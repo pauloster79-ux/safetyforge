@@ -1,0 +1,178 @@
+code: AU
+name: Australia
+regulatory_body: Safe Work Australia (national policy) / State and Territory regulators
+state_regulators:
+  - id: safework_nsw
+    name: SafeWork NSW
+    state: New South Wales
+  - id: worksafe_vic
+    name: WorkSafe Victoria
+    state: Victoria
+  - id: worksafe_qld
+    name: Workplace Health and Safety Queensland
+    state: Queensland
+  - id: worksafe_wa
+    name: WorkSafe Western Australia
+    state: Western Australia
+  - id: safework_sa
+    name: SafeWork SA
+    state: South Australia
+  - id: worksafe_tas
+    name: WorkSafe Tasmania
+    state: Tasmania
+  - id: worksafe_nt
+    name: NT WorkSafe
+    state: Northern Territory
+  - id: worksafe_act
+    name: WorkSafe ACT
+    state: Australian Capital Territory
+primary_legislation: Work Health and Safety Act 2011 (Harmonised)
+construction_legislation: Work Health and Safety Regulation 2011 Chapter 6 - Construction Work
+
+locale:
+  languages: [en-AU]
+  date_format: DD/MM/YYYY
+  temperature_unit: celsius
+  measurement_system: metric
+  currency: AUD
+  currency_symbol: "$"
+  phone_format: "+61 X XXXX XXXX"
+  mobile_format: "+61 4XX XXX XXX"
+  address_format: "{line1}, {suburb}, {state} {postcode}"
+  tax_type: GST
+  tax_rate: 0.10
+
+safety_metrics:
+  incident_rate_name: LTIFR
+  incident_rate_full_name: Lost Time Injury Frequency Rate
+  incident_rate_formula: "(lost time injuries * 1,000,000) / total hours worked"
+  incident_rate_multiplier: 1000000
+  secondary_rate_name: TRIFR
+  secondary_rate_full_name: Total Recordable Injury Frequency Rate
+  secondary_rate_formula: "(recordable injuries * 1,000,000) / total hours worked"
+  reporting_period: financial_year
+  reporting_body: State/Territory Regulator
+
+record_keeping:
+  name: Notifiable Incidents
+  full_name: Notifiable Incidents under WHS Act 2011 Part 3
+  feature_key: notifiable_incidents
+  classifications:
+    - id: death
+      name: Death of a person
+      reportable: true
+      report_deadline_hours: 0
+      report_method: phone
+      preserve_site: true
+    - id: serious_injury
+      name: Serious injury or illness
+      reportable: true
+      report_deadline_hours: 0
+      report_method: phone
+      preserve_site: true
+      examples:
+        - Immediate treatment as in-patient in a hospital
+        - Immediate treatment for amputation
+        - Immediate treatment for serious head injury
+        - Immediate treatment for serious eye injury
+        - Immediate treatment for serious burn
+        - Immediate treatment for spinal injury
+        - Loss of bodily function
+        - Serious lacerations
+    - id: dangerous_incident
+      name: Dangerous incident
+      reportable: true
+      report_deadline_hours: 0
+      report_method: phone
+      preserve_site: true
+      examples:
+        - Uncontrolled escape of gas or steam
+        - Uncontrolled escape of pressurised substance
+        - Electric shock
+        - Fall or release of object from height
+        - Collapse of structure
+        - Inrush of water or similar
+        - Collapse of excavation
+    - id: minor_injury
+      name: Minor injury
+      reportable: false
+      record_in_register: true
+
+enforcement:
+  max_fine_pcbu: 3000000
+  max_fine_officer: 600000
+  max_fine_worker: 150000
+  currency: AUD
+  criminal_liability: true
+  industrial_manslaughter: true
+  industrial_manslaughter_states: [QLD, VIC, WA, NT, ACT]
+  who_enforces: State/Territory WHS Inspectors
+
+compliance_audit:
+  name: WHS Compliance Audit
+  description: Simulates a state regulator WHS compliance inspection
+
+prequalification_platforms:
+  - id: cm3
+    name: Cm3
+  - id: browz
+    name: BROWZ (Avetta)
+  - id: rapid_global
+    name: Rapid Global
+  - id: pegasus
+    name: Pegasus
+
+data_residency:
+  gdpr_applicable: false
+  privacy_act_1988: true
+  data_region: australia-southeast1
+
+duty_holders:
+  - id: pcbu
+    name: Person Conducting a Business or Undertaking
+    legislation: WHS Act 2011 s19
+  - id: officer
+    name: Officer
+    legislation: WHS Act 2011 s27
+  - id: worker
+    name: Worker
+    legislation: WHS Act 2011 s28
+  - id: other_person
+    name: Other persons at the workplace
+    legislation: WHS Act 2011 s29
+
+trade_types:
+  - id: general
+    name: General Builder
+  - id: electrical
+    name: Electrical
+  - id: plumbing
+    name: Plumbing
+  - id: hvac
+    name: HVAC / Refrigeration
+  - id: roofing
+    name: Roofing
+  - id: concrete
+    name: Concreting
+  - id: steel
+    name: Structural Steel / Metal Fabrication
+  - id: demolition
+    name: Demolition
+  - id: excavation
+    name: Earthmoving / Excavation
+  - id: painting
+    name: Painting / Decorating
+  - id: carpentry
+    name: Carpentry
+  - id: masonry
+    name: Bricklaying / Masonry
+  - id: landscaping
+    name: Landscaping
+  - id: fire_protection
+    name: Fire Protection
+  - id: scaffolding
+    name: Scaffolding
+  - id: civil
+    name: Civil Construction
+  - id: other
+    name: Other

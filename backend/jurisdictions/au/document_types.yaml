@@ -1,0 +1,151 @@
+document_types:
+  - id: swms
+    name: Safe Work Method Statement
+    abbreviation: SWMS
+    maps_to_universal: job_hazard_analysis
+    us_equivalent: jha
+    uk_equivalent: rams
+    regulation: WHS Regulation 2011 s299
+    required: true
+    required_for: high_risk_construction_work
+    prompt_file: prompts/swms.md
+    sections:
+      - high_risk_work_activities
+      - hazard_identification
+      - risk_assessment
+      - control_measures
+      - ppe_requirements
+      - responsible_persons
+      - emergency_procedures
+      - worker_sign_off
+
+  - id: whs_management_plan
+    name: WHS Management Plan
+    abbreviation: WHSMP
+    maps_to_universal: site_safety_plan
+    us_equivalent: sssp
+    uk_equivalent: construction_phase_plan
+    regulation: WHS Regulation 2011 s309
+    required: true
+    required_for: construction_projects
+    prompt_file: prompts/whs_management_plan.md
+    sections:
+      - project_overview
+      - whs_responsibilities
+      - risk_management
+      - safe_work_procedures
+      - training_and_induction
+      - incident_management
+      - emergency_procedures
+      - monitoring_and_review
+
+  - id: jsa
+    name: Job Safety Analysis
+    abbreviation: JSA
+    maps_to_universal: job_hazard_analysis
+    us_equivalent: jha
+    regulation: WHS Act 2011 s17 (duty to identify hazards)
+    required: false
+    prompt_file: prompts/jsa.md
+    sections:
+      - task_steps
+      - hazard_identification
+      - risk_assessment
+      - control_measures
+      - ppe_requirements
+
+  - id: toolbox_talk
+    name: Toolbox Talk
+    abbreviation: TBT
+    maps_to_universal: toolbox_talk
+    us_equivalent: toolbox_talk
+    regulation: WHS Act 2011 s47 (consultation with workers)
+    required: false
+    prompt_file: prompts/toolbox_talk.md
+    sections:
+      - topic_overview
+      - key_hazards
+      - whs_requirements
+      - control_measures
+      - discussion_points
+      - attendance_record
+
+  - id: sop
+    name: Safe Operating Procedure
+    abbreviation: SOP
+    maps_to_universal: safe_work_procedure
+    regulation: WHS Regulation 2011 s39
+    required: false
+    prompt_file: prompts/sop.md
+    sections:
+      - scope
+      - equipment
+      - ppe_requirements
+      - step_by_step_procedure
+      - hazard_controls
+      - emergency_shutdown
+
+  - id: emergency_plan
+    name: Emergency Response Plan
+    abbreviation: ERP
+    maps_to_universal: emergency_plan
+    us_equivalent: emergency_action_plan
+    regulation: WHS Regulation 2011 s43
+    required: true
+    prompt_file: prompts/emergency_plan.md
+    sections:
+      - emergency_types
+      - evacuation_procedures
+      - assembly_points
+      - emergency_contacts
+      - first_aid_arrangements
+      - fire_protection
+      - communication_procedures
+
+  - id: site_safety_plan
+    name: Site Safety Plan
+    abbreviation: SSP
+    maps_to_universal: site_safety_plan
+    us_equivalent: sssp
+    regulation: WHS Regulation 2011 s309
+    required: true
+    prompt_file: prompts/site_safety_plan.md
+    sections:
+      - project_details
+      - site_layout
+      - induction_requirements
+      - high_risk_work
+      - emergency_procedures
+      - environmental_controls
+      - traffic_management
+      - plant_and_equipment
+
+  - id: incident_report
+    name: Incident Report
+    abbreviation: IR
+    maps_to_universal: incident_report
+    regulation: WHS Act 2011 Part 3
+    required: true
+    prompt_file: prompts/incident_report.md
+    sections:
+      - incident_summary
+      - timeline
+      - root_cause_analysis
+      - corrective_actions
+      - notifiable_incident_assessment
+      - prevention_measures
+
+  - id: risk_assessment
+    name: Risk Assessment
+    abbreviation: RA
+    maps_to_universal: risk_assessment
+    regulation: WHS Regulation 2011 s34
+    required: true
+    prompt_file: prompts/risk_assessment.md
+    sections:
+      - hazard_identification
+      - risk_analysis
+      - risk_evaluation
+      - control_measures
+      - residual_risk
+      - review_schedule

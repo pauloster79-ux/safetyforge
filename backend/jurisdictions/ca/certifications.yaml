@@ -1,0 +1,193 @@
+certifications:
+  - id: csts
+    name: CSTS
+    full_name: Construction Safety Training System
+    expires: true
+    validity_years: 3
+    required_for: all_site_workers
+    issuing_body: Provincial Safety Association (e.g., ACSA, IHSA)
+    notes: Industry-standard entry-level safety orientation for construction workers
+
+  - id: fall_protection
+    name: Fall Protection
+    full_name: Fall Protection Training
+    expires: true
+    validity_years: 3
+    required_for: height_workers
+    issuing_body: Accredited Training Provider
+    legislation: Provincial OHS fall protection regulations
+
+  - id: confined_space
+    name: Confined Space Entry
+    full_name: Confined Space Entry and Monitor Training
+    expires: true
+    validity_years: 3
+    required_for: confined_space_workers
+    issuing_body: Accredited Training Provider
+    legislation: Provincial OHS confined space regulations
+
+  - id: scaffolding_erector
+    name: Scaffolding Erector
+    full_name: Scaffold Erector Training
+    expires: true
+    validity_years: 3
+    required_for: scaffold_erectors
+    issuing_body: Accredited Training Provider
+
+  - id: crane_operator_mobile
+    name: Mobile Crane Operator
+    full_name: Mobile Crane Operator Certification
+    expires: true
+    validity_years: 5
+    required_for: mobile_crane_operators
+    issuing_body: Provincial Crane Safety Authority / Red Seal
+    notes: Red Seal interprovincial certification available
+
+  - id: crane_operator_tower
+    name: Tower Crane Operator
+    full_name: Tower Crane Operator Certification
+    expires: true
+    validity_years: 5
+    required_for: tower_crane_operators
+    issuing_body: Provincial Crane Safety Authority / Red Seal
+
+  - id: crane_operator_boom_truck
+    name: Boom Truck Operator
+    full_name: Boom Truck Operator Certification
+    expires: true
+    validity_years: 5
+    required_for: boom_truck_operators
+    issuing_body: Provincial Crane Safety Authority
+
+  - id: rigging
+    name: Rigging
+    full_name: Rigging and Hoisting Training
+    expires: true
+    validity_years: 3
+    required_for: rigging_workers
+    issuing_body: Accredited Training Provider
+
+  - id: standard_first_aid
+    name: Standard First Aid
+    full_name: Standard First Aid with CPR-C and AED
+    expires: true
+    validity_years: 3
+    required_for: designated_first_aiders
+    issuing_body: St. John Ambulance / Canadian Red Cross / Heart and Stroke Foundation
+    legislation: Provincial OHS first aid regulations
+
+  - id: emergency_first_aid
+    name: Emergency First Aid
+    full_name: Emergency First Aid with CPR-A
+    expires: true
+    validity_years: 3
+    required_for: all_site_workers
+    issuing_body: St. John Ambulance / Canadian Red Cross / Heart and Stroke Foundation
+
+  - id: whmis
+    name: WHMIS
+    full_name: Workplace Hazardous Materials Information System
+    expires: true
+    validity_years: 1
+    required_for: all_workers_handling_hazardous_materials
+    issuing_body: Employer / Accredited Training Provider
+    legislation: Federal Hazardous Products Act / Provincial WHMIS regulations
+    notes: WHMIS 2015 aligns with GHS (Globally Harmonized System)
+
+  - id: traffic_control_person
+    name: Traffic Control Person
+    full_name: Traffic Control Person Training
+    abbreviation: TCP
+    expires: true
+    validity_years: 3
+    required_for: traffic_controllers
+    issuing_body: Provincial Transportation Authority or Accredited Provider
+
+  - id: ground_disturbance
+    name: Ground Disturbance
+    full_name: Ground Disturbance Supervision / Competent Worker
+    expires: true
+    validity_years: 3
+    required_for: excavation_workers
+    issuing_body: Accredited Training Provider (e.g., Alberta Common Ground Alliance)
+    levels:
+      - id: level_1
+        name: Ground Disturbance Supervisor
+      - id: level_2
+        name: Ground Disturbance Competent Worker
+
+  - id: h2s_alive
+    name: H2S Alive
+    full_name: Hydrogen Sulphide Safety Training
+    expires: true
+    validity_years: 3
+    required_for: workers_in_sour_gas_areas
+    issuing_body: Energy Safety Canada
+    notes: Mandatory for oil and gas construction, common in Alberta and Saskatchewan
+
+  - id: cor_auditor
+    name: COR Auditor
+    full_name: Certificate of Recognition Internal Auditor
+    expires: true
+    validity_years: 3
+    required_for: cor_auditing
+    issuing_body: Provincial Certifying Partner
+
+  - id: aerial_work_platform
+    name: Aerial Work Platform
+    full_name: Aerial Work Platform (Scissor Lift / Boom Lift) Operator
+    abbreviation: AWP
+    expires: true
+    validity_years: 3
+    required_for: awp_operators
+    issuing_body: Accredited Training Provider
+
+  - id: forklift
+    name: Forklift Operator
+    full_name: Powered Industrial Truck Operator Training
+    expires: true
+    validity_years: 3
+    required_for: forklift_operators
+    issuing_body: Employer / Accredited Training Provider
+    legislation: Provincial OHS powered mobile equipment regulations
+
+  - id: trenching_and_excavation
+    name: Trenching and Excavation
+    full_name: Trenching and Excavation Safety Training
+    expires: true
+    validity_years: 3
+    required_for: excavation_workers
+    issuing_body: Accredited Training Provider
+
+  - id: lock_out_tag_out
+    name: Lock Out/Tag Out
+    full_name: Energy Isolation (Lock Out/Tag Out) Training
+    abbreviation: LOTO
+    expires: true
+    validity_years: 3
+    required_for: maintenance_workers
+    issuing_body: Employer / Accredited Training Provider
+
+  - id: electrical_safety
+    name: Electrical Safety
+    full_name: Electrical Safety Training (CSA Z462)
+    expires: true
+    validity_years: 3
+    required_for: electrical_workers
+    issuing_body: Accredited Training Provider
+    standard: CSA Z462 Workplace Electrical Safety
+
+  - id: asbestos_awareness
+    name: Asbestos Awareness
+    full_name: Asbestos Awareness and Management Training
+    expires: true
+    validity_years: 1
+    required_for: workers_in_asbestos_areas
+    issuing_body: Accredited Training Provider
+    legislation: Provincial asbestos regulations
+
+  - id: other
+    name: Other
+    expires: true
+    required_for: varies
+    issuing_body: varies

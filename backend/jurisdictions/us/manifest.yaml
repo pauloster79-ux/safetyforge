@@ -1,0 +1,116 @@
+code: US
+name: United States
+regulatory_body: Occupational Safety and Health Administration (OSHA)
+primary_legislation: Occupational Safety and Health Act of 1970
+construction_legislation: OSHA Standards for the Construction Industry (29 CFR 1926)
+
+locale:
+  languages: [en-US, es-US]
+  date_format: MM/DD/YYYY
+  temperature_unit: fahrenheit
+  measurement_system: imperial
+  currency: USD
+  currency_symbol: "$"
+  phone_format: "(XXX) XXX-XXXX"
+  address_format: "{line1}, {city}, {state} {zip}"
+  tax_type: null
+  tax_rate: 0
+
+safety_metrics:
+  incident_rate_name: TRIR
+  incident_rate_full_name: Total Recordable Incident Rate
+  incident_rate_formula: "(recordable cases * 200,000) / total hours worked"
+  incident_rate_multiplier: 200000
+  secondary_rate_name: DART
+  secondary_rate_full_name: Days Away/Restricted/Transfer Rate
+  secondary_rate_formula: "(DART cases * 200,000) / total hours worked"
+  reporting_period: calendar_year
+  reporting_body: OSHA
+
+record_keeping:
+  name: OSHA 300 Log
+  full_name: OSHA Form 300 - Log of Work-Related Injuries and Illnesses
+  feature_key: osha_log
+  classifications:
+    - id: death
+      name: Death
+      reportable: true
+      report_deadline_hours: 8
+    - id: days_away_from_work
+      name: Days away from work
+      reportable: false
+    - id: job_transfer_or_restriction
+      name: Job transfer or restriction
+      reportable: false
+    - id: other_recordable
+      name: Other recordable case
+      reportable: false
+    - id: hospitalization
+      name: In-patient hospitalization
+      reportable: true
+      report_deadline_hours: 24
+    - id: amputation
+      name: Amputation
+      reportable: true
+      report_deadline_hours: 24
+    - id: eye_loss
+      name: Loss of an eye
+      reportable: true
+      report_deadline_hours: 24
+
+enforcement:
+  max_fine_serious: 16131
+  max_fine_willful: 161323
+  max_fine_repeat: 161323
+  currency: USD
+  criminal_liability: false
+  who_enforces: OSHA Compliance Officers
+  state_plans: true
+
+compliance_audit:
+  name: Mock OSHA Inspection
+  description: Simulates an OSHA compliance officer's site walk-through
+
+prequalification_platforms:
+  - id: isnetworld
+    name: ISNetworld
+  - id: avetta
+    name: Avetta
+  - id: browz
+    name: BROWZ
+
+data_residency:
+  gdpr_applicable: false
+  data_region: us-central1
+
+trade_types:
+  - id: general
+    name: General Contractor
+  - id: electrical
+    name: Electrical
+  - id: plumbing
+    name: Plumbing
+  - id: hvac
+    name: HVAC
+  - id: roofing
+    name: Roofing
+  - id: concrete
+    name: Concrete
+  - id: steel
+    name: Structural Steel
+  - id: demolition
+    name: Demolition
+  - id: excavation
+    name: Excavation
+  - id: painting
+    name: Painting
+  - id: carpentry
+    name: Carpentry
+  - id: masonry
+    name: Masonry
+  - id: landscaping
+    name: Landscaping
+  - id: fire_protection
+    name: Fire Protection
+  - id: other
+    name: Other

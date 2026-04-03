@@ -1,0 +1,76 @@
+document_types:
+  - id: sssp
+    name: Site-Specific Safety Plan
+    abbreviation: SSSP
+    maps_to_universal: site_safety_plan
+    regulation: "OSHA 29 CFR 1926.20(b)"
+    required: true
+    prompt_file: prompts/sssp.md
+    sections:
+      - project_overview
+      - hazard_assessment
+      - hazard_controls
+      - ppe_requirements
+      - emergency_procedures
+      - training_requirements
+      - communication_plan
+      - inspection_schedule
+
+  - id: jha
+    name: Job Hazard Analysis
+    abbreviation: JHA
+    maps_to_universal: job_hazard_analysis
+    regulation: "OSHA Publication 3071"
+    required: true
+    prompt_file: prompts/jha.md
+    sections:
+      - task_steps
+      - hazard_identification
+      - control_measures
+      - ppe_requirements
+      - training_required
+      - emergency_procedures
+
+  - id: toolbox_talk
+    name: Toolbox Talk
+    abbreviation: TBT
+    maps_to_universal: toolbox_talk
+    regulation: "OSHA 29 CFR 1926.21"
+    required: false
+    prompt_file: prompts/toolbox_talk.md
+    sections:
+      - topic_overview
+      - key_points
+      - osha_requirements
+      - discussion_questions
+      - attendance_record
+
+  - id: incident_report
+    name: Incident Report
+    abbreviation: IR
+    maps_to_universal: incident_report
+    regulation: "OSHA 29 CFR 1904"
+    required: true
+    prompt_file: prompts/incident_report.md
+    sections:
+      - incident_summary
+      - timeline
+      - root_cause_analysis
+      - corrective_actions
+      - osha_reporting
+      - prevention_measures
+
+  - id: fall_protection
+    name: Fall Protection Plan
+    abbreviation: FPP
+    maps_to_universal: fall_protection_plan
+    regulation: "OSHA 29 CFR 1926 Subpart M"
+    required: true
+    prompt_file: prompts/fall_protection.md
+    sections:
+      - site_assessment
+      - protection_systems
+      - equipment_inspection
+      - rescue_plan
+      - training_requirements
+      - enforcement

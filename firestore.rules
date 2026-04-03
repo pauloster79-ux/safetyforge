@@ -1,0 +1,243 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // Helper functions
+    // =========================================================================
+
+    /// Returns true if the request is from an authenticated user.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /// Returns the UID of the currently authenticated user.
+    function uid() {
+      return request.auth.uid;
+    }
+
+    /// Returns true if the authenticated user is the company owner.
+    function isCompanyOwner(companyId) {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/companies/$(companyId)).data.created_by == uid();
+    }
+
+    /// Returns true if the current user has a membership record in the company.
+    function isCompanyMember(companyId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/companies/$(companyId)/members/$(uid()));
+    }
+
+    /// Returns the role string for the current user in the given company.
+    function getMemberRole(companyId) {
+      return get(/databases/$(database)/documents/companies/$(companyId)/members/$(uid())).data.role;
+    }
+
+    /// Returns true if the user has at least one of the given roles, or is the
+    /// company owner (owner always has full access).
+    function hasRole(companyId, roles) {
+      return isCompanyOwner(companyId)
+        || (isCompanyMember(companyId) && getMemberRole(companyId) in roles);
+    }
+
+    /// Returns true if the user can read data in this company (any role).
+    function canRead(companyId) {
+      return hasRole(companyId, ['owner', 'admin', 'editor', 'viewer']);
+    }
+
+    /// Returns true if the user can write data in this company (owner, admin,
+    /// or editor).
+    function canWrite(companyId) {
+      return hasRole(companyId, ['owner', 'admin', 'editor']);
+    }
+
+    /// Returns true if the user can manage company settings (owner or admin).
+    function canAdmin(companyId) {
+      return hasRole(companyId, ['owner', 'admin']);
+    }
+
+    // -- Audit field validation -----------------------------------------------
+
+    /// Validates that a new document includes the required audit fields set by
+    /// the current user.
+    function hasCreateAudit() {
+      let d = request.resource.data;
+      return d.created_by == uid()
+        && d.updated_by == uid()
+        && d.created_at is timestamp
+        && d.updated_at is timestamp;
+    }
+
+    /// Validates that an update includes the updated_by field set to the
+    /// current user and does not tamper with immutable creation fields.
+    function hasUpdateAudit() {
+      let d = request.resource.data;
+      return d.updated_by == uid()
+        && d.updated_at is timestamp
+        // Immutable creation fields
+        && d.created_by == resource.data.created_by
+        && d.created_at == resource.data.created_at;
+    }
+
+    // =========================================================================
+    // Top-level read-only collections
+    // =========================================================================
+
+    /// Regulatory standards are readable by any authenticated user.
+    /// Only backend (admin SDK) can write.
+    match /regulatory_standards/{standardId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    /// Templates are readable by any authenticated user.
+    /// Only backend (admin SDK) can write.
+    match /templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // =========================================================================
+    // Companies
+    // =========================================================================
+
+    match /companies/{companyId} {
+
+      /// Any authenticated user can create a company (they become owner via
+      /// created_by). Read/update/delete restricted to company members.
+      allow create: if isAuthenticated()
+        && request.resource.data.created_by == uid()
+        && request.resource.data.created_at is timestamp
+        && request.resource.data.updated_at is timestamp
+        && request.resource.data.updated_by == uid()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2;
+
+      allow read: if canRead(companyId);
+
+      allow update: if canAdmin(companyId)
+        && hasUpdateAudit();
+
+      /// Only the company owner can delete the company document.
+      allow delete: if isCompanyOwner(companyId);
+
+      // -----------------------------------------------------------------------
+      // Members subcollection
+      // -----------------------------------------------------------------------
+
+      match /members/{memberId} {
+        /// Owner and admins can manage members.
+        allow read: if canRead(companyId);
+        allow create: if canAdmin(companyId)
+          && request.resource.data.uid is string
+          && request.resource.data.role is string
+          && request.resource.data.role in ['owner', 'admin', 'editor', 'viewer'];
+        allow update: if canAdmin(companyId)
+          && request.resource.data.role in ['owner', 'admin', 'editor', 'viewer'];
+        allow delete: if canAdmin(companyId);
+      }
+
+      // -----------------------------------------------------------------------
+      // Generic subcollection rule for all tenant data
+      //
+      // All subcollections under a company share the same access pattern:
+      //   - read:   any company member (viewer+)
+      //   - create: editor+ with valid audit fields
+      //   - update: editor+ with valid audit fields
+      //   - delete: admin+ (soft-delete preferred, hard-delete for cleanup)
+      //
+      // Each subcollection is listed explicitly so we do not accidentally
+      // expose unlisted collections via a wildcard.
+      // -----------------------------------------------------------------------
+
+      match /projects/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /documents/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /workers/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /inspections/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /toolbox_talks/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /incidents/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /hazard_reports/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /mock_inspections/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /osha_logs/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /morning_briefs/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /equipment/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+
+      match /environmental_programs/{docId} {
+        allow read: if canRead(companyId);
+        allow create: if canWrite(companyId) && hasCreateAudit();
+        allow update: if canWrite(companyId) && hasUpdateAudit();
+        allow delete: if canAdmin(companyId);
+      }
+    }
+
+    // =========================================================================
+    // Deny-all fallback — any path not matched above is rejected.
+    // This is the Firestore default but stated explicitly for clarity.
+    // =========================================================================
+  }
+}

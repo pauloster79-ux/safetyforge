@@ -1,0 +1,183 @@
+# Rules engine: each rule evaluates against company/project data
+# Based on Work Health and Safety Act 2011 and WHS Regulation 2011
+
+required_programs:
+  - id: whs_management_plan
+    name: WHS Management Plan
+    regulation: WHS Regulation 2011 s309
+    check: document_exists
+    document_type: whs_management_plan
+    applies_when: always
+    severity: critical
+
+  - id: swms_high_risk
+    name: SWMS for High Risk Construction Work
+    regulation: WHS Regulation 2011 s299
+    check: swms_exists_for_high_risk
+    document_type: swms
+    applies_when: project.has_high_risk_work
+    severity: critical
+    notes: SWMS must be prepared before high risk construction work commences
+
+  - id: emergency_plan
+    name: Emergency Plan
+    regulation: WHS Regulation 2011 s43
+    check: document_exists
+    document_type: emergency_plan
+    applies_when: always
+    severity: critical
+
+  - id: first_aid
+    name: First Aid Arrangements
+    regulation: WHS Regulation 2011 s42
+    check: first_aid_arrangements
+    applies_when: always
+    severity: high
+
+  - id: induction_training
+    name: Site-Specific Induction
+    regulation: WHS Regulation 2011 s317
+    check: all_workers_inducted
+    applies_when: always
+    severity: critical
+
+certification_rules:
+  - id: white_card_all
+    name: White Card - All Workers
+    regulation: WHS Regulation 2011 s317
+    check: certification_valid
+    certification_type: white_card
+    applies_to: all_site_workers
+    severity: critical
+    message: All workers on a construction site must hold a current White Card
+
+  - id: high_risk_licences
+    name: High Risk Work Licences
+    regulation: WHS Regulation 2011 s82
+    check: licence_valid_for_work
+    applies_to: high_risk_workers
+    severity: critical
+    message: Workers performing high risk work must hold the appropriate licence class
+
+  - id: first_aid_cert
+    name: First Aid Certification
+    regulation: WHS Code of Practice - First Aid in the Workplace
+    check: certification_valid
+    certification_type: first_aid
+    applies_to: designated_first_aiders
+    severity: high
+
+  - id: working_at_heights
+    name: Working at Heights Training
+    regulation: WHS Regulation 2011 Chapter 6 Part 6.4
+    check: certification_valid
+    certification_type: working_at_heights
+    applies_to: height_workers
+    severity: critical
+
+  - id: confined_space_entry
+    name: Confined Space Entry Training
+    regulation: WHS Regulation 2011 Chapter 4 Part 4.3
+    check: certification_valid
+    certification_type: confined_space
+    applies_to: confined_space_workers
+    severity: critical
+
+inspection_rules:
+  - id: plant_inspection
+    name: Plant and Equipment Inspection
+    regulation: WHS Regulation 2011 s213
+    check: inspection_current
+    frequency_days: 30
+    applies_when: project.has_plant
+    severity: high
+
+  - id: scaffold_inspection
+    name: Scaffold Inspection
+    regulation: WHS Regulation 2011 s224
+    check: inspection_current
+    frequency_days: 30
+    applies_when: project.has_scaffolding
+    severity: critical
+    notes: Must be inspected before first use, after alteration, and at least monthly
+
+  - id: excavation_inspection
+    name: Excavation Inspection
+    regulation: WHS Regulation 2011 s306
+    check: inspection_current
+    frequency_days: 1
+    applies_when: project.has_excavation
+    severity: critical
+    notes: Excavations must be inspected by a competent person before each shift
+
+  - id: electrical_safety
+    name: Electrical Installation Inspection
+    regulation: WHS Regulation 2011 s164
+    check: inspection_current
+    frequency_days: 90
+    applies_when: always
+    severity: high
+
+high_risk_construction_work:
+  regulation: WHS Regulation 2011 s291
+  description: Work that requires a SWMS
+  activities:
+    - id: risk_of_fall
+      name: Risk of a person falling more than 2 metres
+      trigger_height_metres: 2
+    - id: demolition
+      name: Demolition of a load-bearing structure
+    - id: confined_space
+      name: Work in a confined space
+    - id: asbestos_removal
+      name: Asbestos removal work
+    - id: tunnelling
+      name: Tunnel construction work
+    - id: pressurised_gas
+      name: Work involving pressurised gas distribution mains or piping
+    - id: chemical_biological_radiological
+      name: Work involving chemical, biological or radiological hazards
+    - id: telecommunications_tower
+      name: Work on a telecommunications tower
+    - id: diving
+      name: Diving work
+    - id: energised_electrical
+      name: Work on or near energised electrical installations or services
+    - id: structural_alteration
+      name: Structural alteration requiring temporary support
+    - id: mobile_plant_near_traffic
+      name: Work involving powered mobile plant near pedestrians or traffic
+    - id: artificial_extremes_temp
+      name: Work in artificially extreme temperatures
+    - id: tilt_up_precast
+      name: Tilt-up or precast concrete work
+    - id: explosive
+      name: Work involving explosives
+    - id: trench_deeper_1_5m
+      name: Work in a trench deeper than 1.5 metres
+    - id: crane_near_overhead_lines
+      name: Work involving a crane near overhead power lines
+
+consultation_rules:
+  - id: worker_consultation
+    name: Worker Consultation
+    regulation: WHS Act 2011 Part 5
+    check: consultation_records
+    applies_when: always
+    severity: high
+    notes: PCBUs must consult with workers on WHS matters
+
+  - id: hsr_election
+    name: Health and Safety Representative Election
+    regulation: WHS Act 2011 s50
+    check: hsr_records
+    applies_when: workers.request_hsr
+    severity: high
+    notes: Workers may request election of a Health and Safety Representative
+
+  - id: hsc_establishment
+    name: Health and Safety Committee
+    regulation: WHS Act 2011 s75
+    check: hsc_records
+    applies_when: workers.request_hsc OR hsr.requests_hsc
+    severity: medium

@@ -1,0 +1,198 @@
+code: CA
+name: Canada
+regulatory_body: Provincial/Territorial OHS Regulators
+federal_body: Employment and Social Development Canada (Labour Program)
+provincial_regulators:
+  - id: worksafebc
+    name: WorkSafeBC
+    province: British Columbia
+  - id: ohs_alberta
+    name: Alberta OHS
+    province: Alberta
+  - id: worksafe_sask
+    name: WorkSafe Saskatchewan
+    province: Saskatchewan
+  - id: wsm_manitoba
+    name: Workplace Safety and Health Manitoba
+    province: Manitoba
+  - id: mol_ontario
+    name: Ontario Ministry of Labour
+    province: Ontario
+  - id: cnesst
+    name: CNESST
+    province: Quebec
+    notes: Commission des normes, de l'equite, de la sante et de la securite du travail
+  - id: worksafe_nb
+    name: WorkSafeNB
+    province: New Brunswick
+  - id: whs_nova_scotia
+    name: Nova Scotia WHS Division
+    province: Nova Scotia
+  - id: worksafe_pei
+    name: Workers Compensation Board PEI
+    province: Prince Edward Island
+  - id: whscc_nl
+    name: Workplace Health Safety and Compensation Commission NL
+    province: Newfoundland and Labrador
+  - id: wscc_nt_nu
+    name: Workers' Safety and Compensation Commission
+    province: Northwest Territories / Nunavut
+  - id: ywchsb
+    name: Yukon Workers' Compensation Health and Safety Board
+    province: Yukon
+primary_legislation: Canada Labour Code Part II (federal workers)
+construction_legislation: Provincial OHS Acts and Construction Regulations
+
+locale:
+  languages: [en-CA, fr-CA]
+  date_format: YYYY-MM-DD
+  date_format_display: DD/MM/YYYY
+  temperature_unit: celsius
+  measurement_system: metric
+  currency: CAD
+  currency_symbol: "$"
+  phone_format: "+1 (XXX) XXX-XXXX"
+  address_format: "{line1}, {city}, {province} {postal_code}"
+  postal_code_format: "A1A 1A1"
+  tax_type: GST/HST
+  tax_rate_gst: 0.05
+  tax_rate_hst_varies: true
+
+safety_metrics:
+  incident_rate_name: TRIR
+  incident_rate_full_name: Total Recordable Incident Rate
+  incident_rate_formula: "(recordable incidents * 200,000) / total hours worked"
+  incident_rate_multiplier: 200000
+  secondary_rate_name: LTIR
+  secondary_rate_full_name: Lost Time Incident Rate
+  secondary_rate_formula: "(lost time incidents * 200,000) / total hours worked"
+  tertiary_rate_name: Severity Rate
+  tertiary_rate_full_name: Severity Rate
+  tertiary_rate_formula: "(days lost * 200,000) / total hours worked"
+  reporting_period: calendar_year
+  reporting_body: Provincial WCB
+
+record_keeping:
+  name: Incident Reporting
+  full_name: Provincial OHS Incident Reporting Requirements
+  feature_key: incident_reporting
+  classifications:
+    - id: fatality
+      name: Fatality
+      reportable: true
+      report_deadline_hours: 0
+      report_method: phone
+      preserve_scene: true
+    - id: critical_injury
+      name: Critical injury
+      reportable: true
+      report_deadline_hours: 0
+      report_method: phone
+      preserve_scene: true
+      definition: Injury that places life in jeopardy, produces unconsciousness, results in substantial loss of blood, fracture of limb, amputation, burns to major part of body, or loss of sight
+    - id: serious_injury
+      name: Serious injury requiring hospitalization
+      reportable: true
+      report_deadline_hours: 24
+    - id: dangerous_occurrence
+      name: Dangerous occurrence
+      reportable: true
+      report_deadline_hours: 24
+      examples:
+        - Collapse of crane or derrick
+        - Structural collapse
+        - Failure of suspended work platform
+        - Uncontrolled release of hazardous substance
+        - Accidental contact with energised electrical conductor
+    - id: occupational_illness
+      name: Occupational illness
+      reportable: true
+      report_deadline_hours: 72
+    - id: minor_injury
+      name: Minor injury requiring medical aid
+      reportable: false
+      record_required: true
+
+enforcement:
+  max_fine_varies_by_province: true
+  example_max_fine_ontario: 1500000
+  example_max_fine_alberta: 1000000
+  currency: CAD
+  criminal_liability: true
+  criminal_liability_act: Criminal Code of Canada s217.1 (Bill C-45 Westray Act)
+  who_enforces: Provincial OHS Officers/Inspectors
+
+compliance_audit:
+  name: COR Audit
+  full_name: Certificate of Recognition Internal Audit
+  description: Evaluates the effectiveness of the employer's health and safety management system
+
+prequalification_platforms:
+  - id: isnetworld
+    name: ISNetworld
+  - id: complyworks
+    name: ComplyWorks
+  - id: avetta
+    name: Avetta
+  - id: cognibox
+    name: Cognibox
+
+certification_programs:
+  - id: cor
+    name: COR
+    full_name: Certificate of Recognition
+    description: Voluntary program that certifies employers with a health and safety management system meeting established standards
+    issuing_body: Certifying partners (industry associations) authorized by WCB
+    benefit: Premium rebates from provincial WCB
+    audit_frequency_years: 3
+    maintenance_audit_years: 1
+  - id: secor
+    name: SECOR
+    full_name: Small Employer Certificate of Recognition
+    description: COR program adapted for small employers (typically under 10 workers)
+    issuing_body: Certifying partners authorized by WCB
+
+data_residency:
+  gdpr_applicable: false
+  pipeda: true
+  pipeda_full_name: Personal Information Protection and Electronic Documents Act
+  provincial_privacy_acts: [PIPA Alberta, PIPA BC, Quebec Privacy Act]
+  data_region: northamerica-northeast1
+
+trade_types:
+  - id: general
+    name: General Contractor
+  - id: electrical
+    name: Electrical
+  - id: plumbing
+    name: Plumbing
+  - id: hvac
+    name: HVAC / Mechanical
+  - id: roofing
+    name: Roofing
+  - id: concrete
+    name: Concrete / Formwork
+  - id: steel
+    name: Structural Steel / Ironwork
+  - id: demolition
+    name: Demolition
+  - id: excavation
+    name: Excavation / Earthwork
+  - id: painting
+    name: Painting / Coating
+  - id: carpentry
+    name: Carpentry / Framing
+  - id: masonry
+    name: Masonry
+  - id: landscaping
+    name: Landscaping
+  - id: fire_protection
+    name: Fire Protection
+  - id: scaffolding
+    name: Scaffolding
+  - id: civil
+    name: Civil / Heavy Construction
+  - id: pipeline
+    name: Pipeline
+  - id: other
+    name: Other

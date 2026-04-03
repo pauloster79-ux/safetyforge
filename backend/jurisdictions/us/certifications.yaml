@@ -1,0 +1,149 @@
+certifications:
+  - id: osha_10
+    name: OSHA 10-Hour
+    full_name: OSHA 10-Hour Construction Safety Training
+    expires: false
+    required_for: all_site_workers
+    issuing_body: OSHA-Authorized Trainer
+
+  - id: osha_30
+    name: OSHA 30-Hour
+    full_name: OSHA 30-Hour Construction Safety Training
+    expires: false
+    required_for: supervisors
+    issuing_body: OSHA-Authorized Trainer
+
+  - id: fall_protection
+    name: Fall Protection Competent Person
+    expires: true
+    validity_years: 3
+    required_for: fall_protection_supervisors
+    issuing_body: Employer or Third Party
+
+  - id: scaffold_competent
+    name: Scaffold Competent Person
+    expires: true
+    validity_years: 3
+    required_for: scaffold_supervisors
+    issuing_body: Employer or Third Party
+
+  - id: confined_space
+    name: Confined Space Entry
+    expires: true
+    validity_years: 1
+    required_for: confined_space_workers
+    issuing_body: Employer or Third Party
+
+  - id: excavation_competent
+    name: Excavation Competent Person
+    expires: true
+    validity_years: 3
+    required_for: excavation_supervisors
+    issuing_body: Employer or Third Party
+
+  - id: forklift_operator
+    name: Forklift Operator
+    expires: true
+    validity_years: 3
+    required_for: forklift_operators
+    issuing_body: Employer
+
+  - id: crane_operator_nccco
+    name: NCCCO Crane Operator
+    full_name: National Commission for the Certification of Crane Operators
+    expires: true
+    validity_years: 5
+    required_for: crane_operators
+    issuing_body: NCCCO
+
+  - id: aerial_lift
+    name: Aerial Lift Operator
+    expires: true
+    validity_years: 3
+    required_for: aerial_lift_operators
+    issuing_body: Employer
+
+  - id: first_aid_cpr
+    name: First Aid/CPR
+    expires: true
+    validity_years: 2
+    required_for: designated_first_aid
+    issuing_body: American Red Cross / American Heart Association
+
+  - id: hazcom_ghs
+    name: HazCom/GHS
+    full_name: Hazard Communication / Globally Harmonized System
+    expires: true
+    validity_years: 1
+    required_for: all_site_workers
+    issuing_body: Employer
+
+  - id: silica_competent
+    name: Silica Competent Person
+    expires: true
+    validity_years: 1
+    required_for: silica_exposure_workers
+    issuing_body: Employer or Third Party
+
+  - id: lead_awareness
+    name: Lead Awareness
+    expires: true
+    validity_years: 1
+    required_for: lead_exposure_workers
+    issuing_body: Employer or Third Party
+
+  - id: asbestos_awareness
+    name: Asbestos Awareness
+    expires: true
+    validity_years: 1
+    required_for: asbestos_exposure_workers
+    issuing_body: Employer or Third Party
+
+  - id: respiratory_fit_test
+    name: Respiratory Fit Test
+    expires: true
+    validity_years: 1
+    required_for: respirator_users
+    issuing_body: Employer
+
+  - id: rigging_signal
+    name: Rigging & Signal Person
+    expires: true
+    validity_years: 3
+    required_for: rigging_workers
+    issuing_body: Employer or Third Party
+
+  - id: electrical_safety
+    name: Electrical Safety (NFPA 70E)
+    expires: true
+    validity_years: 3
+    required_for: electrical_workers
+    issuing_body: Employer or Third Party
+
+  - id: flagger
+    name: Flagger Certification
+    expires: true
+    validity_years: 3
+    required_for: flaggers
+    issuing_body: State DOT / ATSSA
+
+  - id: hazwoper
+    name: HAZWOPER
+    full_name: Hazardous Waste Operations and Emergency Response
+    expires: true
+    validity_years: 1
+    required_for: hazmat_workers
+    issuing_body: OSHA-Authorized Trainer
+
+  - id: fire_watch
+    name: Fire Watch
+    expires: true
+    validity_years: 1
+    required_for: fire_watch_workers
+    issuing_body: Employer
+
+  - id: other
+    name: Other
+    expires: true
+    required_for: varies
+    issuing_body: varies

@@ -1,0 +1,180 @@
+code: UK
+name: United Kingdom
+regulatory_body: Health and Safety Executive (HSE)
+primary_legislation: Health and Safety at Work etc Act 1974
+construction_legislation: Construction (Design and Management) Regulations 2015
+
+locale:
+  languages: [en-GB]
+  date_format: DD/MM/YYYY
+  temperature_unit: celsius
+  measurement_system: metric
+  currency: GBP
+  currency_symbol: "\u00a3"
+  phone_format: "+44 XXXX XXXXXX"
+  address_format: "{line1}, {line2}, {city}, {county}, {postcode}"
+  tax_type: VAT
+  tax_rate: 0.20
+
+safety_metrics:
+  incident_rate_name: AFR
+  incident_rate_full_name: Accident Frequency Rate
+  incident_rate_formula: "(reportable injuries x 100,000) / total hours worked"
+  incident_rate_multiplier: 100000
+  secondary_rate_name: AIR
+  secondary_rate_full_name: Accident Incidence Rate
+  secondary_rate_formula: "(reportable injuries x 100,000) / average number employed"
+  reporting_period: calendar_year
+  reporting_body: HSE via RIDDOR
+
+record_keeping:
+  name: RIDDOR
+  full_name: Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013
+  feature_key: riddor_log
+  classifications:
+    - id: fatal
+      name: Fatal injury
+      reportable: true
+      report_deadline_hours: 0
+      report_method: telephone
+      report_to: HSE via RIDDOR online or 0345 300 9923
+    - id: specified_injury
+      name: Specified injury
+      reportable: true
+      report_deadline_days: 10
+      report_method: online
+      examples:
+        - Fractures (other than fingers, thumbs, and toes)
+        - Amputation of arm, hand, finger, thumb, leg, foot, or toe
+        - Permanent loss of sight or reduction of sight
+        - Crush injuries leading to internal organ damage
+        - Scalping (separation of skin from the head)
+        - Burns covering more than 10% of body
+        - Loss of consciousness from head injury or asphyxia
+        - Hypothermia or heat-induced illness requiring resuscitation or hospital admission
+    - id: over_7_day
+      name: Over 7-day incapacitation
+      reportable: true
+      report_deadline_days: 15
+      report_method: online
+    - id: dangerous_occurrence
+      name: Dangerous occurrence
+      reportable: true
+      report_deadline_days: 10
+      report_method: online
+      examples:
+        - Collapse or overturning of lifting equipment
+        - Failure of pressure systems
+        - Collapse of scaffolding over 5 metres
+        - Unintended collapse of a building or structure
+        - Explosion or fire causing work stoppage for over 24 hours
+        - Accidental release of a biological agent
+        - Electrical short circuit or overload causing fire or explosion
+    - id: occupational_disease
+      name: Occupational disease
+      reportable: true
+      report_deadline_days: 10
+      report_method: online
+      examples:
+        - Carpal tunnel syndrome
+        - Hand-arm vibration syndrome
+        - Occupational dermatitis
+        - Occupational asthma
+        - Tendonitis or tenosynovitis
+        - Occupational cancer
+        - Mesothelioma
+    - id: gas_incident
+      name: Gas-related incident
+      reportable: true
+      report_deadline_hours: 0
+      report_method: telephone
+    - id: minor
+      name: Minor injury
+      reportable: false
+      record_in: accident_book
+
+enforcement:
+  max_fine_unlimited: true
+  typical_serious_fine_range: [10000, 6000000]
+  sentencing_guidelines: "Health and Safety Offences, Corporate Manslaughter and Food Safety and Hygiene Offences Definitive Guideline (2016)"
+  currency: GBP
+  criminal_liability: true
+  corporate_manslaughter: true
+  corporate_manslaughter_act: "Corporate Manslaughter and Corporate Homicide Act 2007"
+  who_enforces: HSE Inspectors
+  enforcement_notices:
+    - id: improvement_notice
+      name: Improvement Notice
+      description: Requires duty holder to remedy a contravention within a specified period
+    - id: prohibition_notice
+      name: Prohibition Notice
+      description: Directs that an activity shall not be carried on unless specified matters have been remedied
+    - id: notification_of_contravention
+      name: Notification of Contravention
+      description: Written notification of a contravention without formal enforcement
+
+compliance_audit:
+  name: Mock HSE Inspection
+  description: Simulates an HSE inspector's site visit, checking compliance with CDM 2015, HSWA 1974, and associated regulations
+
+prequalification_platforms:
+  - id: chas
+    name: CHAS (Contractors Health and Safety Assessment Scheme)
+  - id: safe_contractor
+    name: SafeContractor
+  - id: constructionline
+    name: Constructionline
+  - id: ssip
+    name: SSIP (Safety Schemes in Procurement)
+  - id: builders_profile
+    name: Builders Profile
+  - id: acclaim
+    name: Acclaim Accreditation
+
+data_residency:
+  gdpr_applicable: true
+  uk_dpa_2018: true
+  uk_gdpr: true
+  data_region: europe-west2
+
+trade_types:
+  - id: principal_contractor
+    name: Principal Contractor
+  - id: general
+    name: General Contractor
+  - id: electrical
+    name: Electrical
+  - id: plumbing
+    name: Plumbing & Heating
+  - id: mechanical
+    name: Mechanical Services
+  - id: roofing
+    name: Roofing
+  - id: concrete
+    name: Concrete & Formwork
+  - id: structural_steel
+    name: Structural Steelwork
+  - id: demolition
+    name: Demolition
+  - id: groundworks
+    name: Groundworks & Excavation
+  - id: painting
+    name: Painting & Decorating
+  - id: joinery
+    name: Joinery & Carpentry
+  - id: bricklaying
+    name: Bricklaying & Masonry
+  - id: landscaping
+    name: Landscaping
+  - id: fire_protection
+    name: Fire Protection
+  - id: scaffolding
+    name: Scaffolding
+  - id: cladding
+    name: Cladding & Curtain Walling
+  - id: piling
+    name: Piling & Foundations
+  - id: asbestos_removal
+    name: Asbestos Removal (Licensed)
+  - id: other
+    name: Other

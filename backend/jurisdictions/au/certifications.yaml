@@ -1,0 +1,231 @@
+certifications:
+  - id: white_card
+    name: White Card
+    full_name: General Construction Induction Training
+    unit_code: CPCCWHS1001
+    expires: false
+    required_for: all_site_workers
+    issuing_body: Registered Training Organisation (RTO)
+    legislation: WHS Regulation 2011 s317
+    notes: Mandatory for all construction work. Recognised nationally.
+
+  - id: blue_card_asbestos
+    name: Blue Card (Asbestos Awareness)
+    full_name: Asbestos Awareness Training
+    unit_code: CPCCDE3014
+    expires: true
+    validity_years: 2
+    required_for: asbestos_workers
+    issuing_body: Registered Training Organisation (RTO)
+    legislation: WHS Regulation 2011 Chapter 8 Part 8.1
+
+  - id: ewp
+    name: EWP Licence
+    full_name: Elevating Work Platform Operator
+    licence_class: WP
+    expires: true
+    validity_years: 5
+    required_for: ewp_operators
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: forklift
+    name: Forklift Licence
+    full_name: Forklift Truck Operation
+    licence_class: LF
+    expires: true
+    validity_years: 5
+    required_for: forklift_operators
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: dogging
+    name: Dogging Licence
+    full_name: Dogging
+    licence_class: DG
+    expires: true
+    validity_years: 5
+    required_for: dogging_workers
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: rigging_basic
+    name: Rigging - Basic
+    full_name: Basic Rigging
+    licence_class: RB
+    expires: true
+    validity_years: 5
+    required_for: basic_rigging_workers
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: rigging_intermediate
+    name: Rigging - Intermediate
+    full_name: Intermediate Rigging
+    licence_class: RI
+    expires: true
+    validity_years: 5
+    required_for: intermediate_rigging_workers
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: rigging_advanced
+    name: Rigging - Advanced
+    full_name: Advanced Rigging
+    licence_class: RA
+    expires: true
+    validity_years: 5
+    required_for: advanced_rigging_workers
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: scaffolding_basic
+    name: Scaffolding - Basic
+    full_name: Basic Scaffolding
+    licence_class: SB
+    expires: true
+    validity_years: 5
+    required_for: basic_scaffolders
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: scaffolding_intermediate
+    name: Scaffolding - Intermediate
+    full_name: Intermediate Scaffolding
+    licence_class: SI
+    expires: true
+    validity_years: 5
+    required_for: intermediate_scaffolders
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: scaffolding_advanced
+    name: Scaffolding - Advanced
+    full_name: Advanced Scaffolding
+    licence_class: SA
+    expires: true
+    validity_years: 5
+    required_for: advanced_scaffolders
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: crane_c1
+    name: Crane - C1
+    full_name: Non-Slewing Mobile Crane (up to 3 tonnes)
+    licence_class: C1
+    expires: true
+    validity_years: 5
+    required_for: crane_operators_c1
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: crane_c2
+    name: Crane - C2
+    full_name: Non-Slewing Mobile Crane (greater than 3 tonnes)
+    licence_class: C2
+    expires: true
+    validity_years: 5
+    required_for: crane_operators_c2
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: crane_c6
+    name: Crane - C6
+    full_name: Slewing Mobile Crane (greater than 100 tonnes)
+    licence_class: C6
+    expires: true
+    validity_years: 5
+    required_for: crane_operators_c6
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: crane_ct
+    name: Tower Crane
+    full_name: Tower Crane Operation
+    licence_class: CT
+    expires: true
+    validity_years: 5
+    required_for: tower_crane_operators
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s82
+
+  - id: first_aid
+    name: First Aid
+    full_name: Provide First Aid
+    unit_code: HLTAID011
+    expires: true
+    validity_years: 3
+    required_for: designated_first_aiders
+    issuing_body: Registered Training Organisation (RTO)
+    legislation: WHS Code of Practice - First Aid in the Workplace
+
+  - id: cpr
+    name: CPR
+    full_name: Provide Cardiopulmonary Resuscitation
+    unit_code: HLTAID009
+    expires: true
+    validity_years: 1
+    required_for: designated_first_aiders
+    issuing_body: Registered Training Organisation (RTO)
+
+  - id: traffic_controller
+    name: Traffic Controller
+    full_name: Traffic Controller / Traffic Management
+    expires: true
+    validity_years: 3
+    required_for: traffic_controllers
+    issuing_body: State/Territory Roads Authority or RTO
+    legislation: State/Territory road safety legislation
+
+  - id: working_at_heights
+    name: Working at Heights
+    full_name: Work Safely at Heights
+    unit_code: RIIWHS204E
+    expires: true
+    validity_years: 2
+    required_for: height_workers
+    issuing_body: Registered Training Organisation (RTO)
+    legislation: WHS Regulation 2011 Chapter 6 Part 6.4
+
+  - id: confined_space
+    name: Confined Space Entry
+    full_name: Enter and Work in Confined Spaces
+    unit_code: MSMWHS217
+    expires: true
+    validity_years: 2
+    required_for: confined_space_workers
+    issuing_body: Registered Training Organisation (RTO)
+    legislation: WHS Regulation 2011 Chapter 4 Part 4.3
+
+  - id: excavation_competent
+    name: Excavation Competent Person
+    full_name: Excavation Work Competent Person
+    expires: true
+    validity_years: 3
+    required_for: excavation_supervisors
+    issuing_body: Registered Training Organisation (RTO)
+    legislation: WHS Regulation 2011 s306
+
+  - id: asbestos_removal_class_a
+    name: Asbestos Removal - Class A
+    full_name: Class A Asbestos Removal (Friable)
+    expires: true
+    validity_years: 5
+    required_for: friable_asbestos_removers
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s485
+
+  - id: asbestos_removal_class_b
+    name: Asbestos Removal - Class B
+    full_name: Class B Asbestos Removal (Non-Friable)
+    expires: true
+    validity_years: 5
+    required_for: nonfriable_asbestos_removers
+    issuing_body: State/Territory WHS Regulator
+    legislation: WHS Regulation 2011 s485
+
+  - id: other
+    name: Other
+    expires: true
+    required_for: varies
+    issuing_body: varies

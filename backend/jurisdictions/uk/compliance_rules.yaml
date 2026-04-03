@@ -1,0 +1,380 @@
+# UK Compliance Rules Engine
+# Each rule evaluates against company/project data to determine compliance status
+
+required_programs:
+  - id: construction_phase_plan
+    name: Construction Phase Plan
+    regulation: "CDM 2015 Reg 12"
+    check: document_exists
+    document_type: construction_phase_plan
+    applies_when: always
+    severity: critical
+    description: Principal contractor must draw up a construction phase plan before the construction phase begins
+
+  - id: health_safety_policy
+    name: Health & Safety Policy (Written)
+    regulation: "HSWA 1974 s2(3)"
+    check: document_exists
+    document_type: health_safety_policy
+    applies_when: "company.employee_count >= 5"
+    severity: critical
+    description: Employers with 5 or more employees must have a written health and safety policy
+
+  - id: risk_assessments
+    name: Suitable and Sufficient Risk Assessments
+    regulation: "Management of Health and Safety at Work Regulations 1999, Reg 3"
+    check: risk_assessments_current
+    applies_when: always
+    severity: critical
+    description: Every employer must carry out suitable and sufficient assessment of risks to employees and others
+
+  - id: fire_risk_assessment
+    name: Fire Risk Assessment
+    regulation: "Regulatory Reform (Fire Safety) Order 2005, Article 9"
+    check: document_exists
+    document_type: fire_risk_assessment
+    applies_when: always
+    severity: high
+    description: The responsible person must carry out a fire risk assessment
+
+  - id: asbestos_survey
+    name: Asbestos Refurbishment/Demolition Survey
+    regulation: "Control of Asbestos Regulations 2012, Reg 5"
+    check: document_exists
+    document_type: asbestos_survey
+    applies_when: "project.involves_refurbishment_or_demolition"
+    severity: critical
+    description: A refurbishment/demolition survey is required before work begins on buildings constructed before 2000
+
+  - id: coshh_assessments
+    name: COSHH Assessments for Hazardous Substances
+    regulation: "COSHH 2002, Reg 6"
+    check: document_exists_per_substance
+    document_type: coshh_assessment
+    applies_when: "project.uses_hazardous_substances"
+    severity: critical
+    description: Suitable and sufficient assessment of risk from substances hazardous to health
+
+  - id: traffic_management_plan
+    name: Site Traffic Management Plan
+    regulation: "CDM 2015 Schedule 2"
+    check: document_exists
+    document_type: traffic_management_plan
+    applies_when: "project.has_vehicle_movements"
+    severity: high
+    description: Arrangements for managing vehicle and pedestrian traffic on site
+
+  - id: pre_construction_information
+    name: Pre-Construction Information Pack
+    regulation: "CDM 2015 Reg 4(4)"
+    check: document_exists
+    document_type: pre_construction_information
+    applies_when: always
+    severity: critical
+    description: Client must provide pre-construction information as soon as practicable
+
+  - id: health_safety_file
+    name: Health and Safety File
+    regulation: "CDM 2015 Reg 12(5)"
+    check: document_exists
+    document_type: health_safety_file
+    applies_when: always
+    severity: high
+    description: Principal designer or principal contractor must prepare and update the health and safety file
+
+  - id: welfare_facilities
+    name: Adequate Welfare Facilities
+    regulation: "CDM 2015 Schedule 2 Part 3"
+    check: welfare_provision
+    applies_when: always
+    severity: critical
+    description: Sanitary conveniences, washing facilities, drinking water, changing rooms, rest facilities
+
+  - id: employer_liability_insurance
+    name: Employers' Liability Insurance
+    regulation: "Employers' Liability (Compulsory Insurance) Act 1969"
+    check: insurance_valid
+    insurance_type: employer_liability
+    minimum_cover: 5000000
+    currency: GBP
+    applies_when: "company.has_employees"
+    severity: critical
+    description: Employers must have at least 5 million pounds of employers' liability insurance
+
+required_certifications:
+  - id: cscs_all_workers
+    name: CSCS Cards for All Operatives
+    check: all_workers_have_cert
+    certification_type: cscs
+    applies_when: always
+    severity: high
+    description: Industry standard requirement for all operatives on construction sites
+
+  - id: smsts_site_manager
+    name: SMSTS for Site Managers
+    check: role_has_cert
+    role: superintendent
+    certification_type: smsts
+    applies_when: always
+    severity: critical
+    description: Site managers must hold a valid SMSTS certificate
+
+  - id: sssts_supervisors
+    name: SSSTS for Site Supervisors
+    check: role_has_cert
+    role: supervisor
+    certification_type: sssts
+    applies_when: always
+    severity: high
+    description: Site supervisors must hold a valid SSSTS or equivalent certificate
+
+  - id: first_aid_coverage
+    name: Adequate First Aid Cover
+    regulation: "Health and Safety (First-Aid) Regulations 1981"
+    check: min_cert_count
+    certification_type: first_aid_at_work
+    min_ratio: 0.05
+    applies_when: always
+    severity: high
+    description: Minimum 1 qualified first aider per 20 operatives on a construction site
+
+  - id: fire_marshal_coverage
+    name: Adequate Fire Marshal Cover
+    regulation: "Regulatory Reform (Fire Safety) Order 2005"
+    check: min_cert_count
+    certification_type: fire_marshal
+    min_ratio: 0.02
+    applies_when: always
+    severity: high
+    description: Minimum 1 fire marshal per 50 operatives or per floor
+
+  - id: cpcs_plant_operators
+    name: CPCS Cards for Plant Operators
+    check: role_has_cert
+    role: plant_operator
+    certification_type: cpcs
+    applies_when: "project.has_plant"
+    severity: critical
+    description: All plant operators must hold valid CPCS competence cards for the plant they operate
+
+  - id: ipaf_mewp_operators
+    name: IPAF for MEWP Operators
+    check: role_has_cert
+    role: mewp_operator
+    certification_type: ipaf
+    applies_when: "project.has_mewps"
+    severity: critical
+    description: All MEWP operators must hold a valid IPAF licence for the category of platform
+
+  - id: pasma_tower_users
+    name: PASMA for Mobile Tower Scaffold Users
+    check: role_has_cert
+    role: tower_scaffold_user
+    certification_type: pasma
+    applies_when: "project.has_tower_scaffolds"
+    severity: high
+    description: All operatives erecting or working from mobile tower scaffolds must be PASMA trained
+
+  - id: asbestos_awareness_all
+    name: Asbestos Awareness for All Operatives
+    regulation: "Control of Asbestos Regulations 2012, Reg 10"
+    check: all_workers_have_cert
+    certification_type: asbestos_awareness
+    applies_when: always
+    severity: high
+    description: All operatives likely to disturb asbestos must have awareness training (annual refresh)
+
+  - id: temporary_works_coordinator
+    name: Temporary Works Coordinator Appointed
+    regulation: "BS 5975:2019"
+    check: role_has_cert
+    role: temporary_works_coordinator
+    certification_type: temporary_works_coordinator
+    applies_when: "project.has_temporary_works"
+    severity: critical
+    description: A competent temporary works coordinator must be appointed for all temporary works
+
+inspection_requirements:
+  - id: weekly_site_inspection
+    name: Weekly Site Inspection
+    regulation: "CDM 2015"
+    check: inspection_frequency
+    max_days_between: 7
+    applies_when: always
+    severity: high
+    description: Regular site inspections to monitor health and safety standards
+
+  - id: scaffold_inspection
+    name: Scaffold Inspection Before Use and Every 7 Days
+    regulation: "Work at Height Regulations 2005, Schedule 7"
+    check: inspection_frequency
+    inspection_type: scaffold
+    max_days_between: 7
+    additional_triggers:
+      - before_first_use
+      - after_adverse_weather
+      - after_any_event_affecting_stability
+    record_retention_months: 3
+    severity: critical
+    description: Scaffolding must be inspected before use, every 7 days, and after adverse weather
+
+  - id: excavation_inspection
+    name: Excavation Inspection at Start of Each Shift
+    regulation: "CDM 2015, Schedule 4"
+    check: inspection_frequency
+    inspection_type: excavation
+    max_days_between: 1
+    additional_triggers:
+      - before_start_of_shift
+      - after_accidental_fall_of_material
+      - after_unexpected_ground_movement
+    severity: critical
+    description: Excavations must be inspected at the start of each shift and after events affecting stability
+
+  - id: lifting_equipment_inspection
+    name: Lifting Equipment Thorough Examination
+    regulation: "LOLER 1998, Reg 9"
+    check: inspection_frequency
+    inspection_type: lifting_equipment
+    max_months_between_persons: 6
+    max_months_between_goods: 12
+    inspector_requirement: competent_person
+    severity: critical
+    description: Lifting equipment must be thoroughly examined every 6 months (lifting persons) or 12 months (other)
+
+  - id: work_equipment_inspection
+    name: Work Equipment Inspection and Maintenance
+    regulation: "PUWER 1998, Reg 6"
+    check: inspection_frequency
+    inspection_type: work_equipment
+    frequency: before_each_use_and_periodic
+    severity: high
+    description: Work equipment maintained in efficient working order and in good repair
+
+  - id: electrical_installation_inspection
+    name: Temporary Electrical Installation Inspection
+    regulation: "Electricity at Work Regulations 1989"
+    check: inspection_frequency
+    inspection_type: electrical
+    max_months_between: 3
+    severity: high
+    description: Temporary electrical installations inspected and tested at intervals not exceeding 3 months
+
+  - id: fire_equipment_inspection
+    name: Fire Fighting Equipment Inspection
+    regulation: "Regulatory Reform (Fire Safety) Order 2005"
+    check: inspection_frequency
+    inspection_type: fire_equipment
+    max_days_between: 7
+    annual_service_required: true
+    severity: high
+    description: Fire extinguishers checked weekly and serviced annually by competent person
+
+  - id: harness_inspection
+    name: Personal Fall Protection Equipment Inspection
+    regulation: "WAHR 2005, Reg 12; LOLER 1998"
+    check: inspection_frequency
+    inspection_type: fall_arrest_equipment
+    max_months_between: 6
+    pre_use_check: required
+    inspector_requirement: competent_person
+    severity: critical
+    description: Harnesses and lanyards must be inspected by competent person every 6 months and before each use
+
+training_requirements:
+  - id: site_induction
+    name: Site-Specific Induction for All Operatives
+    regulation: "CDM 2015 Reg 13(4)"
+    check: induction_completed
+    applies_when: always
+    severity: critical
+    description: All operatives must receive a site-specific induction before commencing work
+    minimum_content:
+      - Site rules and procedures
+      - Emergency procedures and assembly points
+      - First aid arrangements
+      - Welfare facilities locations
+      - Hazardous areas and exclusion zones
+      - PPE requirements
+      - Reporting procedures for hazards and incidents
+      - Site security arrangements
+
+  - id: asbestos_awareness_training
+    name: Asbestos Awareness Training (Annual)
+    regulation: "Control of Asbestos Regulations 2012, Reg 10"
+    check: all_workers_have_cert
+    certification_type: asbestos_awareness
+    refresh_frequency_months: 12
+    applies_when: always
+    severity: high
+    description: Annual asbestos awareness training for all operatives who may disturb ACMs
+
+  - id: manual_handling_training
+    name: Manual Handling Training
+    regulation: "Manual Handling Operations Regulations 1992"
+    check: all_workers_have_cert
+    certification_type: manual_handling
+    applies_when: always
+    severity: high
+    description: All operatives must receive manual handling training
+
+  - id: working_at_height_training
+    name: Working at Height Training
+    regulation: "Work at Height Regulations 2005"
+    check: role_has_cert
+    role: height_worker
+    certification_type: working_at_height
+    applies_when: "project.involves_work_at_height"
+    severity: critical
+    description: All operatives working at height must be trained and competent
+
+  - id: coshh_training
+    name: COSHH Awareness Training
+    regulation: "COSHH 2002, Reg 12"
+    check: role_has_cert
+    role: hazardous_substance_user
+    applies_when: "project.uses_hazardous_substances"
+    severity: high
+    description: Operatives must be informed and trained on hazardous substances they may encounter
+
+  - id: noise_awareness
+    name: Noise Awareness Training
+    regulation: "Control of Noise at Work Regulations 2005, Reg 10"
+    check: training_completed
+    applies_when: "project.noise_exposure_above_80dba"
+    severity: medium
+    description: Operatives exposed above lower exposure action value must receive information and training
+
+  - id: vibration_awareness
+    name: Hand-Arm Vibration Awareness Training
+    regulation: "Control of Vibration at Work Regulations 2005, Reg 10"
+    check: training_completed
+    applies_when: "project.vibration_exposure_likely"
+    severity: medium
+    description: Operatives exposed to vibration must receive information and training
+
+  - id: confined_space_training
+    name: Confined Space Entry Training
+    regulation: "Confined Spaces Regulations 1997"
+    check: role_has_cert
+    role: confined_space_worker
+    certification_type: confined_space
+    applies_when: "project.has_confined_spaces"
+    severity: critical
+    description: All operatives entering confined spaces must be trained and competent
+
+  - id: fire_safety_training
+    name: Fire Safety Awareness Training
+    regulation: "Regulatory Reform (Fire Safety) Order 2005, Article 21"
+    check: training_completed
+    applies_when: always
+    severity: high
+    description: All operatives must receive fire safety training as part of site induction
+
+  - id: young_persons_induction
+    name: Young Persons Risk Assessment and Supervision
+    regulation: "Management of Health and Safety at Work Regulations 1999, Reg 19"
+    check: young_persons_assessed
+    applies_when: "project.has_workers_under_18"
+    severity: critical
+    description: Specific risk assessment required for young persons, with enhanced supervision arrangements

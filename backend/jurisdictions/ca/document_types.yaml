@@ -1,0 +1,158 @@
+document_types:
+  - id: site_safety_plan
+    name: Site-Specific Safety Plan
+    abbreviation: SSSP
+    maps_to_universal: site_safety_plan
+    us_equivalent: sssp
+    uk_equivalent: construction_phase_plan
+    au_equivalent: whs_management_plan
+    regulation: Provincial OHS Construction Regulations
+    required: true
+    prompt_file: prompts/site_safety_plan.md
+    sections:
+      - project_overview
+      - hazard_assessment
+      - roles_and_responsibilities
+      - safe_work_procedures
+      - training_and_orientation
+      - emergency_response
+      - incident_investigation
+      - inspection_program
+      - communication_plan
+
+  - id: safe_work_procedure
+    name: Safe Work Procedure
+    abbreviation: SWP
+    maps_to_universal: safe_work_procedure
+    us_equivalent: jha
+    uk_equivalent: method_statement
+    au_equivalent: swms
+    regulation: Provincial OHS Acts (duty to ensure safe work procedures)
+    required: true
+    prompt_file: prompts/safe_work_procedure.md
+    sections:
+      - scope_and_purpose
+      - task_steps
+      - hazard_identification
+      - control_measures
+      - ppe_requirements
+      - training_required
+      - emergency_procedures
+
+  - id: flha
+    name: Field Level Hazard Assessment
+    abbreviation: FLHA
+    maps_to_universal: job_hazard_analysis
+    us_equivalent: jha
+    uk_equivalent: rams
+    au_equivalent: jsa
+    regulation: Provincial OHS hazard assessment requirements
+    required: true
+    prompt_file: prompts/flha.md
+    sections:
+      - date_and_location
+      - task_description
+      - hazard_identification
+      - risk_assessment
+      - control_measures
+      - worker_sign_off
+    notes: Completed daily before work begins. Worker-driven hazard identification tool.
+
+  - id: toolbox_talk
+    name: Toolbox Talk / Tailgate Meeting
+    abbreviation: TBT
+    maps_to_universal: toolbox_talk
+    us_equivalent: toolbox_talk
+    regulation: Provincial OHS worker consultation requirements
+    required: false
+    prompt_file: prompts/toolbox_talk.md
+    sections:
+      - topic_overview
+      - key_hazards
+      - regulatory_requirements
+      - control_measures
+      - discussion_questions
+      - attendance_record
+
+  - id: emergency_response_plan
+    name: Emergency Response Plan
+    abbreviation: ERP
+    maps_to_universal: emergency_plan
+    us_equivalent: emergency_action_plan
+    regulation: Provincial OHS emergency planning requirements
+    required: true
+    prompt_file: prompts/emergency_response_plan.md
+    sections:
+      - emergency_types
+      - evacuation_procedures
+      - muster_points
+      - emergency_contacts
+      - first_aid_arrangements
+      - fire_protection
+      - communication_procedures
+      - training_and_drills
+
+  - id: fall_protection_plan
+    name: Fall Protection Plan
+    abbreviation: FPP
+    maps_to_universal: fall_protection_plan
+    us_equivalent: fall_protection
+    regulation: Provincial OHS fall protection regulations
+    required: true
+    required_for: work_above_3m
+    prompt_file: prompts/fall_protection_plan.md
+    sections:
+      - site_assessment
+      - fall_hazard_identification
+      - protection_systems
+      - equipment_inspection
+      - rescue_plan
+      - training_requirements
+      - enforcement
+
+  - id: incident_report
+    name: Incident Investigation Report
+    abbreviation: IIR
+    maps_to_universal: incident_report
+    regulation: Provincial OHS incident reporting/investigation requirements
+    required: true
+    prompt_file: prompts/incident_report.md
+    sections:
+      - incident_summary
+      - timeline
+      - root_cause_analysis
+      - corrective_actions
+      - regulatory_reporting_assessment
+      - prevention_measures
+
+  - id: health_safety_manual
+    name: Health and Safety Program Manual
+    abbreviation: HSM
+    maps_to_universal: safety_program
+    regulation: Provincial OHS program requirements
+    required: true
+    prompt_file: prompts/health_safety_manual.md
+    sections:
+      - policy_statement
+      - roles_and_responsibilities
+      - hazard_assessment
+      - safe_work_procedures
+      - training_program
+      - inspection_program
+      - incident_investigation
+      - emergency_response
+      - records_management
+    notes: Required for COR certification. Comprehensive health and safety management system documentation.
+
+  - id: hot_work_permit
+    name: Hot Work Permit
+    abbreviation: HWP
+    maps_to_universal: high_risk_work_permit
+    regulation: Provincial OHS fire safety regulations
+    required_for: hot_work
+    prompt_file: prompts/hot_work_permit.md
+    sections:
+      - work_description
+      - precautions
+      - fire_watch
+      - authorisation

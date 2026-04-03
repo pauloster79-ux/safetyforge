@@ -1,0 +1,178 @@
+federal:
+  - id: canada_labour_code_part_ii
+    short: CLC Part II
+    full: Canada Labour Code Part II - Occupational Health and Safety
+    applies_to: Federally regulated workplaces (interprovincial transport, telecommunications, banking, Crown corporations)
+    sections:
+      - id: s124
+        title: Duty of employer
+        summary: Every employer shall ensure that the health and safety at work of every person employed by the employer is protected
+      - id: s125
+        title: Specific duties of employer
+        summary: Detailed list of employer obligations including hazard prevention, training, and provision of safety equipment
+      - id: s126
+        title: Duty of employees
+        summary: Every employee shall take all reasonable and necessary precautions to ensure their own and others' health and safety
+      - id: s128
+        title: Right to refuse dangerous work
+        summary: Employee may refuse to work if they have reasonable cause to believe a danger exists
+      - id: s135
+        title: Workplace health and safety committees
+        summary: Requirement for health and safety committees in workplaces with 20 or more employees
+      - id: s136
+        title: Health and safety representatives
+        summary: Requirement for health and safety representative in workplaces with fewer than 20 employees
+
+  - id: criminal_code_s217_1
+    short: Criminal Code s217.1
+    full: Criminal Code of Canada s217.1 (Westray Act / Bill C-45)
+    year: 2004
+    summary: Every one who undertakes or has the authority to direct how another person does work or performs a task is under a legal duty to take reasonable steps to prevent bodily harm arising from that work
+    notes: Allows criminal prosecution of organizations and individuals for workplace safety failures
+
+provincial_examples:
+  british_columbia:
+    - id: wca_bc
+      short: WCA BC
+      full: Workers Compensation Act (British Columbia)
+      regulator: WorkSafeBC
+    - id: ohsr_bc
+      short: OHS Regulation BC
+      full: Occupational Health and Safety Regulation (British Columbia)
+      key_sections:
+        - id: part_11
+          title: Fall Protection
+          trigger_height_metres: 3
+        - id: part_20
+          title: Construction, Excavation and Demolition
+        - id: part_14
+          title: Cranes and Hoists
+
+  alberta:
+    - id: ohsa_ab
+      short: OHS Act AB
+      full: Occupational Health and Safety Act (Alberta)
+      regulator: Alberta OHS
+    - id: ohsc_ab
+      short: OHS Code AB
+      full: Occupational Health and Safety Code (Alberta)
+      key_sections:
+        - id: part_9
+          title: Fall Protection
+          trigger_height_metres: 3
+        - id: part_32
+          title: Excavating and Tunnelling
+        - id: part_6
+          title: Cranes, Hoists and Lifting Devices
+
+  ontario:
+    - id: ohsa_on
+      short: OHSA ON
+      full: Occupational Health and Safety Act (Ontario)
+      regulator: Ontario Ministry of Labour, Immigration, Training and Skills Development
+      sections:
+        - id: s25
+          title: Duties of employers
+        - id: s27
+          title: Duties of supervisors
+        - id: s28
+          title: Duties of workers
+    - id: o_reg_213_91
+      short: O. Reg. 213/91
+      full: Construction Projects (Ontario Regulation 213/91)
+      key_sections:
+        - id: s26
+          title: Fall Protection
+          trigger_height_metres: 3
+        - id: part_iv
+          title: Excavations
+        - id: part_v
+          title: Tunnels, Shafts, Caissons and Cofferdam
+
+  quebec:
+    - id: aosht_qc
+      short: AOSHT QC
+      full: Act respecting occupational health and safety (Quebec)
+      regulator: CNESST
+      notes: Quebec legislation is in French as primary language
+    - id: sbc_qc
+      short: Safety Code QC
+      full: Safety Code for the Construction Industry (Quebec)
+      key_sections:
+        - id: s3_8
+          title: Fall Protection
+          trigger_height_metres: 3
+        - id: s3_15
+          title: Excavation and Trenching
+
+construction:
+  fall_protection:
+    general_trigger_height_metres: 3
+    notes: Most provinces require fall protection at 3 metres (BC, AB, ON, QC, SK, MB, NS). Some situations trigger at lower heights (e.g., above open water, near openings).
+    hierarchy:
+      - Guardrails
+      - Travel restraint system
+      - Fall restricting system
+      - Fall arrest system
+      - Safety nets
+    rescue_plan_required: true
+
+  excavation:
+    shoring_depth_metres: 1.2
+    notes: Most provinces require shoring or sloping for excavations deeper than 1.2 metres
+    requirements:
+      - Competent person must inspect before entry
+      - Locate underground utilities before digging
+      - Maintain safe distance from edge for equipment and spoil pile
+      - Means of egress within 8 metres of any worker
+
+  confined_space:
+    requirements:
+      - Written confined space entry program
+      - Hazard assessment before entry
+      - Entry permit system
+      - Atmospheric testing and monitoring
+      - Trained standby person
+      - Rescue plan and equipment
+
+environmental:
+  - id: noise_exposure
+    short: Noise Exposure Limits
+    standard: CSA Z107.56
+    exposure_limit: {value: 85, unit: "dB(A)", period: "8-hour TWA"}
+    notes: Most provinces adopt 85 dB(A) 8-hour TWA, some use 3 dB exchange rate, some use 5 dB
+
+  - id: asbestos
+    short: Asbestos Regulations
+    exposure_limit: {value: 0.1, unit: "fibres/cc", period: "8-hour TWA"}
+    notes: Provincial asbestos regulations vary but generally limit exposure to 0.1 f/cc
+
+  - id: silica
+    short: Silica Exposure
+    exposure_limit: {value: 0.025, unit: "mg/m3", period: "8-hour TWA"}
+    notes: Most provinces adopt ACGIH TLV of 0.025 mg/m3 for respirable crystalline silica
+
+  - id: whmis
+    short: WHMIS 2015
+    full: Workplace Hazardous Materials Information System 2015
+    alignment: GHS (Globally Harmonized System)
+    requirements:
+      - Safety Data Sheets (SDS) for all hazardous products
+      - Supplier and workplace labels
+      - Worker education and training
+
+standards:
+  description: CSA Group standards commonly referenced in provincial OHS legislation
+  key_standards:
+    - id: csa_z462
+      name: CSA Z462 Workplace Electrical Safety
+    - id: csa_z259
+      name: CSA Z259 Fall Protection
+    - id: csa_z150
+      name: CSA Z150 Safety Code on Mobile Cranes
+    - id: csa_z248
+      name: CSA Z248 Code for Tower Cranes
+    - id: csa_z797
+      name: CSA Z797 Code of Practice for Access Scaffold
+    - id: csa_z321
+      name: CSA Z321 Signs and Symbols for the Workplace

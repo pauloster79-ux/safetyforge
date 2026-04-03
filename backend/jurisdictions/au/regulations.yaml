@@ -1,0 +1,175 @@
+primary:
+  - id: whs_act_2011
+    short: WHS Act 2011
+    full: Work Health and Safety Act 2011
+    harmonised: true
+    adopted_by: [NSW, QLD, SA, TAS, NT, ACT, Commonwealth]
+    not_adopted_by: [VIC, WA]
+    sections:
+      - id: s19
+        title: Primary duty of care
+        summary: A PCBU must ensure so far as is reasonably practicable the health and safety of workers and others
+      - id: s27
+        title: Duty of officers
+        summary: Officers must exercise due diligence to ensure the PCBU complies with duties
+      - id: s28
+        title: Duties of workers
+        summary: Workers must take reasonable care for their own health and safety and the health and safety of others
+      - id: s29
+        title: Duties of other persons at the workplace
+        summary: Other persons must take reasonable care and comply with reasonable instructions
+      - id: s38
+        title: Duty to notify of notifiable incidents
+        summary: PCBU must notify regulator immediately of notifiable incidents
+      - id: s39
+        title: Duty to preserve incident sites
+        summary: Person with management or control must preserve the site of a notifiable incident
+      - id: s47
+        title: Duty to consult with workers
+        summary: PCBU must so far as is reasonably practicable consult with workers on WHS matters
+
+  - id: ohs_act_vic_2004
+    short: OHS Act 2004 (VIC)
+    full: Occupational Health and Safety Act 2004 (Victoria)
+    harmonised: false
+    state: VIC
+    notes: Victoria has not adopted the harmonised WHS Act and retains its own legislation
+
+  - id: ohs_act_wa_2020
+    short: WHS Act 2020 (WA)
+    full: Work Health and Safety Act 2020 (Western Australia)
+    harmonised: true
+    state: WA
+    notes: Western Australia adopted the harmonised WHS laws effective 31 March 2022
+
+construction:
+  - id: whs_reg_2011_ch6
+    short: WHS Reg 2011 Ch6
+    full: Work Health and Safety Regulation 2011 Chapter 6 - Construction Work
+    sections:
+      - id: s291
+        title: High risk construction work
+        summary: Defines 19 categories of high risk construction work requiring a SWMS
+      - id: s292
+        title: Safe Work Method Statements
+        summary: PCBUs must ensure SWMS are prepared for high risk construction work
+      - id: s299
+        title: Content of SWMS
+        summary: Specifies required content of SWMS including hazards, risks, and control measures
+      - id: s305
+        title: Excavation work
+        summary: Requirements for excavation work including shoring, benching, and battering
+      - id: s306
+        title: Inspection of excavations
+        summary: Competent person must inspect excavation before each work shift
+      - id: s309
+        title: WHS Management Plan
+        summary: Principal contractor must prepare a WHS management plan for the workplace
+
+  - id: whs_reg_2011_ch6_p4
+    short: WHS Reg 2011 Ch6 Part 6.4
+    full: Work Health and Safety Regulation 2011 Chapter 6 Part 6.4 - Falls
+    trigger_height_metres: 2
+    key_requirements:
+      - Minimise the risk of a fall
+      - Provide a fall prevention device if risk of fall more than 2 metres
+      - Provide a work positioning system if fall prevention is not practicable
+      - Provide a fall arrest system as last resort
+
+  - id: whs_reg_2011_ch4_p3
+    short: WHS Reg 2011 Ch4 Part 4.3
+    full: Work Health and Safety Regulation 2011 Chapter 4 Part 4.3 - Confined Spaces
+    key_requirements:
+      - Identify confined spaces
+      - Manage risks of entry
+      - Prepare confined space entry permit
+      - Provide trained standby person
+      - Emergency and rescue procedures
+
+  - id: whs_reg_2011_ch7
+    short: WHS Reg 2011 Ch7
+    full: Work Health and Safety Regulation 2011 Chapter 7 - Hazardous Chemicals
+    key_requirements:
+      - Maintain a hazardous chemicals register
+      - Ensure Safety Data Sheets (SDS) are available
+      - Provide appropriate training and PPE
+
+  - id: whs_reg_2011_ch8
+    short: WHS Reg 2011 Ch8
+    full: Work Health and Safety Regulation 2011 Chapter 8 - Asbestos
+    exposure_limit: {value: 0.1, unit: "fibres/ml", period: "8-hour TWA"}
+    key_requirements:
+      - Identify asbestos before demolition or refurbishment
+      - Prepare an asbestos management plan
+      - Licensed asbestos removalist for removal work
+      - Air monitoring during removal
+
+  - id: whs_reg_2011_ch5
+    short: WHS Reg 2011 Ch5
+    full: Work Health and Safety Regulation 2011 Chapter 5 - Plant and Structures
+    sections:
+      - id: s213
+        title: Maintenance and inspection of plant
+        summary: Plant must be maintained and inspected to prevent health and safety risks
+      - id: s224
+        title: Inspection of scaffolding
+        summary: Scaffolding must be inspected before first use, after alteration, and at regular intervals
+
+environmental:
+  - id: whs_reg_2011_noise
+    short: WHS Reg 2011 Part 4.1
+    full: Work Health and Safety Regulation 2011 Chapter 4 Part 4.1 - Noise
+    exposure_standard: {value: 85, unit: "dB(A)", period: "8-hour TWA"}
+    peak_exposure: {value: 140, unit: "dB(C)"}
+
+  - id: whs_reg_2011_hazardous_atmosphere
+    short: WHS Reg 2011 Part 4.2
+    full: Work Health and Safety Regulation 2011 Chapter 4 Part 4.2 - Hazardous Atmospheres
+    key_requirements:
+      - Identify hazardous atmospheres
+      - Implement controls per hierarchy of controls
+      - Atmospheric monitoring where required
+
+codes_of_practice:
+  description: Safe Work Australia Codes of Practice are approved under WHS Act 2011 s274
+  legal_status: Admissible in court proceedings as evidence of what is known about a hazard or risk
+  codes:
+    - id: cop_construction
+      name: Construction Work Code of Practice
+      year: 2022
+    - id: cop_falls
+      name: Managing the Risk of Falls at Workplaces Code of Practice
+      year: 2022
+    - id: cop_excavation
+      name: Excavation Work Code of Practice
+      year: 2022
+    - id: cop_confined_spaces
+      name: Confined Spaces Code of Practice
+      year: 2022
+    - id: cop_demolition
+      name: Demolition Work Code of Practice
+      year: 2022
+    - id: cop_scaffolding
+      name: Safe Design of Structures Code of Practice
+      year: 2022
+    - id: cop_first_aid
+      name: First Aid in the Workplace Code of Practice
+      year: 2022
+    - id: cop_hazardous_chemicals
+      name: Managing Risks of Hazardous Chemicals in the Workplace Code of Practice
+      year: 2022
+    - id: cop_asbestos
+      name: How to Manage and Control Asbestos in the Workplace Code of Practice
+      year: 2022
+    - id: cop_noise
+      name: Managing Noise and Preventing Hearing Loss at Work Code of Practice
+      year: 2022
+    - id: cop_plant
+      name: Managing Risks of Plant in the Workplace Code of Practice
+      year: 2022
+    - id: cop_welding
+      name: Welding Processes Code of Practice
+      year: 2022
+    - id: cop_electrical
+      name: Managing Electrical Risks in the Workplace Code of Practice
+      year: 2022

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafetyForge — Direction C2: Refined Clipboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Concrete-mineral base — slightly cool/green-grey, not warm stone */
+    --white: #ffffff;
+    --concrete-50: #f4f5f3;
+    --concrete-100: #e6e8e3;
+    --concrete-200: #cfd2ca;
+    --concrete-300: #a3a79c;
+    --concrete-400: #71766b;
+    --concrete-500: #545951;
+    --concrete-600: #3e423a;
+    --concrete-700: #2e312b;
+    --concrete-800: #22241f;
+    --concrete-900: #191b17;
+    --black: #0d0e0c;
+
+    /* Machinery yellow — actual CAT/DeWalt equipment color */
+    --machine: #F5B800;
+    --machine-dark: #D9A200;
+    --machine-bright: #FFCA18;
+    --machine-wash: rgba(245,184,0,0.1);
+    --machine-tint: rgba(245,184,0,0.18);
+
+    /* Functional — pass/fail only, restrained */
+    --pass: #2d8a4e;
+    --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030;
+    --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b;
+    --warn-bg: rgba(184,134,11,0.08);
+    --info: #2b6cb0;
+    --info-bg: rgba(43,108,176,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    background: var(--concrete-50);
+    color: var(--black);
+    min-height: 100vh;
+  }
+
+  /* ── Tab bar for logo variants ── */
+  .logo-tabs {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    display: flex; background: #111; border-bottom: 2px solid #333;
+    font-family: -apple-system, sans-serif;
+  }
+  .logo-tab {
+    flex: 1; padding: 12px 16px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    border: none; cursor: pointer; color: #777; background: #111;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .logo-tab:hover { color: #ccc; }
+  .logo-tab.active { color: #F5B800; border-bottom-color: #F5B800; background: #1a1a1a; }
+
+  body { padding-top: 47px; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; left: 0; top: 47px; bottom: 0; width: 210px;
+    background: var(--concrete-900); padding: 20px 0;
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+
+  .logo {
+    padding: 0 16px 20px; border-bottom: 1px solid var(--concrete-700);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Logo variant containers */
+  .logo-variant { display: none; align-items: center; gap: 10px; }
+  .logo-variant.active { display: flex; }
+
+  /* Logo 1: Angle bracket / checkmark */
+  .logo-mark-1 {
+    width: 34px; height: 34px; background: var(--machine); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  /* Logo 2: Inspection stamp */
+  .logo-mark-2 {
+    width: 34px; height: 34px;
+    border: 2.5px solid var(--machine); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    position: relative;
+  }
+
+  /* Logo 3: Bold SF monogram */
+  .logo-mark-3 {
+    width: 34px; height: 34px; background: var(--machine); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  /* Logo 4: Shield-forge */
+  .logo-mark-4 {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-size: 16px; font-weight: 700; color: #e8e9e6; letter-spacing: -0.2px;
+  }
+  .logo-text span { color: var(--machine); }
+
+  .nav-group-label {
+    padding: 14px 16px 6px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--concrete-500);
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+    font-size: 13px; font-weight: 500;
+    /* FIXED: much brighter default text for readability */
+    color: #b0b4aa;
+    cursor: pointer; transition: all 0.1s;
+  }
+  .nav-item:hover { color: #d4d7cf; background: var(--concrete-800); }
+  .nav-item.active {
+    color: #ffffff;
+    background: var(--concrete-800);
+    border-right: 2px solid var(--machine);
+    font-weight: 600;
+  }
+
+  .nav-icon { width: 16px; opacity: 0.6; }
+  .nav-item.active .nav-icon { opacity: 1; }
+
+  .nav-count {
+    margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    background: var(--fail); color: white; padding: 0 5px; border-radius: 3px; font-weight: 600;
+  }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 210px; min-height: calc(100vh - 47px);
+    display: flex; flex-direction: column;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 28px; background: var(--white);
+    border-bottom: 1px solid var(--concrete-100);
+  }
+  .topbar h1 { font-size: 16px; font-weight: 700; color: var(--concrete-900); }
+  .topbar-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--concrete-400); margin-top: 1px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .btn {
+    padding: 6px 12px; font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px; font-weight: 600; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 5px; transition: all 0.1s;
+    border-radius: 3px;
+  }
+  .btn-accent {
+    background: var(--machine); color: var(--black);
+    border: 1px solid var(--machine-dark);
+  }
+  .btn-accent:hover { background: var(--machine-bright); }
+  .btn-ghost {
+    background: transparent; color: var(--concrete-600);
+    border: 1px solid var(--concrete-200);
+  }
+  .btn-ghost:hover { border-color: var(--concrete-400); }
+
+  .avatar {
+    width: 28px; height: 28px; background: var(--concrete-800); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; color: var(--concrete-300);
+  }
+
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* ── Status Strip ── */
+  .status-strip {
+    display: flex; background: var(--white);
+    border: 1px solid var(--concrete-100); margin-bottom: 20px;
+  }
+  .ss-cell {
+    flex: 1; padding: 14px 18px; border-right: 1px solid var(--concrete-100);
+    display: flex; flex-direction: column;
+  }
+  .ss-cell:last-child { border-right: none; }
+  .ss-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--concrete-400); margin-bottom: 6px;
+  }
+  .ss-value { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .ss-value.good { color: var(--pass); }
+  .ss-value.bad { color: var(--fail); }
+  .ss-value.warn { color: var(--warn); }
+  .ss-note { font-size: 11px; color: var(--concrete-400); margin-top: 2px; }
+
+  /* ── Form sections ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  .form-section {
+    background: var(--white); border: 1px solid var(--concrete-100);
+  }
+  .fs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; border-bottom: 1px solid var(--concrete-100);
+    background: var(--concrete-50);
+  }
+  .fs-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--concrete-700);
+  }
+  .fs-action {
+    font-size: 11px; color: var(--machine-dark); font-weight: 600; cursor: pointer;
+  }
+
+  /* ── Checklist rows ── */
+  .check-row {
+    display: flex; align-items: center; padding: 10px 18px;
+    border-bottom: 1px solid var(--concrete-50); gap: 12px; font-size: 13px;
+  }
+  .check-row:last-child { border-bottom: none; }
+
+  .check-box {
+    width: 20px; height: 20px; border: 1.5px solid var(--concrete-300);
+    border-radius: 3px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .check-box.checked { background: var(--pass); border-color: var(--pass); }
+  .check-box.failed { background: var(--fail); border-color: var(--fail); }
+  .check-box svg { width: 12px; height: 12px; }
+
+  .check-info { flex: 1; }
+  .check-title { font-weight: 500; color: var(--concrete-800); }
+  .check-meta { font-size: 11px; color: var(--concrete-400); margin-top: 1px; }
+
+  .check-result {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; padding: 2px 6px;
+  }
+  .check-result.pass { color: var(--pass); background: var(--pass-bg); }
+  .check-result.fail { color: var(--fail); background: var(--fail-bg); }
+  .check-result.pending { color: var(--concrete-400); background: var(--concrete-50); }
+  .check-result.expiring { color: var(--warn); background: var(--warn-bg); }
+
+  /* ── Data rows ── */
+  .data-row {
+    display: grid; grid-template-columns: 1fr 90px 90px 70px;
+    padding: 8px 18px; border-bottom: 1px solid var(--concrete-50);
+    font-size: 13px; align-items: center;
+  }
+  .data-row:last-child { border-bottom: none; }
+  .data-row.header {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--concrete-400);
+    padding: 6px 18px; background: var(--concrete-50);
+    border-bottom: 1px solid var(--concrete-100);
+  }
+  .data-name { font-weight: 600; color: var(--concrete-800); }
+  .data-detail { font-size: 12px; color: var(--concrete-400); }
+  .data-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--concrete-500); }
+
+  /* ── Activity ── */
+  .activity-row {
+    display: flex; gap: 12px; padding: 8px 18px;
+    border-bottom: 1px solid var(--concrete-50);
+    font-size: 12px; color: var(--concrete-500); line-height: 1.6;
+  }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-row strong { color: var(--concrete-800); font-weight: 600; }
+  .activity-time {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--concrete-300); flex-shrink: 0; width: 44px;
+  }
+
+  /* ── Footer ── */
+  .form-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 28px; background: var(--white);
+    border-top: 1px solid var(--concrete-100);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--concrete-400);
+  }
+</style>
+</head>
+<body>
+
+<!-- Logo variant tabs -->
+<div class="logo-tabs">
+  <button class="logo-tab active" onclick="switchLogo(0)">Logo 1: Angle Check</button>
+  <button class="logo-tab" onclick="switchLogo(1)">Logo 2: Stamp</button>
+  <button class="logo-tab" onclick="switchLogo(2)">Logo 3: Structural SF</button>
+  <button class="logo-tab" onclick="switchLogo(3)">Logo 4: Anvil</button>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <!-- Logo 1: Angle bracket that reads as a checkmark -->
+    <div class="logo-variant active" data-logo="0">
+      <div class="logo-mark-1">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10.5L8.5 15L16 5" stroke="#191b17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="logo-text">Safety<span>Forge</span></div>
+    </div>
+
+    <!-- Logo 2: Inspection stamp / seal -->
+    <div class="logo-variant" data-logo="1">
+      <div class="logo-mark-2">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#F5B800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="logo-text">Safety<span>Forge</span></div>
+    </div>
+
+    <!-- Logo 3: Bold SF monogram — shared vertical, geometric, works at any size -->
+    <div class="logo-variant" data-logo="2">
+      <div class="logo-mark-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <!-- S: three horizontal bars connected by diagonals -->
+          <path d="M4 6h7M4 12h7M4 18h7" stroke="#191b17" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M11 6L4 12L11 18" stroke="#191b17" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- F: vertical + two horizontals -->
+          <path d="M14 18V6h6M14 12h5" stroke="#191b17" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="logo-text">Safety<span>Forge</span></div>
+    </div>
+
+    <!-- Logo 4: Shield-forge hybrid — shield outline with a forge spark/strike through it -->
+    <div class="logo-variant" data-logo="3">
+      <div class="logo-mark-4">
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+          <!-- Shield shape -->
+          <path d="M17 4L6 8.5V16C6 22.5 10.5 27.8 17 30C23.5 27.8 28 22.5 28 16V8.5L17 4Z" fill="#F5B800"/>
+          <!-- Downward strike / forge mark — bold diagonal -->
+          <path d="M14 11L17 17.5L20 11" stroke="#191b17" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Anvil base line -->
+          <path d="M12 21h10" stroke="#191b17" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- Spark dots -->
+          <circle cx="12.5" cy="14" r="1.2" fill="#191b17"/>
+          <circle cx="21.5" cy="14" r="1.2" fill="#191b17"/>
+        </svg>
+      </div>
+      <div class="logo-text">Safety<span>Forge</span></div>
+    </div>
+  </div>
+
+  <div class="nav-group-label">Main</div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Projects
+  </div>
+
+  <div class="nav-group-label">Safety</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Inspections
+    <span class="nav-count">3</span>
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+    Documents
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Incidents
+    <span class="nav-count">1</span>
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    Workers
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Toolbox Talks
+  </div>
+
+  <div class="nav-group-label">Reports</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    Analytics
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+    OSHA 300
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="topbar">
+    <div>
+      <h1>Riverside Tower Complex</h1>
+      <div class="topbar-meta">PRJ-007 &bull; Last updated 4 min ago &bull; 34 workers on site</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost">Export</button>
+      <button class="btn btn-accent">+ New Inspection</button>
+      <div class="avatar">PM</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Status Strip -->
+    <div class="status-strip">
+      <div class="ss-cell">
+        <span class="ss-label">Compliance</span>
+        <span class="ss-value good">87%</span>
+        <span class="ss-note">+3% vs last week</span>
+      </div>
+      <div class="ss-cell">
+        <span class="ss-label">Open Actions</span>
+        <span class="ss-value warn">12</span>
+        <span class="ss-note">4 due this week</span>
+      </div>
+      <div class="ss-cell">
+        <span class="ss-label">Certs Expiring</span>
+        <span class="ss-value warn">6</span>
+        <span class="ss-note">2 within 7 days</span>
+      </div>
+      <div class="ss-cell">
+        <span class="ss-label">Open Incidents</span>
+        <span class="ss-value bad">1</span>
+        <span class="ss-note">Near miss</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Inspections -->
+      <div class="form-section">
+        <div class="fs-header">
+          <span class="fs-title">Today's Inspections</span>
+          <span class="fs-action">View All</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box checked"><svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5L5 9L9.5 3.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="check-info">
+            <div class="check-title">Fall Protection — Level 14</div>
+            <div class="check-meta">M. Torres &bull; 18 items</div>
+          </div>
+          <span class="check-result pass">Pass</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box failed"><svg viewBox="0 0 12 12" fill="none"><path d="M3 3L9 9M9 3L3 9" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          <div class="check-info">
+            <div class="check-title">Scaffolding Daily Check</div>
+            <div class="check-meta">S. Kim &bull; 2 deficiencies</div>
+          </div>
+          <span class="check-result fail">Fail</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box checked"><svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5L5 9L9.5 3.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="check-info">
+            <div class="check-title">Electrical — Substation B</div>
+            <div class="check-meta">J. Cole &bull; 24 items</div>
+          </div>
+          <span class="check-result pass">Pass</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box checked"><svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5L5 9L9.5 3.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="check-info">
+            <div class="check-title">Housekeeping — Ground Floor</div>
+            <div class="check-meta">M. Lopez &bull; 1 observation</div>
+          </div>
+          <span class="check-result pass">Pass</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box"></div>
+          <div class="check-info">
+            <div class="check-title">Crane Pre-Shift Inspection</div>
+            <div class="check-meta">D. Wilson &bull; Scheduled</div>
+          </div>
+          <span class="check-result pending">Pending</span>
+        </div>
+      </div>
+
+      <!-- Workers -->
+      <div class="form-section">
+        <div class="fs-header">
+          <span class="fs-title">Certification Status</span>
+          <span class="fs-action">Full Matrix</span>
+        </div>
+        <div class="data-row header">
+          <span>Worker</span><span>Role</span><span>Expires</span><span>Status</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Mike Torres</span>
+          <span class="data-detail">Foreman</span>
+          <span class="data-date">Nov 15</span>
+          <span class="check-result pass">Valid</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Sarah Kim</span>
+          <span class="data-detail">Safety</span>
+          <span class="data-date">Feb 28</span>
+          <span class="check-result pass">Valid</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">James Cole</span>
+          <span class="data-detail">Electrical</span>
+          <span class="data-date">Apr 16</span>
+          <span class="check-result expiring">14d</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Dave Wilson</span>
+          <span class="data-detail">Crane Op</span>
+          <span class="data-date">Mar 31</span>
+          <span class="check-result fail">Expired</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Maria Lopez</span>
+          <span class="data-detail">Laborer</span>
+          <span class="data-date">Sep 20</span>
+          <span class="check-result pass">Valid</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="form-section">
+      <div class="fs-header">
+        <span class="fs-title">Activity Log</span>
+        <span class="fs-action">View All</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">09:41</span>
+        <span><strong>M. Torres</strong> completed Fall Protection inspection — Level 14 — all items passed</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">08:15</span>
+        <span><strong>S. Kim</strong> flagged scaffolding deficiency — missing guardrail section C-4</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">07:30</span>
+        <span><strong>System</strong> cert expiry alert — D. Wilson NCCCO expired 2 days ago</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">Yest.</span>
+        <span><strong>J. Cole</strong> uploaded renewed OSHA-10 — pending verification</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">Yest.</span>
+        <span><strong>P. Murray</strong> approved Toolbox Talk: Trench Safety Awareness</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <span>SafetyForge v2.1</span>
+    <span>Riverside Tower Complex &bull; PRJ-007</span>
+    <span>Last sync: 2 min ago</span>
+  </div>
+</main>
+
+<script>
+function switchLogo(idx) {
+  document.querySelectorAll('.logo-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.logo-variant').forEach((v, i) => {
+    v.classList.toggle('active', i === idx);
+  });
+}
+</script>
+</body>
+</html>

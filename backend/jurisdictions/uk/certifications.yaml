@@ -1,0 +1,472 @@
+certifications:
+  # ─── CSCS Card (Construction Skills Certification Scheme) ───
+  - id: cscs_green
+    name: CSCS Green Card
+    full_name: Construction Skills Certification Scheme - Labourer
+    card_colour: green
+    expires: true
+    validity_years: 5
+    required_for: labourers
+    issuing_body: CSCS
+    prerequisite: CITB Health, Safety and Environment Test
+    category: cscs
+
+  - id: cscs_blue
+    name: CSCS Blue Card
+    full_name: Construction Skills Certification Scheme - Skilled Worker
+    card_colour: blue
+    expires: true
+    validity_years: 5
+    required_for: skilled_workers
+    issuing_body: CSCS
+    prerequisite: NVQ/SVQ Level 2 or equivalent + CITB HS&E Test
+    category: cscs
+
+  - id: cscs_gold
+    name: CSCS Gold Card
+    full_name: Construction Skills Certification Scheme - Supervisory
+    card_colour: gold
+    expires: true
+    validity_years: 5
+    required_for: supervisors
+    issuing_body: CSCS
+    prerequisite: NVQ/SVQ Level 3 or equivalent + CITB HS&E Test
+    category: cscs
+
+  - id: cscs_gold_advanced
+    name: CSCS Gold Advanced Craft Card
+    full_name: Construction Skills Certification Scheme - Advanced Craft
+    card_colour: gold
+    expires: true
+    validity_years: 5
+    required_for: advanced_craft
+    issuing_body: CSCS
+    prerequisite: NVQ/SVQ Level 3 + craft qualification + CITB HS&E Test
+    category: cscs
+
+  - id: cscs_black
+    name: CSCS Black Card
+    full_name: Construction Skills Certification Scheme - Manager
+    card_colour: black
+    expires: true
+    validity_years: 5
+    required_for: managers
+    issuing_body: CSCS
+    prerequisite: NVQ/SVQ Level 6 or equivalent + CITB HS&E Test
+    category: cscs
+
+  - id: cscs_white
+    name: CSCS White Card
+    full_name: Construction Skills Certification Scheme - Professionally Qualified Person
+    card_colour: white
+    expires: true
+    validity_years: 5
+    required_for: professionals
+    issuing_body: CSCS
+    prerequisite: Institution membership (ICE, CIOB, RICS etc.) + CITB HS&E Test
+    category: cscs
+
+  - id: cscs_red_provisional
+    name: CSCS Red Provisional Card
+    full_name: Construction Skills Certification Scheme - Provisional
+    card_colour: red
+    expires: true
+    validity_years: 1
+    max_renewals: 0
+    required_for: new_entrants
+    issuing_body: CSCS
+    prerequisite: CITB HS&E Test (must achieve NVQ within 1 year)
+    category: cscs
+
+  # ─── CITB Site Safety Training ───
+  - id: smsts
+    name: SMSTS
+    full_name: Site Management Safety Training Scheme
+    expires: true
+    validity_years: 5
+    required_for: site_managers
+    issuing_body: CITB
+    duration_days: 5
+    refresher_duration_days: 2
+    category: management
+
+  - id: sssts
+    name: SSSTS
+    full_name: Site Supervisors' Safety Training Scheme
+    expires: true
+    validity_years: 5
+    required_for: supervisors
+    issuing_body: CITB
+    duration_days: 2
+    refresher_duration_days: 1
+    category: management
+
+  # ─── NEBOSH ───
+  - id: nebosh_construction
+    name: NEBOSH Construction Certificate
+    full_name: National Examination Board in Occupational Safety and Health - Health and Safety Management for Construction
+    expires: false
+    required_for: safety_officers
+    issuing_body: NEBOSH
+    category: professional
+
+  - id: nebosh_general
+    name: NEBOSH General Certificate
+    full_name: National Examination Board in Occupational Safety and Health - General Certificate in Occupational Health and Safety
+    expires: false
+    required_for: safety_professionals
+    issuing_body: NEBOSH
+    category: professional
+
+  # ─── First Aid ───
+  - id: first_aid_at_work
+    name: First Aid at Work (FAW)
+    full_name: HSE First Aid at Work Certificate
+    expires: true
+    validity_years: 3
+    required_for: designated_first_aiders
+    issuing_body: HSE Approved Training Provider
+    regulation: "Health and Safety (First-Aid) Regulations 1981"
+    duration_days: 3
+    category: first_aid
+
+  - id: efaw
+    name: Emergency First Aid at Work (EFAW)
+    full_name: HSE Emergency First Aid at Work Certificate
+    expires: true
+    validity_years: 3
+    required_for: minimum_first_aid_cover
+    issuing_body: HSE Approved Training Provider
+    regulation: "Health and Safety (First-Aid) Regulations 1981"
+    duration_days: 1
+    category: first_aid
+
+  # ─── Access Equipment ───
+  - id: ipaf
+    name: IPAF Operator Licence
+    full_name: International Powered Access Federation - Mobile Elevating Work Platform Operator
+    expires: true
+    validity_years: 5
+    required_for: mewp_operators
+    issuing_body: IPAF
+    categories:
+      - id: "1a"
+        name: Static Vertical (PAV)
+      - id: "1b"
+        name: Static Boom (PAB)
+      - id: "3a"
+        name: Mobile Vertical (PAV)
+      - id: "3b"
+        name: Mobile Boom (PAB)
+    category: plant
+
+  - id: pasma
+    name: PASMA
+    full_name: Prefabricated Access Suppliers' and Manufacturers' Association - Towers for Users
+    expires: true
+    validity_years: 5
+    required_for: mobile_tower_scaffold_users
+    issuing_body: PASMA
+    category: access
+
+  # ─── Plant Competence (CPCS) ───
+  - id: cpcs
+    name: CPCS Card
+    full_name: Construction Plant Competence Scheme
+    expires: true
+    validity_years: 5
+    required_for: plant_operators
+    issuing_body: NOCN Job Cards (formerly CPCS)
+    categories:
+      - id: A01
+        name: Crawler Crane
+      - id: A02
+        name: Telescopic Handler
+      - id: A04
+        name: Backhoe Loader
+      - id: A09
+        name: Forward Tipping Dumper
+      - id: A10
+        name: Rear Tipping Dumper
+      - id: A12
+        name: Excavator 180 (below 5 tonnes)
+      - id: A13
+        name: Excavator 180 (5 tonnes and above)
+      - id: A17
+        name: Excavator 360 (below 10 tonnes)
+      - id: A18
+        name: Excavator 360 (10 tonnes and above)
+      - id: A31
+        name: Ride-On Roller
+      - id: A36
+        name: Loader/Securer (Flatbed/Trailer)
+      - id: A40
+        name: Slinger/Signaller
+      - id: A58
+        name: Compact Crane
+      - id: A59
+        name: Lorry Loader
+      - id: A60
+        name: Telescopic Crane
+      - id: A61
+        name: Tower Crane
+      - id: A62
+        name: Piling Rig (Driven)
+      - id: A63
+        name: Piling Rig (Bored)
+      - id: A66
+        name: Concrete Pump
+      - id: A68
+        name: Crusher
+      - id: A71
+        name: Skip Handler
+      - id: D90
+        name: Appointed Person (Lifting Operations)
+    card_types:
+      - id: trained_operator
+        name: Trained Operator (Red Card)
+        validity_years: 2
+      - id: competent_operator
+        name: Competent Operator (Blue Card)
+        validity_years: 5
+    category: plant
+
+  # ─── Asbestos ───
+  - id: asbestos_awareness
+    name: Asbestos Awareness (Category A)
+    full_name: Asbestos Awareness Training - Duty to Manage
+    expires: true
+    validity_years: 1
+    required_for: all_site_workers
+    regulation: "Control of Asbestos Regulations 2012, Reg 10"
+    issuing_body: UKATA or IATP Approved Provider
+    ukata_category: A
+    category: hazardous_substances
+
+  - id: asbestos_non_licensed
+    name: Non-Licensed Asbestos Work (Category B)
+    full_name: Non-Licensed Asbestos Work Training
+    expires: true
+    validity_years: 1
+    required_for: workers_disturbing_low_risk_acm
+    regulation: "Control of Asbestos Regulations 2012"
+    issuing_body: UKATA or IATP Approved Provider
+    ukata_category: B
+    category: hazardous_substances
+
+  - id: asbestos_licensed
+    name: Licensed Asbestos Removal (Category C)
+    full_name: Licensed Asbestos Removal Operative Training
+    expires: true
+    validity_years: 1
+    required_for: licensed_asbestos_workers
+    regulation: "Control of Asbestos Regulations 2012"
+    issuing_body: UKATA or IATP Approved Provider
+    ukata_category: C
+    requires_medical_surveillance: true
+    category: hazardous_substances
+
+  # ─── Manual Handling ───
+  - id: manual_handling
+    name: Manual Handling
+    full_name: Manual Handling Operations Training
+    expires: true
+    validity_years: 3
+    required_for: all_site_workers
+    regulation: "Manual Handling Operations Regulations 1992"
+    issuing_body: Employer or Accredited Provider
+    category: general
+
+  # ─── Working at Height ───
+  - id: working_at_height
+    name: Working at Height
+    full_name: Working at Height Training
+    expires: true
+    validity_years: 3
+    required_for: workers_at_height
+    regulation: "Work at Height Regulations 2005"
+    issuing_body: Employer or Accredited Provider
+    category: access
+
+  - id: harness_user
+    name: Harness Inspection and Use
+    full_name: Personal Fall Protection Equipment Training
+    expires: true
+    validity_years: 3
+    required_for: harness_users
+    regulation: "Work at Height Regulations 2005"
+    issuing_body: Employer or Accredited Provider
+    category: access
+
+  # ─── IOSH ───
+  - id: iosh_managing_safely
+    name: IOSH Managing Safely
+    full_name: Institution of Occupational Safety and Health - Managing Safely
+    expires: true
+    validity_years: 3
+    required_for: managers_and_supervisors
+    issuing_body: IOSH
+    duration_days: 4
+    category: management
+
+  - id: iosh_working_safely
+    name: IOSH Working Safely
+    full_name: Institution of Occupational Safety and Health - Working Safely
+    expires: true
+    validity_years: 3
+    required_for: all_workers
+    issuing_body: IOSH
+    duration_days: 1
+    category: general
+
+  # ─── NVQ/SVQ ───
+  - id: nvq_2
+    name: NVQ Level 2
+    full_name: National Vocational Qualification Level 2 (Trade Specific)
+    expires: false
+    required_for: skilled_workers
+    issuing_body: Awarding Body (City & Guilds, EAL, etc.)
+    note: Required for CSCS Blue Skilled Worker card
+    category: vocational
+
+  - id: nvq_3
+    name: NVQ Level 3
+    full_name: National Vocational Qualification Level 3 (Supervisory)
+    expires: false
+    required_for: supervisors
+    issuing_body: Awarding Body (City & Guilds, EAL, etc.)
+    note: Required for CSCS Gold Supervisory card
+    category: vocational
+
+  - id: nvq_6_health_safety
+    name: NVQ Level 6 Health & Safety
+    full_name: National Vocational Qualification Level 6 in Occupational Health and Safety Practice
+    expires: false
+    required_for: health_safety_professionals
+    issuing_body: Awarding Body
+    note: Required for CSCS Black Manager card (H&S route)
+    category: vocational
+
+  - id: nvq_6_construction_management
+    name: NVQ Level 6 Construction Management
+    full_name: National Vocational Qualification Level 6 in Construction Site Management
+    expires: false
+    required_for: construction_managers
+    issuing_body: Awarding Body
+    note: Required for CSCS Black Manager card (management route)
+    category: vocational
+
+  # ─── Temporary Works ───
+  - id: temporary_works_coordinator
+    name: Temporary Works Coordinator (TWC)
+    full_name: CITB Temporary Works Coordinator Training
+    expires: true
+    validity_years: 5
+    required_for: temporary_works_coordinators
+    issuing_body: CITB
+    regulation: "BS 5975:2019 Code of Practice for Temporary Works"
+    category: specialist
+
+  - id: temporary_works_supervisor
+    name: Temporary Works Supervisor (TWS)
+    full_name: CITB Temporary Works Supervisor Training
+    expires: true
+    validity_years: 5
+    required_for: temporary_works_supervisors
+    issuing_body: CITB
+    regulation: "BS 5975:2019 Code of Practice for Temporary Works"
+    category: specialist
+
+  # ─── Fire Marshal ───
+  - id: fire_marshal
+    name: Fire Marshal
+    full_name: Fire Marshal / Fire Warden Training
+    expires: true
+    validity_years: 3
+    required_for: designated_fire_marshals
+    issuing_body: Employer or Accredited Provider
+    regulation: "Regulatory Reform (Fire Safety) Order 2005"
+    recommended_ratio: "1 per 50 workers or 1 per floor"
+    category: fire_safety
+
+  # ─── Banksman / Slinger ───
+  - id: banksman_slinger
+    name: Banksman / Slinger Signaller
+    full_name: Banksman and Slinger Signaller Training
+    expires: true
+    validity_years: 5
+    required_for: banksmen_and_slingers
+    issuing_body: CPCS / NOCN Job Cards
+    regulation: "LOLER 1998"
+    category: plant
+
+  # ─── Scaffold ───
+  - id: cisrs_scaffolder
+    name: CISRS Scaffolder Card
+    full_name: Construction Industry Scaffolders Record Scheme
+    expires: true
+    validity_years: 5
+    required_for: scaffolders
+    issuing_body: CISRS
+    levels:
+      - id: labourer
+        name: Scaffolding Labourer
+      - id: trainee
+        name: Trainee Scaffolder
+      - id: part_1
+        name: Scaffolder Part 1
+      - id: part_2
+        name: Scaffolder Part 2 (Advanced)
+      - id: basic_inspection
+        name: Basic Scaffold Inspection
+      - id: advanced_inspection
+        name: Advanced Scaffold Inspection
+    category: access
+
+  # ─── Confined Spaces ───
+  - id: confined_space
+    name: Confined Space Entry
+    full_name: Confined Space Entry Training
+    expires: true
+    validity_years: 3
+    required_for: confined_space_workers
+    regulation: "Confined Spaces Regulations 1997"
+    issuing_body: Employer or Accredited Provider
+    levels:
+      - id: low_risk
+        name: Low Risk Confined Space Working
+      - id: medium_risk
+        name: Medium Risk Confined Space Working
+      - id: high_risk
+        name: High Risk Confined Space Entry and Rescue
+    category: specialist
+
+  # ─── Abrasive Wheels ───
+  - id: abrasive_wheels
+    name: Abrasive Wheels
+    full_name: Abrasive Wheels Training (Mounting and Use)
+    expires: true
+    validity_years: 3
+    required_for: abrasive_wheel_users
+    regulation: "PUWER 1998"
+    issuing_body: Employer or Accredited Provider
+    category: general
+
+  # ─── Face Fit Testing ───
+  - id: face_fit_test
+    name: Face Fit Test
+    full_name: RPE Face Fit Testing (Quantitative or Qualitative)
+    expires: true
+    validity_years: 3
+    required_for: rpe_users
+    regulation: "COSHH 2002, Reg 7"
+    issuing_body: Fit2Fit Accredited Tester or Employer
+    note: Must be repeated if RPE model changes or significant weight change
+    category: ppe
+
+  - id: other
+    name: Other
+    expires: true
+    required_for: varies
+    issuing_body: varies
+    category: other

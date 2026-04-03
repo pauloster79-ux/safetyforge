@@ -1,0 +1,373 @@
+# UK Construction Safety Regulations
+# Authoritative regulatory references for SafetyForge jurisdiction pack
+
+primary:
+  - id: hswa_1974
+    short: HSWA 1974
+    full: Health and Safety at Work etc Act 1974
+    url: https://www.legislation.gov.uk/ukpga/1974/37/contents
+    enforced_by: HSE
+    sections:
+      - id: s2
+        title: General duties of employers to their employees
+        summary: Ensure so far as is reasonably practicable the health, safety and welfare at work of all employees
+      - id: s2_3
+        title: Written health and safety policy
+        summary: Employers with 5 or more employees must prepare and revise a written statement of general policy
+      - id: s3
+        title: General duties of employers and self-employed to persons other than their employees
+        summary: Conduct undertaking so as to ensure persons not in employment are not exposed to risks
+      - id: s4
+        title: General duties of persons concerned with premises
+        summary: Persons in control of premises must ensure they are safe and without risks to health
+      - id: s7
+        title: General duties of employees at work
+        summary: Employees must take reasonable care for health and safety of themselves and others
+      - id: s33
+        title: Offences
+        summary: Contravention of duties is a criminal offence
+      - id: s37
+        title: Offences by body corporate
+        summary: Personal liability of directors and officers where offence due to their consent, connivance or neglect
+
+  - id: cmcha_2007
+    short: CMCHA 2007
+    full: Corporate Manslaughter and Corporate Homicide Act 2007
+    url: https://www.legislation.gov.uk/ukpga/2007/19/contents
+    enforced_by: Police and CPS
+    summary: An organisation is guilty of corporate manslaughter if the way its activities are managed causes a death and amounts to a gross breach of duty of care
+
+construction:
+  - id: cdm_2015
+    short: CDM 2015
+    full: Construction (Design and Management) Regulations 2015
+    url: https://www.legislation.gov.uk/uksi/2015/51/contents
+    enforced_by: HSE
+    guidance: "HSE L153 Managing Health and Safety in Construction"
+    roles:
+      - client
+      - domestic_client
+      - principal_designer
+      - principal_contractor
+      - designer
+      - contractor
+      - worker
+    required_documents:
+      - pre_construction_information
+      - construction_phase_plan
+      - health_and_safety_file
+    sections:
+      - id: reg4
+        title: Client duties
+        summary: Make suitable arrangements for managing a project, including appointing competent duty holders
+      - id: reg5
+        title: Appointment of principal designer and principal contractor
+        summary: Client must appoint a principal designer and principal contractor for projects involving more than one contractor
+      - id: reg6
+        title: Notification
+        summary: Projects lasting longer than 30 working days with more than 20 workers, or exceeding 500 person-days, must be notified to HSE (F10)
+      - id: reg8
+        title: General duties of principal designer
+        summary: Plan, manage and monitor the pre-construction phase and coordinate health and safety matters
+      - id: reg9
+        title: Principal designer duties in relation to the construction phase
+        summary: Assist the principal contractor in preparing the construction phase plan and preparing the health and safety file
+      - id: reg12
+        title: Construction phase plan
+        summary: Principal contractor must draw up a construction phase plan before the construction phase begins
+      - id: reg12_schedule2
+        title: Construction phase plan content (Schedule 2)
+        summary: The CPP must include the topics listed in Schedule 2 including management arrangements, monitoring, and welfare
+      - id: reg13
+        title: Duties of contractors
+        summary: Contractors must plan, manage and monitor construction work so it is carried out safely
+      - id: reg13_4
+        title: Site induction
+        summary: Contractors must provide each worker with appropriate supervision, instructions and information
+      - id: reg15
+        title: Duties of workers
+        summary: Workers must report anything likely to endanger health and safety
+      - id: schedule2
+        title: Schedule 2 - Minimum content of construction phase plan
+        summary: Description of project, management structure, arrangements for controlling significant risks, welfare arrangements
+
+  - id: wahr_2005
+    short: WAHR 2005
+    full: Work at Height Regulations 2005
+    url: https://www.legislation.gov.uk/uksi/2005/735/contents
+    enforced_by: HSE
+    trigger_height_metres: 0
+    hierarchy:
+      - Avoid work at height where it is reasonably practicable to do so
+      - Where work at height cannot be avoided, prevent falls using an existing place of work or suitable work equipment
+      - Where the risk of a fall cannot be eliminated, minimise the distance and consequences of a fall
+    key_sections:
+      - id: reg4
+        title: Organisation and planning
+        summary: Work at height must be properly planned, supervised and carried out by competent persons
+      - id: reg6
+        title: Avoidance of risks from work at height
+        summary: Duty to follow the hierarchy of controls
+      - id: reg7
+        title: Selection of work equipment for work at height
+        summary: Most suitable work equipment must be selected having regard to working conditions and risks
+      - id: reg8
+        title: Requirements for particular work equipment
+        summary: Detailed requirements for guard rails, working platforms, nets, airbags etc.
+      - id: reg12
+        title: Inspection of work equipment
+        summary: Work equipment from which a person could fall 2m or more must be inspected after installation and at intervals
+      - id: schedule3
+        title: Schedule 3 - Requirements for working platforms
+        summary: Dimensions, guard rails, toe boards, stability requirements
+      - id: schedule7
+        title: Schedule 7 - Inspections
+        summary: Scaffolding and working platforms must be inspected before use, every 7 days, and after adverse weather
+
+  - id: loler_1998
+    short: LOLER 1998
+    full: Lifting Operations and Lifting Equipment Regulations 1998
+    url: https://www.legislation.gov.uk/uksi/1998/2307/contents
+    enforced_by: HSE
+    guidance: "HSE L113 Safe Use of Lifting Equipment"
+    inspection_requirements:
+      lifting_persons:
+        frequency_months: 6
+        inspector: competent_person
+      lifting_goods:
+        frequency_months: 12
+        inspector: competent_person
+    key_sections:
+      - id: reg4
+        title: Strength and stability
+        summary: Lifting equipment must be of adequate strength and stability for each load
+      - id: reg6
+        title: Positioning and installation
+        summary: Equipment must be positioned and installed to reduce risk
+      - id: reg8
+        title: Planning of lifting operations
+        summary: Every lifting operation must be properly planned, supervised, and carried out in a safe manner
+      - id: reg9
+        title: Thorough examination and inspection
+        summary: Lifting equipment must be thoroughly examined at specified intervals
+      - id: reg10
+        title: Reports and defects
+        summary: Results of thorough examination to be recorded; defective equipment taken out of service immediately
+
+  - id: puwer_1998
+    short: PUWER 1998
+    full: Provision and Use of Work Equipment Regulations 1998
+    url: https://www.legislation.gov.uk/uksi/1998/2306/contents
+    enforced_by: HSE
+    guidance: "HSE L22 Safe Use of Work Equipment"
+    key_sections:
+      - id: reg4
+        title: Suitability of work equipment
+        summary: Equipment must be suitable for purpose and conditions of use
+      - id: reg5
+        title: Maintenance
+        summary: Equipment must be maintained in an efficient state, in efficient working order and in good repair
+      - id: reg6
+        title: Inspection
+        summary: Equipment must be inspected after installation and at suitable intervals
+      - id: reg8
+        title: Information and instructions
+        summary: Adequate health and safety information and written instructions must be available
+      - id: reg9
+        title: Training
+        summary: Persons using work equipment must have received adequate training
+      - id: reg11
+        title: Dangerous parts of machinery
+        summary: Effective measures must be taken to prevent contact with dangerous parts
+
+  - id: confined_spaces_1997
+    short: CS Regs 1997
+    full: Confined Spaces Regulations 1997
+    url: https://www.legislation.gov.uk/uksi/1997/1713/contents
+    enforced_by: HSE
+    guidance: "HSE L101 Safe Work in Confined Spaces"
+    key_requirements:
+      - Avoid entry to confined spaces where reasonably practicable
+      - Implement a safe system of work if entry is unavoidable
+      - Arrange adequate emergency procedures before work begins
+
+  - id: electricity_1989
+    short: EAWR 1989
+    full: Electricity at Work Regulations 1989
+    url: https://www.legislation.gov.uk/uksi/1989/635/contents
+    enforced_by: HSE
+    key_sections:
+      - id: reg4
+        title: Systems, work activities and protective equipment
+        summary: All systems must be constructed and maintained to prevent danger
+      - id: reg14
+        title: Work on or near live conductors
+        summary: No person shall work on or near live conductors unless it is unreasonable to make them dead
+
+  - id: mhsw_1999
+    short: MHSW 1999
+    full: Management of Health and Safety at Work Regulations 1999
+    url: https://www.legislation.gov.uk/uksi/1999/3242/contents
+    enforced_by: HSE
+    key_sections:
+      - id: reg3
+        title: Risk assessment
+        summary: Suitable and sufficient assessment of risks to employees and persons not in employment
+      - id: reg5
+        title: Health and safety arrangements
+        summary: Effective arrangements for planning, organisation, control, monitoring and review
+      - id: reg7
+        title: Health surveillance
+        summary: Appropriate health surveillance where risk assessment identifies the need
+      - id: reg10
+        title: Information for employees
+        summary: Comprehensible and relevant information on risks and protective measures
+      - id: reg13
+        title: Capabilities and training
+        summary: Adequate health and safety training on being recruited and on exposure to new risks
+      - id: reg19
+        title: Protection of young persons
+        summary: Specific risk assessment and restrictions for workers under 18
+
+environmental:
+  - id: caw_2012
+    short: CAW 2012
+    full: Control of Asbestos Regulations 2012
+    url: https://www.legislation.gov.uk/uksi/2012/632/contents
+    enforced_by: HSE
+    exposure_limit:
+      value: 0.1
+      unit: fibres/ml
+      period: 4-hour TWA
+    licence_required_for:
+      - Asbestos insulation
+      - Asbestos coating
+      - Asbestos insulating board
+    key_sections:
+      - id: reg4
+        title: Duty to manage asbestos in non-domestic premises
+        summary: Duty holder must assess whether ACMs are or are liable to be present
+      - id: reg5
+        title: Identification of the presence of asbestos
+        summary: Employer must not carry out demolition or refurbishment unless type and condition of asbestos is determined
+      - id: reg10
+        title: Information, instruction and training
+        summary: Adequate information, instruction and training for employees liable to be exposed
+      - id: reg11
+        title: Prevention or reduction of exposure
+        summary: Prevent exposure or reduce to lowest level reasonably practicable
+
+  - id: coshh_2002
+    short: COSHH 2002
+    full: Control of Substances Hazardous to Health Regulations 2002
+    url: https://www.legislation.gov.uk/uksi/2002/2677/contents
+    enforced_by: HSE
+    guidance: "HSE L5 Workplace Exposure Limits (EH40)"
+    silica_wel:
+      value: 0.1
+      unit: mg/m3
+      period: 8-hour TWA
+    key_sections:
+      - id: reg6
+        title: Assessment of health risk created by work involving substances hazardous to health
+        summary: Suitable and sufficient assessment of risk before work begins
+      - id: reg7
+        title: Prevention or control of exposure
+        summary: Prevent exposure or adequately control it using the hierarchy of controls
+      - id: reg9
+        title: Monitoring exposure at the workplace
+        summary: Monitor exposure where necessary to maintain adequate control
+      - id: reg11
+        title: Health surveillance
+        summary: Appropriate health surveillance where employees are exposed to listed substances
+      - id: reg12
+        title: Information, instruction and training
+        summary: Suitable and sufficient information, instruction and training
+
+  - id: noise_2005
+    short: Noise Regs 2005
+    full: Control of Noise at Work Regulations 2005
+    url: https://www.legislation.gov.uk/uksi/2005/1643/contents
+    enforced_by: HSE
+    action_values:
+      lower_exposure_action:
+        daily: 80
+        peak: 135
+        unit: dB(A) / dB(C)
+      upper_exposure_action:
+        daily: 85
+        peak: 137
+        unit: dB(A) / dB(C)
+      exposure_limit:
+        daily: 87
+        peak: 140
+        unit: dB(A) / dB(C)
+    key_requirements:
+      lower_action: Provide information and hearing protection on request
+      upper_action: Designate hearing protection zones, enforce wearing of HPDs, health surveillance
+      exposure_limit: Must not be exceeded (taking account of hearing protection)
+
+  - id: vibration_2005
+    short: Vibration Regs 2005
+    full: Control of Vibration at Work Regulations 2005
+    url: https://www.legislation.gov.uk/uksi/2005/1093/contents
+    enforced_by: HSE
+    exposure_values:
+      hand_arm:
+        daily_exposure_action: 2.5
+        daily_exposure_limit: 5.0
+        unit: m/s2 A(8)
+      whole_body:
+        daily_exposure_action: 0.5
+        daily_exposure_limit: 1.15
+        unit: m/s2 A(8)
+
+  - id: manual_handling_1992
+    short: MHO 1992
+    full: Manual Handling Operations Regulations 1992
+    url: https://www.legislation.gov.uk/uksi/1992/2793/contents
+    enforced_by: HSE
+    guidance: "HSE L23 Manual Handling"
+    hierarchy:
+      - Avoid hazardous manual handling operations where reasonably practicable
+      - Assess any hazardous manual handling operations that cannot be avoided
+      - Reduce the risk of injury so far as is reasonably practicable
+
+  - id: riddor_2013
+    short: RIDDOR 2013
+    full: Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013
+    url: https://www.legislation.gov.uk/uksi/2013/1471/contents
+    enforced_by: HSE
+    reporting_portal: https://www.hse.gov.uk/riddor/report.htm
+    telephone: "0345 300 9923"
+
+  - id: first_aid_1981
+    short: First Aid Regs 1981
+    full: Health and Safety (First-Aid) Regulations 1981
+    url: https://www.legislation.gov.uk/uksi/1981/917/contents
+    enforced_by: HSE
+    guidance: "HSE L74 First Aid at Work"
+
+  - id: fire_safety_2005
+    short: RRO 2005
+    full: Regulatory Reform (Fire Safety) Order 2005
+    url: https://www.legislation.gov.uk/uksi/2005/1541/contents
+    enforced_by: Fire and Rescue Service
+    applies_to: All non-domestic premises including construction sites
+
+  - id: ppe_regulations_2022
+    short: PPE Regs 2022
+    full: Personal Protective Equipment at Work (Amendment) Regulations 2022
+    url: https://www.legislation.gov.uk/uksi/2022/8/contents
+    enforced_by: HSE
+    note: Extended PPE duties to limb (b) workers (not just employees) from April 2022
+
+  - id: bs_5975_2019
+    short: BS 5975:2019
+    full: "BS 5975:2019 Code of Practice for Temporary Works Procedures and the Permissible Stress Design of Falsework"
+    type: british_standard
+    note: Not legislation but widely adopted as the industry standard for temporary works management
+    key_roles:
+      - Temporary Works Coordinator (TWC)
+      - Temporary Works Supervisor (TWS)
+      - Designated Individual

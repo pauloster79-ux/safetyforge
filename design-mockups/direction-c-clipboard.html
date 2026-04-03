@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafetyForge — Direction C: The Foreman's Clipboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* High-contrast form system — near-white, near-black */
+    --white: #ffffff;
+    --off-white: #fafafa;
+    --grey-50: #f5f5f4;
+    --grey-100: #e7e5e4;
+    --grey-200: #d6d3d1;
+    --grey-300: #a8a29e;
+    --grey-400: #78716c;
+    --grey-500: #57534e;
+    --grey-600: #44403c;
+    --grey-700: #363330;
+    --grey-800: #292524;
+    --grey-900: #1c1917;
+    --black: #0c0a09;
+
+    /* Copper — tools, fittings, craft */
+    --copper: #b45309;
+    --copper-dark: #92400e;
+    --copper-light: #d97706;
+    --copper-wash: rgba(180, 83, 9, 0.06);
+    --copper-tint: rgba(180, 83, 9, 0.12);
+
+    /* Minimal functional colors — pass/fail only */
+    --pass: #16a34a;
+    --pass-bg: rgba(22, 163, 74, 0.08);
+    --fail: #dc2626;
+    --fail-bg: rgba(220, 38, 38, 0.08);
+    --warn: #ca8a04;
+    --warn-bg: rgba(202, 138, 4, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    background: var(--grey-50);
+    color: var(--black);
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 200px;
+    background: var(--grey-900);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo {
+    padding: 0 16px 20px;
+    border-bottom: 1px solid var(--grey-700);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-stamp {
+    width: 34px; height: 34px;
+    border: 2px solid var(--copper);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    color: var(--copper);
+    letter-spacing: 0.5px;
+  }
+
+  .logo-text {
+    font-size: 16px; font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.2px;
+  }
+
+  .nav-group-label {
+    padding: 14px 16px 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--grey-500);
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 16px;
+    font-size: 13px; font-weight: 500;
+    color: var(--grey-400);
+    cursor: pointer; transition: all 0.1s;
+  }
+  .nav-item:hover { color: var(--grey-200); }
+  .nav-item.active {
+    color: var(--white);
+    background: var(--grey-800);
+    border-right: 2px solid var(--copper);
+    font-weight: 600;
+  }
+
+  .nav-icon { width: 16px; opacity: 0.5; }
+  .nav-item.active .nav-icon { opacity: 0.9; }
+
+  .nav-count {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    background: var(--fail);
+    color: white;
+    padding: 0 5px; border-radius: 3px;
+    font-weight: 600;
+  }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 200px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 28px;
+    background: var(--white);
+    border-bottom: 1px solid var(--grey-100);
+  }
+
+  .topbar h1 {
+    font-size: 16px; font-weight: 700;
+    color: var(--grey-900);
+  }
+  .topbar-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--grey-400);
+    margin-top: 1px;
+  }
+
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .btn {
+    padding: 6px 12px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px; font-weight: 600;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: all 0.1s;
+  }
+  .btn-copper {
+    background: var(--copper); color: white;
+    border: 1px solid var(--copper-dark);
+  }
+  .btn-copper:hover { background: var(--copper-dark); }
+  .btn-ghost {
+    background: transparent; color: var(--grey-600);
+    border: 1px solid var(--grey-200);
+  }
+  .btn-ghost:hover { border-color: var(--grey-400); }
+
+  .avatar {
+    width: 28px; height: 28px;
+    background: var(--grey-800);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; color: var(--grey-300);
+  }
+
+  /* ── Content ── */
+  .content {
+    padding: 24px 28px;
+    flex: 1;
+  }
+
+  /* ── Status Strip — the form header ── */
+  .status-strip {
+    display: flex;
+    background: var(--white);
+    border: 1px solid var(--grey-100);
+    margin-bottom: 20px;
+  }
+
+  .ss-cell {
+    flex: 1;
+    padding: 14px 18px;
+    border-right: 1px solid var(--grey-100);
+    display: flex; flex-direction: column;
+  }
+  .ss-cell:last-child { border-right: none; }
+
+  .ss-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--grey-400);
+    margin-bottom: 6px;
+  }
+  .ss-value {
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -1px;
+  }
+  .ss-value.good { color: var(--pass); }
+  .ss-value.bad { color: var(--fail); }
+  .ss-value.warn { color: var(--warn); }
+  .ss-value.neutral { color: var(--grey-800); }
+  .ss-note {
+    font-size: 11px; color: var(--grey-400); margin-top: 2px;
+  }
+
+  /* ── Form sections ── */
+  .form-section {
+    background: var(--white);
+    border: 1px solid var(--grey-100);
+    margin-bottom: 16px;
+  }
+
+  .fs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--grey-100);
+    background: var(--grey-50);
+  }
+  .fs-title {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--grey-700);
+  }
+  .fs-action {
+    font-size: 11px; color: var(--copper); font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── Checklist style rows ── */
+  .check-row {
+    display: flex; align-items: center;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--grey-50);
+    gap: 12px;
+    font-size: 13px;
+  }
+  .check-row:last-child { border-bottom: none; }
+
+  .check-box {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--grey-300);
+    border-radius: 2px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .check-box.checked {
+    background: var(--pass);
+    border-color: var(--pass);
+  }
+  .check-box.checked::after {
+    content: '';
+    width: 6px; height: 10px;
+    border: solid white; border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-top: -2px;
+  }
+  .check-box.failed {
+    background: var(--fail);
+    border-color: var(--fail);
+  }
+  .check-box.failed::after {
+    content: '\00d7';
+    color: white; font-size: 14px; font-weight: 700;
+    line-height: 1;
+  }
+
+  .check-info { flex: 1; }
+  .check-title { font-weight: 500; color: var(--grey-800); }
+  .check-meta {
+    font-size: 11px; color: var(--grey-400); margin-top: 1px;
+  }
+  .check-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--grey-400);
+  }
+
+  .check-result {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 6px;
+  }
+  .check-result.pass { color: var(--pass); background: var(--pass-bg); }
+  .check-result.fail { color: var(--fail); background: var(--fail-bg); }
+  .check-result.pending { color: var(--grey-400); background: var(--grey-50); }
+  .check-result.expiring { color: var(--warn); background: var(--warn-bg); }
+
+  /* ── Two column layout ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Dense data rows (worker table) ── */
+  .data-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 70px;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--grey-50);
+    font-size: 13px;
+    align-items: center;
+  }
+  .data-row:last-child { border-bottom: none; }
+  .data-row.header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--grey-400);
+    padding: 6px 18px;
+    background: var(--grey-50);
+    border-bottom: 1px solid var(--grey-100);
+  }
+
+  .data-name { font-weight: 600; color: var(--grey-800); }
+  .data-detail { font-size: 12px; color: var(--grey-400); }
+  .data-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--grey-500);
+  }
+
+  /* ── Activity (minimal) ── */
+  .activity-row {
+    display: flex; gap: 12px;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--grey-50);
+    font-size: 12px;
+    color: var(--grey-500);
+    line-height: 1.6;
+  }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-row strong { color: var(--grey-800); font-weight: 600; }
+
+  .activity-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--grey-300);
+    flex-shrink: 0; width: 44px;
+    padding-top: 1px;
+  }
+
+  /* ── Form footer ── */
+  .form-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 28px;
+    background: var(--white);
+    border-top: 1px solid var(--grey-100);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--grey-400);
+  }
+
+  /* ── Direction Label ── */
+  .direction-label {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    background: var(--copper);
+    color: white;
+    padding: 8px 16px;
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="direction-label">DIRECTION C: THE FOREMAN'S CLIPBOARD</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-stamp">SF</div>
+    <div class="logo-text">SafetyForge</div>
+  </div>
+
+  <div class="nav-group-label">Main</div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Projects
+  </div>
+
+  <div class="nav-group-label">Safety</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Inspections
+    <span class="nav-count">3</span>
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+    Documents
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Incidents
+    <span class="nav-count">1</span>
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    Workers
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Toolbox Talks
+  </div>
+
+  <div class="nav-group-label">Reports</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    Analytics
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+    OSHA 300
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="topbar">
+    <div>
+      <h1>Riverside Tower Complex</h1>
+      <div class="topbar-meta">PRJ-007 &bull; Last updated 4 min ago &bull; 34 workers on site</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost">Export</button>
+      <button class="btn btn-copper">+ New Inspection</button>
+      <div class="avatar">PM</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Status Strip -->
+    <div class="status-strip">
+      <div class="ss-cell">
+        <span class="ss-label">Compliance</span>
+        <span class="ss-value good">87%</span>
+        <span class="ss-note">+3% vs last week</span>
+      </div>
+      <div class="ss-cell">
+        <span class="ss-label">Open Actions</span>
+        <span class="ss-value warn">12</span>
+        <span class="ss-note">4 due this week</span>
+      </div>
+      <div class="ss-cell">
+        <span class="ss-label">Certs Expiring</span>
+        <span class="ss-value warn">6</span>
+        <span class="ss-note">2 within 7 days</span>
+      </div>
+      <div class="ss-cell">
+        <span class="ss-label">Open Incidents</span>
+        <span class="ss-value bad">1</span>
+        <span class="ss-note">Near miss</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Inspections as a checklist -->
+      <div class="form-section">
+        <div class="fs-header">
+          <span class="fs-title">Today's Inspections</span>
+          <span class="fs-action">View All</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box checked"></div>
+          <div class="check-info">
+            <div class="check-title">Fall Protection — Level 14</div>
+            <div class="check-meta">M. Torres &bull; 18 items</div>
+          </div>
+          <span class="check-result pass">Pass</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box failed"></div>
+          <div class="check-info">
+            <div class="check-title">Scaffolding Daily Check</div>
+            <div class="check-meta">S. Kim &bull; 2 deficiencies</div>
+          </div>
+          <span class="check-result fail">Fail</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box checked"></div>
+          <div class="check-info">
+            <div class="check-title">Electrical — Substation B</div>
+            <div class="check-meta">J. Cole &bull; 24 items</div>
+          </div>
+          <span class="check-result pass">Pass</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box checked"></div>
+          <div class="check-info">
+            <div class="check-title">Housekeeping — Ground Floor</div>
+            <div class="check-meta">M. Lopez &bull; 1 observation</div>
+          </div>
+          <span class="check-result pass">Pass</span>
+        </div>
+        <div class="check-row">
+          <div class="check-box"></div>
+          <div class="check-info">
+            <div class="check-title">Crane Pre-Shift Inspection</div>
+            <div class="check-meta">D. Wilson &bull; Scheduled</div>
+          </div>
+          <span class="check-result pending">Pending</span>
+        </div>
+      </div>
+
+      <!-- Worker Certifications -->
+      <div class="form-section">
+        <div class="fs-header">
+          <span class="fs-title">Certification Status</span>
+          <span class="fs-action">Full Matrix</span>
+        </div>
+        <div class="data-row header">
+          <span>Worker</span><span>Role</span><span>Expires</span><span>Status</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Mike Torres</span>
+          <span class="data-detail">Foreman</span>
+          <span class="data-date">Nov 15</span>
+          <span class="check-result pass">Valid</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Sarah Kim</span>
+          <span class="data-detail">Safety</span>
+          <span class="data-date">Feb 28</span>
+          <span class="check-result pass">Valid</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">James Cole</span>
+          <span class="data-detail">Electrical</span>
+          <span class="data-date">Apr 16</span>
+          <span class="check-result expiring">14d</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Dave Wilson</span>
+          <span class="data-detail">Crane Op</span>
+          <span class="data-date">Mar 31</span>
+          <span class="check-result fail">Expired</span>
+        </div>
+        <div class="data-row">
+          <span class="data-name">Maria Lopez</span>
+          <span class="data-detail">Laborer</span>
+          <span class="data-date">Sep 20</span>
+          <span class="check-result pass">Valid</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="form-section">
+      <div class="fs-header">
+        <span class="fs-title">Activity Log</span>
+        <span class="fs-action">View All</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">09:41</span>
+        <span><strong>M. Torres</strong> completed Fall Protection inspection — Level 14 — all items passed</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">08:15</span>
+        <span><strong>S. Kim</strong> flagged scaffolding deficiency — missing guardrail section C-4</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">07:30</span>
+        <span><strong>System</strong> cert expiry alert — D. Wilson NCCCO expired 2 days ago</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">Yest.</span>
+        <span><strong>J. Cole</strong> uploaded renewed OSHA-10 — pending verification</span>
+      </div>
+      <div class="activity-row">
+        <span class="activity-time">Yest.</span>
+        <span><strong>P. Murray</strong> approved Toolbox Talk: Trench Safety Awareness</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <span>SafetyForge v2.1</span>
+    <span>Riverside Tower Complex &bull; PRJ-007</span>
+    <span>Last sync: 2 min ago</span>
+  </div>
+</main>
+
+</body>
+</html>

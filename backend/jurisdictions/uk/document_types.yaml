@@ -1,0 +1,232 @@
+document_types:
+  - id: construction_phase_plan
+    name: Construction Phase Plan
+    abbreviation: CPP
+    maps_to_universal: site_safety_plan
+    us_equivalent: sssp
+    regulation: "CDM 2015 Reg 12, Schedule 2"
+    required: true
+    prompt_file: prompts/construction_phase_plan.md
+    sections:
+      - project_description
+      - management_structure
+      - arrangements_for_health_and_safety
+      - site_rules
+      - specific_measures_for_high_risk_work
+      - welfare_arrangements
+      - emergency_procedures
+      - monitoring_arrangements
+
+  - id: rams
+    name: Risk Assessment & Method Statement
+    abbreviation: RAMS
+    maps_to_universal: job_hazard_analysis
+    us_equivalent: jha
+    regulation: "Management of Health and Safety at Work Regulations 1999, Reg 3"
+    required: true
+    prompt_file: prompts/rams.md
+    sections:
+      - task_description
+      - risk_assessment_matrix
+      - hazard_identification
+      - control_measures
+      - method_statement_steps
+      - ppe_requirements
+      - training_requirements
+      - emergency_procedures
+      - review_schedule
+
+  - id: method_statement
+    name: Method Statement
+    abbreviation: MS
+    maps_to_universal: job_hazard_analysis
+    us_equivalent: jha
+    regulation: "CDM 2015, HSWA 1974 s2"
+    required: true
+    prompt_file: prompts/rams.md
+    sections:
+      - scope_of_work
+      - sequence_of_operations
+      - plant_and_equipment
+      - materials
+      - workforce_requirements
+      - safety_precautions
+      - environmental_controls
+      - quality_checks
+
+  - id: toolbox_talk
+    name: Toolbox Talk
+    abbreviation: TBT
+    maps_to_universal: toolbox_talk
+    us_equivalent: toolbox_talk
+    regulation: "CDM 2015 Reg 13(4), HSWA 1974 s2(2)(c)"
+    required: false
+    prompt_file: prompts/toolbox_talk.md
+    sections:
+      - topic_overview
+      - key_points
+      - regulatory_requirements
+      - discussion_questions
+      - attendance_record
+
+  - id: coshh_assessment
+    name: COSHH Assessment
+    abbreviation: COSHH
+    maps_to_universal: hazardous_substance_assessment
+    us_equivalent: null
+    regulation: "Control of Substances Hazardous to Health Regulations 2002"
+    required: true
+    prompt_file: prompts/coshh_assessment.md
+    sections:
+      - substance_identification
+      - hazard_classification
+      - exposure_assessment
+      - control_measures
+      - health_surveillance
+      - monitoring_requirements
+      - emergency_procedures
+      - review_date
+
+  - id: rescue_plan
+    name: Work at Height Rescue Plan
+    abbreviation: WAHRP
+    maps_to_universal: fall_protection_plan
+    us_equivalent: fall_protection
+    regulation: "Work at Height Regulations 2005, Reg 4"
+    required: true
+    prompt_file: prompts/rescue_plan.md
+    sections:
+      - site_assessment
+      - fall_prevention_measures
+      - rescue_procedures
+      - rescue_equipment
+      - trained_personnel
+      - communication_plan
+      - emergency_services_liaison
+      - review_and_drill_schedule
+
+  - id: permit_to_work
+    name: Permit to Work
+    abbreviation: PTW
+    maps_to_universal: high_risk_work_permit
+    us_equivalent: null
+    regulation: "HSWA 1974, CDM 2015"
+    required_for:
+      - hot_work
+      - confined_space
+      - live_electrical
+      - excavation
+      - roof_work
+      - work_near_underground_services
+    prompt_file: prompts/permit_to_work.md
+    sections:
+      - description_of_work
+      - hazard_identification
+      - precautions_required
+      - ppe_requirements
+      - isolation_requirements
+      - permit_duration
+      - authorisation_chain
+      - handback_procedure
+
+  - id: fire_risk_assessment
+    name: Fire Risk Assessment
+    abbreviation: FRA
+    maps_to_universal: fire_risk_assessment
+    us_equivalent: null
+    regulation: "Regulatory Reform (Fire Safety) Order 2005"
+    required: true
+    prompt_file: prompts/fire_risk_assessment.md
+    sections:
+      - premises_description
+      - fire_hazard_identification
+      - persons_at_risk
+      - existing_fire_safety_measures
+      - risk_evaluation
+      - additional_measures_required
+      - emergency_plan
+      - review_date
+
+  - id: traffic_management_plan
+    name: Traffic Management Plan
+    abbreviation: TMP
+    maps_to_universal: traffic_management_plan
+    us_equivalent: null
+    regulation: "CDM 2015 Schedule 2, HSWA 1974"
+    required: true
+    prompt_file: prompts/traffic_management_plan.md
+    sections:
+      - site_layout
+      - vehicle_routes
+      - pedestrian_routes
+      - segregation_measures
+      - signage_requirements
+      - speed_limits
+      - reversing_procedures
+      - banksman_requirements
+
+  - id: noise_assessment
+    name: Noise Assessment
+    abbreviation: NA
+    maps_to_universal: noise_assessment
+    us_equivalent: null
+    regulation: "Control of Noise at Work Regulations 2005"
+    required_when: "noise_exposure_likely_above_80dBA"
+    prompt_file: prompts/noise_assessment.md
+    sections:
+      - noise_sources
+      - exposure_assessment
+      - action_levels
+      - control_measures
+      - hearing_protection_zones
+      - health_surveillance
+
+  - id: vibration_assessment
+    name: Vibration Assessment
+    abbreviation: VA
+    maps_to_universal: vibration_assessment
+    us_equivalent: null
+    regulation: "Control of Vibration at Work Regulations 2005"
+    required_when: "vibration_exposure_likely"
+    prompt_file: prompts/vibration_assessment.md
+    sections:
+      - vibration_sources
+      - exposure_assessment
+      - daily_exposure_values
+      - control_measures
+      - health_surveillance
+
+  - id: asbestos_management_plan
+    name: Asbestos Management Plan
+    abbreviation: AMP
+    maps_to_universal: asbestos_management_plan
+    us_equivalent: null
+    regulation: "Control of Asbestos Regulations 2012, Reg 4"
+    required_when: "project.involves_refurbishment_or_demolition or premises_contains_acm"
+    prompt_file: prompts/asbestos_management_plan.md
+    sections:
+      - asbestos_survey_summary
+      - acm_register
+      - risk_assessment
+      - management_actions
+      - information_and_training
+      - monitoring_arrangements
+      - emergency_procedures
+
+  - id: incident_report
+    name: Incident Report
+    abbreviation: IR
+    maps_to_universal: incident_report
+    us_equivalent: incident_report
+    regulation: "RIDDOR 2013, HSWA 1974 s2"
+    required: true
+    prompt_file: prompts/incident_report.md
+    sections:
+      - incident_summary
+      - timeline
+      - immediate_causes
+      - root_cause_analysis
+      - riddor_classification
+      - corrective_actions
+      - prevention_measures
+      - lessons_learned

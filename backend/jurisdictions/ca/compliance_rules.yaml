@@ -1,0 +1,200 @@
+# Rules engine: each rule evaluates against company/project data
+# Based on provincial OHS legislation (varies by province)
+# Federal: Canada Labour Code Part II for federally regulated workers
+
+required_programs:
+  - id: site_safety_plan
+    name: Site-Specific Safety Plan
+    regulation: Provincial OHS Construction Regulations
+    check: document_exists
+    document_type: site_safety_plan
+    applies_when: always
+    severity: critical
+
+  - id: health_safety_program
+    name: Health and Safety Program
+    regulation: Provincial OHS Acts
+    check: document_exists
+    document_type: health_safety_manual
+    applies_when: always
+    severity: critical
+    notes: Most provinces require employers with a specified number of workers to have a written health and safety program
+
+  - id: emergency_response_plan
+    name: Emergency Response Plan
+    regulation: Provincial OHS emergency provisions
+    check: document_exists
+    document_type: emergency_response_plan
+    applies_when: always
+    severity: critical
+
+  - id: fall_protection_plan
+    name: Fall Protection Plan
+    regulation: Provincial OHS fall protection regulations
+    check: document_exists
+    document_type: fall_protection_plan
+    applies_when: project.has_work_at_height
+    severity: critical
+
+  - id: whmis_program
+    name: WHMIS Program
+    regulation: Federal Hazardous Products Act / Provincial WHMIS regulations
+    check: whmis_program_current
+    applies_when: project.has_hazardous_materials
+    severity: critical
+    notes: Must include worker training, SDS availability, and proper labelling
+
+  - id: violence_harassment_policy
+    name: Workplace Violence and Harassment Policy
+    regulation: Provincial OHS Acts (varies)
+    check: document_exists
+    applies_when: always
+    severity: high
+    notes: Most provinces now require written policies on workplace violence and harassment
+
+certification_rules:
+  - id: construction_safety_orientation
+    name: Construction Safety Orientation
+    regulation: Provincial OHS construction regulations
+    check: certification_valid
+    certification_type: csts
+    applies_to: all_site_workers
+    severity: critical
+    message: All workers on a construction site must complete safety orientation training
+
+  - id: fall_protection_training
+    name: Fall Protection Training
+    regulation: Provincial OHS fall protection regulations
+    check: certification_valid
+    certification_type: fall_protection
+    applies_to: height_workers
+    severity: critical
+
+  - id: whmis_training
+    name: WHMIS Training
+    regulation: Federal Hazardous Products Act / Provincial WHMIS regulations
+    check: certification_valid
+    certification_type: whmis
+    applies_to: all_workers_handling_hazardous_materials
+    severity: critical
+    message: Workers handling or potentially exposed to hazardous materials must complete WHMIS training
+
+  - id: confined_space_training
+    name: Confined Space Entry Training
+    regulation: Provincial OHS confined space regulations
+    check: certification_valid
+    certification_type: confined_space
+    applies_to: confined_space_workers
+    severity: critical
+
+  - id: first_aid_coverage
+    name: First Aid Coverage
+    regulation: Provincial OHS first aid regulations
+    check: first_aid_coverage
+    applies_to: project_sites
+    severity: critical
+    notes: First aid requirements vary by province, number of workers, and distance from hospital
+
+  - id: crane_operator_certification
+    name: Crane Operator Certification
+    regulation: Provincial crane safety regulations
+    check: certification_valid
+    certification_type: crane_operator_mobile
+    applies_to: crane_operators
+    severity: critical
+
+inspection_rules:
+  - id: workplace_inspection
+    name: Regular Workplace Inspection
+    regulation: Provincial OHS Acts
+    check: inspection_current
+    frequency_days: 30
+    applies_when: always
+    severity: high
+
+  - id: scaffold_inspection
+    name: Scaffold Inspection
+    regulation: Provincial OHS scaffold regulations
+    check: inspection_current
+    frequency_days: 7
+    applies_when: project.has_scaffolding
+    severity: critical
+    notes: Must be inspected by a competent person before first use and at regular intervals
+
+  - id: fall_protection_equipment
+    name: Fall Protection Equipment Inspection
+    regulation: Provincial OHS fall protection regulations
+    check: inspection_current
+    frequency_days: 1
+    applies_when: project.has_fall_protection_equipment
+    severity: critical
+    notes: Full body harnesses and lanyards must be inspected before each use
+
+  - id: crane_inspection
+    name: Crane Inspection
+    regulation: Provincial crane safety regulations
+    check: inspection_current
+    frequency_days: 1
+    applies_when: project.has_crane
+    severity: critical
+    notes: Daily pre-operational inspection required
+
+  - id: fire_extinguisher_inspection
+    name: Fire Extinguisher Inspection
+    regulation: Provincial fire safety regulations
+    check: inspection_current
+    frequency_days: 30
+    applies_when: always
+    severity: high
+
+  - id: excavation_inspection
+    name: Excavation Inspection
+    regulation: Provincial OHS excavation regulations
+    check: inspection_current
+    frequency_days: 1
+    applies_when: project.has_excavation
+    severity: critical
+    notes: Must be inspected by a competent person before workers enter
+
+joint_health_safety_committee:
+  - id: jhsc_required
+    name: Joint Health and Safety Committee
+    regulation: Provincial OHS Acts
+    check: jhsc_records
+    applies_when: company.worker_count >= 20
+    severity: high
+    notes: Most provinces require JHSC for workplaces with 20+ workers. Ontario threshold is 20, Alberta is 20, BC is 20.
+
+  - id: jhsc_meetings
+    name: JHSC Meeting Frequency
+    regulation: Provincial OHS Acts
+    check: jhsc_meeting_frequency
+    frequency_days: 90
+    applies_when: company.has_jhsc
+    severity: high
+    notes: JHSC must meet at least quarterly (monthly in some provinces)
+
+  - id: hsr_required
+    name: Health and Safety Representative
+    regulation: Provincial OHS Acts
+    check: hsr_records
+    applies_when: company.worker_count >= 5 AND company.worker_count < 20
+    severity: high
+    notes: Smaller workplaces require a health and safety representative instead of a committee
+
+cor_program:
+  - id: cor_maintenance
+    name: COR Maintenance Audit
+    check: audit_current
+    frequency_years: 1
+    applies_when: company.has_cor
+    severity: high
+    notes: Annual maintenance audit required to maintain COR standing
+
+  - id: cor_external_audit
+    name: COR External Audit
+    check: external_audit_current
+    frequency_years: 3
+    applies_when: company.has_cor
+    severity: high
+    notes: Full external audit required every three years

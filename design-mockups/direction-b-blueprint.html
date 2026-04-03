@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafetyForge — Direction B: The Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'General Sans';
+    src: local('General Sans');
+  }
+
+  :root {
+    /* Warm paper stock — not pure white */
+    --paper: #f8f6f1;
+    --paper-warm: #f3f0e8;
+    --paper-dark: #eae6dc;
+
+    /* Ink/text colors */
+    --ink-900: #1c1a16;
+    --ink-800: #2d2a24;
+    --ink-700: #3e3b33;
+    --ink-600: #5a564c;
+    --ink-500: #7a756a;
+    --ink-400: #9e998e;
+    --ink-300: #c4bfb4;
+    --ink-200: #dcd8cf;
+    --ink-100: #eceae3;
+
+    /* Blueprint blue — actual engineering drawing cyan */
+    --blue: #2b6cb0;
+    --blue-dark: #1e4f8a;
+    --blue-light: #3b82c4;
+    --blue-wash: rgba(43, 108, 176, 0.06);
+    --blue-tint: rgba(43, 108, 176, 0.12);
+
+    /* Redline — for issues/violations */
+    --redline: #c0392b;
+    --redline-bg: rgba(192, 57, 43, 0.08);
+
+    /* Approval green */
+    --approve: #27864a;
+    --approve-bg: rgba(39, 134, 74, 0.08);
+
+    /* Caution */
+    --caution: #b8860b;
+    --caution-bg: rgba(184, 134, 11, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'General Sans', -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink-900);
+    min-height: 100vh;
+    /* Subtle grid pattern — technical drawing reference */
+    background-image:
+      linear-gradient(var(--ink-100) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ink-100) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--paper);
+    border-right: 2px solid var(--ink-800);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+
+  .logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--ink-300);
+    margin-bottom: 12px;
+  }
+
+  .logo-mark {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    border: 2px solid var(--blue);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .logo-icon::before {
+    content: 'SF';
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    color: var(--blue);
+  }
+
+  .logo-text {
+    font-size: 17px; font-weight: 700;
+    color: var(--ink-800);
+    letter-spacing: -0.3px;
+  }
+  .logo-text span { color: var(--blue); }
+
+  .nav-section {
+    padding: 14px 20px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--ink-400);
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 20px;
+    font-size: 13px; font-weight: 500;
+    color: var(--ink-600);
+    cursor: pointer; transition: all 0.12s;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { color: var(--ink-900); background: var(--blue-wash); }
+  .nav-item.active {
+    color: var(--blue);
+    border-left-color: var(--blue);
+    background: var(--blue-wash);
+    font-weight: 600;
+  }
+
+  .nav-icon { width: 16px; opacity: 0.6; }
+  .nav-item.active .nav-icon { opacity: 1; }
+
+  .nav-count {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--redline);
+    font-weight: 600;
+  }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 220px;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 2px solid var(--ink-800);
+    background: var(--paper);
+    position: sticky; top: 0; z-index: 5;
+  }
+
+  .topbar-left h1 {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.3px;
+  }
+  .topbar-left p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-500); margin-top: 3px;
+  }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .btn {
+    padding: 7px 14px;
+    font-family: 'General Sans', sans-serif;
+    font-size: 12px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.12s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-primary {
+    background: var(--blue); color: white;
+    border: 1px solid var(--blue-dark);
+  }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-outline {
+    background: transparent; color: var(--ink-700);
+    border: 1px solid var(--ink-300);
+  }
+  .btn-outline:hover { border-color: var(--ink-500); }
+
+  .avatar {
+    width: 30px; height: 30px;
+    border: 1.5px solid var(--ink-300);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600; color: var(--ink-600);
+  }
+
+  /* ── Content ── */
+  .content { padding: 28px 32px; }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 28px;
+    border: 1px solid var(--ink-300);
+  }
+
+  .stat-cell {
+    padding: 18px 20px;
+    border-right: 1px solid var(--ink-300);
+    background: var(--paper);
+    position: relative;
+  }
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--ink-500);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 30px; font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--ink-800);
+  }
+  .stat-value.good { color: var(--approve); }
+  .stat-value.warn { color: var(--caution); }
+  .stat-value.bad { color: var(--redline); }
+
+  .stat-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-400); margin-top: 3px;
+  }
+
+  /* ── Grid ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .panel {
+    border: 1px solid var(--ink-300);
+    background: var(--paper);
+  }
+  .grid-2 .panel:first-child { border-right: none; }
+
+  .panel + .panel-full { margin-top: -1px; }
+
+  .panel-full {
+    border: 1px solid var(--ink-300);
+    background: var(--paper);
+  }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--ink-300);
+    background: var(--paper-warm);
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-700);
+  }
+  .panel-action {
+    font-size: 11px; color: var(--blue); font-weight: 600;
+    cursor: pointer; text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* ── Inspection rows ── */
+  .insp-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 140px 80px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--ink-100);
+    font-size: 13px;
+    align-items: center;
+  }
+  .insp-row:last-child { border-bottom: none; }
+  .insp-row.header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-400);
+    border-bottom: 1px solid var(--ink-300);
+    background: var(--paper-warm);
+    padding: 8px 20px;
+  }
+
+  .insp-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--blue);
+    font-weight: 500;
+  }
+  .insp-title { font-weight: 500; }
+  .insp-by { color: var(--ink-500); font-size: 12px; }
+
+  .status-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border: 1px solid;
+  }
+  .status-tag.pass { color: var(--approve); border-color: var(--approve); background: var(--approve-bg); }
+  .status-tag.fail { color: var(--redline); border-color: var(--redline); background: var(--redline-bg); }
+  .status-tag.review { color: var(--caution); border-color: var(--caution); background: var(--caution-bg); }
+  .status-tag.pending { color: var(--ink-500); border-color: var(--ink-300); background: transparent; }
+
+  /* ── Compliance Breakdown ── */
+  .compliance-grid {
+    padding: 20px;
+  }
+
+  .compliance-bar-group {
+    margin-bottom: 16px;
+  }
+  .compliance-bar-group:last-child { margin-bottom: 0; }
+
+  .cb-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; margin-bottom: 5px;
+  }
+  .cb-name { font-weight: 500; }
+  .cb-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .cb-track {
+    height: 6px;
+    background: var(--ink-100);
+    position: relative;
+  }
+  .cb-fill {
+    height: 100%;
+    position: absolute; left: 0; top: 0;
+  }
+  .cb-threshold {
+    position: absolute; top: -3px; bottom: -3px;
+    width: 1px;
+    border-left: 1.5px dashed var(--redline);
+  }
+
+  /* ── Worker table ── */
+  .worker-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 80px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--ink-100);
+    font-size: 13px;
+    align-items: center;
+  }
+  .worker-row:last-child { border-bottom: none; }
+  .worker-row.header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-400);
+    border-bottom: 1px solid var(--ink-300);
+    background: var(--paper-warm);
+    padding: 8px 20px;
+  }
+
+  .worker-name { font-weight: 600; }
+  .worker-detail { color: var(--ink-500); font-size: 12px; }
+  .worker-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-500);
+  }
+
+  /* ── Title Block (bottom right, like a blueprint) ── */
+  .title-block {
+    position: fixed;
+    bottom: 0; right: 0;
+    border: 2px solid var(--ink-800);
+    border-right: none; border-bottom: none;
+    background: var(--paper);
+    padding: 8px 16px;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    gap: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    z-index: 10;
+  }
+  .tb-cell {
+    padding: 4px 12px;
+    border-right: 1px solid var(--ink-300);
+    color: var(--ink-500);
+  }
+  .tb-cell:last-child { border-right: none; }
+  .tb-cell strong { color: var(--ink-800); display: block; }
+
+  /* ── Direction Label ── */
+  .direction-label {
+    position: fixed;
+    bottom: 20px; left: 240px;
+    background: var(--blue);
+    color: white;
+    padding: 8px 16px;
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+    z-index: 100;
+    border: 1px solid var(--blue-dark);
+  }
+</style>
+</head>
+<body>
+
+<div class="direction-label">DIRECTION B: THE BLUEPRINT</div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon"></div>
+      <div class="logo-text">Safety<span>Forge</span></div>
+    </div>
+  </div>
+
+  <div class="nav-section">// overview</div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Projects
+  </div>
+
+  <div class="nav-section">// safety</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Inspections
+    <span class="nav-count">3</span>
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+    Documents
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Incidents
+    <span class="nav-count">1</span>
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    Workers
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Toolbox Talks
+  </div>
+
+  <div class="nav-section">// reports</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    Analytics
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+    OSHA 300 Log
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Site Dashboard</h1>
+      <p>PRJ-2024-007 // Riverside Tower Complex // Rev. 14</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline">Export</button>
+      <button class="btn btn-primary">+ New Inspection</button>
+      <div class="avatar">PM</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-cell">
+        <div class="stat-label">Compliance</div>
+        <div class="stat-value good">87%</div>
+        <div class="stat-sub">+3.2% vs prev. week</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Open Actions</div>
+        <div class="stat-value warn">12</div>
+        <div class="stat-sub">4 due &le; 7 days</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Cert. Expiring</div>
+        <div class="stat-value warn">6</div>
+        <div class="stat-sub">2 within 7 days</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Open Incidents</div>
+        <div class="stat-value bad">1</div>
+        <div class="stat-sub">Near miss &mdash; scaffold</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Inspections -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Inspections</span>
+          <span class="panel-action">View All</span>
+        </div>
+        <div class="insp-row header">
+          <span>Ref.</span><span>Inspection</span><span>Inspector</span><span>Status</span>
+        </div>
+        <div class="insp-row">
+          <span class="insp-id">INS-0247</span>
+          <span class="insp-title">Fall Protection &mdash; Lvl 14</span>
+          <span class="insp-by">M. Torres</span>
+          <span><span class="status-tag pass">Pass</span></span>
+        </div>
+        <div class="insp-row">
+          <span class="insp-id">INS-0246</span>
+          <span class="insp-title">Scaffolding Daily Check</span>
+          <span class="insp-by">S. Kim</span>
+          <span><span class="status-tag fail">Fail</span></span>
+        </div>
+        <div class="insp-row">
+          <span class="insp-id">INS-0245</span>
+          <span class="insp-title">Electrical &mdash; Substation B</span>
+          <span class="insp-by">J. Cole</span>
+          <span><span class="status-tag pass">Pass</span></span>
+        </div>
+        <div class="insp-row">
+          <span class="insp-id">INS-0244</span>
+          <span class="insp-title">Housekeeping &mdash; Ground</span>
+          <span class="insp-by">M. Lopez</span>
+          <span><span class="status-tag review">Review</span></span>
+        </div>
+        <div class="insp-row">
+          <span class="insp-id">INS-0248</span>
+          <span class="insp-title">Crane Pre-Shift</span>
+          <span class="insp-by">D. Wilson</span>
+          <span><span class="status-tag pending">Sched.</span></span>
+        </div>
+      </div>
+
+      <!-- Compliance Breakdown -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Compliance by Category</span>
+        </div>
+        <div class="compliance-grid">
+          <div class="compliance-bar-group">
+            <div class="cb-label"><span class="cb-name">Fall Protection</span><span class="cb-pct">94%</span></div>
+            <div class="cb-track">
+              <div class="cb-fill" style="width:94%; background:var(--approve);"></div>
+              <div class="cb-threshold" style="left:80%;"></div>
+            </div>
+          </div>
+          <div class="compliance-bar-group">
+            <div class="cb-label"><span class="cb-name">Scaffolding</span><span class="cb-pct">72%</span></div>
+            <div class="cb-track">
+              <div class="cb-fill" style="width:72%; background:var(--redline);"></div>
+              <div class="cb-threshold" style="left:80%;"></div>
+            </div>
+          </div>
+          <div class="compliance-bar-group">
+            <div class="cb-label"><span class="cb-name">Electrical Safety</span><span class="cb-pct">91%</span></div>
+            <div class="cb-track">
+              <div class="cb-fill" style="width:91%; background:var(--approve);"></div>
+              <div class="cb-threshold" style="left:80%;"></div>
+            </div>
+          </div>
+          <div class="compliance-bar-group">
+            <div class="cb-label"><span class="cb-name">PPE Compliance</span><span class="cb-pct">88%</span></div>
+            <div class="cb-track">
+              <div class="cb-fill" style="width:88%; background:var(--approve);"></div>
+              <div class="cb-threshold" style="left:80%;"></div>
+            </div>
+          </div>
+          <div class="compliance-bar-group">
+            <div class="cb-label"><span class="cb-name">Housekeeping</span><span class="cb-pct">79%</span></div>
+            <div class="cb-track">
+              <div class="cb-fill" style="width:79%; background:var(--caution);"></div>
+              <div class="cb-threshold" style="left:80%;"></div>
+            </div>
+          </div>
+          <div class="compliance-bar-group">
+            <div class="cb-label"><span class="cb-name">Excavation/Trench</span><span class="cb-pct">85%</span></div>
+            <div class="cb-track">
+              <div class="cb-fill" style="width:85%; background:var(--approve);"></div>
+              <div class="cb-threshold" style="left:80%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workers -->
+    <div class="panel-full" style="margin-top:-1px;">
+      <div class="panel-header">
+        <span class="panel-title">Workforce Certifications</span>
+        <span class="panel-action">Full Matrix</span>
+      </div>
+      <div class="worker-row header">
+        <span>Worker</span><span>Role</span><span>Expires</span><span>Status</span>
+      </div>
+      <div class="worker-row">
+        <span class="worker-name">Mike Torres</span>
+        <span class="worker-detail">Foreman</span>
+        <span class="worker-date">2026-11-15</span>
+        <span><span class="status-tag pass">Valid</span></span>
+      </div>
+      <div class="worker-row">
+        <span class="worker-name">Sarah Kim</span>
+        <span class="worker-detail">Safety Lead</span>
+        <span class="worker-date">2027-02-28</span>
+        <span><span class="status-tag pass">Valid</span></span>
+      </div>
+      <div class="worker-row">
+        <span class="worker-name">James Cole</span>
+        <span class="worker-detail">Electrician</span>
+        <span class="worker-date">2026-04-16</span>
+        <span><span class="status-tag review">14 days</span></span>
+      </div>
+      <div class="worker-row">
+        <span class="worker-name">Dave Wilson</span>
+        <span class="worker-detail">Crane Operator</span>
+        <span class="worker-date">2026-03-31</span>
+        <span><span class="status-tag fail">Expired</span></span>
+      </div>
+      <div class="worker-row">
+        <span class="worker-name">Maria Lopez</span>
+        <span class="worker-detail">Laborer</span>
+        <span class="worker-date">2026-09-20</span>
+        <span><span class="status-tag pass">Valid</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blueprint title block -->
+  <div class="title-block">
+    <div class="tb-cell"><strong>Project</strong>Riverside Tower</div>
+    <div class="tb-cell"><strong>Drawing</strong>Dashboard v14</div>
+    <div class="tb-cell"><strong>Date</strong>2026-04-02</div>
+  </div>
+</main>
+
+</body>
+</html>
