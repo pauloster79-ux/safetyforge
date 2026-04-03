@@ -5,9 +5,23 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
-from app.routers import auth, billing, companies, documents, pdf, templates
+from app.middleware.rate_limit import limiter
+from app.routers import (
+    auth,
+    billing,
+    companies,
+    documents,
+    gc_portal,
+    jurisdictions,
+    me,
+    members,
+    pdf,
+    templates,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,6 +50,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # CORS middleware
 settings = get_settings()
 app.add_middleware(
@@ -53,6 +71,10 @@ app.include_router(documents.router, prefix="/api/v1")
 app.include_router(templates.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
 app.include_router(pdf.router, prefix="/api/v1")
+app.include_router(me.router, prefix="/api/v1")
+app.include_router(jurisdictions.router, prefix="/api/v1")
+app.include_router(members.router, prefix="/api/v1")
+app.include_router(gc_portal.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])

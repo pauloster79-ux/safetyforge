@@ -1,0 +1,57 @@
+code: CA
+name: California
+regulatory_body: Cal/OSHA (Division of Occupational Safety and Health)
+state_plan: true
+primary_legislation: California Labor Code Division 5
+construction_regulation: Cal/OSHA Title 8 CCR
+
+requirements:
+  - id: CA-001
+    state: CA
+    requirement_name: Written Injury & Illness Prevention Program (IIPP)
+    description: Every California employer must establish, implement, and maintain a written IIPP. More detailed than federal requirements.
+    federal_equivalent: "29 CFR 1904 (General Recording)"
+    state_standard: "Cal/OSHA T8 CCR 3203"
+    additional_details: Must include system for identifying/evaluating hazards, methods for correcting hazards, training, communication, and recordkeeping.
+    applies_to: all
+    severity: mandatory
+
+  - id: CA-002
+    state: CA
+    requirement_name: Heat Illness Prevention Plan
+    description: Mandatory outdoor heat illness prevention plan when temperatures exceed 80 degrees F.
+    federal_equivalent: null
+    state_standard: "Cal/OSHA T8 CCR 3395"
+    additional_details: Must provide water, shade, rest breaks, acclimatization procedures, and emergency response procedures.
+    applies_to: construction
+    severity: mandatory
+
+  - id: CA-003
+    state: CA
+    requirement_name: Wildfire Smoke Protection Plan
+    description: Employers must protect workers from wildfire smoke exposure when AQI for PM2.5 exceeds 151.
+    federal_equivalent: null
+    state_standard: "Cal/OSHA T8 CCR 5141.1"
+    additional_details: Must include monitoring air quality, providing N95 respirators, and communication procedures.
+    applies_to: all
+    severity: mandatory
+
+  - id: CA-004
+    state: CA
+    requirement_name: Higher Penalty Structure
+    description: Cal/OSHA penalties are significantly higher than federal OSHA. Serious violations up to $25,000.
+    federal_equivalent: "29 CFR 1903.15"
+    state_standard: "Cal/OSHA Labor Code 6427-6430"
+    additional_details: Willful violations up to $156,259. Repeat violations up to $156,259.
+    applies_to: all
+    severity: mandatory
+
+  - id: CA-005
+    state: CA
+    requirement_name: Permit-Required Confined Space (Construction)
+    description: Cal/OSHA has specific construction-focused confined space requirements beyond federal.
+    federal_equivalent: "29 CFR 1926.1200"
+    state_standard: "Cal/OSHA T8 CCR 5157"
+    additional_details: Requires written program, entry permits, and attendant training specific to construction environments.
+    applies_to: construction
+    severity: mandatory

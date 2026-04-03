@@ -4,8 +4,6 @@ import html
 import logging
 from datetime import datetime, timezone
 
-from weasyprint import HTML
-
 from app.models.company import Company
 from app.models.document import Document, DocumentType
 
@@ -511,6 +509,8 @@ class PdfService:
             document.document_type.value,
             company.id,
         )
+
+        from weasyprint import HTML
 
         pdf_bytes: bytes = HTML(string=html_content).write_pdf()
         logger.info(

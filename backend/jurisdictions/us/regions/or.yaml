@@ -1,0 +1,37 @@
+code: OR
+name: Oregon
+regulatory_body: Oregon OSHA (Oregon Occupational Safety and Health)
+state_plan: true
+primary_legislation: Oregon Safe Employment Act (ORS 654)
+construction_regulation: OAR 437-003 (Construction)
+
+requirements:
+  - id: OR-001
+    state: OR
+    requirement_name: Safety Committee or Safety Meetings
+    description: Employers with 11 or more employees must establish a safety committee. Smaller employers must hold regular safety meetings.
+    federal_equivalent: null
+    state_standard: "OAR 437-001-0765"
+    additional_details: Committee must meet monthly. Must include employee-elected representatives. Written minutes required.
+    applies_to: all
+    severity: mandatory
+
+  - id: OR-002
+    state: OR
+    requirement_name: Fall Protection at 10 Feet
+    description: Oregon requires fall protection in construction at 10 feet, different from federal 6-foot standard.
+    federal_equivalent: "29 CFR 1926.501 (6 feet)"
+    state_standard: "OAR 437-003-0001(5)"
+    additional_details: Applies to construction activities. Some exceptions for specific trades with alternative protection measures.
+    applies_to: construction
+    severity: mandatory
+
+  - id: OR-003
+    state: OR
+    requirement_name: Heat Illness Prevention
+    description: Oregon requires employers to protect workers from heat-related illness at 80 degrees F.
+    federal_equivalent: null
+    state_standard: "OAR 437-002-0156"
+    additional_details: Access to shade, cool water, acclimatization for new workers, and high heat protocols at 90 degrees F.
+    applies_to: all
+    severity: mandatory

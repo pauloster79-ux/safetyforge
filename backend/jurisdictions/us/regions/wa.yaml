@@ -1,0 +1,47 @@
+code: WA
+name: Washington
+regulatory_body: Washington State Department of Labor & Industries (L&I)
+state_plan: true
+primary_legislation: Washington Industrial Safety and Health Act (WISHA)
+construction_regulation: WAC 296-155 (Safety Standards for Construction Work)
+
+requirements:
+  - id: WA-001
+    state: WA
+    requirement_name: Accident Prevention Program (APP)
+    description: Every Washington employer must have a written Accident Prevention Program tailored to their workplace.
+    federal_equivalent: null
+    state_standard: "WAC 296-800-140"
+    additional_details: Must include safety orientation, hazard reporting, regular safety meetings, and first-aid procedures.
+    applies_to: all
+    severity: mandatory
+
+  - id: WA-002
+    state: WA
+    requirement_name: Outdoor Heat Exposure Rule
+    description: Employers must take precautions when temperatures reach 80 degrees F or above.
+    federal_equivalent: null
+    state_standard: "WAC 296-62-095"
+    additional_details: Water, shade, rest breaks required. High heat procedures at 90 degrees F. Emergency response plan mandatory.
+    applies_to: all
+    severity: mandatory
+
+  - id: WA-003
+    state: WA
+    requirement_name: Fall Protection at 4 Feet
+    description: Washington requires fall protection at 4 feet in construction, stricter than federal 6-foot trigger.
+    federal_equivalent: "29 CFR 1926.501 (6 feet)"
+    state_standard: "WAC 296-880-20005"
+    additional_details: All unprotected sides and edges at 4 feet or more require guardrails, safety nets, or personal fall arrest.
+    applies_to: construction
+    severity: mandatory
+
+  - id: WA-004
+    state: WA
+    requirement_name: Safety Committee or Safety Meetings
+    description: Employers with 11+ employees must have a safety committee. Smaller employers must hold regular safety meetings.
+    federal_equivalent: null
+    state_standard: "WAC 296-800-130"
+    additional_details: Committee must meet monthly, include employer and employee representatives, and maintain written records.
+    applies_to: all
+    severity: mandatory

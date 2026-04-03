@@ -1,0 +1,37 @@
+code: MI
+name: Michigan
+regulatory_body: Michigan Occupational Safety and Health Administration (MIOSHA)
+state_plan: true
+primary_legislation: Michigan Occupational Safety and Health Act (PA 154 of 1974)
+construction_regulation: MIOSHA Construction Safety Standards Parts 1-45
+
+requirements:
+  - id: MI-001
+    state: MI
+    requirement_name: Written Safety & Health Program
+    description: Michigan OSHA (MIOSHA) requires employers to develop and maintain a comprehensive written safety and health program.
+    federal_equivalent: null
+    state_standard: "MIOSHA Part 1, Rule 114"
+    additional_details: Must include management commitment, employee involvement, worksite analysis, hazard prevention, and training.
+    applies_to: all
+    severity: mandatory
+
+  - id: MI-002
+    state: MI
+    requirement_name: Right to Know Act
+    description: Michigan's Right to Know law has additional requirements beyond federal HazCom standard.
+    federal_equivalent: "29 CFR 1910.1200"
+    state_standard: "PA 154 of 1986"
+    additional_details: Employers must provide annual training, maintain chemical lists, and post workplace notices.
+    applies_to: all
+    severity: mandatory
+
+  - id: MI-003
+    state: MI
+    requirement_name: Construction Safety Standards
+    description: MIOSHA has state-specific construction safety standards that may differ from federal OSHA.
+    federal_equivalent: "29 CFR 1926"
+    state_standard: "MIOSHA Construction Safety Standards Part 1-45"
+    additional_details: Includes state-specific requirements for scaffolding, demolition, and steel erection.
+    applies_to: construction
+    severity: mandatory

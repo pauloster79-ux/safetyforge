@@ -1,0 +1,47 @@
+code: NY
+name: New York
+regulatory_body: New York State Department of Labor (NYSDOL)
+state_plan: false
+primary_legislation: New York Labor Law Article 10
+construction_regulation: NYC Building Code, Industrial Code Rules
+
+requirements:
+  - id: NY-001
+    state: NY
+    requirement_name: OSHA 10-Hour Training (All Workers)
+    description: All construction workers on NYC public and private sites must have OSHA 10-hour training.
+    federal_equivalent: null
+    state_standard: "NYC Local Law 196 of 2017"
+    additional_details: Workers must carry SST cards. Employers face fines for non-compliant workers on site.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NY-002
+    state: NY
+    requirement_name: OSHA 30-Hour Training (Supervisors)
+    description: All construction supervisors and foremen on NYC sites must have OSHA 30-hour training.
+    federal_equivalent: null
+    state_standard: "NYC Local Law 196 of 2017"
+    additional_details: Site Safety Managers must also hold 30-hour cards plus additional FDNY certificates.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NY-003
+    state: NY
+    requirement_name: Site Safety Manager Requirement
+    description: Certain NYC construction projects require a designated Site Safety Manager or Coordinator.
+    federal_equivalent: null
+    state_standard: "NYC Building Code 3310.5"
+    additional_details: Required on major buildings (10+ stories, full demolition, certain excavations). Must hold NYC DOB license.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NY-004
+    state: NY
+    requirement_name: Scaffold Safety Training
+    description: All workers erecting, dismantling, or using scaffolds must complete scaffold safety training.
+    federal_equivalent: "29 CFR 1926.454"
+    state_standard: "NY Industrial Code Rule 23"
+    additional_details: 4-hour scaffold training course approved by NYC DOB. Must be renewed every 4 years.
+    applies_to: construction
+    severity: mandatory
