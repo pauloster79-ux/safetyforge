@@ -33,7 +33,14 @@ export function DocumentListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewModeState] = useState<'grid' | 'table'>(() => {
+    const saved = localStorage.getItem('kerf_doc_view_mode');
+    return saved === 'table' ? 'table' : 'grid';
+  });
+  const setViewMode = (mode: 'grid' | 'table') => {
+    setViewModeState(mode);
+    localStorage.setItem('kerf_doc_view_mode', mode);
+  };
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const typeFilter = searchParams.get('type') || '';
@@ -78,7 +85,7 @@ export function DocumentListPage() {
 
   const handleTypeFilter = (value: string | null) => {
     const params = new URLSearchParams(searchParams);
-    if (value && value !== 'all') {
+    if (value && !value.startsWith('All')) {
       params.set('type', value);
     } else {
       params.delete('type');
@@ -88,7 +95,7 @@ export function DocumentListPage() {
 
   const handleStatusFilter = (value: string | null) => {
     const params = new URLSearchParams(searchParams);
-    if (value && value !== 'all') {
+    if (value && !value.startsWith('All')) {
       params.set('status', value);
     } else {
       params.delete('status');
@@ -139,12 +146,12 @@ export function DocumentListPage() {
         </div>
 
         <div className="flex gap-2">
-          <Select value={typeFilter || 'all'} onValueChange={handleTypeFilter}>
+          <Select value={typeFilter || 'All'} onValueChange={handleTypeFilter}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="All Types">All Types</SelectItem>
               {DOCUMENT_TYPES.map((type) => (
                 <SelectItem key={type.id} value={type.id}>
                   {type.name}
@@ -153,12 +160,12 @@ export function DocumentListPage() {
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter || 'all'} onValueChange={handleStatusFilter}>
+          <Select value={statusFilter || 'All'} onValueChange={handleStatusFilter}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="All Status">All Status</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="final">Final</SelectItem>
             </SelectContent>

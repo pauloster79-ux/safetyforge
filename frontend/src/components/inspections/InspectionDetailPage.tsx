@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   Calendar,
   Loader2,
   Printer,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useInspection } from '@/hooks/useInspections';
 import { ROUTES, INSPECTION_TYPES } from '@/lib/constants';
 import type { Inspection, InspectionItem } from '@/lib/constants';
+import { downloadPdf } from '@/lib/pdf';
 import { format } from 'date-fns';
 
 function OverallStatusBadge({ status }: { status: Inspection['overall_status'] }) {
@@ -91,6 +93,22 @@ export function InspectionDetailPage() {
     );
   }
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadPdf(
+        `/me/inspections/${inspectionId}/pdf`,
+        `Inspection-${inspection.inspection_type}-${inspection.inspection_date}.pdf`,
+      );
+    } catch {
+      // downloadPdf throws on failure; toast handled at caller if desired
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const typeName = INSPECTION_TYPES.find((t) => t.id === inspection.inspection_type)?.name || inspection.inspection_type;
   const passCount = inspection.items.filter((i) => i.status === 'pass').length;
   const failCount = inspection.items.filter((i) => i.status === 'fail').length;
@@ -124,10 +142,16 @@ export function InspectionDetailPage() {
           </div>
         </div>
 
-        <Button variant="outline" size="sm" disabled>
-          <Printer className="mr-2 h-4 w-4" />
-          Export PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={isDownloading}>
+            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Download PDF
+          </Button>
+        </div>
       </div>
 
       {/* Meta info */}

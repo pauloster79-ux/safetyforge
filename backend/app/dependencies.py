@@ -3,15 +3,21 @@
 import logging
 from typing import Annotated
 
-import firebase_admin
 from fastapi import Depends, Header, HTTPException, status
-from firebase_admin import auth, credentials
-from google.cloud import firestore
+from neo4j import Driver
 
 from app.config import Settings, get_settings
+from app.services.auth_service import (
+    ClerkAuthError,
+    ClerkTokenExpiredError,
+    verify_clerk_token,
+)
+from app.services.neo4j_client import get_sync_driver
+from app.services.agent_identity_service import AgentIdentityService
 from app.services.analytics_service import AnalyticsService
 from app.services.billing_service import BillingService
 from app.services.company_service import CompanyService
+from app.services.context_assembler import ContextAssemblerService
 from app.services.document_service import DocumentService
 from app.services.environmental_service import EnvironmentalService
 from app.services.equipment_service import EquipmentService
@@ -28,61 +34,37 @@ from app.services.mock_inspection_service import MockInspectionService
 from app.services.morning_brief_service import MorningBriefService
 from app.services.osha_log_service import OshaLogService
 from app.services.prequalification_service import PrequalificationService
+from app.services.project_assignment_service import ProjectAssignmentService
 from app.services.project_service import ProjectService
 from app.services.state_compliance_service import StateComplianceService
 from app.services.toolbox_talk_service import ToolboxTalkService
+from app.services.voice_service import VoiceService
 from app.services.worker_service import WorkerService
 
 logger = logging.getLogger(__name__)
 
-_firestore_client: firestore.Client | None = None
-_firebase_initialized: bool = False
 
-
-def _init_firebase(settings: Settings) -> None:
-    """Initialize Firebase Admin SDK if not already initialized."""
-    global _firebase_initialized
-    if _firebase_initialized:
-        return
-    try:
-        firebase_admin.get_app()
-    except ValueError:
-        firebase_admin.initialize_app(
-            credentials.ApplicationDefault(),
-            {"projectId": settings.google_cloud_project},
-        )
-    _firebase_initialized = True
-
-
-def get_firestore_client(
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> firestore.Client:
-    """Return a singleton Firestore client instance.
-
-    Args:
-        settings: Application settings with project configuration.
+def get_neo4j_driver() -> Driver:
+    """Return the Neo4j driver singleton.
 
     Returns:
-        A Firestore client connected to the configured project.
+        A Neo4j Driver with connection pooling.
     """
-    global _firestore_client
-    if _firestore_client is None:
-        _firestore_client = firestore.Client(project=settings.google_cloud_project)
-    return _firestore_client
+    return get_sync_driver()
 
 
 async def get_current_user(
     authorization: Annotated[str, Header()],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> dict:
-    """Verify Firebase ID token and return user information.
+    """Verify Clerk JWT and return user information.
 
     Extracts the Bearer token from the Authorization header, verifies it
-    against Firebase Auth, and returns the decoded user claims.
+    against Clerk's JWKS endpoint, and returns the decoded user claims.
 
     Args:
         authorization: The Authorization header value (Bearer <token>).
-        settings: Application settings for Firebase initialization.
+        settings: Application settings for Clerk configuration.
 
     Returns:
         A dict containing uid, email, and email_verified from the token.
@@ -103,145 +85,176 @@ async def get_current_user(
             detail="Token is missing from Authorization header",
         )
 
-    _init_firebase(settings)
-
     try:
-        decoded_token = auth.verify_id_token(token)
-    except auth.InvalidIdTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token",
-        )
-    except auth.ExpiredIdTokenError:
+        return verify_clerk_token(token, settings)
+    except ClerkTokenExpiredError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication token has expired",
         )
-    except auth.RevokedIdTokenError:
+    except ClerkAuthError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token has been revoked",
+            detail="Invalid authentication token",
         )
-    except Exception as exc:
-        logger.error("Unexpected error verifying Firebase token: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not verify authentication token",
-        )
-
-    return {
-        "uid": decoded_token["uid"],
-        "email": decoded_token.get("email", ""),
-        "email_verified": decoded_token.get("email_verified", False),
-    }
 
 
 def verify_company_access(
-    company_id: str, user_uid: str, db: firestore.Client
+    company_id: str, user_uid: str, driver: Driver
 ) -> None:
-    """Verify that a user has access to a company.
+    """Verify that a user or agent has access to a company.
+
+    Checks both human membership (created_by match) and agent identity
+    (BELONGS_TO relationship). Permission = traversability.
 
     Args:
         company_id: The company ID to check.
-        user_uid: The Firebase UID of the current user.
-        db: Firestore client.
+        user_uid: The Clerk user ID or agent_id of the caller.
+        driver: Neo4j driver.
 
     Raises:
-        HTTPException: 404 if the company doesn't exist, 403 if user lacks access.
+        HTTPException: 404 if the company doesn't exist, 403 if caller lacks access.
     """
-    company_ref = db.collection("companies").document(company_id)
-    company_doc = company_ref.get()
-    if not company_doc.exists:
+    with driver.session() as session:
+        result = session.run(
+            """
+            MATCH (c:Company {id: $company_id})
+            OPTIONAL MATCH (a:AgentIdentity {agent_id: $uid})-[:BELONGS_TO]->(c)
+            RETURN c.id AS id,
+                   c.created_by AS owner_uid,
+                   a.agent_id AS agent_id,
+                   a.status AS agent_status
+            """,
+            company_id=company_id,
+            uid=user_uid,
+        )
+        record = result.single()
+
+    if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Company not found: {company_id}",
         )
-    company_data = company_doc.to_dict()
-    if company_data.get("owner_uid") != user_uid:
+
+    # Agent access: BELONGS_TO relationship exists and agent is active
+    if record["agent_id"] is not None:
+        if record["agent_status"] != "active":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Agent is suspended or revoked",
+            )
+        return
+
+    # Human access: must be company owner
+    if record["owner_uid"] != user_uid:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have access to this company",
         )
 
 
-# -- Tier 1: Simple services (db only) ------------------------------------------
+# -- Agent services ---------------------------------------------------------------
+
+
+def get_agent_identity_service(
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
+) -> AgentIdentityService:
+    """Provide an AgentIdentityService instance."""
+    return AgentIdentityService(driver)
+
+
+# -- Tier 1: Simple services (Neo4j driver only) ----------------------------------
 
 
 def get_company_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> CompanyService:
     """Provide a CompanyService instance."""
-    return CompanyService(db)
+    return CompanyService(driver)
+
+
+def get_context_assembler(
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
+) -> ContextAssemblerService:
+    """Provide a ContextAssemblerService instance."""
+    return ContextAssemblerService(driver)
 
 
 def get_document_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> DocumentService:
     """Provide a DocumentService instance."""
-    return DocumentService(db)
+    return DocumentService(driver)
 
 
 def get_project_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> ProjectService:
     """Provide a ProjectService instance."""
-    return ProjectService(db)
+    return ProjectService(driver)
 
 
 def get_worker_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> WorkerService:
     """Provide a WorkerService instance."""
-    return WorkerService(db)
+    return WorkerService(driver)
 
 
 def get_inspection_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> InspectionService:
     """Provide an InspectionService instance."""
-    return InspectionService(db)
+    return InspectionService(driver)
 
 
 def get_toolbox_talk_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> ToolboxTalkService:
     """Provide a ToolboxTalkService instance."""
-    return ToolboxTalkService(db)
+    return ToolboxTalkService(driver)
 
 
 def get_osha_log_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> OshaLogService:
     """Provide an OshaLogService instance."""
-    return OshaLogService(db)
+    return OshaLogService(driver)
 
 
 def get_environmental_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> EnvironmentalService:
     """Provide an EnvironmentalService instance."""
-    return EnvironmentalService(db)
+    return EnvironmentalService(driver)
 
 
 def get_equipment_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> EquipmentService:
     """Provide an EquipmentService instance."""
-    return EquipmentService(db)
+    return EquipmentService(driver)
+
+
+def get_project_assignment_service(
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
+) -> ProjectAssignmentService:
+    """Provide a ProjectAssignmentService instance."""
+    return ProjectAssignmentService(driver)
 
 
 def get_member_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> MemberService:
     """Provide a MemberService instance."""
-    return MemberService(db)
+    return MemberService(driver)
 
 
 def get_invitation_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> InvitationService:
     """Provide an InvitationService instance."""
-    return InvitationService(db)
+    return InvitationService(driver)
 
 
 # -- Tier 2: Settings-only services ---------------------------------------------
@@ -261,23 +274,30 @@ def get_hazard_analysis_service(
     return HazardAnalysisService(settings)
 
 
-# -- Tier 3: db + settings services ----------------------------------------------
+def get_voice_service(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> VoiceService:
+    """Provide a VoiceService instance."""
+    return VoiceService(settings)
+
+
+# -- Tier 3: driver + settings services ------------------------------------------
 
 
 def get_billing_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> BillingService:
     """Provide a BillingService instance."""
-    return BillingService(db, settings)
+    return BillingService(driver, settings)
 
 
 def get_incident_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> IncidentService:
     """Provide an IncidentService instance."""
-    return IncidentService(db, settings)
+    return IncidentService(driver, settings)
 
 
 # -- Tier 4: Stateless services --------------------------------------------------
@@ -292,25 +312,25 @@ def get_inspection_template_service() -> InspectionTemplateService:
 
 
 def get_hazard_report_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     analysis_service: Annotated[HazardAnalysisService, Depends(get_hazard_analysis_service)],
 ) -> HazardReportService:
     """Provide a HazardReportService instance."""
-    return HazardReportService(db, analysis_service)
+    return HazardReportService(driver, analysis_service)
 
 
 def get_morning_brief_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     worker_service: Annotated[WorkerService, Depends(get_worker_service)],
     inspection_service: Annotated[InspectionService, Depends(get_inspection_service)],
     toolbox_talk_service: Annotated[ToolboxTalkService, Depends(get_toolbox_talk_service)],
 ) -> MorningBriefService:
     """Provide a MorningBriefService instance."""
-    return MorningBriefService(db, worker_service, inspection_service, toolbox_talk_service)
+    return MorningBriefService(driver, worker_service, inspection_service, toolbox_talk_service)
 
 
 def get_analytics_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     project_service: Annotated[ProjectService, Depends(get_project_service)],
     inspection_service: Annotated[InspectionService, Depends(get_inspection_service)],
     toolbox_talk_service: Annotated[ToolboxTalkService, Depends(get_toolbox_talk_service)],
@@ -319,13 +339,13 @@ def get_analytics_service(
 ) -> AnalyticsService:
     """Provide an AnalyticsService instance."""
     return AnalyticsService(
-        db, project_service, inspection_service, toolbox_talk_service,
+        driver, project_service, inspection_service, toolbox_talk_service,
         worker_service, osha_log_service,
     )
 
 
 def get_mock_inspection_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
     document_service: Annotated[DocumentService, Depends(get_document_service)],
     worker_service: Annotated[WorkerService, Depends(get_worker_service)],
@@ -336,13 +356,13 @@ def get_mock_inspection_service(
 ) -> MockInspectionService:
     """Provide a MockInspectionService instance."""
     return MockInspectionService(
-        db, settings, document_service, worker_service, project_service,
+        driver, settings, document_service, worker_service, project_service,
         inspection_service, toolbox_talk_service, osha_log_service,
     )
 
 
 def get_prequalification_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     document_service: Annotated[DocumentService, Depends(get_document_service)],
     osha_log_service: Annotated[OshaLogService, Depends(get_osha_log_service)],
@@ -351,13 +371,13 @@ def get_prequalification_service(
 ) -> PrequalificationService:
     """Provide a PrequalificationService instance."""
     return PrequalificationService(
-        db, company_service, document_service, osha_log_service,
+        driver, company_service, document_service, osha_log_service,
         worker_service, mock_inspection_service,
     )
 
 
 def get_gc_portal_service(
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     document_service: Annotated[DocumentService, Depends(get_document_service)],
     osha_log_service: Annotated[OshaLogService, Depends(get_osha_log_service)],
@@ -365,7 +385,7 @@ def get_gc_portal_service(
 ) -> GcPortalService:
     """Provide a GcPortalService instance."""
     return GcPortalService(
-        db, company_service, document_service, osha_log_service, worker_service,
+        driver, company_service, document_service, osha_log_service, worker_service,
     )
 
 

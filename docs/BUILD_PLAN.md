@@ -1,4 +1,4 @@
-# SafetyForge Build Plan
+# Kerf Build Plan
 
 *Version 1.0 -- 2026-03-31*
 
@@ -6,7 +6,7 @@
 
 ## OVERVIEW
 
-This document is the execution plan for SafetyForge from its current broken state to a revenue-generating product. It synthesizes four architecture documents (backend, frontend, infrastructure, product strategy) and a critical codebase audit into a sprint-by-sprint implementation guide. The current codebase has a working frontend shell with demo mode, a backend with document generation via Claude, and Firebase/Firestore infrastructure -- but the two halves do not talk to each other due to API path mismatches, data model mismatches, and missing entities. The goal is Phase 1 (paying customers) in 6 weeks and Phase 2 (intelligence layer) in 12 weeks.
+This document is the execution plan for Kerf from its current broken state to a revenue-generating product. It synthesizes four architecture documents (backend, frontend, infrastructure, product strategy) and a critical codebase audit into a sprint-by-sprint implementation guide. The current codebase has a working frontend shell with demo mode, a backend with document generation via Claude, and Firebase/Firestore infrastructure -- but the two halves do not talk to each other due to API path mismatches, data model mismatches, and missing entities. The goal is Phase 1 (paying customers) in 6 weeks and Phase 2 (intelligence layer) in 12 weeks.
 
 ---
 
@@ -364,7 +364,7 @@ Nothing else matters until step 1 is complete. A user who signs up, creates a do
 
 - **What:** Implement Cloud Storage upload for photos and audio files.
 - **Files to create:**
-  - `backend/app/services/storage_service.py` -- `StorageService` with: `upload_photo(company_id, path_prefix, file) -> (url, thumbnail_url)`, `upload_audio(company_id, path_prefix, file) -> url`, `generate_signed_url(gcs_path, expiry_minutes) -> str`. Uses `google-cloud-storage` SDK. Bucket: `safetyforge-photos` for images, `safetyforge-audio` for voice.
+  - `backend/app/services/storage_service.py` -- `StorageService` with: `upload_photo(company_id, path_prefix, file) -> (url, thumbnail_url)`, `upload_audio(company_id, path_prefix, file) -> url`, `generate_signed_url(gcs_path, expiry_minutes) -> str`. Uses `google-cloud-storage` SDK. Bucket: `kerf-photos` for images, `kerf-audio` for voice.
 - **Files to modify:**
   - `backend/app/dependencies.py` -- Add `get_storage_service()`.
   - `backend/requirements.txt` or `pyproject.toml` -- Add `google-cloud-storage`.
@@ -1045,4 +1045,4 @@ Every task across all sprints must meet these criteria before it is considered d
 
 ---
 
-*This document is the execution authority for SafetyForge development. Every sprint, every task, every file path traces back to the architecture documents and product strategy. If a task is not in this plan, it does not get built until the plan is updated.*
+*This document is the execution authority for Kerf development. Every sprint, every task, every file path traces back to the architecture documents and product strategy. If a task is not in this plan, it does not get built until the plan is updated.*

@@ -4,7 +4,7 @@ dev:
 	docker compose up --build
 
 test-backend:
-	cd backend && FIRESTORE_EMULATOR_HOST=localhost:8080 GOOGLE_CLOUD_PROJECT=test-project ENVIRONMENT=test pytest -v
+	cd backend && ENVIRONMENT=test pytest -v
 
 lint:
 	cd backend && ruff check . && ruff format --check .

@@ -1,8 +1,8 @@
-# SafetyForge Frontend Architecture
+# Kerf Frontend Architecture
 
 *Last updated: 2026-03-31*
 
-This document is the definitive frontend architecture blueprint for SafetyForge. Every component, route, type, and pattern defined here traces back to the product strategy and vision. Engineers build from this document; deviations require an ADR.
+This document is the definitive frontend architecture blueprint for Kerf. Every component, route, type, and pattern defined here traces back to the product strategy and vision. Engineers build from this document; deviations require an ADR.
 
 ---
 
@@ -1823,7 +1823,7 @@ interface QueuedMutation {
 
 // Stores in IndexedDB, processes on reconnect
 export class OfflineQueue {
-  private dbName = 'safetyforge_offline';
+  private dbName = 'kerf_offline';
   private storeName = 'mutations';
 
   async enqueue(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'retries'>): Promise<void> {
@@ -1869,7 +1869,7 @@ export class OfflineQueue {
 
 ## 6. MOBILE-FIRST / FIELD-FIRST DESIGN
 
-This is the most critical architectural decision in SafetyForge. The primary user (Marco the foreman) works outdoors in sun, rain, dust, and noise with gloves on.
+This is the most critical architectural decision in Kerf. The primary user (Marco the foreman) works outdoors in sun, rain, dust, and noise with gloves on.
 
 ### Responsive breakpoints
 
@@ -2242,7 +2242,7 @@ For now, no RTL code ships. The architecture supports it without rework.
 
 ### Design system principles
 
-SafetyForge extends shadcn/ui with construction-safety-specific components. All primitives come from shadcn/ui. All business components compose shadcn primitives.
+Kerf extends shadcn/ui with construction-safety-specific components. All primitives come from shadcn/ui. All business components compose shadcn primitives.
 
 **Color system:**
 

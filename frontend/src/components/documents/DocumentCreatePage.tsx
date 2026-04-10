@@ -23,6 +23,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useCreateDocument, useGenerateDocument } from '@/hooks/useDocuments';
 import { ROUTES, DOCUMENT_TYPES, type DocumentTypeConfig } from '@/lib/constants';
@@ -64,6 +72,8 @@ export function DocumentCreatePage() {
   );
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [generationMessage, setGenerationMessage] = useState(0);
+  const [pendingType, setPendingType] = useState<DocumentTypeConfig | null>(null);
+  const [showTypeChangeDialog, setShowTypeChangeDialog] = useState(false);
 
   const createDocument = useCreateDocument();
   const generateDocument = useGenerateDocument();
@@ -82,10 +92,32 @@ export function DocumentCreatePage() {
     return () => clearInterval(interval);
   }, [isGenerating]);
 
+  const hasFilledFields = Object.values(fieldValues).some((v) => v.trim());
+
   const handleSelectType = (type: DocumentTypeConfig) => {
+    if (selectedType && selectedType.id !== type.id && hasFilledFields) {
+      setPendingType(type);
+      setShowTypeChangeDialog(true);
+      return;
+    }
     setSelectedType(type);
     setFieldValues({});
     setStep(2);
+  };
+
+  const confirmTypeChange = () => {
+    if (pendingType) {
+      setSelectedType(pendingType);
+      setFieldValues({});
+      setStep(2);
+    }
+    setPendingType(null);
+    setShowTypeChangeDialog(false);
+  };
+
+  const cancelTypeChange = () => {
+    setPendingType(null);
+    setShowTypeChangeDialog(false);
   };
 
   const handleFieldChange = (fieldId: string, value: string) => {
@@ -377,6 +409,29 @@ export function DocumentCreatePage() {
       {step === 1 && renderTypeSelection()}
       {step === 2 && renderFieldForm()}
       {step === 3 && renderGenerating()}
+
+      {/* Confirmation dialog when changing type after filling fields */}
+      <Dialog open={showTypeChangeDialog} onOpenChange={setShowTypeChangeDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Document Type?</DialogTitle>
+            <DialogDescription>
+              You have already filled in some fields. Changing the document type will clear all entered data. Do you want to continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelTypeChange}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-primary hover:bg-[var(--machine-dark)]"
+              onClick={confirmTypeChange}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

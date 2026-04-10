@@ -37,6 +37,15 @@ class SubscriptionInfo(BaseModel):
     cancel_at_period_end: bool = Field(
         default=False, description="Whether the subscription cancels at period end"
     )
+    is_trial: bool = Field(
+        default=False, description="Whether the company is in a free trial period"
+    )
+    trial_days_remaining: int | None = Field(
+        default=None, description="Days remaining in the trial, None if not on trial"
+    )
+    trial_end_date: datetime | None = Field(
+        default=None, description="When the trial period ends"
+    )
 
 
 class PaddleWebhookPayload(BaseModel):

@@ -1,6 +1,5 @@
 import { toast } from 'sonner';
-import { auth, isConfigured } from './firebase';
-import { DEMO_DOCUMENTS, DEMO_COMPANY, DEMO_STATS, DEMO_PROJECTS, DEMO_INSPECTIONS, DEMO_TOOLBOX_TALKS, DEMO_WORKERS, DEMO_OSHA_ENTRIES, DEMO_OSHA_SUMMARY, DEMO_MOCK_INSPECTION, DEMO_MOCK_INSPECTION_RESULTS, DEMO_HAZARD_REPORTS, DEMO_MORNING_BRIEF, DEMO_MORNING_BRIEF_HISTORY, DEMO_INCIDENTS, DEMO_ANALYTICS, DEMO_PREQUAL_PACKAGES, DEMO_PREQUAL_REQUIREMENTS, DEMO_GC_RELATIONSHIPS, DEMO_SUB_COMPLIANCE, DEMO_STATE_REQUIREMENTS, DEMO_STATE_COMPLIANCE_RESULTS, DEMO_ENVIRONMENTAL_PROGRAMS, DEMO_EXPOSURE_RECORDS, DEMO_SWPPP_INSPECTIONS, DEMO_EQUIPMENT, DEMO_EQUIPMENT_INSPECTIONS } from './demo-data';
+import { DEMO_DOCUMENTS, DEMO_COMPANY, DEMO_STATS, DEMO_PROJECTS, DEMO_INSPECTIONS, DEMO_TOOLBOX_TALKS, DEMO_WORKERS, DEMO_OSHA_ENTRIES, DEMO_OSHA_SUMMARY, DEMO_MOCK_INSPECTION, DEMO_MOCK_INSPECTION_RESULTS, DEMO_HAZARD_REPORTS, DEMO_MORNING_BRIEF, DEMO_MORNING_BRIEF_HISTORY, DEMO_INCIDENTS, DEMO_ANALYTICS, DEMO_PREQUAL_PACKAGES, DEMO_PREQUAL_REQUIREMENTS, DEMO_GC_RELATIONSHIPS, DEMO_SUB_COMPLIANCE, DEMO_STATE_REQUIREMENTS, DEMO_STATE_COMPLIANCE_RESULTS, DEMO_ENVIRONMENTAL_PROGRAMS, DEMO_EXPOSURE_RECORDS, DEMO_SWPPP_INSPECTIONS, DEMO_EQUIPMENT, DEMO_EQUIPMENT_INSPECTIONS, DEMO_PROJECT_ASSIGNMENTS } from './demo-data';
 import { DAILY_SITE_INSPECTION_TEMPLATE, CERTIFICATION_TYPES } from './constants';
 import type { Certification } from './constants';
 
@@ -23,11 +22,45 @@ class ApiError extends Error {
 }
 
 function isDemoMode(): boolean {
-  return sessionStorage.getItem('safetyforge_demo') === 'true';
+  return sessionStorage.getItem('kerf_demo') === 'true';
 }
 
 // Demo mode API responses — returns fake data for all endpoints
 function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown): T {
+  // ---- Voice Routes ----
+
+  // Transcribe audio
+  if (endpoint.match(/\/me\/voice\/transcribe/) && method === 'POST') {
+    return {
+      transcript: 'Scaffolding on level 2 looks good, guardrails in place, planking secure. Moving to electrical — I see an open junction box near the east stairwell, no cover plate. Housekeeping is good, walkways are clear.',
+    } as T;
+  }
+
+  // Parse inspection from transcript
+  if (endpoint.match(/\/me\/voice\/parse-inspection/) && method === 'POST') {
+    return {
+      items: [
+        { item_id: 'ds_01', category: 'Scaffolding', description: 'Scaffolding on level 2', status: 'pass', notes: 'Guardrails in place, planking secure' },
+        { item_id: 'ds_02', category: 'Electrical', description: 'Junction box near east stairwell', status: 'fail', notes: 'Open junction box, no cover plate' },
+        { item_id: 'ds_03', category: 'Housekeeping', description: 'Walkways and work areas', status: 'pass', notes: 'Walkways clear' },
+      ],
+      notes: 'Level 2 inspection complete. One electrical issue found.',
+      corrective_actions: 'Install cover plate on junction box near east stairwell before end of shift.',
+    } as T;
+  }
+
+  // Parse incident from transcript
+  if (endpoint.match(/\/me\/voice\/parse-incident/) && method === 'POST') {
+    return {
+      location: 'Level 3, near the HVAC shaft',
+      severity: 'near_miss',
+      description: 'A wrench fell approximately 15 feet from the scaffold platform. No workers were in the drop zone at the time. The tool was not tethered.',
+      persons_involved: 'James Wilson (scaffold crew)',
+      witnesses: 'Maria Rodriguez (site supervisor)',
+      immediate_actions_taken: 'Area cordoned off, tool tethering policy reviewed with scaffold crew, all tools inspected for tethering.',
+    } as T;
+  }
+
   // ---- Environmental Compliance Routes ----
 
   // Environmental programs list
@@ -288,6 +321,67 @@ function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown):
     };
     DEMO_EQUIPMENT.unshift(newEquip as typeof DEMO_EQUIPMENT[0]);
     return newEquip as T;
+  }
+
+  // ---- Project Assignments ----
+
+  // Single assignment GET/PATCH/DELETE
+  const asgnMatch = endpoint.match(/\/me\/assignments\/([^/?]+)$/);
+  if (asgnMatch && (method === 'GET' || method === 'PATCH' || method === 'DELETE')) {
+    if (method === 'DELETE') {
+      const idx = DEMO_PROJECT_ASSIGNMENTS.findIndex(a => a.id === asgnMatch[1]);
+      if (idx !== -1) DEMO_PROJECT_ASSIGNMENTS.splice(idx, 1);
+      return undefined as T;
+    }
+    if (method === 'PATCH') {
+      const payload = body as Record<string, unknown>;
+      const idx = DEMO_PROJECT_ASSIGNMENTS.findIndex(a => a.id === asgnMatch[1]);
+      if (idx !== -1) {
+        DEMO_PROJECT_ASSIGNMENTS[idx] = { ...DEMO_PROJECT_ASSIGNMENTS[idx], ...payload, updated_at: new Date().toISOString() } as typeof DEMO_PROJECT_ASSIGNMENTS[0];
+        return DEMO_PROJECT_ASSIGNMENTS[idx] as T;
+      }
+    }
+    const asgn = DEMO_PROJECT_ASSIGNMENTS.find(a => a.id === asgnMatch[1]);
+    if (asgn) return asgn as T;
+    return DEMO_PROJECT_ASSIGNMENTS[0] as T;
+  }
+
+  // List assignments (global or per-project)
+  if ((endpoint.match(/\/me\/assignments/) || endpoint.match(/\/me\/projects\/[^/]+\/assignments/)) && method === 'GET') {
+    const url = new URL(endpoint, 'http://localhost');
+    const projectId = url.searchParams.get('project_id') || endpoint.match(/\/me\/projects\/([^/]+)\/assignments/)?.[1];
+    const resourceType = url.searchParams.get('resource_type');
+    const resourceId = url.searchParams.get('resource_id');
+    const statusFilter = url.searchParams.get('status');
+    let items = [...DEMO_PROJECT_ASSIGNMENTS];
+    if (projectId) items = items.filter(a => a.project_id === projectId);
+    if (resourceType) items = items.filter(a => a.resource_type === resourceType);
+    if (resourceId) items = items.filter(a => a.resource_id === resourceId);
+    if (statusFilter) items = items.filter(a => a.status === statusFilter);
+    return { assignments: items, total: items.length } as T;
+  }
+
+  // Create assignment
+  if (endpoint.match(/\/me\/assignments/) && method === 'POST') {
+    const payload = body as Record<string, unknown>;
+    const newAsgn = {
+      id: 'asgn_' + Date.now(),
+      company_id: 'demo_company_001',
+      resource_type: (payload.resource_type as string) || 'worker',
+      resource_id: (payload.resource_id as string) || '',
+      project_id: (payload.project_id as string) || '',
+      role: (payload.role as string) || null,
+      start_date: (payload.start_date as string) || new Date().toISOString().split('T')[0],
+      end_date: (payload.end_date as string) || null,
+      status: (payload.status as string) || 'active',
+      notes: (payload.notes as string) || null,
+      created_at: new Date().toISOString(),
+      created_by: 'demo_user_001',
+      updated_at: new Date().toISOString(),
+      updated_by: 'demo_user_001',
+    };
+    DEMO_PROJECT_ASSIGNMENTS.unshift(newAsgn as typeof DEMO_PROJECT_ASSIGNMENTS[0]);
+    return newAsgn as T;
   }
 
   // ---- Analytics Routes ----
@@ -1214,6 +1308,9 @@ function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown):
       max_projects: 1,
       renewal_date: null,
       features: ['Limited document generation'],
+      is_trial: true,
+      trial_days_remaining: 12,
+      trial_end_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
     } as T;
   }
 
@@ -1222,16 +1319,45 @@ function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown):
     return [] as T;
   }
 
+  // Members
+  if (endpoint.match(/\/me\/members\/invitations/) && method === 'GET') {
+    return [] as T;
+  }
+  if (endpoint.match(/\/me\/members/) && method === 'GET') {
+    return [
+      {
+        id: 'mem_001',
+        company_id: 'demo_company',
+        uid: 'demo_user_001',
+        email: 'demo@kerf.build',
+        display_name: 'Demo Contractor',
+        role: 'owner',
+        invited_by: null,
+        joined_at: '2026-03-15T10:00:00Z',
+        created_at: '2026-03-15T10:00:00Z',
+        updated_at: '2026-03-15T10:00:00Z',
+      },
+    ] as T;
+  }
+
   // Default fallback
   return {} as T;
 }
 
+/**
+ * Token getter injected by the auth provider at runtime.
+ * This avoids a circular dependency between api.ts and Clerk hooks.
+ */
+let _tokenGetter: (() => Promise<string | null>) | null = null;
+
+export function setTokenGetter(getter: () => Promise<string | null>): void {
+  _tokenGetter = getter;
+}
+
 async function getAuthToken(): Promise<string | null> {
   if (isDemoMode()) return 'demo-token';
-  if (!isConfigured || !auth) return null;
-  const user = auth.currentUser;
-  if (!user) return null;
-  return user.getIdToken();
+  if (_tokenGetter) return _tokenGetter();
+  return null;
 }
 
 async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
@@ -1288,10 +1414,18 @@ async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T
       errorData = null;
     }
 
-    const errorMessage =
-      (errorData && typeof errorData === 'object' && 'detail' in errorData
-        ? String((errorData as { detail: unknown }).detail)
-        : null) || `API Error: ${response.statusText}`;
+    let errorMessage = `API Error: ${response.statusText}`;
+    if (errorData && typeof errorData === 'object' && 'detail' in errorData) {
+      const detail = (errorData as { detail: unknown }).detail;
+      if (typeof detail === 'string') {
+        errorMessage = detail;
+      } else if (Array.isArray(detail)) {
+        // FastAPI validation errors return [{msg, loc, type}, ...]
+        errorMessage = detail.map((e: { msg?: string }) => e.msg || String(e)).join(', ');
+      } else {
+        errorMessage = JSON.stringify(detail);
+      }
+    }
 
     if (response.status === 402) {
       toast.error('Please upgrade your plan to access this feature');

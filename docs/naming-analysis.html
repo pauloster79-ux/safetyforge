@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf Naming Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: #f4f5f3;
+    --foreground: #0d0e0c;
+    --card: #ffffff;
+    --primary: #F5B800;
+    --primary-foreground: #0d0e0c;
+    --muted: #e6e8e3;
+    --muted-foreground: #71766b;
+    --border: #e6e8e3;
+    --pass: #2d8a4e;
+    --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030;
+    --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b;
+    --warn-bg: rgba(184,134,11,0.08);
+    --machine-wash: rgba(245,184,0,0.1);
+    --machine-dark: #D9A200;
+    --concrete-50: #f8f8f7;
+    --concrete-500: #71766b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  .page-wrapper { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 210px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+  }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-bottom: 24px; }
+  .sidebar-logo-icon { width: 32px; height: 32px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo-icon svg { width: 18px; height: 18px; fill: var(--foreground); }
+  .sidebar-logo-text { font-weight: 600; font-size: 15px; }
+  .sidebar-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted-foreground); padding: 0 8px; margin: 20px 0 8px; }
+  .sidebar-nav { list-style: none; }
+  .sidebar-nav li a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; font-size: 13px; font-weight: 500; color: var(--concrete-500); text-decoration: none; border-radius: 4px; border-left: 2px solid transparent; transition: all 0.15s; }
+  .sidebar-nav li a:hover { color: var(--foreground); background: var(--muted); }
+  .sidebar-nav li a.active { background: var(--machine-wash); border-left-color: var(--primary); color: var(--foreground); font-weight: 600; }
+
+  /* MAIN */
+  .main-content { margin-left: 210px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--card); }
+  .page-header h1 { font-size: 18px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; background: var(--machine-wash); color: var(--machine-dark); font-family: 'IBM Plex Mono', monospace; }
+  .content-area { flex: 1; padding: 24px; overflow-y: auto; }
+  .page-footer { border-top: 1px solid var(--border); background: var(--card); padding: 10px 24px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted-foreground); text-align: center; }
+
+  /* CARDS */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 3px; margin-bottom: 16px; }
+  .card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--concrete-50); }
+  .card-header h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card-body { padding: 16px; }
+  .card-pass { border-left: 3px solid var(--pass); }
+  .card-fail { border-left: 3px solid var(--fail); }
+  .card-warn { border-left: 3px solid var(--warn); }
+  .card-primary { border-left: 3px solid var(--primary); }
+
+  /* SECTIONS */
+  .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-foreground); margin-bottom: 6px; }
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .section { margin-bottom: 40px; }
+  h3.sub { font-size: 14px; font-weight: 600; margin: 24px 0 12px; }
+  p { margin-bottom: 12px; line-height: 1.65; }
+  ul, ol { margin: 8px 0 12px 20px; font-size: 13px; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--foreground); font-weight: 600; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+  thead th { text-align: left; padding: 8px 10px; font-weight: 600; border-bottom: 2px solid var(--border); background: var(--concrete-50); font-size: 12px; white-space: nowrap; }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: rgba(245,184,0,0.03); }
+
+  /* TAGS */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; }
+  .tag-pass { background: var(--pass-bg); color: var(--pass); }
+  .tag-fail { background: var(--fail-bg); color: var(--fail); }
+  .tag-warn { background: var(--warn-bg); color: var(--warn); }
+  .tag-primary { background: var(--machine-wash); color: var(--machine-dark); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* PERSONAS */
+  .persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
+  .persona { background: var(--card); border: 1px solid var(--border); border-radius: 3px; padding: 12px; }
+  .persona .role { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-foreground); margin-bottom: 4px; }
+  .persona .reaction { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .persona p { font-size: 12px; color: var(--muted-foreground); margin: 0; }
+  .persona-pass { border-left: 3px solid var(--pass); }
+  .persona-fail { border-left: 3px solid var(--fail); }
+
+  /* NAME CARDS */
+  .name-card { background: var(--card); border: 1px solid var(--border); border-radius: 3px; padding: 16px; margin-bottom: 12px; display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: start; }
+  .name-card .name-label { font-size: 18px; font-weight: 700; }
+  .name-card .name-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted-foreground); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .name-card .name-desc { font-size: 13px; line-height: 1.6; }
+  .name-card .name-scores { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--muted-foreground); }
+  .name-card-t1 { border-left: 3px solid var(--pass); }
+  .name-card-t2 { border-left: 3px solid var(--primary); }
+  .name-card-t3 { border-left: 3px solid var(--muted-foreground); }
+
+  .tier-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .tier-1 { background: var(--pass-bg); color: var(--pass); }
+  .tier-2 { background: var(--machine-wash); color: var(--machine-dark); }
+  .tier-3 { background: var(--warn-bg); color: var(--warn); }
+
+  .callout { background: var(--machine-wash); border-left: 3px solid var(--primary); border-radius: 3px; padding: 12px 16px; margin: 16px 0; font-size: 13px; }
+  .callout-red { background: var(--fail-bg); border-left-color: var(--fail); }
+
+  .verdict-box { background: var(--card); border: 2px solid var(--primary); border-radius: 3px; padding: 24px; margin: 24px 0; }
+  .verdict-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  .quote { background: var(--concrete-50); border-left: 3px solid var(--muted-foreground); padding: 12px 16px; margin: 12px 0; font-style: italic; font-size: 13px; color: var(--concrete-500); }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .name-card { grid-template-columns: 1fr; }
+    .content-area { padding: 16px; }
+    .persona-grid { grid-template-columns: 1fr; }
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #a3a79c; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #71766b; }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18l6 3.33v6.98l-6 3.33-6-3.33V7.51l6-3.33z"/></svg></div>
+      <span class="sidebar-logo-text">Kerf</span>
+    </div>
+    <div class="sidebar-section-label">Context</div>
+    <ul class="sidebar-nav">
+      <li><a href="#starting-point" class="active">Starting Point</a></li>
+      <li><a href="#worker-lens">The Worker Lens</a></li>
+      <li><a href="#market">Market Evidence</a></li>
+    </ul>
+    <div class="sidebar-section-label">The Name</div>
+    <ul class="sidebar-nav">
+      <li><a href="#kerf">Kerf Verdict</a></li>
+      <li><a href="#graveyard">Name Graveyard</a></li>
+      <li><a href="#survivors">What Survived</a></li>
+    </ul>
+    <div class="sidebar-section-label">Decision</div>
+    <ul class="sidebar-nav">
+      <li><a href="#recommendation">Recommendation</a></li>
+      <li><a href="#transition">Transition Plan</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>Naming Analysis</h1>
+      <span class="badge">PRE-LAUNCH &bull; ZERO BRAND EQUITY</span>
+    </div>
+
+    <div class="content-area">
+
+      <!-- ======== STARTING POINT ======== -->
+      <div class="section" id="starting-point">
+        <div class="section-label">Context</div>
+        <div class="section-title">Starting Point</div>
+
+        <div class="callout">
+          <strong>This app has not launched. There are no customers, no brand equity, no SEO to protect.</strong> The name choice has zero switching cost. We're choosing the launch name, not rebranding.
+        </div>
+
+        <p>Kerf is a construction operations platform: safety inspections, incident reporting, hazard reports, toolbox talks, OSHA compliance, environmental monitoring, equipment management, worker management, project management, voice transcription, AI document generation. The product architecture is already broader than "safety" &mdash; it's a full construction ops platform that started with safety as the entry point.</p>
+
+        <p>The question: should the <em>launch name</em> be Kerf, or something that matches the actual scope of the product?</p>
+      </div>
+
+      <!-- ======== WORKER LENS ======== -->
+      <div class="section" id="worker-lens">
+        <div class="section-label">The Most Important Perspective</div>
+        <div class="section-title">How Construction Workers Actually Think About Software</div>
+
+        <div class="card card-primary">
+          <div class="card-header"><h3>What the research found</h3></div>
+          <div class="card-body">
+            <p>91% of B2B construction purchases are influenced by word-of-mouth. The primary discovery channel is a superintendent or PM telling another one "you need this." The name needs to survive being yelled across a jobsite, texted with gloves on, and recommended in a trailer over coffee.</p>
+          </div>
+        </div>
+
+        <h3 class="sub">What workers respect in a name</h3>
+        <div class="persona-grid">
+          <div class="persona persona-pass">
+            <div class="role">Directness</div>
+            <div class="reaction">No BS, no fluff</div>
+            <p>Say what you mean. Don't try to sound smarter than the user.</p>
+          </div>
+          <div class="persona persona-pass">
+            <div class="role">Durability</div>
+            <div class="reaction">Sounds like it can take a hit</div>
+            <p>The name should feel physical, not corporate.</p>
+          </div>
+          <div class="persona persona-pass">
+            <div class="role">Brevity</div>
+            <div class="reaction">Two syllables max</div>
+            <p>They have 30 seconds between tasks. Long names get shortened or replaced with "the app."</p>
+          </div>
+          <div class="persona persona-pass">
+            <div class="role">Realness</div>
+            <div class="reaction">Exists in the physical world</div>
+            <p>Should sound like something on a jobsite, not in a pitch deck.</p>
+          </div>
+        </div>
+
+        <h3 class="sub">What workers would mock</h3>
+        <ul>
+          <li>Anything ending in "-ify," "-ly," "-io"</li>
+          <li>Anything with "smart," "AI," "360," "Hub," "Cloud," or "Suite" in it</li>
+          <li>Cutesy misspellings (Buildr, Safetyy)</li>
+          <li>Anything that needs a TED talk to explain</li>
+          <li>Anything that sounds like "another way to get the field guys to do office work"</li>
+        </ul>
+
+        <div class="quote">
+          "This app development is such an office move. It's a nightmare for field workers. It's another way to get the field guys to do most of the office work. Taking away focus from actual field work."
+          <br><span style="font-style:normal; font-size:11px; color:var(--muted-foreground);">&mdash; Construction worker review, Capterra</span>
+        </div>
+
+        <h3 class="sub">The tool brand playbook, not the SaaS playbook</h3>
+        <p>Construction workers are loyal to tool brands: DeWalt, Milwaukee, Hilti, Makita, Bosch, Klein, STIHL. These names share patterns that SaaS names don't follow.</p>
+
+        <table>
+          <thead><tr><th>Tool Brand Pattern</th><th>SaaS Pattern (avoid)</th></tr></thead>
+          <tbody>
+            <tr><td>Short: 1-2 syllables (Bosch, Klein, Hilti, DeWalt)</td><td>Compound descriptors: PlanGrid, BuildOps, FieldWire</td></tr>
+            <tr><td>Proper-noun feeling: sounds like a name, not a description</td><td>Function-in-name: SafetyCulture, TimeKeeper, ProjectPay</td></tr>
+            <tr><td>Consonant-heavy, punchy sounds (K, T, B, D)</td><td>Soft/generic sounds (-flow, -sync, -hub)</td></tr>
+            <tr><td>No function described: STIHL doesn't say "chainsaw"</td><td>Category declared: Buildertrend says "builders only"</td></tr>
+            <tr><td>Earned meaning through quality, not marketing</td><td>Tries to sound big before earning it</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>The insight:</strong> Software names that follow tool brand patterns (short, physical, consonant-heavy, no function described) will feel native to construction workers. Names that follow SaaS patterns will trigger the "office move" reflex.
+        </div>
+
+        <h3 class="sub">The jobsite test</h3>
+        <p>Every candidate name must pass this test: <strong>"Pull it up on [Name]"</strong> said by a foreman on a concrete pour with a pump truck running. If the listener can't parse it, the name fails. Hard plosive consonants (B, D, G, K, P, T) cut through diesel generators and impact drivers. Soft fricatives (S, F, H) and sibilants get swallowed.</p>
+
+        <p>Names that work on a jobsite: <strong>Procore</strong> (hard P, K), <strong>Raken</strong> (hard R, K), <strong>Bluebeam</strong> (hard B, B). Names that struggle: Kerf (soft S, soft F), SafetyCulture (5 syllables).</p>
+      </div>
+
+      <!-- ======== MARKET ======== -->
+      <div class="section" id="market">
+        <div class="section-label">Evidence</div>
+        <div class="section-title">What the Market Data Says</div>
+
+        <h3 class="sub">Winner naming patterns</h3>
+        <table>
+          <thead><tr><th>Company</th><th>Valuation</th><th>Name Type</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Procore</strong></td><td>~$8.7B</td><td><span class="tag tag-pass">Abstract</span></td><td>Coined word. Never limited by function. Platform from day one</td></tr>
+            <tr><td><strong>Trimble</strong></td><td>~$15B</td><td><span class="tag tag-pass">Abstract</span></td><td>Proper noun. Zero category signal. Infinite expansion</td></tr>
+            <tr><td><strong>SafetyCulture</strong></td><td>~$2.5B</td><td><span class="tag tag-warn">Descriptive</span></td><td>Expanding beyond safety, but marketing now fights the name</td></tr>
+            <tr><td><strong>PlanGrid</strong></td><td>$875M acq.</td><td><span class="tag tag-fail">Feature-specific</span></td><td>Never became a platform. Absorbed into Autodesk Build</td></tr>
+            <tr><td><strong>eSUB</strong></td><td>Private</td><td><span class="tag tag-fail">Audience-specific</span></td><td>Locked into subcontractors. GCs assume it's not for them</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>Zero</strong> construction tech companies with a function-specific name have independently reached $1B+. Every company above $1B has an abstract or coined name.
+        </div>
+
+        <h3 class="sub">The buyer routing problem</h3>
+        <p>The name determines which desk your product lands on and which budget pays for it.</p>
+
+        <table>
+          <thead><tr><th>Name signals...</th><th>Lands on desk of...</th><th>Budget range</th></tr></thead>
+          <tbody>
+            <tr><td>"Safety" software</td><td>Safety Director (cost centre)</td><td>$5K &ndash; $50K/yr</td></tr>
+            <tr><td>Construction operations platform</td><td>Owner / VP Ops</td><td>$50K &ndash; $500K+/yr</td></tr>
+          </tbody>
+        </table>
+
+        <div class="grid-2">
+          <div class="card card-fail">
+            <div class="card-header"><h3>Hears "Kerf"</h3></div>
+            <div class="card-body">
+              <ul>
+                <li><strong>PM:</strong> "That's the safety team's thing, not mine"</li>
+                <li><strong>Owner:</strong> "Departmental tool. What's it cost?"</li>
+                <li><strong>CFO:</strong> "Safety compliance line item"</li>
+                <li><strong>Worker:</strong> "The safety app" (uses it minimally)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="card card-pass">
+            <div class="card-header"><h3>Hears a platform name</h3></div>
+            <div class="card-body">
+              <ul>
+                <li><strong>PM:</strong> "That's the jobsite tool. Let me check it"</li>
+                <li><strong>Owner:</strong> "Operations tool. Could replace 3 apps"</li>
+                <li><strong>CFO:</strong> "Platform spend. Consolidation value"</li>
+                <li><strong>Worker:</strong> "The app" (uses it for everything)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== KERF VERDICT ======== -->
+      <div class="section" id="kerf">
+        <div class="section-label">The Current Name</div>
+        <div class="section-title">Kerf: The Verdict</div>
+
+        <table>
+          <thead><tr><th>Test</th><th>Result</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td>Jobsite noise test</td><td><span class="tag tag-fail">C-</span></td><td>Sibilant S + fricative F swallowed by equipment noise</td></tr>
+            <tr><td>Syllable count</td><td><span class="tag tag-warn">3-4</span></td><td>Ambiguous parsing. Winners average 2 syllables</td></tr>
+            <tr><td>Verb test</td><td><span class="tag tag-fail">Fail</span></td><td>"Forge it" sounds like "Forget." "Kerf that" is unspeakable</td></tr>
+            <tr><td>Abbreviation</td><td><span class="tag tag-fail">Fail</span></td><td>"SF" collides with San Francisco + Salesforce</td></tr>
+            <tr><td>Forgery connotation</td><td><span class="tag tag-fail">Risk</span></td><td>"Forging safety records" = fabricating compliance docs. Heard by the exact buyer</td></tr>
+            <tr><td>UK market</td><td><span class="tag tag-fail">Risk</span></td><td>"Health &amp; Safety" has cultural baggage. "Forge" = "to fake" in British English</td></tr>
+            <tr><td>Buyer routing</td><td><span class="tag tag-fail">Fail</span></td><td>Routes to Safety Director desk ($5-50K budget), not Owner/VP Ops ($50-500K+)</td></tr>
+            <tr><td>Worker perception</td><td><span class="tag tag-warn">Meh</span></td><td>Sounds like enterprise software, not a tool they'd choose</td></tr>
+            <tr><td>Expansion potential</td><td><span class="tag tag-fail">Fail</span></td><td>Every non-safety feature fights the name for attention</td></tr>
+          </tbody>
+        </table>
+
+        <div class="card card-fail">
+          <div class="card-header"><h3>The "Forge" problem in detail</h3></div>
+          <div class="card-body">
+            <table>
+              <thead><tr><th>Meaning</th><th>Connotation</th><th>Who hears it?</th></tr></thead>
+              <tbody>
+                <tr><td>Metalworking forge</td><td><span class="tag tag-pass">Positive</span></td><td>Superintendents, field workers</td></tr>
+                <tr><td>Forge ahead</td><td><span class="tag tag-pass">Positive</span></td><td>General audience</td></tr>
+                <tr><td>Forge a document</td><td><span class="tag tag-fail">Dangerous</span></td><td><strong>Compliance officers and safety directors</strong> &mdash; the exact target buyer</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:12px; margin-bottom:0; font-size:12px; color:var(--muted-foreground);">Autodesk abandoned their "Forge" branding (now "Autodesk Platform Services"). They were in the exact same industry.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== GRAVEYARD ======== -->
+      <div class="section" id="graveyard">
+        <div class="section-label">Research Findings</div>
+        <div class="section-title">The Name Graveyard</div>
+        <p>We researched 25+ name candidates. The construction tech namespace is shockingly crowded. Here's what we found &mdash; and eliminated.</p>
+
+        <div class="callout-red callout">
+          <strong>Every "obvious" name is taken.</strong> SiteCommand, Structor, Datum, Siteline, Trestle, Bolster, Bedrock, Torque, Anvil, Grit, Tackle, Punchlist &mdash; all have existing companies in construction tech or closely adjacent software.
+        </div>
+
+        <table>
+          <thead><tr><th>Name</th><th>Conflict</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td><strong>SiteCommand</strong></td><td>Active construction mgmt software (sitecommandapp.com)</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Siteline</strong></td><td>VC-backed ($18.4M) construction billing SaaS at siteline.com</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Datum</strong></td><td>Autodesk has a product called Datum + Datum Tech Solutions in construction</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Structor</strong></td><td>Construction company (Atlanta) + Structor.io construction tech platform</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Trestle</strong></td><td>VC-backed subcontractor mgmt platform (gotrestle.com)</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Bolster</strong></td><td>YC-grad construction mgmt software (bolsterbuilt.com)</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Bedrock</strong></td><td>$1.75B autonomous construction tech company</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Torque</strong></td><td>Multiple software companies across verticals</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Anvil</strong></td><td>Multiple software companies (useanvil.com, anvil.works)</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Grit</strong></td><td>Grit Virtual was a construction scheduling company (acquired)</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Tackle</strong></td><td>$1.25B unicorn (tackle.io) + construction estimating (usetackle.com)</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Punchlist</strong></td><td>Active construction PM software at punchlist.com</td><td><span class="tag tag-fail">Taken</span></td></tr>
+            <tr><td><strong>Formwork</strong></td><td>Formwork Labs is the "YC of construction tech" accelerator</td><td><span class="tag tag-warn">Risky</span></td></tr>
+            <tr><td><strong>Rebar</strong></td><td>Too generic to trademark. .com taken. Bitcoin startup</td><td><span class="tag tag-warn">Risky</span></td></tr>
+            <tr><td><strong>SiteForge</strong></td><td>Original company deadpooled. .com possibly acquirable. No construction conflict</td><td><span class="tag tag-primary">Possible</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ======== SURVIVORS ======== -->
+      <div class="section" id="survivors">
+        <div class="section-label">What Actually Works</div>
+        <div class="section-title">Names That Survived Conflict Checks</div>
+
+        <p>After eliminating everything with existing conflicts, four candidates remain clean. We've evaluated each through the construction worker lens.</p>
+
+        <div class="tier-badge tier-1">Recommended &mdash; Construction-native</div>
+
+        <div class="name-card name-card-t1">
+          <div>
+            <div class="name-label">Gangbox</div>
+            <div class="name-meta">2 syllables &bull; Construction term</div>
+          </div>
+          <div>
+            <div class="name-desc">
+              The gang box is the big metal toolbox on every construction site. Every single person on a jobsite knows what it is &mdash; it's where you keep your tools, your safety equipment, your gear. It's communal (the whole crew accesses it), tough (heavy steel that sits outside in all weather), and essential. The metaphor is perfect: your digital gang box for the whole crew's tools.
+            </div>
+            <p style="margin-top:8px; margin-bottom:4px;"><strong>Worker test:</strong> "Check the gangbox" is already something foremen say 10 times a day. The name integrates into jobsite language seamlessly. "Log it in Gangbox" &mdash; natural. "Pull it up on Gangbox" &mdash; clean.</p>
+            <p style="margin-bottom:4px;"><strong>Phonetics:</strong> Hard G + hard B + hard K/X. Three plosives in one word. Cuts through any jobsite noise. Two syllables.</p>
+            <p style="margin-bottom:4px;"><strong>Expansion:</strong> A gang box holds everything &mdash; tools, PPE, documents, plans. The name naturally extends to any construction ops feature without explanation.</p>
+            <p style="margin-bottom:4px;"><strong>Domain:</strong> gangbox.com is registered but not serving &mdash; likely parked/acquirable. No software competitors. A physical tools company uses "thegangbox.com."</p>
+            <div class="name-scores">
+              <span>Jobsite: <strong style="color:var(--pass)">A+</strong></span>
+              <span>Worker resonance: <strong style="color:var(--pass)">A+</strong></span>
+              <span>Expansion: <strong style="color:var(--pass)">5/5</strong></span>
+              <span>Conflicts: <strong style="color:var(--pass)">None</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="name-card name-card-t1">
+          <div>
+            <div class="name-label">Kerf</div>
+            <div class="name-meta">1 syllable &bull; Construction term</div>
+          </div>
+          <div>
+            <div class="name-desc">
+              The width of a saw cut &mdash; the precise gap a blade makes through material. Every carpenter, metalworker, and millworker knows this word. It implies precision, cutting through with purpose, and getting the measurement exactly right. One syllable, hard K, feels like a tool brand.
+            </div>
+            <p style="margin-top:8px; margin-bottom:4px;"><strong>Worker test:</strong> "Log it in Kerf" &mdash; fast, clean, one syllable. Feels like something you'd find next to your DeWalt. "Pull it up on Kerf" &mdash; sharp and memorable.</p>
+            <p style="margin-bottom:4px;"><strong>Phonetics:</strong> Hard K attack, RF ending. One syllable. Maximum noise penetration. Sounds like STIHL, Klein, Bosch &mdash; the tool brand pattern.</p>
+            <p style="margin-bottom:4px;"><strong>Expansion:</strong> Abstract enough to hold any meaning. Like "Procore" &mdash; the word becomes the brand.</p>
+            <p style="margin-bottom:4px;"><strong>Domain:</strong> kerf.build redirects to GoDaddy "for sale." Prior software startup (time-series DB) is dead. Domain is acquirable.</p>
+            <p style="margin-bottom:0;"><strong>Risk:</strong> Not every trade uses the word "kerf" daily. Ironworkers and heavy civil crews may not connect immediately. But tool brands earn their meaning &mdash; Hilti didn't mean anything until it did.</p>
+            <div class="name-scores">
+              <span>Jobsite: <strong style="color:var(--pass)">A+</strong></span>
+              <span>Worker resonance: <strong style="color:var(--pass)">A</strong></span>
+              <span>Expansion: <strong style="color:var(--pass)">5/5</strong></span>
+              <span>Conflicts: <strong style="color:var(--pass)">Clear</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tier-badge tier-2" style="margin-top: 24px;">Worth Considering &mdash; Coined / abstract</div>
+
+        <div class="name-card name-card-t2">
+          <div>
+            <div class="name-label">Bildek</div>
+            <div class="name-meta">2 syllables &bull; Coined word</div>
+          </div>
+          <div>
+            <div class="name-desc">
+              Coined from "build" + Germanic/Old English roots. Feels like a tool brand name &mdash; similar phonetic shape to DeWalt or Hilti. Three hard plosives (B, D, K). The "bild" root connects to building across Germanic languages (German: Bild = image/picture, bilden = to form/create).
+            </div>
+            <p style="margin-top:8px; margin-bottom:4px;"><strong>Worker test:</strong> "Log it in Bildek" &mdash; works. Feels industrial, not corporate. Sounds like something that exists in a Hilti catalogue.</p>
+            <p style="margin-bottom:4px;"><strong>Phonetics:</strong> BIL-dek. Hard B, D, K. Two syllables. Excellent noise penetration.</p>
+            <p style="margin-bottom:4px;"><strong>Expansion:</strong> Coined words have unlimited expansion (Procore model). No pre-existing meaning to fight.</p>
+            <p style="margin-bottom:0;"><strong>Domain:</strong> bildek.com registered but not active (self-signed cert). Likely parked, acquirable. Minor Latvian entity exists (unrelated).</p>
+            <div class="name-scores">
+              <span>Jobsite: <strong style="color:var(--pass)">A</strong></span>
+              <span>Worker resonance: <strong>B+</strong></span>
+              <span>Expansion: <strong style="color:var(--pass)">5/5</strong></span>
+              <span>Conflicts: <strong style="color:var(--pass)">Clear</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="name-card name-card-t2">
+          <div>
+            <div class="name-label">Daktik</div>
+            <div class="name-meta">2 syllables &bull; Coined word</div>
+          </div>
+          <div>
+            <div class="name-desc">
+              Coined from Greek "daktikos" (relating to fingers/touch) + "taktik" (tactical). Four hard plosives (D, K, T, K). Sounds sharp, precise, modern. The cleanest namespace of any candidate &mdash; no company or product uses this word anywhere.
+            </div>
+            <p style="margin-top:8px; margin-bottom:4px;"><strong>Worker test:</strong> "Log it in Daktik" &mdash; clean but slightly foreign-sounding. Doesn't immediately feel like construction, more like a tech brand.</p>
+            <p style="margin-bottom:4px;"><strong>Phonetics:</strong> DAK-tik. Aggressive consonant pattern. Cuts through anything. But the double K sound could feel clinical rather than rugged.</p>
+            <p style="margin-bottom:0;"><strong>Domain:</strong> daktik.com appears unregistered or minimally parked. Strongest domain availability of any candidate.</p>
+            <div class="name-scores">
+              <span>Jobsite: <strong style="color:var(--pass)">A</strong></span>
+              <span>Worker resonance: <strong>B</strong></span>
+              <span>Expansion: <strong style="color:var(--pass)">5/5</strong></span>
+              <span>Conflicts: <strong style="color:var(--pass)">Clear</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tier-badge tier-3" style="margin-top: 24px;">Fallback &mdash; Lowest switching cost</div>
+
+        <div class="name-card name-card-t3">
+          <div>
+            <div class="name-label">SiteForge</div>
+            <div class="name-meta">2 syllables &bull; Compound</div>
+          </div>
+          <div>
+            <div class="name-desc">
+              Keeps the "Forge" identity while dropping "Safety." The original SiteForge software company (workflow orchestration, Herndon VA) appears to be dead. The .com may be acquirable. No construction tech conflict exists.
+            </div>
+            <p style="margin-top:8px; margin-bottom:4px;"><strong>Worker test:</strong> "Log it in SiteForge" &mdash; functional but doesn't excite. Still has the F fricative problem. Still carries the forgery connotation.</p>
+            <p style="margin-bottom:0;"><strong>Trade-off:</strong> Easiest name change from Kerf. But it inherits most of Kerf's phonetic weaknesses and the "forge = fake" risk.</p>
+            <div class="name-scores">
+              <span>Jobsite: <strong>B+</strong></span>
+              <span>Worker resonance: <strong>B</strong></span>
+              <span>Expansion: <strong style="color:var(--pass)">5/5</strong></span>
+              <span>Conflicts: <strong style="color:var(--primary)">Low (dead company)</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="sub" style="margin-top:32px;">Side-by-side comparison</h3>
+        <table>
+          <thead>
+            <tr><th>Criterion</th><th>Kerf</th><th>Gangbox</th><th>Kerf</th><th>Bildek</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Syllables</td><td>3-4</td><td><strong>2</strong></td><td><strong>1</strong></td><td><strong>2</strong></td></tr>
+            <tr><td>Hard plosives</td><td>0</td><td><strong>3 (G,B,K)</strong></td><td><strong>1 (K)</strong></td><td><strong>3 (B,D,K)</strong></td></tr>
+            <tr><td>Jobsite noise</td><td><span class="tag tag-fail">C-</span></td><td><span class="tag tag-pass">A+</span></td><td><span class="tag tag-pass">A+</span></td><td><span class="tag tag-pass">A</span></td></tr>
+            <tr><td>Verb test</td><td><span class="tag tag-fail">Fail</span></td><td><span class="tag tag-pass">Pass</span> "gangbox it"</td><td><span class="tag tag-pass">Pass</span> "kerf it"</td><td><span class="tag tag-pass">Pass</span> "bildek it"</td></tr>
+            <tr><td>Worker resonance</td><td>Enterprise software feel</td><td>Immediately familiar</td><td>Craft precision feel</td><td>Tool brand feel</td></tr>
+            <tr><td>Negative connotations</td><td><span class="tag tag-fail">Forgery</span></td><td><span class="tag tag-pass">None</span></td><td><span class="tag tag-pass">None</span></td><td><span class="tag tag-pass">None</span></td></tr>
+            <tr><td>Expansion potential</td><td>Limited by "Safety"</td><td>Gang box holds everything</td><td>Abstract enough for anything</td><td>Coined = unlimited</td></tr>
+            <tr><td>Domain</td><td>N/A (current)</td><td>Parked, acquirable</td><td>For sale (GoDaddy)</td><td>Parked, acquirable</td></tr>
+            <tr><td>Conflicts</td><td>N/A</td><td><span class="tag tag-pass">None</span></td><td><span class="tag tag-pass">None</span></td><td><span class="tag tag-pass">None</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ======== RECOMMENDATION ======== -->
+      <div class="section" id="recommendation">
+        <div class="section-label">Decision</div>
+        <div class="section-title">Recommendation</div>
+
+        <div class="verdict-box">
+          <h3>Launch as Gangbox.</h3>
+          <p>It's the only name that passes every test simultaneously: construction workers already know the word, it's two syllables with three hard plosives, it has zero conflicts in software, the metaphor naturally extends to any construction ops feature, and it sounds like a tool they'd choose to use rather than software that was chosen for them.</p>
+          <p style="margin-bottom:0;">If Gangbox feels too informal or the domain proves unacquirable, <strong>Kerf</strong> is the close second &mdash; one syllable, domain is for sale, follows the tool brand pattern (STIHL, Klein, Bosch). <strong>Bildek</strong> is the Procore-style coined option if you want maximum expansion runway and are willing to invest in building meaning from zero.</p>
+        </div>
+
+        <h3 class="sub">Why Gangbox wins from the worker's perspective</h3>
+        <div class="persona-grid">
+          <div class="persona persona-pass">
+            <div class="role">Foreman</div>
+            <div class="reaction">"Check the gangbox"</div>
+            <p>Already says this phrase 10x daily. Zero learning curve. Feels like his tool, not an office mandate.</p>
+          </div>
+          <div class="persona persona-pass">
+            <div class="role">Project Engineer</div>
+            <div class="reaction">"Log it in Gangbox"</div>
+            <p>Sounds like something that belongs on a jobsite. Opens it by default, not just for safety tasks.</p>
+          </div>
+          <div class="persona persona-pass">
+            <div class="role">Safety Director</div>
+            <div class="reaction">"Our whole crew uses Gangbox"</div>
+            <p>Her tool is the company's tool. Platform, not point solution. Career-advancing position.</p>
+          </div>
+          <div class="persona persona-pass">
+            <div class="role">Company Owner</div>
+            <div class="reaction">"We run everything through Gangbox"</div>
+            <p>Sounds like an operations platform. Evaluates on broad ROI, not just safety compliance.</p>
+          </div>
+        </div>
+
+        <h3 class="sub">Why not Kerf</h3>
+        <div class="card card-fail">
+          <div class="card-body">
+            <p style="margin-bottom:8px;">The product has already outgrown the name. Multi-jurisdiction compliance, environmental monitoring, equipment management, project management, worker management, voice transcription, AI doc generation &mdash; this is a construction operations platform. Launching as "Kerf" means every non-safety feature fights the name for attention from day one.</p>
+            <p style="margin-bottom:8px;">There is <strong>zero brand equity to protect</strong>. No customers, no SEO, no contracts. The switching cost of choosing a different launch name is literally zero. This is the only moment in the company's life where the name is free to change.</p>
+            <p style="margin-bottom:0;">Every customer acquired under "Kerf" makes a future rename more expensive. If the platform ambition is real, the name should match it from launch.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== TRANSITION ======== -->
+      <div class="section" id="transition">
+        <div class="section-label">Next Steps</div>
+        <div class="section-title">What To Do Now</div>
+
+        <div class="card">
+          <div class="card-body">
+            <ol>
+              <li style="margin-bottom:12px;"><strong>WHOIS check on gangbox.com</strong> &mdash; determine owner, acquisition cost. Check kerf.build and bildek.com as backups</li>
+              <li style="margin-bottom:12px;"><strong>Trademark search</strong> &mdash; USPTO search for "Gangbox" in software/SaaS classes. The word is a generic construction term, which can complicate trademark registration but also means no one else can own it exclusively</li>
+              <li style="margin-bottom:12px;"><strong>Say it out loud for a week</strong> &mdash; use the name in sentences. "We're building Gangbox." "Check out gangbox.com." "Gangbox just added project scheduling." Does it still feel right after 100 repetitions?</li>
+              <li style="margin-bottom:12px;"><strong>Ask 5 construction workers</strong> &mdash; show them the name cold, no context. First reaction matters more than explained reaction. Do they get it? Do they respect it?</li>
+              <li style="margin-bottom:0;"><strong>If it clears all checks, rename the repo and codebase before launch</strong> &mdash; this is free right now. It will never be this cheap again.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      Kerf &bull; Naming Analysis &bull; April 2026 &bull; Pre-launch
+    </div>
+  </div>
+</div>
+
+<script>
+  const sections = document.querySelectorAll('.section[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const activeLink = document.querySelector(`.sidebar-nav a[href="#${entry.target.id}"]`);
+        if (activeLink) activeLink.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(section => observer.observe(section));
+</script>
+</body>
+</html>

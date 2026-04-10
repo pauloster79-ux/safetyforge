@@ -1,4 +1,4 @@
-# SafetyForge Infrastructure Plan
+# Kerf Infrastructure Plan
 
 *Last updated: 2026-03-31*
 
@@ -12,21 +12,21 @@ Three isolated GCP projects enforce environment separation and prevent accidenta
 
 | Environment | Project ID | Purpose |
 |---|---|---|
-| Development | `safetyforge-dev` | Local-to-cloud development, Firestore emulator fallback, CI test runs |
-| Staging | `safetyforge-staging` | Pre-production validation, QA, demo environment |
-| Production | `safetyforge-prod` | Live customer traffic |
+| Development | `kerf-dev` | Local-to-cloud development, Firestore emulator fallback, CI test runs |
+| Staging | `kerf-staging` | Pre-production validation, QA, demo environment |
+| Production | `kerf-prod` | Live customer traffic |
 
 ```bash
 # Create projects (requires billing account linked)
-gcloud projects create safetyforge-dev --name="SafetyForge Dev"
-gcloud projects create safetyforge-staging --name="SafetyForge Staging"
-gcloud projects create safetyforge-prod --name="SafetyForge Prod"
+gcloud projects create kerf-dev --name="Kerf Dev"
+gcloud projects create kerf-staging --name="Kerf Staging"
+gcloud projects create kerf-prod --name="Kerf Prod"
 
 # Link billing account (get your billing account ID first)
 BILLING_ACCOUNT=$(gcloud billing accounts list --format="value(ACCOUNT_ID)" --limit=1)
-gcloud billing projects link safetyforge-dev --billing-account=$BILLING_ACCOUNT
-gcloud billing projects link safetyforge-staging --billing-account=$BILLING_ACCOUNT
-gcloud billing projects link safetyforge-prod --billing-account=$BILLING_ACCOUNT
+gcloud billing projects link kerf-dev --billing-account=$BILLING_ACCOUNT
+gcloud billing projects link kerf-staging --billing-account=$BILLING_ACCOUNT
+gcloud billing projects link kerf-prod --billing-account=$BILLING_ACCOUNT
 ```
 
 ### 1.2 API Enablement
@@ -34,7 +34,7 @@ gcloud billing projects link safetyforge-prod --billing-account=$BILLING_ACCOUNT
 Run for each project (replace `$PROJECT_ID`):
 
 ```bash
-PROJECT_ID="safetyforge-prod"  # repeat for -dev and -staging
+PROJECT_ID="kerf-prod"  # repeat for -dev and -staging
 
 gcloud services enable \
   run.googleapis.com \
@@ -65,7 +65,7 @@ gcloud services enable \
 | `ci-deployer@$PROJECT_ID.iam.gserviceaccount.com` | All | GitHub Actions deployment |
 
 ```bash
-PROJECT_ID="safetyforge-prod"
+PROJECT_ID="kerf-prod"
 
 # Cloud Run runtime service account
 gcloud iam service-accounts create cloudrun-api \
@@ -133,12 +133,12 @@ gcloud iam service-accounts keys create ci-key-prod.json \
 # Example for prod (CLI budget creation requires the billing budgets API)
 gcloud billing budgets create \
   --billing-account=$BILLING_ACCOUNT \
-  --display-name="SafetyForge Prod Monthly" \
+  --display-name="Kerf Prod Monthly" \
   --budget-amount=500USD \
   --threshold-rule=percent=0.5 \
   --threshold-rule=percent=0.8 \
   --threshold-rule=percent=1.0 \
-  --filter-projects=projects/safetyforge-prod
+  --filter-projects=projects/kerf-prod
 ```
 
 ---
@@ -149,12 +149,12 @@ gcloud billing budgets create \
 
 ```bash
 # Initialize Firebase in each GCP project
-firebase projects:addfirebase safetyforge-dev
-firebase projects:addfirebase safetyforge-staging
-firebase projects:addfirebase safetyforge-prod
+firebase projects:addfirebase kerf-dev
+firebase projects:addfirebase kerf-staging
+firebase projects:addfirebase kerf-prod
 
 # Add web app for the frontend
-firebase apps:create WEB "SafetyForge Web" --project=safetyforge-prod
+firebase apps:create WEB "Kerf Web" --project=kerf-prod
 ```
 
 ### 2.2 Auth Configuration
@@ -169,8 +169,8 @@ Providers to enable: **Email/Password** and **Google Sign-In**.
 Firebase Console steps (per project):
 1. Go to Authentication > Sign-in method
 2. Enable **Email/Password** (disable Email link / passwordless)
-3. Enable **Google** provider (set support email to admin@safetyforge.com)
-4. Set Authorized domains: `app.safetyforge.com`, `staging.safetyforge.com`, `localhost`
+3. Enable **Google** provider (set support email to admin@kerf.build)
+4. Set Authorized domains: `app.kerf.build`, `staging.kerf.build`, `localhost`
 
 Frontend Firebase config (stored in environment variables):
 
@@ -270,7 +270,7 @@ service cloud.firestore {
 Deploy rules:
 
 ```bash
-firebase deploy --only firestore:rules --project=safetyforge-prod
+firebase deploy --only firestore:rules --project=kerf-prod
 ```
 
 ### 2.4 Firestore Indexes
@@ -315,7 +315,7 @@ Based on the data model (documents have `company_id`, `document_type`, `status`,
 Deploy indexes:
 
 ```bash
-firebase deploy --only firestore:indexes --project=safetyforge-prod
+firebase deploy --only firestore:indexes --project=kerf-prod
 ```
 
 ### 2.5 Firebase Hosting vs Vercel Decision
@@ -341,10 +341,10 @@ Vercel wins on developer experience, preview deployments, and zero-config React/
 ### 3.1 Service Configuration
 
 ```bash
-PROJECT_ID="safetyforge-prod"
-REGION="europe-west2"
-SERVICE_NAME="safetyforge-api"
-IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/safetyforge/$SERVICE_NAME"
+PROJECT_ID="kerf-prod"
+REGION="us-central1"
+SERVICE_NAME="kerf-api"
+IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/kerf/$SERVICE_NAME"
 
 gcloud run deploy $SERVICE_NAME \
   --project=$PROJECT_ID \
@@ -362,7 +362,7 @@ gcloud run deploy $SERVICE_NAME \
   --cpu-throttling \
   --allow-unauthenticated \
   --set-env-vars="ENVIRONMENT=production,GCP_PROJECT_ID=$PROJECT_ID" \
-  --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,LEMON_SQUEEZY_WEBHOOK_SECRET=lemonsqueezy-webhook-secret:latest,LEMON_SQUEEZY_API_KEY=lemonsqueezy-api-key:latest"
+  --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,PADDLE_WEBHOOK_SECRET=paddle-webhook-secret:latest,PADDLE_API_KEY=paddle-api-key:latest"
 ```
 
 Configuration rationale:
@@ -380,18 +380,18 @@ Configuration rationale:
 ### 3.2 Environment Variable Management (Secret Manager)
 
 ```bash
-PROJECT_ID="safetyforge-prod"
+PROJECT_ID="kerf-prod"
 
 # Create secrets
 echo -n "sk-ant-..." | gcloud secrets create anthropic-api-key \
   --project=$PROJECT_ID \
   --data-file=-
 
-echo -n "whsec_..." | gcloud secrets create lemonsqueezy-webhook-secret \
+echo -n "whsec_..." | gcloud secrets create paddle-webhook-secret \
   --project=$PROJECT_ID \
   --data-file=-
 
-echo -n "eyJ..." | gcloud secrets create lemonsqueezy-api-key \
+echo -n "eyJ..." | gcloud secrets create paddle-api-key \
   --project=$PROJECT_ID \
   --data-file=-
 
@@ -401,12 +401,12 @@ gcloud secrets add-iam-policy-binding anthropic-api-key \
   --member="serviceAccount:cloudrun-api@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
-gcloud secrets add-iam-policy-binding lemonsqueezy-webhook-secret \
+gcloud secrets add-iam-policy-binding paddle-webhook-secret \
   --project=$PROJECT_ID \
   --member="serviceAccount:cloudrun-api@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
-gcloud secrets add-iam-policy-binding lemonsqueezy-api-key \
+gcloud secrets add-iam-policy-binding paddle-api-key \
   --project=$PROJECT_ID \
   --member="serviceAccount:cloudrun-api@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
@@ -417,25 +417,25 @@ Non-secret environment variables (set directly on the Cloud Run service):
 | Variable | Value | Notes |
 |---|---|---|
 | `ENVIRONMENT` | `production` / `staging` / `development` | Controls logging level, CORS |
-| `GCP_PROJECT_ID` | `safetyforge-prod` | Used by Firestore client |
-| `CORS_ORIGINS` | `https://app.safetyforge.com` | Comma-separated allowed origins |
+| `GCP_PROJECT_ID` | `kerf-prod` | Used by Firestore client |
+| `CORS_ORIGINS` | `https://app.kerf.build` | Comma-separated allowed origins |
 
 ### 3.3 Custom Domain Mapping
 
 ```bash
-# Map api.safetyforge.com to Cloud Run
+# Map api.kerf.build to Cloud Run
 gcloud run domain-mappings create \
-  --service=safetyforge-api \
-  --domain=api.safetyforge.com \
-  --region=europe-west2 \
-  --project=safetyforge-prod
+  --service=kerf-api \
+  --domain=api.kerf.build \
+  --region=us-central1 \
+  --project=kerf-prod
 
 # The command outputs DNS records to add:
 # Type: CNAME, Name: api, Value: ghs.googlehosted.com
 # Add this to your DNS provider (e.g., Cloudflare, Route53)
 ```
 
-Staging: `api-staging.safetyforge.com` mapped to the staging Cloud Run service.
+Staging: `api-staging.kerf.build` mapped to the staging Cloud Run service.
 
 ### 3.4 Health Check Configuration
 
@@ -444,9 +444,9 @@ The existing `/health` endpoint in `app/main.py` is sufficient. Cloud Run uses t
 ```bash
 # Cloud Run uses the container's port for health checks by default.
 # Configure startup probe for cold-start resilience:
-gcloud run services update safetyforge-api \
-  --project=safetyforge-prod \
-  --region=europe-west2 \
+gcloud run services update kerf-api \
+  --project=kerf-prod \
+  --region=us-central1 \
   --startup-cpu-boost \
   --liveness-probe-path=/health \
   --liveness-probe-period=30 \
@@ -484,8 +484,8 @@ Cloud Run scales based on concurrent requests. With concurrency=80, a single ins
 One bucket per environment, with object prefixes for logical separation:
 
 ```bash
-PROJECT_ID="safetyforge-prod"
-REGION="europe-west2"
+PROJECT_ID="kerf-prod"
+REGION="us-central1"
 
 # Create the bucket
 gcloud storage buckets create gs://$PROJECT_ID-files \
@@ -495,7 +495,7 @@ gcloud storage buckets create gs://$PROJECT_ID-files \
   --public-access-prevention
 
 # Prefix structure inside the bucket:
-# gs://safetyforge-prod-files/
+# gs://kerf-prod-files/
 #   photos/{companyId}/{documentId}/{filename}    -- Jobsite photos, hazard images
 #   pdfs/{companyId}/{documentId}/{filename}.pdf   -- Generated PDF documents
 #   voice/{companyId}/{filename}.webm              -- Voice note recordings
@@ -563,7 +563,7 @@ cat > /tmp/lifecycle.json << 'EOF'
 }
 EOF
 
-gcloud storage buckets update gs://safetyforge-prod-files \
+gcloud storage buckets update gs://kerf-prod-files \
   --lifecycle-file=/tmp/lifecycle.json
 ```
 
@@ -624,7 +624,7 @@ def generate_download_url(
 cat > /tmp/cors.json << 'EOF'
 [
   {
-    "origin": ["https://app.safetyforge.com", "https://staging.safetyforge.com"],
+    "origin": ["https://app.kerf.build", "https://staging.kerf.build"],
     "method": ["GET", "PUT", "POST"],
     "responseHeader": ["Content-Type", "x-goog-content-length-range"],
     "maxAgeSeconds": 3600
@@ -632,7 +632,7 @@ cat > /tmp/cors.json << 'EOF'
 ]
 EOF
 
-gcloud storage buckets update gs://safetyforge-prod-files \
+gcloud storage buckets update gs://kerf-prod-files \
   --cors-file=/tmp/cors.json
 ```
 
@@ -668,13 +668,13 @@ Use Cloud Storage event triggers with a Cloud Run job for scanning:
 
 # 1. Create Eventarc trigger on object.finalize
 gcloud eventarc triggers create scan-uploads \
-  --project=safetyforge-prod \
-  --location=europe-west2 \
-  --destination-run-service=safetyforge-scanner \
-  --destination-run-region=europe-west2 \
+  --project=kerf-prod \
+  --location=us-central1 \
+  --destination-run-service=kerf-scanner \
+  --destination-run-region=us-central1 \
   --event-filters="type=google.cloud.storage.object.v1.finalized" \
-  --event-filters="bucket=safetyforge-prod-files" \
-  --service-account=cloudrun-api@safetyforge-prod.iam.gserviceaccount.com
+  --event-filters="bucket=kerf-prod-files" \
+  --service-account=cloudrun-api@kerf-prod.iam.gserviceaccount.com
 ```
 
 For MVP, skip the dedicated scanner. Enforce strict MIME type checks and file size limits via signed URLs. Add ClamAV scanning as a Phase 2 enhancement.
@@ -691,7 +691,7 @@ npm i -g vercel
 
 # Link project (from frontend/ directory)
 cd frontend
-vercel link --project=safetyforge-web
+vercel link --project=kerf-web
 ```
 
 `vercel.json` (already exists, enhanced):
@@ -713,7 +713,7 @@ vercel link --project=safetyforge-web
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=(self)" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://apis.google.com; connect-src 'self' https://api.safetyforge.com https://*.firebaseio.com https://*.googleapis.com; img-src 'self' data: https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://apis.google.com; connect-src 'self' https://api.kerf.build https://*.firebaseio.com https://*.googleapis.com; img-src 'self' data: https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
       ]
     },
@@ -735,23 +735,23 @@ Set in Vercel dashboard (Settings > Environment Variables) or via CLI:
 
 ```bash
 # Production
-vercel env add VITE_API_BASE_URL production       # https://api.safetyforge.com
+vercel env add VITE_API_BASE_URL production       # https://api.kerf.build
 vercel env add VITE_FIREBASE_API_KEY production    # from Firebase Console
-vercel env add VITE_FIREBASE_AUTH_DOMAIN production # safetyforge-prod.firebaseapp.com
-vercel env add VITE_FIREBASE_PROJECT_ID production  # safetyforge-prod
-vercel env add VITE_FIREBASE_STORAGE_BUCKET production # safetyforge-prod.appspot.com
+vercel env add VITE_FIREBASE_AUTH_DOMAIN production # kerf-prod.firebaseapp.com
+vercel env add VITE_FIREBASE_PROJECT_ID production  # kerf-prod
+vercel env add VITE_FIREBASE_STORAGE_BUCKET production # kerf-prod.appspot.com
 vercel env add VITE_FIREBASE_MESSAGING_SENDER_ID production
 vercel env add VITE_FIREBASE_APP_ID production
 vercel env add VITE_SENTRY_DSN production          # from Sentry project
 
 # Preview (staging values)
-vercel env add VITE_API_BASE_URL preview           # https://api-staging.safetyforge.com
-vercel env add VITE_FIREBASE_PROJECT_ID preview     # safetyforge-staging
+vercel env add VITE_API_BASE_URL preview           # https://api-staging.kerf.build
+vercel env add VITE_FIREBASE_PROJECT_ID preview     # kerf-staging
 # ... (repeat for all Firebase config values pointing to staging)
 
 # Development
 vercel env add VITE_API_BASE_URL development       # http://localhost:8000
-vercel env add VITE_FIREBASE_PROJECT_ID development # safetyforge-dev
+vercel env add VITE_FIREBASE_PROJECT_ID development # kerf-dev
 ```
 
 ### 5.3 Preview Deployments
@@ -767,7 +767,7 @@ Vercel creates automatic preview deployments for every PR. Configuration:
 
 ```bash
 # Add custom domain via Vercel CLI or dashboard
-vercel domains add app.safetyforge.com --project=safetyforge-web
+vercel domains add app.kerf.build --project=kerf-web
 
 # DNS records to add:
 # Type: CNAME, Name: app, Value: cname.vercel-dns.com
@@ -804,9 +804,9 @@ on:
     paths: ['backend/**']
 
 env:
-  REGION: europe-west2
-  SERVICE_NAME: safetyforge-api
-  REPO_NAME: safetyforge
+  REGION: us-central1
+  SERVICE_NAME: kerf-api
+  REPO_NAME: kerf
 
 jobs:
   lint-and-test:
@@ -869,7 +869,7 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: safetyforge-staging
+          project_id: kerf-staging
 
       - name: Configure Docker auth
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
@@ -877,16 +877,16 @@ jobs:
       - name: Build and push image
         working-directory: backend
         run: |
-          IMAGE="${{ env.REGION }}-docker.pkg.dev/safetyforge-staging/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/kerf-staging/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
           docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
 
       - name: Deploy to Cloud Run (staging)
         run: |
-          IMAGE="${{ env.REGION }}-docker.pkg.dev/safetyforge-staging/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/kerf-staging/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
           gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --project=safetyforge-staging \
+            --project=kerf-staging \
             --region=${{ env.REGION }} \
             --image=$IMAGE:${{ github.sha }} \
             --platform=managed \
@@ -898,7 +898,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://api.safetyforge.com
+      url: https://api.kerf.build
 
     steps:
       - uses: actions/checkout@v4
@@ -910,7 +910,7 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: safetyforge-prod
+          project_id: kerf-prod
 
       - name: Configure Docker auth
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
@@ -918,16 +918,16 @@ jobs:
       - name: Build and push image
         working-directory: backend
         run: |
-          IMAGE="${{ env.REGION }}-docker.pkg.dev/safetyforge-prod/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/kerf-prod/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
           docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
 
       - name: Deploy to Cloud Run (production)
         run: |
-          IMAGE="${{ env.REGION }}-docker.pkg.dev/safetyforge-prod/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/kerf-prod/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}"
           gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --project=safetyforge-prod \
+            --project=kerf-prod \
             --region=${{ env.REGION }} \
             --image=$IMAGE:${{ github.sha }} \
             --platform=managed \
@@ -936,7 +936,7 @@ jobs:
       - name: Verify deployment health
         run: |
           URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
-            --project=safetyforge-prod \
+            --project=kerf-prod \
             --region=${{ env.REGION }} \
             --format="value(status.url)")
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/health")
@@ -989,10 +989,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_BASE_URL: https://api-staging.safetyforge.com
-          VITE_FIREBASE_PROJECT_ID: safetyforge-staging
+          VITE_API_BASE_URL: https://api-staging.kerf.build
+          VITE_FIREBASE_PROJECT_ID: kerf-staging
           VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY_STAGING }}
-          VITE_FIREBASE_AUTH_DOMAIN: safetyforge-staging.firebaseapp.com
+          VITE_FIREBASE_AUTH_DOMAIN: kerf-staging.firebaseapp.com
 
   # Vercel handles the actual deployment via its GitHub integration.
   # This workflow ensures lint/type/build pass before Vercel deploys.
@@ -1024,20 +1024,20 @@ Deployments:
 # Backend rollback: redeploy previous revision
 # List revisions
 gcloud run revisions list \
-  --service=safetyforge-api \
-  --project=safetyforge-prod \
-  --region=europe-west2
+  --service=kerf-api \
+  --project=kerf-prod \
+  --region=us-central1
 
 # Route 100% traffic to previous revision
-gcloud run services update-traffic safetyforge-api \
-  --project=safetyforge-prod \
-  --region=europe-west2 \
-  --to-revisions=safetyforge-api-00042-abc=100
+gcloud run services update-traffic kerf-api \
+  --project=kerf-prod \
+  --region=us-central1 \
+  --to-revisions=kerf-api-00042-abc=100
 
 # Frontend rollback: Vercel instant rollback
 # Go to Vercel dashboard > Deployments > click previous deployment > Promote to Production
 # Or via CLI:
-vercel rollback --project=safetyforge-web
+vercel rollback --project=kerf-web
 ```
 
 ### 6.5 Secrets Management in CI
@@ -1108,15 +1108,15 @@ Log retention policy:
 
 ```bash
 # Create log sink for long-term retention (production)
-gcloud logging sinks create safetyforge-archive \
-  storage.googleapis.com/safetyforge-prod-logs \
-  --project=safetyforge-prod \
-  --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="safetyforge-api"'
+gcloud logging sinks create kerf-archive \
+  storage.googleapis.com/kerf-prod-logs \
+  --project=kerf-prod \
+  --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="kerf-api"'
 
 # Create the logs bucket
-gcloud storage buckets create gs://safetyforge-prod-logs \
-  --project=safetyforge-prod \
-  --location=europe-west2 \
+gcloud storage buckets create gs://kerf-prod-logs \
+  --project=kerf-prod \
+  --location=us-central1 \
   --lifecycle-file=/tmp/logs-lifecycle.json
 ```
 
@@ -1165,18 +1165,18 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 ```bash
 # Cloud Monitoring uptime checks
-gcloud monitoring uptime-checks create http safetyforge-api-health \
-  --project=safetyforge-prod \
-  --display-name="SafetyForge API Health" \
-  --uri=https://api.safetyforge.com/health \
+gcloud monitoring uptime-checks create http kerf-api-health \
+  --project=kerf-prod \
+  --display-name="Kerf API Health" \
+  --uri=https://api.kerf.build/health \
   --check-interval=60s \
   --timeout=10s \
   --regions=USA,EUROPE,ASIA_PACIFIC
 
-gcloud monitoring uptime-checks create http safetyforge-web-health \
-  --project=safetyforge-prod \
-  --display-name="SafetyForge Web" \
-  --uri=https://app.safetyforge.com \
+gcloud monitoring uptime-checks create http kerf-web-health \
+  --project=kerf-prod \
+  --display-name="Kerf Web" \
+  --uri=https://app.kerf.build \
   --check-interval=300s \
   --timeout=10s \
   --regions=USA,EUROPE
@@ -1189,14 +1189,14 @@ Track key business and performance metrics via Cloud Logging log-based metrics:
 ```bash
 # Document generation latency
 gcloud logging metrics create document_generation_latency \
-  --project=safetyforge-prod \
+  --project=kerf-prod \
   --description="Time to generate a safety document via AI" \
   --log-filter='resource.type="cloud_run_revision" AND jsonPayload.metric="document_generation_latency"'
 
 # API response times (tracked automatically by Cloud Run metrics)
 # Custom metric for Claude API call duration
 gcloud logging metrics create claude_api_duration \
-  --project=safetyforge-prod \
+  --project=kerf-prod \
   --description="Duration of Claude API calls" \
   --log-filter='resource.type="cloud_run_revision" AND jsonPayload.metric="claude_api_duration"'
 ```
@@ -1204,7 +1204,7 @@ gcloud logging metrics create claude_api_duration \
 ### 7.5 Alerting Rules
 
 ```bash
-PROJECT_ID="safetyforge-prod"
+PROJECT_ID="kerf-prod"
 
 # Alert: Error rate > 5% for 5 minutes
 gcloud monitoring policies create \
@@ -1227,7 +1227,7 @@ gcloud monitoring channels create \
   --project=$PROJECT_ID \
   --display-name="Engineering Email" \
   --type=email \
-  --channel-labels=email_address=eng@safetyforge.com
+  --channel-labels=email_address=eng@kerf.build
 ```
 
 ### 7.6 Dashboard Design
@@ -1293,7 +1293,7 @@ services:
     command: >
       gcloud emulators firestore start
       --host-port=0.0.0.0:8080
-      --project=safetyforge-dev
+      --project=kerf-dev
     ports:
       - "8080:8080"
 
@@ -1301,7 +1301,7 @@ services:
     image: node:20-alpine
     command: >
       sh -c "npm install -g firebase-tools &&
-             firebase emulators:start --only auth --project=safetyforge-dev"
+             firebase emulators:start --only auth --project=kerf-dev"
     ports:
       - "9099:9099"   # Auth emulator
       - "4000:4000"   # Emulator UI
@@ -1317,7 +1317,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
-      - VITE_FIREBASE_PROJECT_ID=safetyforge-dev
+      - VITE_FIREBASE_PROJECT_ID=kerf-dev
       - VITE_FIREBASE_AUTH_DOMAIN=localhost
     depends_on:
       - backend
@@ -1377,7 +1377,7 @@ os.environ.setdefault("FIRESTORE_EMULATOR_HOST", "localhost:8080")
 from google.cloud import firestore
 from datetime import datetime, timezone
 
-db = firestore.Client(project="safetyforge-dev")
+db = firestore.Client(project="kerf-dev")
 
 
 def seed():
@@ -1459,11 +1459,11 @@ Run: `python backend/scripts/seed_data.py`
 
 ```bash
 # backend/.env (git-ignored, created from template)
-GOOGLE_CLOUD_PROJECT=safetyforge-dev
+GOOGLE_CLOUD_PROJECT=kerf-dev
 ENVIRONMENT=development
 ANTHROPIC_API_KEY=sk-ant-your-dev-key-here
-LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_dev_test
-LEMON_SQUEEZY_API_KEY=eyJ_dev_test
+PADDLE_WEBHOOK_SECRET=whsec_dev_test
+PADDLE_API_KEY=eyJ_dev_test
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 FIRESTORE_EMULATOR_HOST=localhost:8080
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
@@ -1471,11 +1471,11 @@ FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 
 ```bash
 # backend/.env.example (checked into git)
-GOOGLE_CLOUD_PROJECT=safetyforge-dev
+GOOGLE_CLOUD_PROJECT=kerf-dev
 ENVIRONMENT=development
 ANTHROPIC_API_KEY=
-LEMON_SQUEEZY_WEBHOOK_SECRET=
-LEMON_SQUEEZY_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_API_KEY=
 CORS_ORIGINS=http://localhost:5173
 FIRESTORE_EMULATOR_HOST=localhost:8080
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
@@ -1486,8 +1486,8 @@ FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 VITE_API_BASE_URL=http://localhost:8000
 VITE_FIREBASE_API_KEY=demo-api-key
 VITE_FIREBASE_AUTH_DOMAIN=localhost
-VITE_FIREBASE_PROJECT_ID=safetyforge-dev
-VITE_FIREBASE_STORAGE_BUCKET=safetyforge-dev.appspot.com
+VITE_FIREBASE_PROJECT_ID=kerf-dev
+VITE_FIREBASE_STORAGE_BUCKET=kerf-dev.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
 VITE_FIREBASE_APP_ID=1:000000000000:web:demo
 ```
@@ -1538,7 +1538,7 @@ All prices in USD/month. Based on GCP and Vercel pricing as of March 2026.
 | **Sentry** | Free tier (5K errors/month) | $0 |
 | **Claude API (Anthropic)** | ~500 calls/day, avg 4K input + 2K output tokens | $90 |
 | **Vercel** | Pro plan (team) | $20 |
-| **Domain** | safetyforge.com | $15/year = $1.25 |
+| **Domain** | kerf.build | $15/year = $1.25 |
 | **Total** | | **~$145/month** |
 
 Claude API cost breakdown: 500 calls/day x 30 days = 15,000 calls/month. At ~4K input tokens ($3/M) + ~2K output tokens ($15/M): (15K x 4K x $3/M) + (15K x 2K x $15/M) = $0.18 + $0.45 = $0.63/day = ~$19/month for Haiku. For Sonnet: (15K x 4K x $3/M) + (15K x 2K x $15/M) = $0.18 + $0.45 = ~$19/month for cached/small calls. Actual cost depends on model choice: **$19/month (Haiku) to $90/month (Sonnet)**. Budget $90 for safety.
@@ -1591,7 +1591,7 @@ At $150K+ MRR (12-month target at this scale), infrastructure is ~2.8% of revenu
 ### 10.1 HTTPS Everywhere
 
 - **Frontend**: Vercel enforces HTTPS and auto-provisions Let's Encrypt certificates.
-- **Backend**: Cloud Run enforces HTTPS on its `*.run.app` domain. Custom domain `api.safetyforge.com` gets a Google-managed certificate automatically.
+- **Backend**: Cloud Run enforces HTTPS on its `*.run.app` domain. Custom domain `api.kerf.build` gets a Google-managed certificate automatically.
 - **HSTS header**: Set on both frontend (via `vercel.json`) and backend (via middleware).
 
 ### 10.2 API Authentication Flow
@@ -1696,14 +1696,14 @@ For Growth/Scale stage, upgrade to Cloud Armor WAF:
 
 ```bash
 # Create Cloud Armor security policy
-gcloud compute security-policies create safetyforge-waf \
-  --project=safetyforge-prod \
-  --description="WAF policy for SafetyForge API"
+gcloud compute security-policies create kerf-waf \
+  --project=kerf-prod \
+  --description="WAF policy for Kerf API"
 
 # Rate limiting rule
 gcloud compute security-policies rules create 1000 \
-  --security-policy=safetyforge-waf \
-  --project=safetyforge-prod \
+  --security-policy=kerf-waf \
+  --project=kerf-prod \
   --action=rate-based-ban \
   --rate-limit-threshold-count=100 \
   --rate-limit-threshold-interval-sec=60 \
@@ -1714,8 +1714,8 @@ gcloud compute security-policies rules create 1000 \
 
 # OWASP top 10 protection
 gcloud compute security-policies rules create 2000 \
-  --security-policy=safetyforge-waf \
-  --project=safetyforge-prod \
+  --security-policy=kerf-waf \
+  --project=kerf-prod \
   --action=deny-403 \
   --expression="evaluatePreconfiguredExpr('sqli-v33-stable')"
 ```
@@ -1745,24 +1745,24 @@ No customer-managed encryption keys (CMEK) needed at this stage. CMEK adds compl
 # Schedule via Cloud Scheduler + Cloud Function or gcloud
 
 # Manual export (for initial setup / ad-hoc)
-gcloud firestore export gs://safetyforge-prod-backups/$(date +%Y-%m-%d) \
-  --project=safetyforge-prod
+gcloud firestore export gs://kerf-prod-backups/$(date +%Y-%m-%d) \
+  --project=kerf-prod
 
 # Automated daily backup via Cloud Scheduler
 gcloud scheduler jobs create http firestore-daily-backup \
-  --project=safetyforge-prod \
-  --location=europe-west2 \
+  --project=kerf-prod \
+  --location=us-central1 \
   --schedule="0 2 * * *" \
-  --uri="https://firestore.googleapis.com/v1/projects/safetyforge-prod/databases/(default):exportDocuments" \
+  --uri="https://firestore.googleapis.com/v1/projects/kerf-prod/databases/(default):exportDocuments" \
   --http-method=POST \
-  --message-body='{"outputUriPrefix": "gs://safetyforge-prod-backups"}' \
-  --oauth-service-account-email=cloudrun-api@safetyforge-prod.iam.gserviceaccount.com \
+  --message-body='{"outputUriPrefix": "gs://kerf-prod-backups"}' \
+  --oauth-service-account-email=cloudrun-api@kerf-prod.iam.gserviceaccount.com \
   --oauth-token-scope=https://www.googleapis.com/auth/cloud-platform
 
 # Create backup bucket with lifecycle
-gcloud storage buckets create gs://safetyforge-prod-backups \
-  --project=safetyforge-prod \
-  --location=europe-west2
+gcloud storage buckets create gs://kerf-prod-backups \
+  --project=kerf-prod \
+  --location=us-central1
 
 # Retain backups for 90 days, then delete
 cat > /tmp/backup-lifecycle.json << 'EOF'
@@ -1776,7 +1776,7 @@ cat > /tmp/backup-lifecycle.json << 'EOF'
 }
 EOF
 
-gcloud storage buckets update gs://safetyforge-prod-backups \
+gcloud storage buckets update gs://kerf-prod-backups \
   --lifecycle-file=/tmp/backup-lifecycle.json
 ```
 
@@ -1822,11 +1822,11 @@ Restore procedure:
 
 ```bash
 # List available backups
-gcloud storage ls gs://safetyforge-prod-backups/
+gcloud storage ls gs://kerf-prod-backups/
 
 # Restore from a specific backup
-gcloud firestore import gs://safetyforge-prod-backups/2026-03-30 \
-  --project=safetyforge-prod
+gcloud firestore import gs://kerf-prod-backups/2026-03-30 \
+  --project=kerf-prod
 
 # Note: import merges data -- it does not delete existing documents.
 # For a clean restore, create a new Firestore database or delete existing data first.
@@ -1834,24 +1834,24 @@ gcloud firestore import gs://safetyforge-prod-backups/2026-03-30 \
 
 ### 11.3 Cloud Storage Redundancy
 
-The bucket uses **Standard** storage class in `europe-west2` which provides:
+The bucket uses **Standard** storage class in `us-central1` which provides:
 - Multi-zone redundancy within the region (99.99% availability SLA)
 - No need for multi-region until Scale stage
 
 At Scale stage, consider enabling **dual-region** storage for cross-region redundancy:
 
 ```bash
-# Upgrade to dual-region (europe-west2 + europe-west1)
+# Upgrade to dual-region (us-central1 + europe-west1)
 # Note: cannot change existing bucket; create new and migrate
-gcloud storage buckets create gs://safetyforge-prod-files-v2 \
-  --project=safetyforge-prod \
-  --placement=europe-west2,europe-west1 \
+gcloud storage buckets create gs://kerf-prod-files-v2 \
+  --project=kerf-prod \
+  --placement=us-central1,europe-west1 \
   --uniform-bucket-level-access
 ```
 
 ### 11.4 Cloud Run Multi-Region
 
-Not needed until Scale stage. Single-region (`europe-west2`) provides:
+Not needed until Scale stage. Single-region (`us-central1`) provides:
 - 99.95% availability SLA
 - Automatic scaling and self-healing
 
@@ -1859,8 +1859,8 @@ At Scale stage, deploy to a second region and use Cloud Load Balancing:
 
 ```bash
 # Deploy to second region
-gcloud run deploy safetyforge-api \
-  --project=safetyforge-prod \
+gcloud run deploy kerf-api \
+  --project=kerf-prod \
   --region=us-central1 \
   --image=$IMAGE:latest \
   --platform=managed \
@@ -1890,22 +1890,22 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **A1. Create GCP projects**
   ```bash
-  gcloud projects create safetyforge-dev --name="SafetyForge Dev"
-  gcloud projects create safetyforge-staging --name="SafetyForge Staging"
-  gcloud projects create safetyforge-prod --name="SafetyForge Prod"
+  gcloud projects create kerf-dev --name="Kerf Dev"
+  gcloud projects create kerf-staging --name="Kerf Staging"
+  gcloud projects create kerf-prod --name="Kerf Prod"
   ```
 
 - [ ] **A2. Link billing accounts**
   ```bash
   BILLING_ACCOUNT=$(gcloud billing accounts list --format="value(ACCOUNT_ID)" --limit=1)
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     gcloud billing projects link $proj --billing-account=$BILLING_ACCOUNT
   done
   ```
 
 - [ ] **A3. Enable APIs** (for each project)
   ```bash
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     gcloud services enable \
       run.googleapis.com firestore.googleapis.com storage.googleapis.com \
       artifactregistry.googleapis.com secretmanager.googleapis.com \
@@ -1919,9 +1919,9 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **A4. Initialize Firebase**
   ```bash
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     firebase projects:addfirebase $proj
-    firebase apps:create WEB "SafetyForge Web" --project=$proj
+    firebase apps:create WEB "Kerf Web" --project=$proj
   done
   ```
 
@@ -1932,17 +1932,17 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **A6. Create Firestore databases**
   ```bash
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     gcloud firestore databases create \
       --project=$proj \
-      --location=europe-west2 \
+      --location=us-central1 \
       --type=firestore-native
   done
   ```
 
 - [ ] **A7. Deploy Firestore security rules and indexes**
   ```bash
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     firebase deploy --only firestore:rules,firestore:indexes --project=$proj
   done
   ```
@@ -1951,7 +1951,7 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **B1. Create service accounts** (for each project)
   ```bash
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     gcloud iam service-accounts create cloudrun-api \
       --display-name="Cloud Run API Runtime" --project=$proj
     gcloud iam service-accounts create ci-deployer \
@@ -1963,17 +1963,17 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **B3. Create secrets in Secret Manager** (for staging and prod)
   ```bash
-  for proj in safetyforge-staging safetyforge-prod; do
+  for proj in kerf-staging kerf-prod; do
     echo -n "$ANTHROPIC_KEY" | gcloud secrets create anthropic-api-key --project=$proj --data-file=-
-    echo -n "$LEMONSQUEEZY_WEBHOOK" | gcloud secrets create lemonsqueezy-webhook-secret --project=$proj --data-file=-
-    echo -n "$LEMONSQUEEZY_KEY" | gcloud secrets create lemonsqueezy-api-key --project=$proj --data-file=-
+    echo -n "$LEMONSQUEEZY_WEBHOOK" | gcloud secrets create paddle-webhook-secret --project=$proj --data-file=-
+    echo -n "$LEMONSQUEEZY_KEY" | gcloud secrets create paddle-api-key --project=$proj --data-file=-
   done
   ```
 
 - [ ] **B4. Grant secret access to Cloud Run SA**
   ```bash
-  for proj in safetyforge-staging safetyforge-prod; do
-    for secret in anthropic-api-key lemonsqueezy-webhook-secret lemonsqueezy-api-key; do
+  for proj in kerf-staging kerf-prod; do
+    for secret in anthropic-api-key paddle-webhook-secret paddle-api-key; do
       gcloud secrets add-iam-policy-binding $secret \
         --project=$proj \
         --member="serviceAccount:cloudrun-api@$proj.iam.gserviceaccount.com" \
@@ -1985,9 +1985,9 @@ Step-by-step from current state (local Docker-based development) to production.
 - [ ] **B5. Export CI deployer keys for GitHub Actions**
   ```bash
   gcloud iam service-accounts keys create ci-key-staging.json \
-    --iam-account=ci-deployer@safetyforge-staging.iam.gserviceaccount.com
+    --iam-account=ci-deployer@kerf-staging.iam.gserviceaccount.com
   gcloud iam service-accounts keys create ci-key-prod.json \
-    --iam-account=ci-deployer@safetyforge-prod.iam.gserviceaccount.com
+    --iam-account=ci-deployer@kerf-prod.iam.gserviceaccount.com
   # Upload these as GitHub repository secrets: GCP_SA_KEY_STAGING, GCP_SA_KEY_PROD
   ```
 
@@ -1995,9 +1995,9 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **C1. Create storage buckets**
   ```bash
-  for proj in safetyforge-dev safetyforge-staging safetyforge-prod; do
+  for proj in kerf-dev kerf-staging kerf-prod; do
     gcloud storage buckets create gs://$proj-files \
-      --project=$proj --location=europe-west2 \
+      --project=$proj --location=us-central1 \
       --uniform-bucket-level-access --public-access-prevention
   done
   ```
@@ -2008,19 +2008,19 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **C4. Create backup bucket** (prod only)
   ```bash
-  gcloud storage buckets create gs://safetyforge-prod-backups \
-    --project=safetyforge-prod --location=europe-west2
+  gcloud storage buckets create gs://kerf-prod-backups \
+    --project=kerf-prod --location=us-central1
   ```
 
 ### Phase D: Artifact Registry
 
 - [ ] **D1. Create Docker repositories**
   ```bash
-  for proj in safetyforge-staging safetyforge-prod; do
-    gcloud artifacts repositories create safetyforge \
-      --project=$proj --location=europe-west2 \
+  for proj in kerf-staging kerf-prod; do
+    gcloud artifacts repositories create kerf \
+      --project=$proj --location=us-central1 \
       --repository-format=docker \
-      --description="SafetyForge Docker images"
+      --description="Kerf Docker images"
   done
   ```
 
@@ -2028,9 +2028,9 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **E1. Build and push Docker image**
   ```bash
-  PROJECT_ID="safetyforge-staging"
-  REGION="europe-west2"
-  IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/safetyforge/safetyforge-api"
+  PROJECT_ID="kerf-staging"
+  REGION="us-central1"
+  IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/kerf/kerf-api"
 
   cd backend
   gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
@@ -2040,27 +2040,27 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **E2. Deploy to Cloud Run (staging first)**
   ```bash
-  gcloud run deploy safetyforge-api \
-    --project=safetyforge-staging \
-    --region=europe-west2 \
+  gcloud run deploy kerf-api \
+    --project=kerf-staging \
+    --region=us-central1 \
     --image=$IMAGE:v1.0.0 \
     --platform=managed \
-    --service-account=cloudrun-api@safetyforge-staging.iam.gserviceaccount.com \
+    --service-account=cloudrun-api@kerf-staging.iam.gserviceaccount.com \
     --memory=1Gi --cpu=1 --concurrency=80 \
     --min-instances=0 --max-instances=5 \
     --port=8000 --timeout=300s \
     --allow-unauthenticated \
-    --set-env-vars="ENVIRONMENT=staging,GCP_PROJECT_ID=safetyforge-staging,CORS_ORIGINS=https://staging.safetyforge.com" \
-    --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,LEMON_SQUEEZY_WEBHOOK_SECRET=lemonsqueezy-webhook-secret:latest,LEMON_SQUEEZY_API_KEY=lemonsqueezy-api-key:latest"
+    --set-env-vars="ENVIRONMENT=staging,GCP_PROJECT_ID=kerf-staging,CORS_ORIGINS=https://staging.kerf.build" \
+    --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,PADDLE_WEBHOOK_SECRET=paddle-webhook-secret:latest,PADDLE_API_KEY=paddle-api-key:latest"
   ```
 
 - [ ] **E3. Verify staging health**
   ```bash
-  STAGING_URL=$(gcloud run services describe safetyforge-api \
-    --project=safetyforge-staging --region=europe-west2 \
+  STAGING_URL=$(gcloud run services describe kerf-api \
+    --project=kerf-staging --region=us-central1 \
     --format="value(status.url)")
   curl -s "$STAGING_URL/health"
-  # Should return: {"status":"healthy","version":"1.0.0","service":"safetyforge-api"}
+  # Should return: {"status":"healthy","version":"1.0.0","service":"kerf-api"}
   ```
 
 - [ ] **E4. Deploy to production** (same as E2 with prod values, min-instances=1, max-instances=20)
@@ -2071,19 +2071,19 @@ Step-by-step from current state (local Docker-based development) to production.
 
 - [ ] **F1. Connect GitHub repo to Vercel**
   - Go to vercel.com > New Project > Import Git Repository
-  - Select the safetyforge repo
+  - Select the kerf repo
   - Set root directory to `frontend`
   - Set framework preset to Vite
   - Set environment variables (section 5.2)
 
 - [ ] **F2. Configure production domain**
   ```bash
-  vercel domains add app.safetyforge.com
+  vercel domains add app.kerf.build
   # Add DNS CNAME record: app -> cname.vercel-dns.com
   ```
 
 - [ ] **F3. Verify production deployment**
-  - Visit https://app.safetyforge.com
+  - Visit https://app.kerf.build
   - Verify Firebase Auth login works
   - Verify API calls reach Cloud Run backend
 
@@ -2092,20 +2092,20 @@ Step-by-step from current state (local Docker-based development) to production.
 - [ ] **G1. Configure backend custom domain**
   ```bash
   gcloud run domain-mappings create \
-    --service=safetyforge-api \
-    --domain=api.safetyforge.com \
-    --region=europe-west2 \
-    --project=safetyforge-prod
+    --service=kerf-api \
+    --domain=api.kerf.build \
+    --region=us-central1 \
+    --project=kerf-prod
   # Add DNS record: api CNAME ghs.googlehosted.com
   ```
 
 - [ ] **G2. Configure staging custom domain**
   ```bash
   gcloud run domain-mappings create \
-    --service=safetyforge-api \
-    --domain=api-staging.safetyforge.com \
-    --region=europe-west2 \
-    --project=safetyforge-staging
+    --service=kerf-api \
+    --domain=api-staging.kerf.build \
+    --region=us-central1 \
+    --project=kerf-staging
   ```
 
 - [ ] **G3. Verify SSL certificates** (auto-provisioned, may take up to 24 hours)
@@ -2180,4 +2180,4 @@ Step-by-step from current state (local Docker-based development) to production.
 
 ---
 
-*This document is the executable infrastructure blueprint for SafetyForge. Every command has been tested against GCP APIs as of March 2026. Update version numbers and pricing when executing.*
+*This document is the executable infrastructure blueprint for Kerf. Every command has been tested against GCP APIs as of March 2026. Update version numbers and pricing when executing.*

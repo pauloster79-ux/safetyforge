@@ -10,7 +10,7 @@ class TestCreateEquipment:
     def test_create_equipment(self, client: TestClient, test_company):
         """Create equipment with valid data returns 201."""
         response = client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={
                 "name": "CAT 320 Excavator",
                 "equipment_type": "excavator",
@@ -35,15 +35,15 @@ class TestListEquipment:
     def test_list_equipment(self, client: TestClient, test_company):
         """List equipment returns created items."""
         client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Excavator A", "equipment_type": "excavator"},
         )
         client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Forklift B", "equipment_type": "forklift"},
         )
 
-        response = client.get("/me/equipment")
+        response = client.get("/api/v1/me/equipment")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -56,18 +56,18 @@ class TestGetEquipment:
     def test_get_equipment(self, client: TestClient, test_company):
         """Get an existing equipment returns 200."""
         create_resp = client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Test Crane", "equipment_type": "crane"},
         )
         equip_id = create_resp.json()["id"]
 
-        response = client.get(f"/me/equipment/{equip_id}")
+        response = client.get(f"/api/v1/me/equipment/{equip_id}")
         assert response.status_code == 200
         assert response.json()["name"] == "Test Crane"
 
     def test_get_equipment_not_found(self, client: TestClient, test_company):
         """Get nonexistent equipment returns 404."""
-        response = client.get("/me/equipment/eqp_nonexistent")
+        response = client.get("/api/v1/me/equipment/eqp_nonexistent")
         assert response.status_code == 404
 
 
@@ -77,13 +77,13 @@ class TestEquipmentInspectionLog:
     def test_create_and_list_inspection_log(self, client: TestClient, test_company):
         """Create an inspection log and verify it appears in the list."""
         create_resp = client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Forklift #3", "equipment_type": "forklift"},
         )
         equip_id = create_resp.json()["id"]
 
         log_resp = client.post(
-            f"/me/equipment/{equip_id}/inspections",
+            f"/api/v1/me/equipment/{equip_id}/inspections",
             json={
                 "inspection_date": "2026-03-31",
                 "inspector_name": "Bob Safety",
@@ -101,7 +101,7 @@ class TestEquipmentInspectionLog:
         assert log["equipment_id"] == equip_id
         assert log["overall_status"] == "pass"
 
-        list_resp = client.get(f"/me/equipment/{equip_id}/inspections")
+        list_resp = client.get(f"/api/v1/me/equipment/{equip_id}/inspections")
         assert list_resp.status_code == 200
         assert list_resp.json()["total"] == 1
 
@@ -112,12 +112,12 @@ class TestEquipmentInspectionTemplate:
     def test_get_crane_template(self, client: TestClient, test_company):
         """Get inspection template for a crane returns checklist items."""
         create_resp = client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Liebherr LTM 1300", "equipment_type": "crane"},
         )
         equip_id = create_resp.json()["id"]
 
-        response = client.get(f"/me/equipment/{equip_id}/inspection-template")
+        response = client.get(f"/api/v1/me/equipment/{equip_id}/inspection-template")
         assert response.status_code == 200
         data = response.json()
         assert data["equipment_type"] == "crane"
@@ -133,19 +133,19 @@ class TestEquipmentSummary:
     def test_equipment_summary(self, client: TestClient, test_company):
         """Equipment summary returns correct counts."""
         client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Crane 1", "equipment_type": "crane"},
         )
         client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Crane 2", "equipment_type": "crane"},
         )
         client.post(
-            "/me/equipment",
+            "/api/v1/me/equipment",
             json={"name": "Truck 1", "equipment_type": "vehicle"},
         )
 
-        response = client.get("/me/equipment/summary")
+        response = client.get("/api/v1/me/equipment/summary")
         assert response.status_code == 200
         data = response.json()
         assert data["total_equipment"] == 3

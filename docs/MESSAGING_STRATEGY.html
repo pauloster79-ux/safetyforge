@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerf Messaging Strategy</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <style>
+        :root {
+            --primary: #F5B800;
+            --primary-foreground: #0d0e0c;
+            --machine-dark: #D9A200;
+            --machine-wash: rgba(245,184,0,0.1);
+            --background: #f4f5f3;
+            --foreground: #0d0e0c;
+            --card: #ffffff;
+            --border: #e6e8e3;
+            --muted: #e6e8e3;
+            --muted-foreground: #71766b;
+            --pass: #2d8a4e;
+            --pass-bg: rgba(45,138,78,0.1);
+            --fail: #c53030;
+            --fail-bg: rgba(197,48,48,0.1);
+            --warn: #b8860b;
+            --warn-bg: rgba(184,134,11,0.08);
+            --concrete-50: #f4f5f3;
+            --concrete-100: #e6e8e3;
+            --concrete-300: #a3a79c;
+            --concrete-400: #71766b;
+            --concrete-500: #545951;
+            --concrete-600: #3e423a;
+            --concrete-700: #2e312b;
+            --concrete-800: #191b17;
+            --radius: 3px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'IBM Plex Sans', sans-serif; color: var(--foreground); line-height: 1.6; background: var(--background); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--concrete-300); border-radius: 3px; }
+
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 210px; background: var(--card); border-right: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+        .sidebar-logo { height: 56px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--border); gap: 8px; }
+        .logo-mark { width: 28px; height: 28px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .logo-mark svg { width: 16px; height: 16px; }
+        .logo-text { font-size: 15px; font-weight: 700; }
+        .sidebar-nav { padding: 12px 8px; flex: 1; }
+        .nav-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--concrete-400); padding: 8px 10px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 13px; color: var(--concrete-500); border-radius: var(--radius); cursor: default; margin-bottom: 1px; text-decoration: none; }
+        .nav-item:hover { background: var(--concrete-50); color: var(--foreground); }
+        .nav-item.active { background: var(--machine-wash); color: var(--foreground); font-weight: 600; border-left: 2px solid var(--primary); }
+        .nav-item svg { width: 16px; height: 16px; opacity: 0.5; flex-shrink: 0; }
+        .nav-item.active svg { opacity: 1; color: var(--machine-dark); }
+
+        .main { flex: 1; margin-left: 210px; display: flex; flex-direction: column; min-height: 100vh; }
+        .topbar { height: 56px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; }
+        .topbar-breadcrumb { font-size: 13px; color: var(--muted-foreground); }
+        .topbar-breadcrumb strong { color: var(--foreground); font-weight: 600; }
+        .content { flex: 1; padding: 24px; max-width: 1100px; width: 100%; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; font-weight: 700; }
+        .page-header p { font-size: 14px; color: var(--muted-foreground); margin-top: 2px; }
+
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 2.2); margin-bottom: 16px; }
+        .card-header { padding: 16px 16px 8px; }
+        .card-header h2 { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+        .card-header h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .card-header p { font-size: 13px; color: var(--muted-foreground); }
+        .card-content { padding: 0 16px 16px; }
+        .section-bar { background: var(--concrete-50); padding: 8px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--concrete-700); border-bottom: 1px solid var(--border); border-radius: calc(var(--radius) * 2.2) calc(var(--radius) * 2.2) 0 0; }
+
+        .badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: calc(var(--radius) * 2.6); font-size: 12px; font-weight: 600; }
+        .badge-primary { background: var(--primary); color: var(--primary-foreground); }
+        .badge-warn { background: var(--warn-bg); color: var(--warn); }
+        .badge-pass { background: var(--pass-bg); color: var(--pass); }
+        .badge-machine { background: var(--machine-wash); color: var(--machine-dark); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th { text-align: left; padding: 8px 12px; font-weight: 600; font-size: 12px; color: var(--concrete-600); background: var(--concrete-50); border-bottom: 1px solid var(--border); }
+        tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--concrete-50); }
+        .row-highlight { background: var(--machine-wash) !important; font-weight: 600; }
+
+        ul, ol { padding-left: 20px; margin: 8px 0; }
+        li { margin-bottom: 4px; font-size: 13px; }
+
+        .callout { border-radius: calc(var(--radius) * 1.8); padding: 12px 16px; margin: 12px 0; font-size: 13px; }
+        .callout-pass { background: var(--pass-bg); border-left: 3px solid var(--pass); }
+        .callout-fail { background: var(--fail-bg); border-left: 3px solid var(--fail); }
+        .callout-warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+        .callout-machine { background: var(--machine-wash); border-left: 3px solid var(--primary); }
+        .callout strong { display: block; margin-bottom: 4px; }
+
+        h4 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; }
+        .section-gap { margin-top: 24px; }
+
+        /* Hero mockup */
+        .hero-mock {
+            background: var(--concrete-800);
+            color: #fff;
+            border-radius: calc(var(--radius) * 2.2);
+            padding: 40px 32px;
+            margin: 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-mock::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at bottom right, rgba(245,184,0,0.15), transparent 70%);
+        }
+        .hero-mock .eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        .hero-mock h2 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 12px;
+            max-width: 600px;
+        }
+        .hero-mock h2 em {
+            color: var(--primary);
+            font-style: normal;
+        }
+        .hero-mock .sub {
+            font-size: 15px;
+            color: #a3a79c;
+            max-width: 560px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .hero-mock .cta-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .hero-mock .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary);
+            color: var(--primary-foreground);
+            padding: 10px 20px;
+            border-radius: calc(var(--radius) * 1.4);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+        }
+        .hero-mock .cta-secondary {
+            font-size: 14px;
+            color: #a3a79c;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .hero-mock .proof {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #71766b;
+        }
+        .hero-label {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            opacity: 0.6;
+        }
+
+        /* Lever bar */
+        .lever-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .lever-card {
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) * 1.8);
+            padding: 14px;
+            text-align: center;
+            background: var(--card);
+        }
+        .lever-card.primary-lever {
+            border-color: var(--primary);
+            background: var(--machine-wash);
+        }
+        .lever-card .lever-rank {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--muted-foreground);
+            margin-bottom: 4px;
+        }
+        .lever-card.primary-lever .lever-rank {
+            color: var(--machine-dark);
+        }
+        .lever-card .lever-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .lever-card .lever-desc {
+            font-size: 11px;
+            color: var(--muted-foreground);
+            margin-top: 4px;
+        }
+
+        /* Comparison blocks */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .compare-block {
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) * 1.8);
+            overflow: hidden;
+        }
+        .compare-block .compare-header {
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .compare-block.before .compare-header {
+            background: var(--fail-bg);
+            color: var(--fail);
+        }
+        .compare-block.after .compare-header {
+            background: var(--pass-bg);
+            color: var(--pass);
+        }
+        .compare-block .compare-body {
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        .conf-high { color: var(--pass); font-weight: 600; font-size: 12px; }
+
+        .footer { border-top: 1px solid var(--border); background: var(--card); padding: 10px 24px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted-foreground); margin-left: 210px; }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .footer { margin-left: 0; }
+            .lever-grid { grid-template-columns: repeat(2, 1fr); }
+            .compare-grid { grid-template-columns: 1fr; }
+        }
+        @media print {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .footer { margin-left: 0; }
+            body { background: #fff; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="logo-text">Kerf</div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Strategy</div>
+            <a class="nav-item" href="PRICING_STRATEGY.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Pricing</a>
+            <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Messaging</a>
+            <div class="nav-section">Reference</div>
+            <a class="nav-item" href="#diagnosis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Diagnosis</a>
+            <a class="nav-item" href="#levers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg> Levers</a>
+            <a class="nav-item" href="#hero"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg> Hero Options</a>
+            <a class="nav-item" href="#sections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Page Sections</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <span class="topbar-breadcrumb">Strategy &rsaquo; <strong>Messaging</strong></span>
+            <span style="margin-left:auto"><span class="badge badge-warn">Draft</span></span>
+        </div>
+
+        <div class="content">
+
+            <div class="page-header">
+                <h1>Messaging Strategy</h1>
+                <p>What to say, how to say it, and why it will cut through &mdash; April 2026</p>
+            </div>
+
+            <!-- Diagnosis -->
+            <div class="card" id="diagnosis">
+                <div class="section-bar">Diagnosis: Why the Current Messaging Won&rsquo;t Scale</div>
+                <div class="card-content" style="padding-top:12px">
+                    <p>The current landing page is well-written and effective for H1 (safety-only). But it has three structural problems as Kerf expands:</p>
+
+                    <div class="callout callout-warn">
+                        <strong>1. It sells safety software, not a construction operating system.</strong>
+                        Every section is OSHA-centric &mdash; penalties, citations, compliance gaps. This attracts the contractor who Googles &ldquo;OSHA fall protection plan&rdquo; at 11 PM. It does not attract the contractor who is drowning in six apps, paper timesheets, and Sunday-night catch-up sessions. As H2 features ship, the site must speak to the broader pain.
+                    </div>
+
+                    <div class="callout callout-warn">
+                        <strong>2. It leads with fear, not time.</strong>
+                        The hero (&ldquo;Know exactly where you stand before OSHA walks on site&rdquo;) is a fear message. Research shows <strong>time savings is the #1 universal motivator</strong> for small contractors. Fear creates anxiety; time savings creates desire. Jobber leads with &ldquo;12 hours+ saved per week.&rdquo; ServiceTitan leads with &ldquo;25% revenue increase.&rdquo; Fear should be a supporting lever, not the headline.
+                    </div>
+
+                    <div class="callout callout-warn">
+                        <strong>3. It doesn&rsquo;t tell Marco&rsquo;s story.</strong>
+                        The vision document has the most compelling narrative in the entire codebase: one site walk, talk into your phone, three reports write themselves, no forms. The landing page never mentions voice input, daily logs, time tracking, or the &ldquo;documentation as a byproduct of work&rdquo; thesis. The product principle &ldquo;the best documentation is the documentation that writes itself&rdquo; should be the messaging foundation, not just an internal belief.
+                    </div>
+
+                    <h4>What&rsquo;s Working (Keep These)</h4>
+                    <div class="callout callout-pass">
+                        <ul>
+                            <li><strong>Pain-point scenarios</strong> (&ldquo;If any of this is you&rdquo;) &mdash; specific, emotionally resonant, mirror real contractor language</li>
+                            <li><strong>Testimonials with specifics</strong> &mdash; Mike R. saves $1,200/plan, Sarah K. avoids $16K fine</li>
+                            <li><strong>Low-friction CTAs</strong> &mdash; &ldquo;Try it free, no credit card&rdquo; and &ldquo;See what OSHA would find&rdquo;</li>
+                            <li><strong>Regulatory citations throughout</strong> &mdash; builds trust with OSHA-literate buyers</li>
+                            <li><strong>Price anchoring</strong> &mdash; comparing $99/mo to $1,500/SSSP consultant fee</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversion Levers -->
+            <div class="section-gap" id="levers">
+                <div class="card">
+                    <div class="section-bar">The Four Conversion Levers (Ranked)</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <p style="font-size:13px;color:var(--muted-foreground);margin-bottom:12px">Research on construction SaaS adoption shows these four emotional triggers drive purchase decisions. The order matters &mdash; lead with time, close with fear.</p>
+
+                        <div class="lever-grid">
+                            <div class="lever-card primary-lever">
+                                <div class="lever-rank">Primary</div>
+                                <div class="lever-name">Time</div>
+                                <div class="lever-desc">Universally resonant. Lowest resistance. &ldquo;Get your Sundays back.&rdquo;</div>
+                            </div>
+                            <div class="lever-card">
+                                <div class="lever-rank">Secondary</div>
+                                <div class="lever-name">Identity</div>
+                                <div class="lever-desc">Emotionally compelling. &ldquo;Run safety like a $50M contractor.&rdquo;</div>
+                            </div>
+                            <div class="lever-card">
+                                <div class="lever-rank">Supporting</div>
+                                <div class="lever-name">Money</div>
+                                <div class="lever-desc">Rational justification. &ldquo;Replace $1,275/mo in tools.&rdquo;</div>
+                            </div>
+                            <div class="lever-card">
+                                <div class="lever-rank">Tertiary</div>
+                                <div class="lever-name">Fear</div>
+                                <div class="lever-desc">Creates urgency. Always pair with solution. Use sparingly.</div>
+                            </div>
+                        </div>
+
+                        <h4>Why This Order?</h4>
+                        <table>
+                            <thead><tr><th>Lever</th><th>Why It Works</th><th>How Competitors Use It</th><th>Risk If Overused</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Time</strong></td><td>Contractors work 60+ hour weeks. An hour saved is an hour with family. Connects to quality of life, not just business.</td><td>Jobber: &ldquo;12+ hours saved/week&rdquo;<br>ClockShark: &ldquo;finish jobs quickly&rdquo;<br>Raken: &ldquo;field management made easy&rdquo;</td><td>Low risk. Everyone wants more time.</td></tr>
+                                <tr><td><strong>Identity</strong></td><td>Small contractors are professionalising. They want to &ldquo;run a real business,&rdquo; not just survive job-to-job. Safety program quality signals legitimacy to GCs.</td><td>Jobber: &ldquo;Run a stronger service business&rdquo;<br>BuildOps: &ldquo;Software That Speaks Contractor&rdquo;</td><td>Must feel authentic, never condescending.</td></tr>
+                                <tr><td><strong>Money</strong></td><td>ROI is the rational justification after the emotional decision. Works best as &ldquo;cost of the problem&rdquo; framing.</td><td>ServiceTitan: &ldquo;25% revenue increase&rdquo;<br>Safesite: &ldquo;8 hours saved per week&rdquo;</td><td>Generic ROI claims feel like every other ad.</td></tr>
+                                <tr><td><strong>Fear</strong></td><td>OSHA penalties are real ($16,550/serious, $165K/willful). Fear creates urgency when paired with a solution.</td><td>Current Kerf site leads with fear. Few competitors do &mdash; it&rsquo;s differentiating but limiting.</td><td>Fear alone creates anxiety, not action. Can feel manipulative.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The Core Narrative -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">The Core Narrative: &ldquo;One Walk. Everything Done.&rdquo;</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <p>The vision document contains the most powerful marketing story Kerf has. It is currently buried in an internal doc. It should be the centrepiece of the marketing site.</p>
+
+                        <div class="compare-grid">
+                            <div class="compare-block before">
+                                <div class="compare-header">Before Kerf &mdash; Marco&rsquo;s Morning</div>
+                                <div class="compare-body">
+                                    <ol>
+                                        <li>Check weather on phone</li>
+                                        <li>Open App 1 for safety checklist</li>
+                                        <li>Open App 2 for daily log</li>
+                                        <li>Open App 3 for time tracking</li>
+                                        <li>Open email for RFI responses</li>
+                                        <li>Check spreadsheet for schedule</li>
+                                        <li>Sunday night: reconcile all of it</li>
+                                    </ol>
+                                    <p style="margin-top:8px;font-weight:600;color:var(--fail)">6 apps. Paper timesheets. Fiction written from memory.</p>
+                                </div>
+                            </div>
+                            <div class="compare-block after">
+                                <div class="compare-header">With Kerf &mdash; Marco&rsquo;s Morning</div>
+                                <div class="compare-body">
+                                    <ol>
+                                        <li>Open Kerf. Morning brief is waiting.</li>
+                                        <li>Deliver toolbox talk. Crew signs on their phones.</li>
+                                        <li>Walk the site for 8 minutes, talking and taking photos.</li>
+                                        <li>Kerf writes the safety inspection, quality report, and daily log.</li>
+                                        <li>Review. Two taps. Done.</li>
+                                    </ol>
+                                    <p style="margin-top:8px;font-weight:600;color:var(--pass)">One tool. One walk. Three reports. No forms.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="callout callout-machine">
+                            <strong>This is the cut-through message.</strong>
+                            No competitor can tell this story. SafetyCulture does inspections. Raken does daily logs. ClockShark does time tracking. Nobody does all three from one site walk using voice and camera. The &ldquo;one walk, everything done&rdquo; narrative is unique to Kerf and impossible to claim without the technology to back it up.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Options -->
+            <div class="section-gap" id="hero">
+                <div class="card">
+                    <div class="section-bar">Hero Section Options (Ranked)</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <p style="font-size:13px;color:var(--muted-foreground);margin-bottom:16px">Three hero concepts, each leading with a different lever. All are designed for the expanded Kerf platform, not safety-only.</p>
+
+                        <!-- Option A -->
+                        <div class="hero-mock">
+                            <div class="hero-label">Option A &mdash; Recommended</div>
+                            <div class="eyebrow">For contractors running 2-20 projects</div>
+                            <h2>One site walk. <em>Everything documented.</em></h2>
+                            <div class="sub">Walk the site, talk into your phone. Kerf writes the safety inspection, daily log, and quality report. Your crew clocks in with a tap. Your certifications track themselves. Your Sundays are yours again.</div>
+                            <div class="cta-row">
+                                <div class="cta-primary">Try it free &mdash; no credit card &rarr;</div>
+                                <div class="cta-secondary">See a 2-minute demo</div>
+                            </div>
+                            <div class="proof">Replaces safety binders, daily log apps, time trackers, and paper forms. From $99/mo. Unlimited users.</div>
+                        </div>
+
+                        <div class="callout callout-pass">
+                            <strong>Why Option A wins:</strong>
+                            Leads with the unique capability (voice-to-reports from one walk). Uses the time lever (&ldquo;Sundays are yours again&rdquo;). Names the specific outputs contractors need. The eyebrow qualifies the audience. The proof line addresses consolidation and price without making them the headline.
+                        </div>
+
+                        <!-- Option B -->
+                        <div class="hero-mock" style="margin-top:24px">
+                            <div class="hero-label">Option B &mdash; Identity-Led</div>
+                            <div class="eyebrow">Safety. Daily logs. Time tracking. Quality. One app.</div>
+                            <h2>Stop running your jobsite <em>out of a filing cabinet.</em></h2>
+                            <div class="sub">Your crew uses 6 apps, 3 binders, and a spreadsheet. Kerf replaces all of it. Voice-first inspections. Automatic daily logs. GPS time tracking. Professional documents that win GC contracts. In English and Spanish.</div>
+                            <div class="cta-row">
+                                <div class="cta-primary">Start free &rarr;</div>
+                                <div class="cta-secondary">Run a free Mock OSHA Inspection</div>
+                            </div>
+                            <div class="proof">Used by contractors across 23 states. OSHA 29 CFR 1926 compliant. From $99/mo.</div>
+                        </div>
+
+                        <div class="callout callout-machine">
+                            <strong>Why Option B works:</strong>
+                            Identity lever &mdash; challenges the contractor to stop being the &ldquo;filing cabinet&rdquo; company. Names the sprawl (6 apps, 3 binders, a spreadsheet). Lists all platform capabilities in the sub. Bilingual mention is a differentiator and a values signal.
+                        </div>
+
+                        <!-- Option C -->
+                        <div class="hero-mock" style="margin-top:24px">
+                            <div class="hero-label">Option C &mdash; Consolidation-Led</div>
+                            <div class="eyebrow">The construction operations platform</div>
+                            <h2>Replace your safety binder, daily log app, time tracker, <em>and paper forms.</em></h2>
+                            <div class="sub">Kerf is one app for everything your superintendent touches in a day. Safety inspections, toolbox talks, daily logs, time tracking, quality checks, and sub compliance &mdash; all from the field, all by voice.</div>
+                            <div class="cta-row">
+                                <div class="cta-primary">See what you can cancel &rarr;</div>
+                                <div class="cta-secondary">Watch the 2-minute walkthrough</div>
+                            </div>
+                            <div class="proof">Contractors save $400-1,000/mo by replacing 3-6 separate tools. No per-user fees. Unlimited crew.</div>
+                        </div>
+
+                        <div class="callout callout-machine">
+                            <strong>Why Option C works:</strong>
+                            Money lever via consolidation. &ldquo;See what you can cancel&rdquo; is a high-intent CTA. Names specific tools being replaced. The proof line quantifies savings. Risk: may feel generic if competitors start saying the same thing.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messaging by Audience -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Messaging by Persona</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <p style="font-size:13px;color:var(--muted-foreground);margin-bottom:12px">Different people in the buying journey care about different things. The landing page must speak to all four, but the owner (Sarah) and foreman (Marco) are the decision-makers.</p>
+                        <table>
+                            <thead><tr><th>Persona</th><th>What They Search</th><th>What They Need to Hear</th><th>Primary Lever</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Sarah</strong><br><span style="font-size:11px;color:var(--muted-foreground)">Owner, 45 employees</span></td>
+                                    <td>&ldquo;OSHA safety program template&rdquo;<br>&ldquo;how to lower EMR&rdquo;<br>&ldquo;safety software for contractors&rdquo;</td>
+                                    <td>&ldquo;Get your Sundays back. Your compliance dashboard, sub tracking, and prequalification &mdash; all in one place. Your EMR drops. You win more bids.&rdquo;</td>
+                                    <td>Time + Money</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Marco</strong><br><span style="font-size:11px;color:var(--muted-foreground)">Foreman, 22-person crew</span></td>
+                                    <td>He doesn&rsquo;t search. Sarah or Dave sends him the link.</td>
+                                    <td>&ldquo;One site walk. Talk into your phone. The inspection, daily log, and quality report write themselves. In English or Spanish.&rdquo;</td>
+                                    <td>Time + Ease</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Dave</strong><br><span style="font-size:11px;color:var(--muted-foreground)">Superintendent, 3-4 projects</span></td>
+                                    <td>&ldquo;daily report app construction&rdquo;<br>&ldquo;best construction daily log app&rdquo;</td>
+                                    <td>&ldquo;Your site walk produces the safety report AND the daily log. Voice-first. Works between sites. The GC stops bugging you about documentation.&rdquo;</td>
+                                    <td>Time + Identity</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ana</strong><br><span style="font-size:11px;color:var(--muted-foreground)">GC Safety Director</span></td>
+                                    <td>&ldquo;subcontractor compliance software&rdquo;<br>&ldquo;sub safety tracking&rdquo;</td>
+                                    <td>&ldquo;See every sub&rsquo;s compliance, training, and insurance status in real time. 7 out of 10 COIs you receive are non-compliant. Stop chasing paper.&rdquo;</td>
+                                    <td>Time + Fear</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Section Recommendations -->
+            <div class="section-gap" id="sections">
+                <div class="card">
+                    <div class="section-bar">Recommended Landing Page Structure</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <p style="font-size:13px;color:var(--muted-foreground);margin-bottom:12px">The current page has 10 sections. The revised page keeps the structure but shifts the narrative from &ldquo;OSHA compliance tool&rdquo; to &ldquo;the one app that replaces everything.&rdquo;</p>
+
+                        <table>
+                            <thead><tr><th>#</th><th>Section</th><th>Current</th><th>Proposed</th><th>Lever</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td><strong>Hero</strong></td>
+                                    <td>&ldquo;Know where you stand before OSHA walks on site&rdquo;</td>
+                                    <td><strong>&ldquo;One site walk. Everything documented.&rdquo;</strong> (Option A above)</td>
+                                    <td>Time</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td><strong>What You Get</strong></td>
+                                    <td>5 safety features (inspections, docs, workers, OSHA log, mock inspection)</td>
+                                    <td><strong>6-7 capability icons:</strong> Safety, Daily Logs, Time Tracking, Quality, Sub Compliance, Mock OSHA, Voice Input. Show breadth early.</td>
+                                    <td>Consolidation</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td><strong>The Problem</strong><br><em>&ldquo;If any of this is you&rdquo;</em></td>
+                                    <td>4 safety pain points (GC compliance, cert expiry, consultant cost, toolbox talk gap)</td>
+                                    <td><strong>6 pain points spanning ops:</strong> Keep the best 2 safety ones. Add: &ldquo;Your daily logs are fiction written from memory on Sunday night.&rdquo; &ldquo;Paper timesheets are costing you $52K/year.&rdquo; &ldquo;You&rsquo;re paying for 4 apps that don&rsquo;t talk to each other.&rdquo; &ldquo;Your Spanish-speaking crew can&rsquo;t read the safety plan.&rdquo;</td>
+                                    <td>Fear + Time</td>
+                                </tr>
+                                <tr class="row-highlight">
+                                    <td>4</td>
+                                    <td><strong>The Demo Moment</strong><br><em>NEW SECTION</em></td>
+                                    <td>Does not exist</td>
+                                    <td><strong>The Marco story as an animated/illustrated walkthrough.</strong> &ldquo;6:00 AM: Morning brief is waiting. 6:15 AM: Walk the site, talk and take photos. 6:23 AM: Safety inspection, daily log, and quality report are done. One walk. Three reports. No forms.&rdquo; This is the money section &mdash; the moment a visitor says &ldquo;I need this.&rdquo;</td>
+                                    <td>Time + Identity</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td><strong>How It Works</strong></td>
+                                    <td>4 safety-only workflows</td>
+                                    <td><strong>4 expanded workflows:</strong> (1) Morning brief + toolbox talk, (2) Voice walkthrough &rarr; inspection + daily log + quality, (3) Time tracking + certifications, (4) Mock OSHA + GC compliance</td>
+                                    <td>Ease</td>
+                                </tr>
+                                <tr class="row-highlight">
+                                    <td>6</td>
+                                    <td><strong>What You Can Cancel</strong><br><em>NEW SECTION</em></td>
+                                    <td>Does not exist</td>
+                                    <td><strong>Tool replacement calculator.</strong> &ldquo;What are you paying now?&rdquo; Show logos/categories: Safety app ($X/mo) + Daily log app ($X/mo) + Time tracker ($X/mo) + Paper forms ($X in fines). Total: $1,275/mo. Kerf: $299/mo. Interactive or static.</td>
+                                    <td>Money</td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td><strong>Social Proof</strong></td>
+                                    <td>2 testimonials (safety-focused)</td>
+                                    <td><strong>Expand to 3-4 testimonials spanning use cases.</strong> Keep Mike R. (safety docs) and Sarah K. (cert tracking). Add: a foreman on voice input + daily logs, an owner on app consolidation / Sundays back.</td>
+                                    <td>Trust</td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td><strong>Pricing</strong></td>
+                                    <td>4 tiers, safety-only features</td>
+                                    <td><strong>Updated tiers showing H2 features.</strong> Safety and Operations sub-sections per card (matching the pricing strategy doc).</td>
+                                    <td>Value</td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td><strong>FAQ</strong></td>
+                                    <td>5 safety questions</td>
+                                    <td><strong>Add:</strong> &ldquo;Does it work offline?&rdquo; (yes), &ldquo;Will my crew actually use it?&rdquo; (voice-first, 3 taps or less), &ldquo;Is it in Spanish?&rdquo; (yes, first-class), &ldquo;Can I replace my daily log app?&rdquo; (yes), &ldquo;What about time tracking?&rdquo; (yes, GPS clock-in)</td>
+                                    <td>Objection handling</td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td><strong>Final CTA</strong></td>
+                                    <td>&ldquo;Your next OSHA inspection could be tomorrow&rdquo;</td>
+                                    <td><strong>&ldquo;Your foreman opens one app tomorrow morning. Everything else takes care of itself.&rdquo;</strong> Shifts from fear to aspiration. CTA: &ldquo;Start free &mdash; takes 2 minutes&rdquo;</td>
+                                    <td>Identity + Time</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Copy Lines -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Copy Bank &mdash; Lines Worth Testing</div>
+                    <div class="card-content" style="padding-top:12px">
+
+                        <h4>Headlines</h4>
+                        <table>
+                            <thead><tr><th>Line</th><th>Lever</th><th>Use Where</th></tr></thead>
+                            <tbody>
+                                <tr class="row-highlight"><td>&ldquo;One site walk. Everything documented.&rdquo;</td><td>Time</td><td>Hero (primary)</td></tr>
+                                <tr><td>&ldquo;Stop running your jobsite out of a filing cabinet.&rdquo;</td><td>Identity</td><td>Hero (alt) or section header</td></tr>
+                                <tr><td>&ldquo;The app your foreman will actually use.&rdquo;</td><td>Ease</td><td>Hero (alt) or social proof intro</td></tr>
+                                <tr><td>&ldquo;Replace your safety binder, daily log app, and time tracker.&rdquo;</td><td>Money</td><td>Consolidation section</td></tr>
+                                <tr><td>&ldquo;Safety. Daily logs. Time tracking. Quality. One app.&rdquo;</td><td>Consolidation</td><td>Eyebrow or nav bar</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Subheadlines and Supporting Copy</h4>
+                        <table>
+                            <thead><tr><th>Line</th><th>Lever</th></tr></thead>
+                            <tbody>
+                                <tr><td>&ldquo;Walk the site, talk into your phone. The inspection, daily log, and quality report write themselves.&rdquo;</td><td>Time + Ease</td></tr>
+                                <tr><td>&ldquo;Your crew clocks in with a tap. Certifications track themselves. Your Sundays are yours again.&rdquo;</td><td>Time</td></tr>
+                                <tr><td>&ldquo;Most contractors juggle 6 different apps. Their foremen hate all of them.&rdquo;</td><td>Identity</td></tr>
+                                <tr><td>&ldquo;You&rsquo;re paying $1,275/month for safety, daily logs, and time tracking from 4 different vendors. Kerf does all of it for $299.&rdquo;</td><td>Money</td></tr>
+                                <tr><td>&ldquo;Every document references current OSHA 29 CFR 1926 standards. Every inspection is GPS-tagged and timestamped. Every report is audit-ready.&rdquo;</td><td>Trust</td></tr>
+                                <tr><td>&ldquo;In English and Spanish. Because 34% of your workforce shouldn&rsquo;t get worse safety information because of the language they speak.&rdquo;</td><td>Identity + Values</td></tr>
+                                <tr><td>&ldquo;The best documentation is the documentation that writes itself.&rdquo;</td><td>Time (philosophical)</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>CTAs</h4>
+                        <table>
+                            <thead><tr><th>CTA</th><th>Intent Level</th><th>Use Where</th></tr></thead>
+                            <tbody>
+                                <tr><td>&ldquo;Try it free &mdash; no credit card&rdquo;</td><td>Low friction, high volume</td><td>Hero primary</td></tr>
+                                <tr><td>&ldquo;See a 2-minute demo&rdquo;</td><td>Medium &mdash; wants proof before commitment</td><td>Hero secondary</td></tr>
+                                <tr><td>&ldquo;Run your free Mock OSHA Inspection&rdquo;</td><td>High &mdash; has a specific compliance concern</td><td>Fear section, final CTA</td></tr>
+                                <tr><td>&ldquo;See what you can cancel&rdquo;</td><td>High &mdash; already paying for other tools</td><td>Consolidation section</td></tr>
+                                <tr><td>&ldquo;Start free &mdash; takes 2 minutes&rdquo;</td><td>Low friction, emphasises speed</td><td>Final CTA, inline</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Pain Point Scenarios (New / Expanded)</h4>
+                        <table>
+                            <thead><tr><th>Scenario</th><th>Twist</th><th>Category</th></tr></thead>
+                            <tbody>
+                                <tr><td>&ldquo;Your daily logs are fiction written from memory on Sunday night.&rdquo;</td><td>&ldquo;With Kerf, 80% of the daily log writes itself from your morning safety walk.&rdquo;</td><td>Daily Logs</td></tr>
+                                <tr><td>&ldquo;Your timesheets are paper. Bad time tracking costs a 50-person crew $52K/year.&rdquo;</td><td>&ldquo;GPS clock-in. One tap. No paper. Cost codes auto-assigned.&rdquo;</td><td>Time Tracking</td></tr>
+                                <tr><td>&ldquo;You&rsquo;re paying for 4 apps that don&rsquo;t talk to each other.&rdquo;</td><td>&ldquo;Kerf connects safety, daily logs, time, and quality in one system. Data flows. Reports write themselves.&rdquo;</td><td>Consolidation</td></tr>
+                                <tr><td>&ldquo;A third of your crew can&rsquo;t read the safety plan.&rdquo;</td><td>&ldquo;Everything in Kerf works in Spanish &mdash; voice input, toolbox talks, hazard reports. First-class, not translated.&rdquo;</td><td>Bilingual</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO & Meta -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">SEO &amp; Meta Tags (Currently Missing)</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <div class="callout callout-fail">
+                            <strong>The index.html has no SEO metadata.</strong>
+                            Title is &ldquo;frontend&rdquo;. No description, no keywords, no Open Graph tags. This must be fixed immediately &mdash; it affects every search result and social share.
+                        </div>
+
+                        <h4>Recommended Meta Tags</h4>
+                        <table>
+                            <thead><tr><th>Tag</th><th>Value</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>&lt;title&gt;</code></td><td>Kerf &mdash; Safety, Daily Logs, Time Tracking for Construction Contractors</td></tr>
+                                <tr><td><code>description</code></td><td>One app for safety inspections, daily logs, time tracking, and quality management. Voice-first. Bilingual. From $99/month with unlimited users. Built for construction crews, not offices.</td></tr>
+                                <tr><td><code>og:title</code></td><td>Kerf &mdash; One site walk. Everything documented.</td></tr>
+                                <tr><td><code>og:description</code></td><td>Replace your safety binder, daily log app, and time tracker. Voice-first inspections. Automatic daily logs. GPS time tracking. In English and Spanish. From $99/mo.</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Target Search Terms (Content-Led SEO)</h4>
+                        <table>
+                            <thead><tr><th>Keyword Cluster</th><th>Intent</th><th>Current Coverage</th></tr></thead>
+                            <tbody>
+                                <tr><td>OSHA safety program template / fall protection plan</td><td>High-intent safety</td><td><span class="conf-high">Strong</span> &mdash; current site serves this well</td></tr>
+                                <tr><td>construction daily log app / daily report software</td><td>High-intent ops</td><td style="color:var(--fail);font-weight:600">Missing &mdash; no mention of daily logs</td></tr>
+                                <tr><td>construction time tracking app / GPS clock in</td><td>High-intent ops</td><td style="color:var(--fail);font-weight:600">Missing &mdash; no mention of time tracking</td></tr>
+                                <tr><td>construction safety app for small contractors</td><td>Category search</td><td><span class="conf-high">Strong</span></td></tr>
+                                <tr><td>replace procore small contractor / procore alternative</td><td>Consolidation</td><td style="color:var(--fail);font-weight:600">Missing &mdash; no positioning vs Procore</td></tr>
+                                <tr><td>bilingual safety app construction / spanish safety software</td><td>Differentiator</td><td style="color:var(--warn);font-weight:600">Weak &mdash; mentioned but not SEO-targeted</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messaging Rollout by Horizon -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Messaging Rollout by Horizon</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <table>
+                            <thead><tr><th>Phase</th><th>Headline Position</th><th>Site Emphasis</th><th>SEO Targets</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>H1 Launch</strong><br><span style="font-size:11px;color:var(--muted-foreground)">Months 1-6</span></td>
+                                    <td>&ldquo;The AI Safety Director for $99/month&rdquo;</td>
+                                    <td>Safety docs, inspections, voice input, bilingual, Mock OSHA. Keep current fear/compliance messaging but shift hero to time lever.</td>
+                                    <td>Safety program templates, OSHA compliance, toolbox talks</td>
+                                </tr>
+                                <tr class="row-highlight">
+                                    <td><strong>H2 Expansion</strong><br><span style="font-size:11px;color:var(--muted-foreground)">Months 6-12</span></td>
+                                    <td>&ldquo;One site walk. Everything documented.&rdquo;</td>
+                                    <td>Full platform narrative. Add daily logs, time tracking, quality sections. &ldquo;What you can cancel&rdquo; section. Marco story as the centrepiece.</td>
+                                    <td>Add: daily log app, time tracking, quality inspection, construction operations platform</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>H3 Platform</strong><br><span style="font-size:11px;color:var(--muted-foreground)">Months 12-18</span></td>
+                                    <td>&ldquo;Run your entire jobsite from one app.&rdquo;</td>
+                                    <td>Add RFIs, scheduling, change orders. Position against Procore. GC-focused landing page variant.</td>
+                                    <td>Add: Procore alternative, construction management software, RFI tracking</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="callout callout-machine">
+                            <strong>Timing recommendation:</strong>
+                            Don&rsquo;t wait for H2 features to ship before updating the hero. Switch the hero to Option A (&ldquo;One site walk. Everything documented.&rdquo;) now &mdash; it works for safety-only and sets up the platform narrative. Add H2 feature sections as they ship. The &ldquo;one tool&rdquo; positioning should be established in the market before competitors can claim it.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Summary: Three Things That Will Cut Through</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <div class="callout callout-pass">
+                            <strong>1. &ldquo;One walk, everything done.&rdquo;</strong>
+                            No competitor can say this. It is specific, demonstrable, and immediately understood by anyone who has ever done a site walk with a clipboard. It leads with time (primary lever), implies technology depth (voice + AI), and differentiates from every template-based, form-filling competitor. This is the headline.
+                        </div>
+                        <div class="callout callout-pass">
+                            <strong>2. &ldquo;Replace your safety binder, daily log app, time tracker, and paper forms.&rdquo;</strong>
+                            This names the tools being replaced. Specificity beats abstraction. &ldquo;All-in-one platform&rdquo; is generic. &ldquo;Replace your safety binder, daily log app, time tracker, and paper forms&rdquo; is a checklist the contractor can verify against their own desk. The consolidation narrative is the value justification &mdash; $299 vs $1,275 is unanswerable.
+                        </div>
+                        <div class="callout callout-pass">
+                            <strong>3. &ldquo;In English and Spanish. Because a third of your crew shouldn&rsquo;t get worse safety information because of the language they speak.&rdquo;</strong>
+                            This is a values statement disguised as a feature. It signals that Kerf understands who actually works on construction sites. No competitor leads with bilingual as a moral position rather than a checkbox feature. It differentiates emotionally, builds trust with Latino-owned firms, and is memorable precisely because nobody else says it.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    Kerf Messaging Strategy &mdash; Draft for Review &mdash; April 2026 &mdash; &ldquo;Precision for Your Jobsite&rdquo;
+</div>
+
+</body>
+</html>

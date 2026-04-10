@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerf Pricing Strategy</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <style>
+        :root {
+            --primary: #F5B800;
+            --primary-foreground: #0d0e0c;
+            --machine-dark: #D9A200;
+            --machine-bright: #FFCA18;
+            --machine-wash: rgba(245,184,0,0.1);
+            --background: #f4f5f3;
+            --foreground: #0d0e0c;
+            --card: #ffffff;
+            --card-foreground: #0d0e0c;
+            --border: #e6e8e3;
+            --muted: #e6e8e3;
+            --muted-foreground: #71766b;
+            --pass: #2d8a4e;
+            --pass-bg: rgba(45,138,78,0.1);
+            --fail: #c53030;
+            --fail-bg: rgba(197,48,48,0.1);
+            --warn: #b8860b;
+            --warn-bg: rgba(184,134,11,0.08);
+            --concrete-50: #f4f5f3;
+            --concrete-100: #e6e8e3;
+            --concrete-300: #a3a79c;
+            --concrete-400: #71766b;
+            --concrete-500: #545951;
+            --concrete-600: #3e423a;
+            --concrete-700: #2e312b;
+            --concrete-800: #191b17;
+            --radius: 3px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'IBM Plex Sans', sans-serif; color: var(--foreground); line-height: 1.6; background: var(--background); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--concrete-300); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--concrete-400); }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 210px; background: var(--card); border-right: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+        .sidebar-logo { height: 56px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--border); gap: 8px; }
+        .logo-mark { width: 28px; height: 28px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .logo-mark svg { width: 16px; height: 16px; }
+        .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+        .sidebar-nav { padding: 12px 8px; flex: 1; overflow-y: auto; }
+        .nav-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--concrete-400); padding: 8px 10px 4px; }
+        .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 13px; color: var(--concrete-500); border-radius: var(--radius); cursor: default; margin-bottom: 1px; text-decoration: none; }
+        .nav-item:hover { background: var(--concrete-50); color: var(--foreground); }
+        .nav-item.active { background: var(--machine-wash); color: var(--foreground); font-weight: 600; border-left: 2px solid var(--primary); }
+        .nav-item svg { width: 16px; height: 16px; opacity: 0.5; flex-shrink: 0; }
+        .nav-item.active svg { opacity: 1; color: var(--machine-dark); }
+
+        /* Main */
+        .main { flex: 1; margin-left: 210px; display: flex; flex-direction: column; min-height: 100vh; }
+        .topbar { height: 56px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; }
+        .topbar-breadcrumb { font-size: 13px; color: var(--muted-foreground); }
+        .topbar-breadcrumb strong { color: var(--foreground); font-weight: 600; }
+        .content { flex: 1; padding: 24px; max-width: 1100px; width: 100%; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h1 { font-size: 24px; font-weight: 700; }
+        .page-header p { font-size: 14px; color: var(--muted-foreground); margin-top: 2px; }
+
+        /* Card */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 2.2); margin-bottom: 16px; }
+        .card-header { padding: 16px 16px 8px; }
+        .card-header h2 { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+        .card-header h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .card-header p { font-size: 13px; color: var(--muted-foreground); }
+        .card-content { padding: 0 16px 16px; }
+
+        /* Section bar */
+        .section-bar { background: var(--concrete-50); padding: 8px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--concrete-700); border-bottom: 1px solid var(--border); border-radius: calc(var(--radius) * 2.2) calc(var(--radius) * 2.2) 0 0; }
+
+        /* Badge */
+        .badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: calc(var(--radius) * 2.6); font-size: 12px; font-weight: 600; }
+        .badge-primary { background: var(--primary); color: var(--primary-foreground); }
+        .badge-pass { background: var(--pass-bg); color: var(--pass); }
+        .badge-fail { background: var(--fail-bg); color: var(--fail); }
+        .badge-warn { background: var(--warn-bg); color: var(--warn); }
+        .badge-muted { background: var(--muted); color: var(--concrete-600); }
+        .badge-machine { background: var(--machine-wash); color: var(--machine-dark); }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th { text-align: left; padding: 8px 12px; font-weight: 600; font-size: 12px; color: var(--concrete-600); background: var(--concrete-50); border-bottom: 1px solid var(--border); white-space: nowrap; }
+        tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--concrete-50); }
+        .row-highlight { background: var(--machine-wash) !important; font-weight: 600; }
+
+        /* Stat grid */
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+        .stat-card { background: var(--concrete-50); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.8); padding: 14px; text-align: center; }
+        .stat-card .value { font-size: 28px; font-weight: 700; }
+        .stat-card .value.accent { color: var(--primary); }
+        .stat-card .label { font-size: 11px; font-weight: 500; color: var(--muted-foreground); margin-top: 2px; }
+
+        /* Pricing cards */
+        .pricing-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin: 16px 0; }
+        .pricing-card { background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 2.2); padding: 20px 16px; text-align: center; display: flex; flex-direction: column; position: relative; }
+        .pricing-card.popular { border-color: var(--primary); box-shadow: 0 2px 8px rgba(245, 184, 0, 0.15); }
+        .pricing-card.popular::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: var(--primary); border-radius: calc(var(--radius) * 2.2) calc(var(--radius) * 2.2) 0 0; }
+        .pricing-badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: calc(var(--radius) * 2.6); white-space: nowrap; }
+        .pricing-card .tier-name { font-size: 17px; font-weight: 700; }
+        .pricing-card .price { margin-top: 8px; }
+        .pricing-card .price .amount { font-size: 32px; font-weight: 700; }
+        .pricing-card .price .period { font-size: 13px; color: var(--muted-foreground); }
+        .pricing-card .project-count { font-size: 13px; color: var(--muted-foreground); margin-top: 4px; }
+        .pricing-card .separator { height: 1px; background: var(--border); margin: 12px 0; }
+        .pricing-card .features { flex: 1; text-align: left; }
+        .pricing-card .feat-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--concrete-400); margin: 8px 0 4px; }
+        .pricing-card .feat-section:first-child { margin-top: 0; }
+        .pricing-card .feature { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; font-size: 12px; color: var(--muted-foreground); }
+        .pricing-card .feature svg { width: 14px; height: 14px; color: var(--pass); flex-shrink: 0; margin-top: 1px; }
+        .pricing-card .feature.h2-feat svg { color: var(--primary); }
+        .change { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+        .change-new { background: var(--pass-bg); color: var(--pass); }
+        .change-mod { background: var(--warn-bg); color: var(--warn); }
+        .change-h2 { background: var(--machine-wash); color: var(--machine-dark); }
+        .pricing-card .btn { display: block; margin-top: 14px; padding: 8px 12px; border-radius: calc(var(--radius) * 1.4); font-size: 13px; font-weight: 600; text-align: center; cursor: default; border: none; }
+        .btn-primary { background: var(--primary); color: var(--primary-foreground); }
+        .btn-dark { background: var(--concrete-800); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--concrete-600); }
+
+        /* Bars */
+        .bar-chart { margin: 16px 0; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 6px; }
+        .bar-label { width: 160px; font-size: 12px; font-weight: 500; color: var(--concrete-500); flex-shrink: 0; }
+        .bar-label.sf { color: var(--foreground); font-weight: 600; }
+        .bar-track { flex: 1; height: 22px; background: var(--concrete-50); border-radius: var(--radius); overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: var(--radius); display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; }
+        .bar-fill.competitor { background: var(--muted); color: var(--concrete-600); }
+        .bar-fill.safetyforge { background: var(--primary); color: var(--primary-foreground); }
+
+        /* Lists */
+        ul, ol { padding-left: 20px; margin: 8px 0; }
+        li { margin-bottom: 4px; font-size: 13px; }
+
+        /* Callout */
+        .callout { border-radius: calc(var(--radius) * 1.8); padding: 12px 16px; margin: 12px 0; font-size: 13px; }
+        .callout-pass { background: var(--pass-bg); border-left: 3px solid var(--pass); }
+        .callout-fail { background: var(--fail-bg); border-left: 3px solid var(--fail); }
+        .callout-warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+        .callout-machine { background: var(--machine-wash); border-left: 3px solid var(--primary); }
+        .callout strong { display: block; margin-bottom: 4px; }
+        .callout ol, .callout ul { margin: 4px 0; }
+
+        /* Check list */
+        .check-list { list-style: none; padding: 0; }
+        .check-list li { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+        .check-list li svg { width: 16px; height: 16px; color: var(--pass); flex-shrink: 0; margin-top: 2px; }
+        .check-list li strong { color: var(--foreground); }
+
+        /* Confidence */
+        .conf-high { color: var(--pass); font-weight: 600; font-size: 12px; }
+        .conf-med { color: var(--warn); font-weight: 600; font-size: 12px; }
+        .conf-low { color: var(--fail); font-weight: 600; font-size: 12px; }
+
+        /* Horizon badge */
+        .hz { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; vertical-align: middle; }
+        .hz-1 { background: var(--pass-bg); color: var(--pass); }
+        .hz-2 { background: var(--machine-wash); color: var(--machine-dark); }
+        .hz-3 { background: #e8e0f0; color: #6b4fa0; }
+        .hz-4 { background: var(--concrete-50); color: var(--concrete-600); border: 1px solid var(--border); }
+
+        h4 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; }
+        .section-gap { margin-top: 24px; }
+
+        .footer { border-top: 1px solid var(--border); background: var(--card); padding: 10px 24px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted-foreground); margin-left: 210px; }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .footer { margin-left: 0; }
+            .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media print {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .footer { margin-left: 0; }
+            body { background: #fff; }
+            .card { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="logo-text">Kerf</div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Overview</div>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</a>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg> Projects</a>
+            <div class="nav-section">Safety</div>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Documents</a>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Inspections</a>
+            <div class="nav-section">Operations <span class="hz hz-2">H2</span></div>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Daily Logs</a>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Time Tracking</a>
+            <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Quality</a>
+            <div class="nav-section">Account</div>
+            <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Billing</a>
+        </nav>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+        <div class="topbar">
+            <span class="topbar-breadcrumb">Account &rsaquo; <strong>Pricing Strategy</strong></span>
+            <span style="margin-left:auto"><span class="badge badge-warn">Draft</span></span>
+        </div>
+
+        <div class="content">
+
+            <div class="page-header">
+                <h1>Pricing Strategy</h1>
+                <p>One tool, not six &mdash; competitive analysis and pricing for the construction operations platform &mdash; April 2026</p>
+            </div>
+
+            <!-- Horizons Overview -->
+            <div class="card">
+                <div class="section-bar">The Four Horizons</div>
+                <div class="card-content" style="padding-top:12px">
+                    <p style="font-size:13px;color:var(--muted-foreground);margin-bottom:12px">Kerf is expanding from safety into a full construction operations platform. Pricing must reflect the expanding value at each horizon.</p>
+                    <table>
+                        <thead><tr><th>Horizon</th><th>Timeline</th><th>Modules</th><th>Pricing Impact</th></tr></thead>
+                        <tbody>
+                            <tr class="row-highlight"><td><span class="hz hz-1">H1</span> AI Safety Director</td><td>Months 1-6</td><td>Safety programs, inspections, toolbox talks, voice, bilingual</td><td>Current tiers &mdash; safety is the wedge</td></tr>
+                            <tr><td><span class="hz hz-2">H2</span> Construction Ops</td><td>Months 6-12</td><td>Daily logs, time tracking, quality, equipment, sub mgmt</td><td>Included at no extra cost (recommended)</td></tr>
+                            <tr><td><span class="hz hz-3">H3</span> Project Coordination</td><td>Months 12-18</td><td>RFIs, scheduling, change orders</td><td>Evaluate price increase ($50/tier)</td></tr>
+                            <tr><td><span class="hz hz-4">H4</span> Intelligence</td><td>Year 2-3</td><td>Predictive analytics, benchmarks, carrier integration</td><td>Premium/Enterprise expansion</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="value">$2.8B</div>
+                    <div class="label">EHS Market (2025)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">6.2</div>
+                    <div class="label">Avg Tools Per Contractor</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">$1,275</div>
+                    <div class="label">Competitor Stack Cost/mo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value accent">$299</div>
+                    <div class="label">Kerf Replaces All Of It</div>
+                </div>
+            </div>
+
+            <!-- Tool Stack Comparison -->
+            <div class="card">
+                <div class="section-bar">&ldquo;One Tool, Not Six&rdquo; &mdash; The Consolidation Opportunity</div>
+                <div class="card-content" style="padding-top:0">
+                    <table>
+                        <thead><tr><th>Tool Category</th><th>Typical Cost (25 crew)</th><th>Kerf Replaces</th><th>Horizon</th></tr></thead>
+                        <tbody>
+                            <tr><td>Safety compliance</td><td>$300-600/mo</td><td>Full replacement</td><td><span class="hz hz-1">H1</span></td></tr>
+                            <tr><td>Daily log software</td><td>$150-400/mo</td><td>Auto-populated from safety walk</td><td><span class="hz hz-2">H2</span></td></tr>
+                            <tr><td>Time tracking</td><td>$100-375/mo</td><td>GPS clock-in, cost codes</td><td><span class="hz hz-2">H2</span></td></tr>
+                            <tr><td>Quality inspections</td><td>$200-500/mo</td><td>Same engine as safety</td><td><span class="hz hz-2">H2</span></td></tr>
+                            <tr><td>Sub compliance</td><td>$200-400/mo</td><td>COI, performance scoring</td><td><span class="hz hz-2">H2</span></td></tr>
+                            <tr><td>Project coordination</td><td>$500-2,500/mo</td><td>RFIs, scheduling, change orders</td><td><span class="hz hz-3">H3</span></td></tr>
+                            <tr class="row-highlight"><td><strong>Total stack</strong></td><td><strong>$1,450-4,800/mo</strong></td><td colspan="2"><strong>Kerf Professional: $299/mo</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card">
+                <div class="section-bar">Key Recommendations</div>
+                <div class="card-content" style="padding-top:12px">
+                    <ol>
+                        <li><strong>Include Horizon 2 features in existing tiers at no price increase.</strong> Daily logs, time tracking, and quality inspections are included where their safety prerequisite already exists. This drives the &ldquo;one tool&rdquo; narrative and the app consolidation metric.</li>
+                        <li><strong>Increase document limits</strong> on Free (3&rarr;5) and Starter (10&rarr;25).</li>
+                        <li><strong>Reduce Business tier</strong> from $599 to $499.</li>
+                        <li><strong>Increase annual discount</strong> from 20% to 25%.</li>
+                        <li><strong>Plan for Horizon 3 price increase</strong> ($50/tier) once RFIs &amp; scheduling ship and are proven. Grandfather existing customers.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Proposed Pricing Cards -->
+            <div class="section-gap">
+                <h4>Proposed Tier Structure</h4>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <div class="tier-name">Free</div>
+                        <div class="price"><span class="amount">$0</span></div>
+                        <div class="project-count">1 project</div>
+                        <div class="separator"></div>
+                        <div class="features">
+                            <div class="feat-section">Safety <span class="hz hz-1">H1</span></div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 5 docs/mo <span class="change change-new">+2</span></div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Basic generation</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited users</div>
+                        </div>
+                        <div class="btn btn-outline">Free Forever</div>
+                    </div>
+
+                    <div class="pricing-card">
+                        <div class="tier-name">Starter</div>
+                        <div class="price"><span class="amount">$99</span><span class="period">/mo</span></div>
+                        <div class="project-count">2 projects</div>
+                        <div class="separator"></div>
+                        <div class="features">
+                            <div class="feat-section">Safety <span class="hz hz-1">H1</span></div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 25 docs/mo <span class="change change-new">+15</span></div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Mock inspections</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Morning briefs</div>
+                            <div class="feat-section">Operations <span class="hz hz-2">H2</span></div>
+                            <div class="feature h2-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Time tracking <span class="change change-h2">New</span></div>
+                        </div>
+                        <div class="btn btn-dark">Upgrade to Starter</div>
+                    </div>
+
+                    <div class="pricing-card popular">
+                        <div class="pricing-badge">Most Popular</div>
+                        <div class="tier-name">Professional</div>
+                        <div class="price"><span class="amount">$299</span><span class="period">/mo</span></div>
+                        <div class="project-count">8 projects</div>
+                        <div class="separator"></div>
+                        <div class="features">
+                            <div class="feat-section">Safety <span class="hz hz-1">H1</span></div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited docs</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> AI voice &amp; video</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Photo hazard</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Prequal automation</div>
+                            <div class="feat-section">Operations <span class="hz hz-2">H2</span></div>
+                            <div class="feature h2-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Daily logs <span class="change change-h2">New</span></div>
+                            <div class="feature h2-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Quality inspections <span class="change change-h2">New</span></div>
+                        </div>
+                        <div class="btn btn-primary">Upgrade to Professional</div>
+                    </div>
+
+                    <div class="pricing-card">
+                        <div class="tier-name">Business</div>
+                        <div class="price"><span class="amount">$499</span><span class="period">/mo</span></div>
+                        <div class="project-count">20 projects <span class="change change-mod">-$100</span></div>
+                        <div class="separator"></div>
+                        <div class="features">
+                            <div class="feat-section">Safety <span class="hz hz-1">H1</span></div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> GC portal</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> EMR modeling</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Predictive scoring</div>
+                            <div class="feat-section">Operations <span class="hz hz-2">H2</span></div>
+                            <div class="feature h2-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Equipment mgmt <span class="change change-h2">New</span></div>
+                            <div class="feature h2-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sub compliance+ <span class="change change-h2">New</span></div>
+                        </div>
+                        <div class="btn btn-dark">Upgrade to Business</div>
+                    </div>
+
+                    <div class="pricing-card">
+                        <div class="tier-name">Enterprise</div>
+                        <div class="price"><span class="amount">Custom</span></div>
+                        <div class="project-count">Unlimited</div>
+                        <div class="separator"></div>
+                        <div class="features">
+                            <div class="feat-section">Everything +</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> SSO &amp; API</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> White-label</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> State compliance</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated CSM</div>
+                            <div class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> All modules</div>
+                        </div>
+                        <div class="btn btn-dark">Contact Sales</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Changes -->
+            <div class="card">
+                <div class="section-bar">Changes from Current Pricing</div>
+                <div class="card-content" style="padding-top:0">
+                    <table>
+                        <thead><tr><th>Change</th><th>Before</th><th>After</th><th>Impact</th></tr></thead>
+                        <tbody>
+                            <tr><td>Free doc limit</td><td>3/mo</td><td><strong>5/mo</strong></td><td>Better conversion hook</td></tr>
+                            <tr><td>Starter doc limit</td><td>10/mo</td><td><strong>25/mo</strong></td><td>Reduced upgrade anxiety</td></tr>
+                            <tr><td>Business price</td><td>$599/mo</td><td><strong>$499/mo</strong></td><td>Lower upgrade friction</td></tr>
+                            <tr><td>Annual discount</td><td>20%</td><td><strong>25%</strong></td><td>Improved retention</td></tr>
+                            <tr class="row-highlight"><td>H2 features</td><td>Not yet built</td><td><strong>Included in existing tiers</strong></td><td>Massive value increase, no price increase</td></tr>
+                            <tr><td>Trade assoc. discount</td><td>None</td><td><strong>10%</strong></td><td>Aligns with GTM</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Competitive Landscape -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Competitive Landscape</div>
+                    <div class="card-header"><h3>Safety-Only Competitors (Current Competition)</h3></div>
+                    <div class="card-content">
+                        <table>
+                            <thead><tr><th>Competitor</th><th>Entry Price</th><th>Model</th><th>Free Tier</th><th>Confidence</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>SafetyCulture</strong></td><td>$24/seat/mo</td><td>Per-seat</td><td>10 users, 5 templates</td><td><span class="conf-high">High</span></td></tr>
+                                <tr><td><strong>Safesite</strong></td><td>$16/member/mo</td><td>Per-member</td><td>Unlimited users</td><td><span class="conf-high">High</span></td></tr>
+                                <tr><td><strong>SiteDocs</strong></td><td>~$29/user/mo</td><td>Per-user</td><td>None</td><td><span class="conf-med">Medium</span></td></tr>
+                                <tr><td><strong>KYRO AI</strong></td><td>$25/user/mo</td><td>Per-user</td><td>Unknown</td><td><span class="conf-med">Medium</span></td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Cost: 25-Person Crew &mdash; Safety + Operations Stack</h4>
+                        <div class="bar-chart">
+                            <div class="bar-row">
+                                <div class="bar-label">Procore (full platform)</div>
+                                <div class="bar-track"><div class="bar-fill competitor" style="width:100%">$2,500+/mo</div></div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">Multi-tool stack</div>
+                                <div class="bar-track"><div class="bar-fill competitor" style="width:51%">$1,275/mo</div></div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">SafetyCulture (safety only)</div>
+                                <div class="bar-track"><div class="bar-fill competitor" style="width:24%">$600/mo</div></div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label sf">Kerf (everything)</div>
+                                <div class="bar-track"><div class="bar-fill safetyforge" style="width:12%">$299/mo</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>Operations Tools Kerf Replaces <span class="hz hz-2">H2</span></h3></div>
+                    <div class="card-content">
+                        <table>
+                            <thead><tr><th>Category</th><th>Key Players</th><th>Typical Cost (25 crew)</th><th>Confidence</th></tr></thead>
+                            <tbody>
+                                <tr><td>Daily logs</td><td>Raken ($12/user/mo)</td><td>$300/mo</td><td><span class="conf-high">High</span></td></tr>
+                                <tr><td>Time tracking</td><td>ClockShark ($8-15/user/mo)</td><td>$200-375/mo</td><td><span class="conf-high">High</span></td></tr>
+                                <tr><td>Quality</td><td>PlanGrid, SafetyCulture</td><td>$200-500/mo</td><td><span class="conf-med">Medium</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>AI-Powered / Enterprise (Not Direct Threats)</h3></div>
+                    <div class="card-content">
+                        <table>
+                            <thead><tr><th>Competitor</th><th>Pricing</th><th>Why Not a Threat</th></tr></thead>
+                            <tbody>
+                                <tr><td><strong>Safety Mojo</strong></td><td>100-user min, enterprise</td><td>Cannot serve &lt;100 employees</td></tr>
+                                <tr><td><strong>Benetics AI</strong></td><td>No public pricing</td><td>Mid-market via Procore, not standalone</td></tr>
+                                <tr><td><strong>FYLD</strong></td><td>Enterprise ($41M raise)</td><td>Infrastructure, not SMB</td></tr>
+                                <tr><td><strong>BuildPass</strong></td><td>$175/mo (Australia)</td><td>Limited US OSHA depth</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Why Include H2 Free -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Horizon 2 Feature Strategy &mdash; Include, Don&rsquo;t Upsell</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <div class="callout callout-machine">
+                            <strong>Recommendation: Include daily logs, time tracking, and quality in existing tiers at no extra cost.</strong>
+                            The product vision says &ldquo;one tool, not six.&rdquo; Charging per-module contradicts this. Including H2 features justifies current prices, drives the app consolidation metric (target: 2+ tools replaced), and reduces churn because multi-feature users never leave.
+                        </div>
+
+                        <h4>Feature-to-Tier Mapping</h4>
+                        <table>
+                            <thead><tr><th>Feature</th><th>Available At</th><th>Rationale</th></tr></thead>
+                            <tbody>
+                                <tr><td>Time tracking (GPS clock-in)</td><td>Starter+</td><td>Lightweight, drives daily engagement</td></tr>
+                                <tr><td>Daily logs (auto-populated)</td><td>Professional+</td><td>Auto-fills from safety walk data</td></tr>
+                                <tr><td>Quality inspections</td><td>Professional+</td><td>Same engine as safety inspections</td></tr>
+                                <tr><td>Equipment management</td><td>Business+</td><td>Extends existing equipment workflow</td></tr>
+                                <tr><td>Sub compliance (expanded)</td><td>Business+</td><td>Extends existing GC portal</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strengths & Weaknesses -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Current Pricing Assessment</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <h4>Strengths</h4>
+                        <div class="callout callout-pass">
+                            <ul class="check-list">
+                                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><strong>Per-project + unlimited users.</strong> The moat that widens with every horizon. Carlos the laborer clocking in should never be a line-item debate.</div></li>
+                                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><strong>$299 replaces $1,275+ in tools.</strong> As H2 features ship, the value gap becomes absurd.</div></li>
+                                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><strong>AI bundled, not add-on.</strong> Voice, video, photo hazard, document generation &mdash; all included.</div></li>
+                                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><div><strong>Enormous pricing headroom.</strong> Even a H3 price increase to $349 is 1/10th of Procore.</div></li>
+                            </ul>
+                        </div>
+                        <h4>Weaknesses</h4>
+                        <div class="callout callout-warn">
+                            <ol>
+                                <li><strong>$299&rarr;$599 gap (2x)</strong> &mdash; reduces to 1.67x at proposed $499.</li>
+                                <li><strong>Doc limits feel tight</strong> &mdash; Free (3) and Starter (10) below competitor free tiers.</li>
+                                <li><strong>No H2 pricing plan.</strong> Need to decide before features ship.</li>
+                                <li><strong>Annual discount (20%)</strong> below SaaS average (28%).</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Analysis -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Risk Analysis</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <div class="callout callout-machine">
+                            <strong>Risk 1: Giving Away H2 Features Leaves Money on the Table</strong>
+                            <em>Mitigation:</em> Multi-feature users churn 3-5x less. The real play is retention + justified price increase at H3. &ldquo;We added $500/mo of value and raised the price $50.&rdquo;
+                        </div>
+                        <div class="callout callout-warn">
+                            <strong>Risk 2: Per-Project Limits Revenue Per Customer</strong>
+                            <em>Mitigation:</em> Platform consolidation means ARPU ceiling is much higher than safety-only. Pricing headroom exists &mdash; $349-549 at H3 is still 1/10th of Procore.
+                        </div>
+                        <div class="callout callout-warn">
+                            <strong>Risk 3: Competitors Bundle Faster</strong>
+                            <em>Mitigation:</em> SafetyCulture is horizontal (losing $36M/yr, CEO turnover). Safesite is insurance-focused. Neither has voice-first field experience. Data moat compounds daily.
+                        </div>
+                        <div class="callout callout-fail">
+                            <strong>Risk 4: Procore Moves Downmarket</strong>
+                            <em>Mitigation:</em> Procore is office-first, not field-first. Their minimum viable product requires PM overhead a 25-person crew doesn&rsquo;t need. Different user, different product.
+                        </div>
+                        <div class="callout callout-machine">
+                            <strong>Risk 5: AI Commoditization</strong>
+                            <em>Mitigation:</em> AI generation is the wedge, not the moat. Five compounding layers: knowledge graph, bilingual voice model, data network, workflow embedding, ecosystem lock-in.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Revenue Projections &mdash; Year 1 (5,000 Customers)</div>
+                    <div class="card-content" style="padding-top:0">
+                        <table>
+                            <thead><tr><th>Tier</th><th>%</th><th>Count</th><th>Monthly</th><th>Annual</th></tr></thead>
+                            <tbody>
+                                <tr><td>Free</td><td>60%</td><td>3,000</td><td>$0</td><td>$0</td></tr>
+                                <tr><td>Starter</td><td>15%</td><td>750</td><td>$74,250</td><td>$891,000</td></tr>
+                                <tr class="row-highlight"><td>Professional</td><td>15%</td><td>750</td><td>$224,250</td><td>$2,691,000</td></tr>
+                                <tr><td>Business</td><td>7%</td><td>350</td><td>$174,650</td><td>$2,095,800</td></tr>
+                                <tr><td>Enterprise</td><td>3%</td><td>150</td><td>~$150,000</td><td>~$1,800,000</td></tr>
+                                <tr class="row-highlight"><td><strong>Total</strong></td><td></td><td><strong>5,000</strong></td><td><strong>~$623K</strong></td><td><strong>~$7.5M</strong></td></tr>
+                            </tbody>
+                        </table>
+                        <p style="font-size:12px;color:var(--muted-foreground);margin-top:8px"><em>Assumes 60% annual billing adoption at 25% discount. Enterprise ~$1,000/mo avg.</em></p>
+
+                        <h4>Horizon 3 Price Increase Scenario (Month 18+)</h4>
+                        <table>
+                            <thead><tr><th>Tier</th><th>Current</th><th>Post-H3</th><th>Annual (25%)</th></tr></thead>
+                            <tbody>
+                                <tr><td>Starter</td><td>$99</td><td>$129</td><td>$1,161/yr</td></tr>
+                                <tr><td>Professional</td><td>$299</td><td>$349</td><td>$3,141/yr</td></tr>
+                                <tr><td>Business</td><td>$499</td><td>$549</td><td>$4,941/yr</td></tr>
+                            </tbody>
+                        </table>
+                        <p style="font-size:12px;color:var(--muted-foreground);margin-top:4px"><em>Existing customers grandfathered for 12 months. Only after H3 features are shipping and proven.</em></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GTM Pricing -->
+            <div class="section-gap">
+                <div class="card">
+                    <div class="section-bar">Go-to-Market Pricing by Horizon</div>
+                    <div class="card-content" style="padding-top:12px">
+                        <h4><span class="hz hz-1">H1</span> Launch Phase (Months 1-6)</h4>
+                        <ul>
+                            <li>Lead with safety: &ldquo;AI Safety Director for $99/month.&rdquo;</li>
+                            <li>14-day Professional trial, no credit card.</li>
+                            <li>30% annual discount for first 500 subscribers.</li>
+                        </ul>
+
+                        <h4><span class="hz hz-2">H2</span> Expansion Phase (Months 6-12)</h4>
+                        <ul>
+                            <li><strong>Announce ops features as &ldquo;included at no extra cost.&rdquo;</strong></li>
+                            <li>Drive consolidation: &ldquo;Cancel ClockShark. Cancel Raken.&rdquo;</li>
+                            <li>Track app consolidation rate (target: 2+ tools replaced).</li>
+                            <li>Track features per customer (target: 3.5+ modules).</li>
+                        </ul>
+
+                        <h4><span class="hz hz-3">H3</span> Platform Phase (Months 12-18)</h4>
+                        <ul>
+                            <li>Evaluate price increase once RFIs &amp; scheduling ship.</li>
+                            <li>Enterprise sales motion for 20+ project contractors.</li>
+                            <li>GC-driven adoption &mdash; free GC portal, monetize through subs.</li>
+                        </ul>
+
+                        <h4>Discounts</h4>
+                        <table>
+                            <thead><tr><th>Type</th><th>Amount</th><th>Conditions</th></tr></thead>
+                            <tbody>
+                                <tr><td>Annual billing</td><td>25%</td><td>All tiers</td></tr>
+                                <tr><td>Early adopter</td><td>30%</td><td>First 500 annual subscribers</td></tr>
+                                <tr><td>Referral</td><td>1 month free</td><td>Both parties</td></tr>
+                                <tr><td>Trade association</td><td>10%</td><td>ABC, AGC, NECA, MCAA</td></tr>
+                                <tr><td>Nonprofit / veteran</td><td>15%</td><td>Verification required</td></tr>
+                                <tr><td>Multi-company</td><td>Negotiated</td><td>Enterprise, 3+ companies</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    Kerf Pricing Strategy &mdash; Draft for Review &mdash; April 2026 &mdash; &ldquo;Precision for Your Jobsite&rdquo;
+</div>
+
+</body>
+</html>

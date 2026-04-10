@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf &mdash; GTM Strategy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* === Kerf Design Tokens === */
+  :root {
+    --background: #f4f5f3;
+    --foreground: #0d0e0c;
+    --card: #ffffff;
+    --card-foreground: #0d0e0c;
+    --primary: #F5B800;
+    --primary-dark: #D9A200;
+    --primary-bright: #FFCA18;
+    --primary-wash: rgba(245,184,0,0.1);
+    --secondary: #f4f5f3;
+    --secondary-fg: #3e423a;
+    --muted: #e6e8e3;
+    --muted-fg: #71766b;
+    --border: #e6e8e3;
+    --pass: #2d8a4e;
+    --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030;
+    --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b;
+    --warn-bg: rgba(184,134,11,0.08);
+    --concrete-50: #f4f5f3;
+    --concrete-100: #e6e8e3;
+    --concrete-300: #a3a79c;
+    --concrete-500: #545951;
+    --concrete-700: #3e423a;
+    --concrete-800: #2e312b;
+    --concrete-900: #191b17;
+    --radius: 3px;
+    --font-sans: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --sidebar-w: 210px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 14px;
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* === Scrollbar === */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--concrete-300); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-fg); }
+
+  /* === Sidebar === */
+  .sidebar {
+    position: fixed; inset: 0 auto 0 0;
+    width: var(--sidebar-w);
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 50;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    height: 56px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-logo-icon {
+    width: 32px; height: 32px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: var(--foreground);
+  }
+  .sidebar-logo-text {
+    font-size: 14px; font-weight: 700;
+  }
+  .sidebar-logo-text span { color: var(--primary); }
+  .sidebar-section {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted-fg);
+    padding: 16px 16px 6px;
+  }
+  .sidebar-nav { padding: 4px 8px; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px;
+    font-size: 13px; font-weight: 500;
+    color: var(--concrete-500);
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+  }
+  .sidebar-link:hover {
+    color: var(--foreground);
+    background: var(--concrete-50);
+  }
+  .sidebar-link.active {
+    background: var(--primary-wash);
+    color: var(--foreground);
+    font-weight: 600;
+    border-left-color: var(--primary);
+  }
+  .sidebar-link.active .sidebar-icon { color: var(--primary-dark); opacity: 1; }
+  .sidebar-icon { opacity: 0.5; font-size: 15px; width: 18px; text-align: center; }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-fg);
+  }
+
+  /* === Main === */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+  }
+
+  /* === Header === */
+  .header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    padding: 12px 24px;
+    flex-shrink: 0;
+  }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .header-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted-fg); }
+
+  /* === Content === */
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* === Footer === */
+  .app-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+    padding: 10px 24px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-fg);
+    flex-shrink: 0;
+  }
+
+  /* === Hero Banner === */
+  .hero-banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .hero-banner h1 {
+    font-size: 28px; font-weight: 700; margin-bottom: 4px;
+  }
+  .hero-banner h1 span { color: var(--primary); }
+  .hero-banner p { color: var(--muted-fg); font-size: 14px; max-width: 600px; margin: 0 auto; }
+  .hero-stats {
+    display: flex; gap: 24px; justify-content: center; margin-top: 24px; flex-wrap: wrap;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat-num {
+    font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--primary);
+  }
+  .hero-stat-label {
+    font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted-fg);
+  }
+
+  /* === Section === */
+  h2 {
+    font-size: 18px; font-weight: 700; margin: 32px 0 12px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+  }
+  h2:first-child { margin-top: 0; }
+  h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; color: var(--foreground); }
+  h4 { font-size: 14px; font-weight: 600; margin: 16px 0 6px; color: var(--primary-dark); }
+  p { margin-bottom: 10px; }
+  ul, ol { margin: 6px 0 12px 20px; }
+  li { margin-bottom: 4px; }
+  strong { color: var(--foreground); }
+
+  /* === Card === */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 8px 0;
+  }
+  .card-sm { padding: 12px; }
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .card-icon {
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .card-icon-y { background: var(--primary-wash); color: var(--primary-dark); }
+  .card-icon-g { background: var(--pass-bg); color: var(--pass); }
+  .card-icon-r { background: var(--fail-bg); color: var(--fail); }
+  .card-icon-w { background: var(--warn-bg); color: var(--warn); }
+  .card-icon-m { background: rgba(84,89,81,0.1); color: var(--concrete-500); }
+  .card-title { font-weight: 600; font-size: 14px; }
+  .card-bordered-l { border-left: 2px solid var(--primary); }
+
+  /* === Grid === */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 800px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  /* === Table === */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  th {
+    background: var(--card);
+    color: var(--foreground);
+    font-weight: 600; text-align: left;
+    padding: 8px 10px; font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--secondary); }
+
+  /* === Badge === */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 20px; padding: 0 8px;
+    border-radius: 9999px;
+    font-size: 12px; font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-pass { background: var(--pass-bg); color: var(--pass); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-fail { background: var(--fail-bg); color: var(--fail); }
+  .badge-primary { background: var(--primary-wash); color: var(--primary-dark); }
+  .badge-muted { background: var(--muted); color: var(--concrete-500); }
+
+  /* === Callout === */
+  .callout {
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 16px 0;
+    border: 1px solid;
+  }
+  .callout-y { background: var(--primary-wash); border-color: rgba(245,184,0,0.25); }
+  .callout-g { background: var(--pass-bg); border-color: rgba(45,138,78,0.25); }
+  .callout-r { background: var(--fail-bg); border-color: rgba(197,48,48,0.25); }
+  .callout-m { background: var(--muted); border-color: var(--border); }
+  .callout-title { font-weight: 700; margin-bottom: 6px; font-size: 14px; }
+
+  /* === Flow/Code === */
+  .flow {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 10px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    color: var(--concrete-500);
+    overflow-x: auto;
+  }
+  .flow .y { color: var(--primary-dark); font-weight: 600; }
+  .flow .g { color: var(--pass); font-weight: 600; }
+
+  /* === Blockquote === */
+  blockquote {
+    border-left: 2px solid var(--primary);
+    padding: 12px 16px;
+    background: var(--primary-wash);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 10px 0;
+    font-style: italic;
+    color: var(--concrete-700);
+  }
+
+  /* === Checklist === */
+  .checklist { list-style: none; margin-left: 0; }
+  .checklist li {
+    position: relative; padding-left: 24px; margin-bottom: 6px;
+  }
+  .checklist li::before {
+    content: ''; position: absolute; left: 0; top: 5px;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-radius: 2px;
+  }
+
+  /* === Infrastructure layers === */
+  .infra-layer {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 10px 0;
+    position: relative;
+  }
+  .infra-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary-dark);
+    background: var(--primary-wash);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    margin-bottom: 8px;
+  }
+  .infra-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .infra-box {
+    flex: 1; min-width: 160px;
+    background: var(--secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    font-size: 13px;
+  }
+  .infra-box h5 {
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 4px;
+  }
+  .connector {
+    text-align: center;
+    color: var(--muted-fg);
+    font-size: 16px;
+    padding: 4px 0;
+  }
+
+  /* === Mono label === */
+  .mono { font-family: var(--font-mono); }
+  .text-muted { color: var(--muted-fg); }
+  .text-sm { font-size: 13px; }
+  .text-xs { font-size: 12px; }
+  .mt-0 { margin-top: 0; }
+  .mb-0 { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">SF</div>
+    <div class="sidebar-logo-text">Safety<span>Forge</span></div>
+  </div>
+
+  <div class="sidebar-section">Strategy</div>
+  <nav class="sidebar-nav">
+    <a href="#summary" class="sidebar-link active"><span class="sidebar-icon">&#9670;</span> Executive Summary</a>
+    <a href="#viral-loop" class="sidebar-link"><span class="sidebar-icon">&#8634;</span> GC Viral Loop</a>
+    <a href="#channels" class="sidebar-link"><span class="sidebar-icon">&#9776;</span> Acquisition Channels</a>
+    <a href="#playbooks" class="sidebar-link"><span class="sidebar-icon">&#9881;</span> Hermes Playbooks</a>
+    <a href="#infrastructure" class="sidebar-link"><span class="sidebar-icon">&#9653;</span> Marketing Infra</a>
+    <a href="#international" class="sidebar-link"><span class="sidebar-icon">&#9789;</span> International</a>
+    <a href="#messaging" class="sidebar-link"><span class="sidebar-icon">&#9993;</span> Messaging &amp; Sales</a>
+    <a href="#execution" class="sidebar-link"><span class="sidebar-icon">&#10003;</span> 90-Day Plan</a>
+  </nav>
+
+  <div class="sidebar-section">Reference</div>
+  <nav class="sidebar-nav">
+    <a href="#global-map" class="sidebar-link"><span class="sidebar-icon">&#9729;</span> Global Market Map</a>
+    <a href="#profitability" class="sidebar-link"><span class="sidebar-icon">&#9650;</span> Profitability</a>
+    <a href="#metrics" class="sidebar-link"><span class="sidebar-icon">&#9632;</span> Metrics</a>
+    <a href="#ad-copy" class="sidebar-link"><span class="sidebar-icon">&#9998;</span> Ad Copy</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    GTM Strategy v1.0<br>April 2026
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <div class="header-title">Go-To-Market Strategy</div>
+      <div class="header-meta">Global Customer Acquisition Playbook</div>
+    </div>
+    <div class="header-meta">Last updated: April 2026</div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- HERO -->
+    <div class="hero-banner">
+      <h1>Safety<span>Forge</span> GTM</h1>
+      <p>Near-zero spend. ROI within 90 days. Powered by AI agent automation and a viral GC-to-sub network loop.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-num">$640M&ndash;1.4B</div><div class="hero-stat-label">Global TAM</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">80&ndash;200</div><div class="hero-stat-label">Customers at 90 Days</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">$16&ndash;40K</div><div class="hero-stat-label">MRR at Day 90</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">~$1K</div><div class="hero-stat-label">Monthly GTM Spend</div></div>
+      </div>
+    </div>
+
+    <!-- EXECUTIVE SUMMARY -->
+    <section id="summary">
+      <h2 class="mt-0">Executive Summary</h2>
+      <p>Kerf sits at the intersection of <strong>massive pain</strong> ($86K&ndash;235K/year compliance cost), an <strong>empty market</strong> ($99&ndash;200/month construction-specific space nobody occupies), and <strong>750K+</strong> potential customers in the US alone. International markets add another 800K+ small contractors.</p>
+      <div class="callout callout-y">
+        <div class="callout-title">The #1 Insight</div>
+        <p class="mb-0">The product IS the marketing channel. Every document Kerf generates travels through the construction ecosystem. The GC Portal viral loop is the single highest-leverage growth mechanism.</p>
+      </div>
+      <div class="callout callout-m">
+        <div class="callout-title">Fully Autonomous &mdash; Zero Human Contact</div>
+        <p class="mb-0">This strategy requires <strong>zero phone calls, zero meetings, zero conferences, zero in-person activity</strong>. Every channel runs through Hermes and AI agents. Hermes logs into platforms (Facebook, LinkedIn, email), engages autonomously, and learns what converts. The only human input is reviewing Hermes' weekly performance report and approving strategic direction changes.</p>
+      </div>
+    </section>
+
+    <!-- GC VIRAL LOOP -->
+    <section id="viral-loop">
+      <h2>1. The GC Viral Loop (Priority #1)</h2>
+      <p>One GC acquisition cascades into dozens of sub acquisitions.</p>
+      <div class="flow">GC signs up <span class="y">(free portal)</span>
+  &rarr; Mandates subs submit docs via Kerf
+    &rarr; <span class="y">80+ subs</span> receive invitation emails
+      &rarr; Subs discover the platform
+        &rarr; <span class="g">8&ndash;12% convert to paid</span> within 12 months
+          &rarr; Those subs work for <span class="y">OTHER GCs</span>
+            &rarr; New GCs discover Kerf
+              &rarr; Cycle repeats <span class="g">(k ~1.0&ndash;1.2)</span></div>
+
+      <h3>GC Acquisition (Automated via Hermes)</h3>
+      <p><strong>Target:</strong> Mid-market commercial GCs (50&ndash;500 employees). Hermes identifies them via permit data, ENR rankings, and ABC/AGC member directories, then runs cold email sequences to GC Safety Directors.</p>
+      <p><strong>No calls. No meetings.</strong> The email pitch + free portal signup is the entire acquisition motion. Hermes sends, follows up, handles replies, and routes signups to self-serve onboarding.</p>
+      <blockquote>"You're already responsible when your subs get OSHA citations. You're already spending 10 hours a week chasing insurance certs by email. Kerf gives you a single dashboard. Your subs upload their own documents. You stop chasing. It costs you nothing. Set up takes 10 minutes &mdash; kerf.build/gc"</blockquote>
+      <div class="callout callout-g">
+        <div class="callout-title">Critical Decision: GC Portal is FREE</div>
+        <p class="mb-0">The GC is the distribution channel, not the customer. Revenue comes from subs who upgrade. Zero friction at the seed node = maximum viral spread.</p>
+      </div>
+
+      <h3>Sub Onboarding Flow</h3>
+      <p>The invitation email is the single most important piece of copy:</p>
+      <ul>
+        <li><strong>Subject:</strong> "Action Required: [GC Name] &mdash; Safety Compliance Documentation"</li>
+        <li>Uses GC's logo prominently (sub opens it because they recognize their client)</li>
+        <li>Lists exact documents needed + time estimate ("5&ndash;10 minutes")</li>
+        <li>CTA is "Upload Your Documents" not "Sign Up for Kerf"</li>
+      </ul>
+
+      <h4>Conversion: forced compliance &rarr; willing adoption</h4>
+      <ol>
+        <li><strong>Weeks 1&ndash;4 (passive value):</strong> Compliance summaries, expiration alerts</li>
+        <li><strong>Months 2&ndash;6 (multi-GC value):</strong> Second GC invites same sub &mdash; docs auto-populate</li>
+        <li><strong>Months 3&ndash;12 (proactive value):</strong> Sub discovers doc generation, mock inspections. Upgrade moment.</li>
+      </ol>
+
+      <h3>Free Sub Tier vs Paid</h3>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-icon card-icon-g">&#10003;</div><div class="card-title">Free (Forever)</div></div>
+          <ul>
+            <li>Respond to GC compliance requests</li>
+            <li>Upload/store core documents</li>
+            <li>Expiration reminders</li>
+            <li>Basic compliance profile &amp; score</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-icon card-icon-y">&#9733;</div><div class="card-title">Paid (Upgrade Triggers)</div></div>
+          <ul>
+            <li>Generate safety documents (SSSP, JHA, toolbox talks)</li>
+            <li>Incident reporting &amp; tracking</li>
+            <li>Worker training management</li>
+            <li>Analytics, mock OSHA inspections</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Viral Loop Metrics</h3>
+      <table>
+        <tr><th>Metric</th><th>Month 6</th><th>Month 18</th></tr>
+        <tr><td>Subs invited per GC</td><td>50</td><td>80</td></tr>
+        <tr><td>Sub signup rate</td><td>25%</td><td>35%</td></tr>
+        <tr><td>Sub activation</td><td>18%</td><td>28%</td></tr>
+        <tr><td>Sub paid conversion (12mo)</td><td>3%</td><td>8%</td></tr>
+        <tr><td>Organic GC signups (% of total)</td><td>10%</td><td>50%+</td></tr>
+      </table>
+    </section>
+
+    <!-- CHANNELS -->
+    <section id="channels">
+      <h2>2. Free Acquisition Channels</h2>
+      <h3>A. Product-Led Growth: Free Tools</h3>
+      <div class="grid-2">
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-r">&#9888;</div><div class="card-title">OSHA Penalty Calculator</div></div><p>Input violation type, get estimated fine. Email-gated for detail.</p><p><span class="badge badge-pass">$0/mo</span> <span class="badge badge-primary">2 days</span> <span class="badge badge-muted">50&ndash;200 leads/mo</span></p></div>
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-m">&#9745;</div><div class="card-title">Gap Checker</div></div><p>10-question assessment, AI-generated PDF gap analysis.</p><p><span class="badge badge-pass">$5&ndash;15/mo</span> <span class="badge badge-primary">3 days</span> <span class="badge badge-muted">100&ndash;300 leads/mo</span></p></div>
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-g">&#9998;</div><div class="card-title">Free Toolbox Talk Generator</div></div><p>One free generation per email per week.</p><p><span class="badge badge-pass">$2&ndash;5/mo</span> <span class="badge badge-primary">1 day</span> <span class="badge badge-muted">200&ndash;500 leads/mo</span></p></div>
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-y">&#128269;</div><div class="card-title">Free Mock OSHA Inspection</div></div><p>10-min self-assessment. The gap list IS the sales pitch.</p><p><span class="badge badge-pass">$0</span> <span class="badge badge-primary">5 days</span> <span class="badge badge-muted">Core PLG funnel</span></p></div>
+      </div>
+
+      <h3>B. Content &amp; SEO</h3>
+      <ul>
+        <li><strong>YouTube "60-Second Safety Briefing"</strong> &mdash; 3&ndash;5x/week, one hazard per video</li>
+        <li><strong>"Mock OSHA Walk"</strong> &mdash; walk through jobsites pointing out violations</li>
+        <li><strong>"OSHA Citation Breakdown"</strong> &mdash; "This Roofer Just Got Fined $156K"</li>
+        <li><strong>Programmatic SEO:</strong> 15 trades &times; 50 states = 750 pages. Cost: ~$112 total</li>
+        <li><strong>Spanish-Language SEO:</strong> Near zero competition. 34% of construction workforce is Hispanic/Latino</li>
+      </ul>
+
+      <h3>C. Community &amp; Social (Hermes Operated)</h3>
+      <p><strong>Hermes logs into Facebook, LinkedIn, and Reddit</strong> using your accounts and engages autonomously. It answers safety questions in contractor groups, shares free tools, builds reputation over weeks. All posts are drafted by Hermes and sent directly &mdash; no human review loop needed once tone is calibrated (first week).</p>
+
+      <h3>D. Partnerships (Automated Outreach via Email)</h3>
+      <p>No meetings. Hermes sends cold partnership proposals to insurance brokers, trade association directors, and safety trainers. Interested parties reply and Hermes manages the conversation to a self-serve affiliate signup page.</p>
+      <div class="grid-3">
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-y">&#127974;</div><div class="card-title">Insurance Agents</div></div><p class="text-sm text-muted">Hermes emails 50 agents/week. Affiliate link + commission dashboard. Zero calls.</p></div>
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-m">&#127970;</div><div class="card-title">Trade Associations</div></div><p class="text-sm text-muted">Hermes proposes "member benefit" deals via email to chapter directors.</p></div>
+        <div class="card card-sm"><div class="card-header"><div class="card-icon card-icon-g">&#127891;</div><div class="card-title">Safety Trainers</div></div><p class="text-sm text-muted">Hermes finds trainers via LinkedIn, emails affiliate offer. Self-serve signup.</p></div>
+      </div>
+    </section>
+
+    <!-- HERMES PLAYBOOKS -->
+    <section id="playbooks">
+      <h2>3. Hermes Autonomous Playbooks</h2>
+      <p>Every playbook below runs without human involvement. Hermes handles end-to-end.</p>
+
+      <div class="callout callout-y">
+        <div class="callout-title">One-Time Setup Required</div>
+        <p class="mb-0"><strong>Before anything runs:</strong> Install Hermes Agent. Log it into: Facebook (your account), LinkedIn (your account), Gmail/email (sending accounts), Instantly.ai, Buffer. Give it API keys for: Claude API, Google Places, Apollo.io. All logins persist across sessions via Hermes' persistent memory. Total setup: ~4 hours.</p>
+      </div>
+
+      <!-- PLAYBOOK 1: OUTBOUND -->
+      <h3>Playbook 1: OSHA Violation Outbound (Runs Daily)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-r">&#9888;</div><div class="card-title">Fully Autonomous &mdash; Zero Human Input After Setup</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~3 hours)</h4>
+        <ol>
+          <li>Create 3 sending domains: kerf.co, getkerf.build, kerfhq.com ($10/yr each)</li>
+          <li>Configure SPF, DKIM, DMARC on all 3 via Cloudflare</li>
+          <li>Create 2 Gmail/Outlook mailboxes per domain (6 total)</li>
+          <li>Connect all 6 to Instantly.ai ($30/mo). Enable auto-warmup</li>
+          <li>Give Hermes: Instantly API key, Claude API key, Google Places API key</li>
+          <li>Teach Hermes the OSHA API schema: <code>enforcedata.dol.gov/api/search</code></li>
+          <li>Set Hermes cron: daily at 6 AM ET</li>
+        </ol>
+        <h4>Daily Autonomous Cycle</h4>
+        <div class="flow"><span class="y">06:00</span> Hermes queries OSHA API for new citations (SIC 1500-1799, penalty > $0)
+<span class="y">06:05</span> Filters to ICP: construction, 5-200 employees, US-based
+<span class="y">06:10</span> Enriches each: Google Places (phone, website, size) + Apollo (email)
+<span class="y">06:20</span> Scores leads: citation severity, company size, trade, geography
+<span class="y">06:30</span> For each qualified lead (score > 40):
+        Claude API generates personalised 4-email sequence
+        References: specific violation, penalty amount, trade, location
+<span class="y">06:45</span> Loads all sequences into Instantly.ai via API
+<span class="y">07:00</span> Instantly sends Email 1 (within daily volume limits)
+<span class="y">Ongoing</span> Instantly handles: Email 2 (day 3), Email 3 (day 7), Email 4 (day 14)
+<span class="g">On reply</span> Instantly webhook fires to Hermes
+        Hermes classifies: interested / objection / not now / unsubscribe
+        Interested: sends Cal.com self-book link + free SSSP offer
+        Objection: sends tailored rebuttal from objection library
+        Not now: schedules follow-up in Hermes memory (3/6/12 months)
+        Unsubscribe: removes from all sequences</div>
+        <h4>Volume &amp; Output</h4>
+        <table>
+          <tr><td>New citations scraped/week</td><td>200&ndash;400</td></tr>
+          <tr><td>Qualified leads after filtering</td><td>80&ndash;160/week</td></tr>
+          <tr><td>Emails sent/month</td><td>1,500&ndash;3,000</td></tr>
+          <tr><td>Expected reply rate</td><td>3&ndash;5%</td></tr>
+          <tr><td>Conversations/month</td><td>45&ndash;150</td></tr>
+          <tr><td>Trials started/month</td><td>15&ndash;50</td></tr>
+          <tr><td style="font-weight:700">Paid conversions/month</td><td style="font-weight:700;color:var(--primary-dark)">5&ndash;15</td></tr>
+        </table>
+      </div>
+
+      <!-- PLAYBOOK 2: FACEBOOK -->
+      <h3>Playbook 2: Facebook Group Engagement (Runs Daily)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-y">&#128101;</div><div class="card-title">Hermes Logs In As You &mdash; Engages Autonomously</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~2 hours)</h4>
+        <ol>
+          <li>Log Hermes into your Facebook account via browser automation</li>
+          <li>Join 15&ndash;20 target groups: "Construction Contractors", "OSHA Compliance Help", state-specific groups, trade groups, Spanish-language contractor groups</li>
+          <li>Configure Hermes tone: helpful expert, never salesy, references personal experience</li>
+          <li>Set daily schedule: scan groups at 7 AM, 12 PM, 5 PM ET</li>
+          <li>Define escalation: if someone DMs asking for pricing &rarr; send kerf.build link</li>
+        </ol>
+        <h4>Daily Autonomous Cycle</h4>
+        <div class="flow"><span class="y">07:00</span> Hermes opens each group, scans last 12 hours of posts
+<span class="y">07:05</span> Identifies posts matching triggers:
+        - Safety questions ("how do I write a JHA", "OSHA requirements for...")
+        - Pain signals ("just got cited", "GC wants safety plan", "workers comp went up")
+        - Document requests ("anyone have a toolbox talk template")
+<span class="y">07:10</span> For each matching post:
+        Drafts a genuinely helpful reply (200-400 words)
+        Includes specific OSHA references when relevant
+        <span class="g">Week 1-4:</span> Pure value. No product mentions
+        <span class="g">Week 5+:</span> Occasionally includes "I use Kerf for this" or links to free tools
+        Posts reply directly (no human review needed after tone calibration)
+<span class="y">12:00</span> Second scan. Responds to replies on earlier comments
+<span class="y">17:00</span> Third scan. Shares one piece of content (video, free tool, infographic)
+<span class="y">Weekly</span> Posts 1 original thread per week:
+        "What's your biggest safety documentation headache?"
+        "How do you handle toolbox talks for Spanish-speaking crews?"
+        These generate discussion and position you as an authority</div>
+        <h4>Output</h4>
+        <table>
+          <tr><td>Groups monitored</td><td>15&ndash;20</td></tr>
+          <tr><td>Replies posted/week</td><td>20&ndash;40</td></tr>
+          <tr><td>Profile visits driven/week</td><td>50&ndash;100</td></tr>
+          <tr><td>Free tool signups from FB/week</td><td>10&ndash;25</td></tr>
+          <tr><td style="font-weight:700">Trials from FB/month</td><td style="font-weight:700;color:var(--primary-dark)">8&ndash;20</td></tr>
+        </table>
+      </div>
+
+      <!-- PLAYBOOK 3: LINKEDIN -->
+      <h3>Playbook 3: LinkedIn Content &amp; Engagement (Runs Daily)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-m">&#128188;</div><div class="card-title">Hermes Manages Your LinkedIn Presence</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~1 hour)</h4>
+        <ol>
+          <li>Log Hermes into your LinkedIn account</li>
+          <li>Connect with 50 GC safety directors, 50 insurance brokers, 50 contractor owners (Hermes sends connection requests with personalised notes)</li>
+          <li>Follow: #constructionsafety, #OSHA, #safetymanagement</li>
+          <li>Set posting schedule: 5x/week, 8 AM ET</li>
+        </ol>
+        <h4>Daily Autonomous Cycle</h4>
+        <div class="flow"><span class="y">06:00</span> Hermes generates post from OSHA data/news using Claude API
+        Formats: citation breakdowns, stat threads, tips, polls
+<span class="y">08:00</span> Posts to LinkedIn. Engages with comments for 2 hours
+<span class="y">10:00</span> Scans feed for relevant posts by target personas
+        Leaves thoughtful comments (not generic "Great post!")
+<span class="y">14:00</span> Sends 10&ndash;15 new connection requests to ICP contacts
+        Personalised note: references their trade, location, or recent post
+<span class="y">On accept</span> Welcome DM with free tool link (not a pitch)
+        "Hey [name] &mdash; noticed you're in [trade]. Built a free OSHA penalty
+         calculator that might be useful: [link]. No strings."</div>
+      </div>
+
+      <!-- PLAYBOOK 4: PERMIT OUTBOUND -->
+      <h3>Playbook 4: Building Permit Outbound (Runs Weekly)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-y">&#127959;</div><div class="card-title">Every New Commercial Project = A Lead</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~4 hours)</h4>
+        <ol>
+          <li>Identify permit data portals for top 10 metros (NYC DOB, Chicago Socrata, LA LADBS, etc.)</li>
+          <li>Teach Hermes each portal's API or scraping pattern</li>
+          <li>Set weekly cron: Sunday 6 AM</li>
+        </ol>
+        <h4>Weekly Autonomous Cycle</h4>
+        <div class="flow"><span class="y">Sunday 06:00</span> Hermes scrapes permit portals for new commercial permits (value > $500K)
+<span class="y">06:30</span> Extracts: contractor name, project address, project type, estimated value
+<span class="y">07:00</span> Enriches contractor (Google Places, Apollo, website scrape)
+<span class="y">07:30</span> Generates personalised email:
+        "Congrats on the new [project type] at [address]. For a project this
+         size, OSHA requires [specific programs]. Here's a free safety plan
+         checklist for [project type]: [link]. Or generate your full SSSP
+         in 2 minutes: [trial link]"
+<span class="y">08:00</span> Loads into Instantly.ai. 3-email sequence over 10 days.</div>
+        <p><strong>Output:</strong> 100&ndash;300 qualified leads/month. 2&ndash;4% conversion = 2&ndash;12 customers/month.</p>
+      </div>
+
+      <!-- PLAYBOOK 5: CONTENT -->
+      <h3>Playbook 5: Content Generation &amp; Distribution (Runs Daily)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-g">&#128221;</div><div class="card-title">All Content Created &amp; Posted by Hermes</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~2 hours)</h4>
+        <ol>
+          <li>Log Hermes into Buffer ($6/mo) for social scheduling</li>
+          <li>Connect: LinkedIn, Facebook page, X/Twitter, YouTube (if AI avatar videos)</li>
+          <li>Set up Resend for newsletter sends ($0 for 3K/mo)</li>
+          <li>Optional: HeyGen ($24/mo) for AI avatar YouTube videos from scripts</li>
+        </ol>
+        <h4>Weekly Content Calendar (Auto-Generated)</h4>
+        <table>
+          <tr><th>Day</th><th>Content</th><th>Distributed To</th></tr>
+          <tr><td>Mon</td><td>"This Week's OSHA Focus" &mdash; top violations from past week</td><td>LinkedIn, FB, Newsletter</td></tr>
+          <tr><td>Tue</td><td>Trade-specific safety tip (rotate trades)</td><td>LinkedIn, FB groups, X</td></tr>
+          <tr><td>Wed</td><td>"Citation Spotlight" &mdash; real case + lessons</td><td>LinkedIn, FB, YouTube script</td></tr>
+          <tr><td>Thu</td><td>Quick compliance checklist (shareable graphic)</td><td>LinkedIn, FB, Instagram</td></tr>
+          <tr><td>Fri</td><td>"Weekend Safety Read" &mdash; curated digest</td><td>Newsletter, LinkedIn</td></tr>
+        </table>
+        <p>All content auto-generated in English + Spanish. Hermes uses Claude API + OSHA data feeds.</p>
+      </div>
+
+      <!-- PLAYBOOK 6: SEO -->
+      <h3>Playbook 6: SEO Page Army (One-Time Build + Monthly Refresh)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-m">&#127760;</div><div class="card-title">750+ Pages Generated by Hermes</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~8 hours)</h4>
+        <ol>
+          <li>Define keyword matrix: 15 trades &times; 50 states = 750 combos</li>
+          <li>Hermes generates each page via Claude API (~$0.15/page = ~$112 total)</li>
+          <li>Each page includes: state-specific OSHA stats, trade hazard profile, applicable standards, FAQ schema markup, embedded penalty calculator</li>
+          <li>Deploy as static routes on your frontend</li>
+          <li>Submit sitemap to Google Search Console</li>
+        </ol>
+        <h4>Monthly Refresh (Auto via Hermes Cron)</h4>
+        <div class="flow"><span class="y">1st of month</span> Hermes pulls latest OSHA enforcement stats per state
+<span class="y">Auto</span> Updates citation counts, penalty averages, enforcement trends on each page
+<span class="y">Auto</span> Generates 10 new pages for emerging long-tail keywords (from Search Console data)
+<span class="y">Auto</span> Submits updated sitemap</div>
+        <p><strong>Expected:</strong> 5K&ndash;15K organic visits/month at steady state. 3% convert to email = 150&ndash;450 leads/month.</p>
+      </div>
+
+      <!-- PLAYBOOK 7: TRIAL ACTIVATION -->
+      <h3>Playbook 7: Trial Activation &amp; Conversion (Always Running)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-w">&#128200;</div><div class="card-title">No Demo Calls. Self-Serve Only.</div></div>
+        <p>Demos are replaced by: (a) self-serve trial with guided onboarding, (b) pre-recorded video walkthrough on landing page, (c) Hermes-triggered emails that generate a free SSSP for the prospect's actual project.</p>
+        <h4>Activation Triggers (Hermes monitors Firestore/PostHog events)</h4>
+        <table>
+          <tr><th>Trigger</th><th>Hermes Action</th></tr>
+          <tr><td>Signup, no project by Day 1</td><td>Email: "Let me set up your first project" + link to guided wizard</td></tr>
+          <tr><td>Project created, no doc by Day 3</td><td>Email: AI-generates a free SSSP for their project type and sends it as preview</td></tr>
+          <tr><td>Docs generated, no team invite Day 7</td><td>Email: "Your team can use Kerf from their phones &mdash; here's how"</td></tr>
+          <tr><td>Low engagement (< 1 session in 5 days)</td><td>Email: "Quick question &mdash; what's blocking you?" + link to pre-recorded demo video</td></tr>
+          <tr><td>Day 12, not converted</td><td>Email: "Trial ends in 2 days. Here's what you'll lose: [list of their generated docs]"</td></tr>
+          <tr><td>Day 14, trial expired</td><td>Email: "Everything's saved. Reactivate anytime." + 20% discount offer</td></tr>
+          <tr><td>Day 21, still not converted</td><td>Email: Free trade-specific safety update for their state. Re-engagement hook.</td></tr>
+        </table>
+        <p><strong>Target: 25&ndash;35% trial-to-paid conversion</strong> (vs typical 15&ndash;20% SaaS) because Hermes personalises every intervention.</p>
+      </div>
+
+      <!-- PLAYBOOK 8: GC ACQUISITION -->
+      <h3>Playbook 8: GC Portal Acquisition (Automated Outreach)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-y">&#8634;</div><div class="card-title">GCs Acquired via Email, Not Sales Calls</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~3 hours)</h4>
+        <ol>
+          <li>Build GC target list: ENR regional rankings, ABC/AGC member directories, state license DBs filtered by GC classification</li>
+          <li>Hermes enriches: safety director name + email via Apollo/LinkedIn</li>
+          <li>Create self-serve GC Portal signup page at kerf.build/gc</li>
+          <li>Create pre-recorded 3-minute GC Portal demo video (screen recording, no face needed)</li>
+        </ol>
+        <h4>Hermes GC Email Sequence</h4>
+        <div class="flow"><span class="y">Email 1 (Day 0):</span> "How much time does your team spend chasing sub safety docs?
+  Kerf gives you a free dashboard. Your subs upload their own.
+  60-second setup: kerf.build/gc  |  3-min video: [link]"
+
+<span class="y">Email 2 (Day 4):</span> "Most GC safety directors tell us they spend 10+ hours/week on
+  sub document collection. One just told us it dropped to zero.
+  Free for GCs. Your subs do the work: kerf.build/gc"
+
+<span class="y">Email 3 (Day 9):</span> "Quick math: if you have 50 active subs, and each one's insurance
+  cert expires once a year, that's 50 chase-down conversations.
+  Kerf sends automated reminders. You see a dashboard.
+  Free setup: kerf.build/gc"</div>
+        <p><strong>Volume:</strong> Hermes sends to 50&ndash;100 GC safety directors/week. 5&ndash;10% signup rate = 2&ndash;10 GCs/month. Each GC invites 50&ndash;80 subs.</p>
+      </div>
+
+      <!-- PLAYBOOK 9: PARTNERSHIP -->
+      <h3>Playbook 9: Partnership Acquisition (Email-Only)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-g">&#129309;</div><div class="card-title">Affiliate Partners Acquired Without a Single Call</div></div>
+        <h4 style="margin-top:8px">Setup (once, ~2 hours)</h4>
+        <ol>
+          <li>Build affiliate signup page: kerf.build/partners &mdash; self-serve, 15&ndash;20% recurring commission</li>
+          <li>Build partner lists: insurance broker directories (state DBs), OSHA trainer directories, safety consultant LinkedIn searches</li>
+          <li>Hermes sends personalised partnership emails</li>
+        </ol>
+        <h4>Insurance Broker Email</h4>
+        <blockquote>"I noticed you specialise in contractor insurance in [state]. We built a safety compliance platform that helps your clients reduce OSHA citations and improve EMR. That means lower premiums, happier clients, better retention for you. We pay 20% recurring commission. Self-serve signup: kerf.build/partners"</blockquote>
+        <h4>Safety Trainer Email</h4>
+        <blockquote>"You train contractors on OSHA compliance. We help them implement what you taught them &mdash; generating the actual safety plans, running inspections, tracking certs. We pay 15% recurring commission when your trainees sign up. It makes your training stickier and gives you residual income: kerf.build/partners"</blockquote>
+        <p><strong>Volume:</strong> 50 partnership emails/week. 5&ndash;10% interested. 2&ndash;5 active partners/month. Each partner sends 2&ndash;5 customers/month.</p>
+      </div>
+
+      <!-- PLAYBOOK 10: GLOBAL REPLICATION -->
+      <h3>Playbook 10: Global Market Replication (Per-Country)</h3>
+      <div class="card">
+        <div class="card-header"><div class="card-icon card-icon-y">&#127760;</div><div class="card-title">Clone the Playbook for Every Country</div></div>
+        <p>For each new country, Hermes adapts the proven workflow:</p>
+        <table>
+          <tr><th>Step</th><th>Hermes Action</th><th>Time</th></tr>
+          <tr><td>1</td><td>Identify local enforcement data source (Hermes searches government websites)</td><td>1&ndash;2 hrs</td></tr>
+          <tr><td>2</td><td>Build scraping skill for that source (applies learned patterns from OSHA)</td><td>2&ndash;3 hrs</td></tr>
+          <tr><td>3</td><td>Research local regulations via web search, adapt email messaging</td><td>1&ndash;2 hrs</td></tr>
+          <tr><td>4</td><td>Identify 10&ndash;20 local FB/LinkedIn groups, join them</td><td>30 min</td></tr>
+          <tr><td>5</td><td>Generate 20 SEO pages for that country's top trades</td><td>1 hr</td></tr>
+          <tr><td>6</td><td>Start daily scrape + outreach cycle</td><td>Auto</td></tr>
+          <tr><td></td><td style="font-weight:700">Total human effort per country</td><td style="font-weight:700;color:var(--primary-dark)">0 hours (Hermes does it all)</td></tr>
+        </table>
+        <p>You tell Hermes: "Add Ireland." Hermes finds HSA enforcement data, joins Irish builder groups, generates IE-specific SEO pages, and starts sending personalised emails to recently cited Irish contractors. All autonomously.</p>
+      </div>
+    </section>
+
+    <!-- MARKETING INFRASTRUCTURE -->
+    <section id="infrastructure">
+      <h2>4. Marketing Infrastructure</h2>
+
+      <!-- EMAIL AT SCALE -->
+      <h3>Email Sending at Scale</h3>
+      <p>The 50 emails/mailbox/day limit is per-mailbox for deliverability. You scale by multiplying mailboxes and domains.</p>
+
+      <div class="callout callout-y">
+        <div class="callout-title">Scaling Formula</div>
+        <p class="mb-0"><strong>Daily volume = (# mailboxes) &times; (safe send rate per mailbox)</strong><br>
+        Google Workspace: 30&ndash;50/mailbox/day after warmup. Microsoft 365: 50&ndash;80/mailbox/day.<br>
+        2&ndash;3 mailboxes per domain max (more = shared reputation risk).</p>
+      </div>
+
+      <table>
+        <tr><th>Target Volume</th><th>Mailboxes</th><th>Domains</th><th>Warmup Time</th><th>Monthly Infra Cost</th></tr>
+        <tr><td>500/day</td><td>10&ndash;15</td><td>5&ndash;7</td><td>3&ndash;4 weeks</td><td>~$150&ndash;200</td></tr>
+        <tr><td style="font-weight:600">1,000/day</td><td>25&ndash;35</td><td>10&ndash;15</td><td>3&ndash;4 weeks</td><td style="font-weight:600">~$300&ndash;400</td></tr>
+        <tr><td>5,000/day</td><td>100&ndash;150</td><td>35&ndash;50</td><td>4&ndash;6 weeks</td><td>~$1,000&ndash;1,500</td></tr>
+        <tr><td>10,000/day</td><td>200&ndash;300</td><td>70&ndash;100</td><td>4&ndash;8 weeks</td><td>~$1,800&ndash;2,500</td></tr>
+      </table>
+
+      <h4>Recommended Scale-Up Path</h4>
+      <div class="flow"><span class="y">Week 1:</span> Buy 15 domains. 2 mailboxes each = 30 mailboxes. Start warmup.
+<span class="y">Week 4:</span> Ramp to 40/mailbox/day = <span class="g">~1,200 emails/day</span>
+<span class="y">Month 2:</span> Add 20 more domains (40 mailboxes) = 70 total = <span class="g">~2,800/day</span>
+<span class="y">Month 3:</span> Add 30 more domains = 130 total = <span class="g">~5,000/day = 150,000/month</span>
+<span class="y">Month 4+:</span> Evaluate: improve targeting at 5K/day often beats blasting 10K/day</div>
+
+      <h4>Deliverability at Scale</h4>
+      <ul>
+        <li><strong>AI-generated unique emails are essential.</strong> ESP fingerprinting detects templates at volume. Claude/GPT generates each email fresh for ~$0.50&ndash;2.00 per 10K emails</li>
+        <li><strong>Validate all emails before sending</strong> (ZeroBounce/NeverBounce, $3&ndash;5 per 1K). Bounce rate must stay &lt; 3%</li>
+        <li><strong>Keep warmup running at all times</strong> &mdash; 30&ndash;50% of daily volume is warmup even at cruise speed</li>
+        <li><strong>Budget for 5&ndash;10% domain burn per month.</strong> Keep 10&ndash;15% reserve domains warmed and ready</li>
+        <li><strong>Plain text only.</strong> No images, max 1 link, short (50&ndash;120 words). Inbox placement: 45&ndash;55% at 5K/day volume</li>
+        <li><strong>Hermes auto-pauses</strong> any mailbox/domain where bounce &gt; 3% or spam &gt; 0.1%</li>
+      </ul>
+
+      <h4>Email Cost Breakdown &mdash; By Growth Phase</h4>
+
+      <p style="font-weight:600;margin-bottom:4px">Phase 1: Launch (Weeks 1&ndash;4) &mdash; 300 emails/day</p>
+      <table>
+        <tr><th>Item</th><th>Qty</th><th>Unit Cost</th><th>One-Time</th><th>Monthly</th></tr>
+        <tr><td>Domains (.com/.io/.co)</td><td>10</td><td>$10&ndash;15/yr each</td><td>$100&ndash;150</td><td>$8&ndash;13</td></tr>
+        <tr><td>Cloudflare DNS (SPF/DKIM/DMARC)</td><td>10</td><td>Free</td><td>$0</td><td>$0</td></tr>
+        <tr><td>Microsoft 365 Business Basic</td><td>20 mailboxes</td><td>$6/mo each</td><td>&mdash;</td><td>$120</td></tr>
+        <tr><td>Instantly.ai (Growth)</td><td>1</td><td>$30/mo</td><td>&mdash;</td><td>$30</td></tr>
+        <tr><td>Email verification (ZeroBounce)</td><td>~9K/mo</td><td>$3/1K</td><td>&mdash;</td><td>$27</td></tr>
+        <tr><td>Claude API (email generation)</td><td>~9K emails</td><td>~$0.002/email</td><td>&mdash;</td><td>$18</td></tr>
+        <tr><td>Lead enrichment</td><td>&mdash;</td><td>Hermes scrapes websites + Google Places free tier</td><td>&mdash;</td><td>$0</td></tr>
+        <tr><td style="font-weight:700">PHASE 1 TOTAL</td><td></td><td></td><td style="font-weight:700">$100&ndash;150</td><td style="font-weight:700;color:var(--primary-dark)">~$211/mo</td></tr>
+      </table>
+
+      <p style="font-weight:600;margin-bottom:4px;margin-top:16px">Phase 2: Scale (Months 2&ndash;3) &mdash; 1,500 emails/day</p>
+      <table>
+        <tr><th>Item</th><th>Qty</th><th>Unit Cost</th><th>One-Time</th><th>Monthly</th></tr>
+        <tr><td>Additional domains</td><td>+20 (30 total)</td><td>$10&ndash;15/yr</td><td>$200&ndash;300</td><td>$25</td></tr>
+        <tr><td>Additional M365 mailboxes</td><td>+40 (60 total)</td><td>$6/mo</td><td>&mdash;</td><td>$360</td></tr>
+        <tr><td>Instantly.ai (Hypergrowth)</td><td>1</td><td>$77/mo</td><td>&mdash;</td><td>$77</td></tr>
+        <tr><td>Email verification</td><td>~45K/mo</td><td>$3/1K</td><td>&mdash;</td><td>$135</td></tr>
+        <tr><td>Claude API (email gen)</td><td>~45K emails</td><td>~$0.002</td><td>&mdash;</td><td>$90</td></tr>
+        <tr><td>Lead enrichment</td><td>&mdash;</td><td>Hermes scraping</td><td>&mdash;</td><td>$0</td></tr>
+        <tr><td style="font-weight:700">PHASE 2 TOTAL</td><td></td><td></td><td style="font-weight:700">$200&ndash;300</td><td style="font-weight:700;color:var(--primary-dark)">~$687/mo</td></tr>
+      </table>
+
+      <p style="font-weight:600;margin-bottom:4px;margin-top:16px">Phase 3: Cruise (Month 4+) &mdash; 5,000 emails/day</p>
+      <table>
+        <tr><th>Item</th><th>Qty</th><th>Unit Cost</th><th>One-Time</th><th>Monthly</th></tr>
+        <tr><td>Additional domains</td><td>+20 (50 total)</td><td>$10&ndash;15/yr</td><td>$200&ndash;300</td><td>$42</td></tr>
+        <tr><td>Additional M365 mailboxes</td><td>+70 (130 total)</td><td>$6/mo</td><td>&mdash;</td><td>$780</td></tr>
+        <tr><td>Instantly.ai (Hypergrowth)</td><td>1</td><td>$77/mo</td><td>&mdash;</td><td>$77</td></tr>
+        <tr><td>Email verification</td><td>~150K/mo</td><td>$3/1K</td><td>&mdash;</td><td>$450</td></tr>
+        <tr><td>Claude API (email gen)</td><td>~150K emails</td><td>~$0.002</td><td>&mdash;</td><td>$300</td></tr>
+        <tr><td>Lead enrichment</td><td>&mdash;</td><td>Hermes scraping</td><td>&mdash;</td><td>$0</td></tr>
+        <tr><td>Reserve domains (burn replacement)</td><td>5&ndash;8/mo</td><td>$10&ndash;15/yr</td><td>&mdash;</td><td>$8</td></tr>
+        <tr><td style="font-weight:700">PHASE 3 TOTAL</td><td></td><td></td><td style="font-weight:700">$200&ndash;300</td><td style="font-weight:700;color:var(--primary-dark)">~$1,657/mo</td></tr>
+      </table>
+
+      <div class="callout callout-g" style="margin-top:12px">
+        <div class="callout-title">Email ROI at Each Phase</div>
+        <table style="margin:0">
+          <tr><th>Phase</th><th>Emails/Day</th><th>Cost/Mo</th><th>Replies/Mo (2%)</th><th>Customers/Mo (20%)</th><th>Revenue/Mo ($199)</th><th>ROI</th></tr>
+          <tr><td>1</td><td>300</td><td>$211</td><td>180</td><td>36</td><td>$7,164</td><td style="color:var(--pass);font-weight:600">3,295%</td></tr>
+          <tr><td>2</td><td>1,500</td><td>$687</td><td>900</td><td>180</td><td>$35,820</td><td style="color:var(--pass);font-weight:600">5,114%</td></tr>
+          <tr><td>3</td><td>5,000</td><td>$1,657</td><td>3,000</td><td>600</td><td>$119,400</td><td style="color:var(--pass);font-weight:600">7,103%</td></tr>
+        </table>
+        <p class="text-sm mb-0" style="margin-top:8px;color:var(--concrete-500)">Assumes 2% reply rate, 20% reply-to-paid. Even at 1/4 of these numbers the ROI is enormous. Hermes' learning model improves conversion over time.</p>
+      </div>
+
+      <h4>Per-Email Unit Cost Breakdown</h4>
+      <p>What it costs to send a single cold email, broken into every component:</p>
+      <table>
+        <tr><th>Step</th><th>What Happens</th><th>Tool</th><th>Cost</th></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">Lead Acquisition</td></tr>
+        <tr><td>1. Data scrape</td><td>Pull citation/permit from public API</td><td>OSHA API / permit portals</td><td>$0.000</td></tr>
+        <tr><td>2. Find email</td><td>Hermes visits contractor website, scrapes contact page, finds email in footer/contact form</td><td>Hermes browser automation</td><td>$0.000</td></tr>
+        <tr><td></td><td colspan="3" class="text-sm text-muted">Most contractor websites have email addresses visible on their contact page. Hermes scrapes these directly &mdash; no paid enrichment tool needed. For contractors without a website, Hermes checks Google Places (free tier: 10K lookups/mo) or state license databases (public, free).</td></tr>
+        <tr><td>3. Extra context</td><td>Extract: trade, services, project photos, company size signals, location</td><td>Hermes browser + Google Places API</td><td>$0.000</td></tr>
+        <tr><td>4. Lead scoring</td><td>Score against ICP: trade, size, geography, pain signals</td><td>Hermes (local logic)</td><td>$0.000</td></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">Email Generation</td></tr>
+        <tr><td>5. Personalisation</td><td>Claude generates unique 4-email sequence from lead context</td><td>Claude Haiku API</td><td>$0.001</td></tr>
+        <tr><td></td><td colspan="3" class="text-sm text-muted">~1K input tokens (lead data + prompt) &times; $0.25/M = $0.00025 input.<br>~2K output tokens (4 emails &times; 80&ndash;120 words each) &times; $1.25/M = $0.0025 output.<br>Total per 4-email sequence: ~$0.003. Per individual email: ~$0.001.</td></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">Verification &amp; Sending</td></tr>
+        <tr><td>6. Email verify</td><td>Check deliverability before sending</td><td>ZeroBounce / NeverBounce</td><td>$0.003</td></tr>
+        <tr><td>7. Sending</td><td>Deliver via warmed mailbox with rotation</td><td>Instantly.ai + M365</td><td>$0.006</td></tr>
+        <tr><td></td><td colspan="3" class="text-sm text-muted">M365 mailbox: $6/mo &divide; ~1,000 emails/mo per box = $0.006/email. Instantly platform fee is negligible per-email (~$0.001 at Hypergrowth plan volume).</td></tr>
+        <tr><td>8. Warmup</td><td>Warmup emails maintain sender reputation (30&ndash;50% of volume)</td><td>Instantly (included)</td><td>$0.000</td></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">Reply Handling</td></tr>
+        <tr><td>9. Reply detection</td><td>Webhook fires on reply, pauses sequence</td><td>Instantly webhook</td><td>$0.000</td></tr>
+        <tr><td>10. Reply triage</td><td>Hermes classifies reply + drafts response via Claude</td><td>Claude Haiku API</td><td>$0.001</td></tr>
+        <tr><td colspan="4" style="background:var(--secondary)"></td></tr>
+        <tr style="font-size:15px">
+          <td style="font-weight:700" colspan="3">TOTAL COST PER EMAIL SENT</td>
+          <td style="font-weight:700;color:var(--primary-dark)">~$0.010</td>
+        </tr>
+        <tr style="font-size:15px">
+          <td style="font-weight:700" colspan="3">TOTAL COST PER REPLY</td>
+          <td style="font-weight:700;color:var(--primary-dark)">~$0.001</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-m" style="margin-top:12px">
+        <div class="callout-title">Why No Apollo.io?</div>
+        <p class="mb-0">Apollo.io is a paid lead enrichment database ($49&ndash;149/month) that finds people's email addresses and phone numbers. <strong>We don't need it.</strong> Construction contractors aren't hiding &mdash; their email is on their website's contact page, in their Google Business listing, on their state contractor license record, and often in the OSHA citation data itself. Hermes scrapes all of these for free. Apollo is useful for finding the personal email of a VP at a Fortune 500 company. It's overkill for finding joe@joesroofing.com &mdash; that's right on the homepage.</p>
+      </div>
+
+      <h4>Cost Per Customer</h4>
+      <table>
+        <tr><th>Metric</th><th>Calculation</th><th>Value</th></tr>
+        <tr><td>Emails to generate 1 reply (at 2% rate)</td><td>1 &divide; 0.02</td><td>50 emails</td></tr>
+        <tr><td>Cost of those 50 emails</td><td>50 &times; $0.010</td><td>$0.50</td></tr>
+        <tr><td>+ Reply handling cost</td><td></td><td>$0.001</td></tr>
+        <tr><td style="font-weight:600">Cost per reply (all-in)</td><td></td><td style="font-weight:600">$0.50</td></tr>
+        <tr><td colspan="3" style="background:var(--secondary)"></td></tr>
+        <tr><td>Replies to generate 1 customer (at 20%)</td><td>1 &divide; 0.20</td><td>5 replies</td></tr>
+        <tr><td>Cost of those 5 replies</td><td>5 &times; $0.50</td><td>$2.50</td></tr>
+        <tr><td style="font-weight:700;font-size:15px">Cost per paying customer</td><td></td><td style="font-weight:700;color:var(--primary-dark);font-size:15px">$2.50</td></tr>
+      </table>
+
+      <div class="callout callout-g">
+        <div class="callout-title">Cost Per Customer vs Lifetime Value</div>
+        <table style="margin:0">
+          <tr><th>Metric</th><th>Value</th></tr>
+          <tr><td>Cost to acquire 1 customer via email</td><td style="font-weight:600">$2.50</td></tr>
+          <tr><td>First month's revenue from that customer</td><td>$199</td></tr>
+          <tr><td>Average customer lifetime (20 months)</td><td style="font-weight:600">LTV: $3,980</td></tr>
+          <tr><td>LTV:CAC ratio</td><td style="font-weight:700;color:var(--pass);font-size:16px">1,592:1</td></tr>
+        </table>
+        <p class="text-sm mb-0" style="margin-top:8px">A healthy SaaS LTV:CAC ratio is 3:1. This is 500x better than that. Even if real-world conversion is 10x worse than modelled, the ratio is still 159:1. The economics are absurd. Scale without hesitation.</p>
+      </div>
+
+      <!-- GLOBAL SEO -->
+      <h3>Global SEO: Every Country, Every Trade</h3>
+      <p>Instead of just 750 US pages, build programmatic SEO pages for <strong>every country Kerf supports</strong>.</p>
+
+      <table>
+        <tr><th>Market</th><th>Formula</th><th>Pages</th><th>Example Keyword</th></tr>
+        <tr><td>US</td><td>15 trades &times; 50 states</td><td>750</td><td>"OSHA compliance for roofers in Texas"</td></tr>
+        <tr><td>UK</td><td>15 trades &times; 12 regions</td><td>180</td><td>"CDM 2015 compliance for electricians London"</td></tr>
+        <tr><td>Australia</td><td>15 trades &times; 8 states</td><td>120</td><td>"SWMS for concreters in NSW"</td></tr>
+        <tr><td>Canada</td><td>15 trades &times; 13 provinces</td><td>195</td><td>"COR safety plan for welders Alberta"</td></tr>
+        <tr><td>Mexico</td><td>15 trades &times; 32 states</td><td>480</td><td>"cumplimiento NOM-031 electricistas CDMX"</td></tr>
+        <tr><td>Ireland</td><td>15 trades &times; 4 regions</td><td>60</td><td>"HSA compliance for builders Dublin"</td></tr>
+        <tr><td>New Zealand</td><td>15 trades &times; 6 regions</td><td>90</td><td>"WorkSafe NZ compliance scaffolders Auckland"</td></tr>
+        <tr><td>Singapore</td><td>15 trades &times; 1</td><td>15</td><td>"MOM WSH requirements for contractors Singapore"</td></tr>
+        <tr><td>UAE</td><td>15 trades &times; 7 emirates</td><td>105</td><td>"construction safety compliance Dubai"</td></tr>
+        <tr><td>Colombia</td><td>15 trades &times; 10 departments</td><td>150</td><td>"SG-SST para contratistas Bogota"</td></tr>
+        <tr><td>Chile</td><td>15 trades &times; 8 regions</td><td>120</td><td>"seguridad laboral construccion Santiago"</td></tr>
+        <tr><td>+ 10 more countries</td><td>15 trades &times; avg 5</td><td>750</td><td>(country-specific)</td></tr>
+        <tr><td style="font-weight:700">TOTAL</td><td></td><td style="font-weight:700;color:var(--primary-dark)">~3,000 pages</td><td></td></tr>
+      </table>
+
+      <h4>SEO Cost Breakdown</h4>
+
+      <p style="font-weight:600;margin-bottom:4px">One-Time Generation (Hermes + Claude API)</p>
+      <table>
+        <tr><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Total</th></tr>
+        <tr><td>Claude API &mdash; page generation (1,500&ndash;2,000 words each)</td><td>3,000 pages</td><td>~$0.15/page</td><td>$450</td></tr>
+        <tr><td>Claude API &mdash; meta titles/descriptions</td><td>3,000</td><td>~$0.01/page</td><td>$30</td></tr>
+        <tr><td>Claude API &mdash; FAQ schema generation per page</td><td>3,000</td><td>~$0.02/page</td><td>$60</td></tr>
+        <tr><td>Hermes time (scraping government regulation data)</td><td>~20 countries</td><td>Agent runtime</td><td>$2&ndash;5</td></tr>
+        <tr><td>Google Search Console setup + sitemap submission</td><td>1</td><td>Free</td><td>$0</td></tr>
+        <tr><td style="font-weight:700">ONE-TIME TOTAL</td><td></td><td></td><td style="font-weight:700;color:var(--primary-dark)">~$545</td></tr>
+      </table>
+
+      <p style="font-weight:600;margin-bottom:4px;margin-top:16px">Monthly Maintenance (Hermes Cron &mdash; 1st of Each Month)</p>
+      <table>
+        <tr><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Monthly</th></tr>
+        <tr><td>Refresh enforcement stats on all pages</td><td>3,000 pages</td><td>~$0.03/page</td><td>$90</td></tr>
+        <tr><td>Generate new pages for emerging keywords</td><td>~20 new pages</td><td>$0.15/page</td><td>$3</td></tr>
+        <tr><td>Hermes runtime (scraping fresh data)</td><td>&mdash;</td><td>&mdash;</td><td>$2&ndash;5</td></tr>
+        <tr><td style="font-weight:700">MONTHLY TOTAL</td><td></td><td></td><td style="font-weight:700;color:var(--primary-dark)">~$95/mo</td></tr>
+      </table>
+
+      <p style="font-weight:600;margin-bottom:4px;margin-top:16px">Expected SEO Returns</p>
+      <table>
+        <tr><th>Timeframe</th><th>Organic Visits/Mo</th><th>Email Captures (3%)</th><th>Trials (10%)</th><th>Customers (20%)</th><th>Revenue/Mo ($199)</th></tr>
+        <tr><td>Month 3&ndash;6</td><td>2,000&ndash;5,000</td><td>60&ndash;150</td><td>6&ndash;15</td><td>1&ndash;3</td><td>$199&ndash;597</td></tr>
+        <tr><td>Month 6&ndash;12</td><td>10,000&ndash;25,000</td><td>300&ndash;750</td><td>30&ndash;75</td><td>6&ndash;15</td><td>$1,194&ndash;2,985</td></tr>
+        <tr><td style="font-weight:600">Month 12+</td><td style="font-weight:600">25,000&ndash;50,000</td><td>750&ndash;1,500</td><td>75&ndash;150</td><td style="font-weight:600">15&ndash;30</td><td style="font-weight:600;color:var(--primary-dark)">$2,985&ndash;5,970</td></tr>
+      </table>
+      <p class="text-sm text-muted">SEO is a compounding investment. At ~$95/month ongoing, 3,000 pages generating 15&ndash;30 customers/month = <strong>$3&ndash;6 CAC from SEO</strong>. The pages also feed agentic discovery &mdash; LLMs cite these pages when answering contractor queries.</p>
+
+      <!-- AGENTIC DISCOVERY -->
+      <h3>Agentic Discovery: How AI Finds and Recommends Kerf</h3>
+      <p>94% of B2B buyers now use generative AI in purchasing decisions. If Kerf doesn't appear when a contractor asks ChatGPT "what safety software should I use?", it doesn't exist for that buyer.</p>
+
+      <div class="callout callout-y">
+        <div class="callout-title">The Opportunity</div>
+        <p class="mb-0">69% of sites block ClaudeBot. 62% block GPTBot. Only ~951 domains have published llms.txt. <strong>By allowing AI crawlers and publishing llms.txt, Kerf leapfrogs competitors who are hiding from AI.</strong></p>
+      </div>
+
+      <h4>1. Deploy /llms.txt (1 hour)</h4>
+      <p>A structured markdown file at <code>kerf.build/llms.txt</code> that tells LLMs what your product does. Anthropic specifically requested this standard. Google included it in their Agent-to-Agent protocol.</p>
+      <div class="card card-sm">
+        <div class="flow" style="font-size:11px"># Kerf
+
+> Kerf is a construction safety compliance platform for small-to-mid-size
+> contractors. It automates OSHA documentation, incident reporting, toolbox talks,
+> inspections, and worker certification management across all 50 US states,
+> UK, Australia, Canada, and Latin America with jurisdiction-specific compliance.
+
+## Product
+- [Features](https://kerf.build/features): AI document generation, mock
+  OSHA inspections, voice-first field tools, bilingual EN/ES
+- [Pricing](https://kerf.build/pricing): Plans from $99-599/month
+
+## Compliance Coverage
+- [OSHA](https://kerf.build/compliance/osha): 29 CFR 1926 construction
+- [State Compliance](https://kerf.build/compliance/states): All 50 states
+- [International](https://kerf.build/compliance/international): UK HSE,
+  AU SafeWork, CA OHS, MX STPS, CO SG-SST, CL Mutual system</div>
+      </div>
+
+      <h4>2. Allow AI Crawlers in robots.txt (10 minutes)</h4>
+      <p>Allow both training AND search crawlers. Most competitors block them &mdash; competitive advantage.</p>
+      <div class="card card-sm">
+        <div class="flow" style="font-size:11px"><span class="g"># Allow AI search + training (maximise visibility)</span>
+User-agent: OAI-SearchBot     <span class="g"># ChatGPT search</span>
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: GPTBot             <span class="g"># OpenAI training</span>
+Allow: /
+User-agent: Claude-SearchBot   <span class="g"># Claude search</span>
+Allow: /
+User-agent: ClaudeBot          <span class="g"># Anthropic training</span>
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended    <span class="g"># Google AI features</span>
+Allow: /</div>
+      </div>
+
+      <h4>3. JSON-LD Schema Markup (2 hours)</h4>
+      <p>Add SoftwareApplication, Organization, and FAQPage schema. One company saw 100% AI traffic increase within 90 days of adding SoftwareApplication schema.</p>
+
+      <h4>4. Answer-First Content Format</h4>
+      <p>AI models extract 44% of citations from the first 30% of a page. Every page must open with a direct answer, not marketing copy.</p>
+      <div class="grid-2">
+        <div class="card card-sm" style="border-left: 2px solid var(--fail)">
+          <p class="text-xs" style="color:var(--fail);font-weight:600;margin-bottom:4px">BAD</p>
+          <p class="text-sm mb-0">"In today's fast-paced construction industry, safety has never been more important. That's why we built Kerf..."</p>
+        </div>
+        <div class="card card-sm" style="border-left: 2px solid var(--pass)">
+          <p class="text-xs" style="color:var(--pass);font-weight:600;margin-bottom:4px">GOOD</p>
+          <p class="text-sm mb-0">"Kerf is a construction safety compliance platform that automates OSHA documentation for contractors with 5&ndash;500+ workers across all 50 US states."</p>
+        </div>
+      </div>
+
+      <h4>5. Review Platform Presence (Critical for AI Citation)</h4>
+      <p>100% of tools mentioned in ChatGPT answers had Capterra presence. 99% had G2. Reddit is the #1 cited domain at 40.1%.</p>
+      <table>
+        <tr><th>Platform</th><th>Action</th><th>Why</th></tr>
+        <tr><td style="font-weight:600">G2</td><td>Create profile, collect 50+ reviews</td><td>Top 20 most-cited domain. 50-review threshold for disproportionate citation weight</td></tr>
+        <tr><td style="font-weight:600">Capterra</td><td>Create profile, collect reviews</td><td>100% of ChatGPT software recs have Capterra presence</td></tr>
+        <tr><td style="font-weight:600">Reddit</td><td>Hermes participates in r/construction, r/OSHA</td><td>#1 cited domain by LLMs at 40.1%</td></tr>
+        <tr><td>Product Hunt</td><td>Launch post</td><td>Gets indexed, tech-savvy audience</td></tr>
+        <tr><td>Quora</td><td>Hermes answers safety compliance questions</td><td>Feeds into LLM training data</td></tr>
+      </table>
+      <p class="text-sm text-muted">Hermes can autonomously create G2/Capterra profiles, answer Quora questions, and engage on Reddit. Review collection requires real customer emails &mdash; Hermes sends review request emails to paying customers automatically at Day 30.</p>
+
+      <h4>6. MCP Server for AI Agent Discovery (Future-Proofing)</h4>
+      <p>As AI agents autonomously research and recommend tools, build an MCP server that exposes Kerf capabilities programmatically. Agents can ask "what safety compliance tools exist?" and discover Kerf through the MCP registry.</p>
+
+      <h4>7. Data-Rich "Definitive Guide" Content</h4>
+      <p>Statistics increase AI visibility by 22%. Quotations boost it by 37%. Pages not updated quarterly are 3x more likely to lose citations.</p>
+      <p><strong>Hermes generates and maintains:</strong></p>
+      <ul>
+        <li>"Complete Guide to OSHA Compliance for Small Contractors [2026]" &mdash; updated quarterly</li>
+        <li>"Construction Safety Software Comparison" &mdash; feature/pricing matrices</li>
+        <li>"OSHA Citation Trends by State [2026]" &mdash; original data from enforcement API</li>
+        <li>"Average Cost of Non-Compliance for Small Contractors" &mdash; statistics-rich</li>
+        <li>Country-specific equivalents for every target market</li>
+      </ul>
+
+      <!-- FULL INFRA COST -->
+      <h3>Complete Infrastructure Cost Summary</h3>
+
+      <table>
+        <tr><th>Category</th><th>Phase 1 (Mo 1)</th><th>Phase 2 (Mo 2&ndash;3)</th><th>Phase 3 (Mo 4+)</th></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">Email Infrastructure</td></tr>
+        <tr><td>Domains (amortised)</td><td>$13</td><td>$25</td><td>$42</td></tr>
+        <tr><td>M365 mailboxes</td><td>$120</td><td>$360</td><td>$780</td></tr>
+        <tr><td>Instantly.ai</td><td>$30</td><td>$77</td><td>$77</td></tr>
+        <tr><td>Email verification</td><td>$27</td><td>$135</td><td>$450</td></tr>
+        <tr><td>Lead enrichment (Hermes scraping)</td><td>$0</td><td>$0</td><td>$0</td></tr>
+        <tr><td>Domain burn replacement</td><td>$0</td><td>$4</td><td>$8</td></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">AI Generation</td></tr>
+        <tr><td>Claude API &mdash; emails</td><td>$18</td><td>$90</td><td>$300</td></tr>
+        <tr><td>Claude API &mdash; social content</td><td>$10</td><td>$10</td><td>$10</td></tr>
+        <tr><td>Claude API &mdash; SEO page refresh</td><td>$0</td><td>$95</td><td>$95</td></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">Platforms &amp; Tools</td></tr>
+        <tr><td>Buffer (social scheduling)</td><td>$6</td><td>$6</td><td>$6</td></tr>
+        <tr><td>Hermes hosting (local/VPS)</td><td>$0&ndash;5</td><td>$0&ndash;5</td><td>$0&ndash;5</td></tr>
+        <tr><td>PostHog + Resend + Cal.com</td><td>$0</td><td>$0</td><td>$0</td></tr>
+        <tr><td colspan="4" style="font-weight:600;color:var(--primary-dark);background:var(--primary-wash)">One-Time Costs</td></tr>
+        <tr><td>SEO page army (3,000 pages)</td><td>$545</td><td>&mdash;</td><td>&mdash;</td></tr>
+        <tr><td>Initial domain purchase</td><td>$150</td><td>$300</td><td>$300</td></tr>
+        <tr><td colspan="4" style="background:var(--secondary)"></td></tr>
+        <tr style="font-size:15px">
+          <td style="font-weight:700">MONTHLY RECURRING</td>
+          <td style="font-weight:700;color:var(--primary-dark)">~$224</td>
+          <td style="font-weight:700;color:var(--primary-dark)">~$802</td>
+          <td style="font-weight:700;color:var(--primary-dark)">~$1,768</td>
+        </tr>
+        <tr style="font-size:15px">
+          <td style="font-weight:700">ONE-TIME SETUP</td>
+          <td style="font-weight:700;color:var(--primary-dark)">~$695</td>
+          <td style="font-weight:700;color:var(--primary-dark)">+$300</td>
+          <td style="font-weight:700;color:var(--primary-dark)">+$300</td>
+        </tr>
+      </table>
+
+      <div class="callout callout-g">
+        <div class="callout-title">Cost vs Revenue by Phase</div>
+        <table style="margin:0">
+          <tr><th>Phase</th><th>Monthly Spend</th><th>Expected MRR</th><th>Net Monthly</th></tr>
+          <tr><td>Phase 1 (Month 1)</td><td>$224</td><td>$0&ndash;2,000</td><td style="color:var(--fail)">-$224 to +$1,776</td></tr>
+          <tr><td>Phase 2 (Month 2&ndash;3)</td><td>$802</td><td>$5,000&ndash;15,000</td><td style="color:var(--pass)">+$4,198 to +$14,198</td></tr>
+          <tr><td>Phase 3 (Month 4+)</td><td>$1,768</td><td>$16,000&ndash;40,000+</td><td style="color:var(--pass);font-weight:700">+$14,232 to +$38,232</td></tr>
+        </table>
+        <p class="text-sm mb-0" style="margin-top:8px">Scale email infra ONLY when revenue supports it. Phase 1 costs are under a single customer's MRR. Each phase is self-funding from the previous phase's revenue.</p>
+      </div>
+    </section>
+
+    <!-- INTERNATIONAL -->
+    <section id="international">
+      <h2>5. International Expansion</h2>
+
+      <h3>Spanish-Language Corridor (Biggest Near-Term Opportunity)</h3>
+      <p>Combined TAM $60&ndash;120M+. <strong>Zero new language dev.</strong></p>
+      <table>
+        <tr><th>Country</th><th>TAM</th><th>Enforcement</th><th>Key Hook</th><th>Priority</th></tr>
+        <tr><td>Mexico</td><td>$30&ndash;70M</td><td>Moderate</td><td>Nearshoring, 200K+ firms</td><td><span class="badge badge-pass">HIGH #1</span></td></tr>
+        <tr><td>Colombia</td><td>$8&ndash;20M</td><td>Strong</td><td>SG-SST mandate, ARL channel</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Chile</td><td>$8&ndash;18M</td><td>Strictest LatAm</td><td>Mutual de Seguridad, mining</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Peru</td><td>$5&ndash;12M</td><td>Moderate</td><td>Mining mandates</td><td><span class="badge badge-warn">MEDIUM</span></td></tr>
+        <tr><td>Argentina</td><td>$5&ndash;15M</td><td>Moderate</td><td>ART channel, currency risk</td><td><span class="badge badge-fail">LOW-MED</span></td></tr>
+      </table>
+
+      <h3>English-Speaking Markets (Immediate)</h3>
+      <table>
+        <tr><th>Country</th><th>TAM</th><th>Enforcement</th><th>Priority</th></tr>
+        <tr><td>Ireland</td><td>$5&ndash;15M</td><td>Strict (HSA)</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>New Zealand</td><td>$10&ndash;20M</td><td>Strict (WorkSafe)</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Singapore</td><td>$5&ndash;15M</td><td>Very Strict (MOM)</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Philippines</td><td>$10&ndash;25M</td><td>Moderate (RA 11058)</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>UAE</td><td>$10&ndash;30M</td><td>Moderate-Strict</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Saudi Arabia</td><td>$15&ndash;40M</td><td>Moderate</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Hong Kong</td><td>$30&ndash;80M</td><td>Strict</td><td><span class="badge badge-warn">MED-HIGH</span></td></tr>
+        <tr><td>India</td><td>$20&ndash;60M</td><td>Moderate</td><td><span class="badge badge-warn">MEDIUM</span></td></tr>
+        <tr><td>Canada (Alberta)</td><td>$15&ndash;25M</td><td>Strict (COR)</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+      </table>
+
+      <h3>New Language Markets (Medium-Term)</h3>
+      <table>
+        <tr><th>Country</th><th>TAM</th><th>Language</th><th>Catalyst</th><th>Priority</th></tr>
+        <tr><td>Brazil</td><td>$40&ndash;80M</td><td>Portuguese</td><td>NR-18, labor courts</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>South Korea</td><td>$25&ndash;50M</td><td>Korean</td><td>CEO jail time law</td><td><span class="badge badge-pass">HIGH</span></td></tr>
+        <tr><td>Germany</td><td>$30&ndash;70M</td><td>German</td><td>BG BAU audits</td><td><span class="badge badge-warn">MED-HIGH</span></td></tr>
+        <tr><td>France</td><td>$40&ndash;80M</td><td>French</td><td>OPPBTP, Grand Paris</td><td><span class="badge badge-warn">MEDIUM</span></td></tr>
+      </table>
+
+      <h3>Total Global TAM</h3>
+      <table>
+        <tr><th>Segment</th><th>TAM</th></tr>
+        <tr><td>English-speaking (US, UK, AU, CA, IE, NZ, SG, PH, HK, IN, ZA, UAE, SA, QA)</td><td>$250&ndash;550M</td></tr>
+        <tr><td>Spanish-speaking (MX, CO, CL, PE, AR, PA)</td><td>$60&ndash;120M</td></tr>
+        <tr><td>Portuguese (Brazil)</td><td>$40&ndash;80M</td></tr>
+        <tr><td>European (DE, FR, NL, Nordics, PL)</td><td>$130&ndash;280M</td></tr>
+        <tr><td>East Asian (JP, KR)</td><td>$105&ndash;200M</td></tr>
+        <tr><td>Other (SE Asia, Turkey, Africa)</td><td>$55&ndash;145M</td></tr>
+        <tr><td style="font-weight:700;font-size:15px">TOTAL</td><td style="font-weight:700;color:var(--primary-dark);font-size:15px">$640M &ndash; $1.4B</td></tr>
+      </table>
+    </section>
+
+    <!-- MESSAGING -->
+    <section id="messaging">
+      <h2>6. Messaging &amp; Sales Playbook</h2>
+
+      <h3>Core Value Propositions</h3>
+      <div class="grid-2">
+        <div class="card card-bordered-l"><h4 style="margin-top:0">A. Money (for sales)</h4><p class="mb-0" style="font-style:italic">"Stop paying consultants $86K a year to do what an app can do in 10 minutes."</p></div>
+        <div class="card card-bordered-l"><h4 style="margin-top:0">B. Time (for ads)</h4><p class="mb-0" style="font-style:italic">"Get your Sunday nights back. Kerf writes your safety docs while you're still on the jobsite."</p></div>
+        <div class="card card-bordered-l"><h4 style="margin-top:0">C. Fear (for email)</h4><p class="mb-0" style="font-style:italic">"The next OSHA inspector doesn't care that you're a good contractor. He cares what's on paper."</p></div>
+        <div class="card card-bordered-l"><h4 style="margin-top:0">D. Opportunity</h4><p class="mb-0" style="font-style:italic">"You're losing bids right now because your safety program looks like it was stapled together at Kinko's."</p></div>
+      </div>
+
+      <h3>The Bar Conversation</h3>
+      <blockquote>"You know how every GC wants a full safety program before they'll let you bid? We built an app that does it. Answer a few questions, it spits out the whole thing &mdash; SSSP, JHA, toolbox talks. Like having a safety director on your phone for less than your diesel fill-up."</blockquote>
+
+      <h3>Key Objection Handling</h3>
+      <div class="card card-sm"><h4 style="margin-top:0">"We've been fine without it."</h4><blockquote style="margin:0">"Most guys were fine too &mdash; right up until they weren't. Quick question &mdash; when was the last time a GC asked for your safety program and you had to scramble?"</blockquote></div>
+      <div class="card card-sm"><h4 style="margin-top:0">"My guys won't use it."</h4><blockquote style="margin:0">"That's why it's all voice. Hit record, say what you see. Done. Works in Spanish. Can your guys send a voice text? It's that easy."</blockquote></div>
+      <div class="card card-sm"><h4 style="margin-top:0">"It's too expensive."</h4><blockquote style="margin:0">"One serious OSHA citation is $16,131. One willful is $161,323. Kerf is $99/month. That's less than your porta-john rental."</blockquote></div>
+
+      <h3>The Aha Moment (Self-Serve, No Demo Call)</h3>
+      <p><strong>The free trial IS the demo.</strong> First thing a trial user sees: "Tell us about your project" &rarr; AI generates a 30-page SSSP in 90 seconds. That moment sells the product. No human needed.</p>
+      <p><strong>For cold outreach leads:</strong> Hermes offers to generate a free SSSP in the first email. "Give me a project name and I'll generate a free safety plan and send it over. No strings." The generated PDF arrives by email &mdash; prospect opens it, sees a professional 30-page document with their company name. That's the demo.</p>
+    </section>
+
+    <!-- EXECUTION -->
+    <section id="execution">
+      <h2>7. 90-Day Execution Plan</h2>
+
+      <h3>Day 1: Hermes Setup (4 hours of your time, then hands-off)</h3>
+      <ul class="checklist">
+        <li>Install Hermes Agent. Configure persistent memory store</li>
+        <li>Give Hermes API keys: Claude API, Google Places, Apollo.io</li>
+        <li>Log Hermes into: Facebook, LinkedIn, Instantly.ai, Buffer</li>
+        <li>Buy 3 sending domains, configure SPF/DKIM/DMARC, connect to Instantly</li>
+        <li>Create self-serve pages: kerf.build/gc, kerf.build/partners</li>
+        <li>Record one 3-minute screen-capture demo video (no face, just product walkthrough)</li>
+      </ul>
+
+      <h3>Days 2&ndash;5: Build Phase (Hermes builds, you review once)</h3>
+      <ul class="checklist">
+        <li>Hermes builds OSHA scraping skill + tests with 50 leads</li>
+        <li>Deploy OSHA Penalty Calculator (Hermes can scaffold, you review)</li>
+        <li>Deploy Gap Checker + Free Toolbox Talk Generator</li>
+        <li>Hermes joins 15&ndash;20 Facebook groups + connects with 50 LinkedIn contacts</li>
+        <li>Hermes generates 750 SEO pages via Claude API. Deploy to frontend</li>
+        <li>Domains enter warm-up (14 days, fully automated)</li>
+      </ul>
+
+      <h3>Days 6&ndash;14: Warm-Up Phase (Zero Human Input)</h3>
+      <ul class="checklist">
+        <li>Email domains warming up automatically via Instantly</li>
+        <li>Hermes begins Facebook group engagement (helpful answers, no product yet)</li>
+        <li>Hermes posts to LinkedIn 5x/week</li>
+        <li>Hermes generates daily social content via Buffer</li>
+        <li>Free tools start getting indexed by Google</li>
+        <li>Hermes builds permit scraping skills for top 5 metros</li>
+      </ul>
+
+      <h3>Week 3&ndash;4: First Live Outbound (Fully Autonomous)</h3>
+      <ul class="checklist">
+        <li>Email warm-up complete. Hermes sends first OSHA-triggered outbound</li>
+        <li>Hermes adds UK HSE + AU SafeWork + Canada + Ireland data sources</li>
+        <li>Facebook group engagement shifts to sharing free tools</li>
+        <li>First replies come in. Hermes handles all conversations</li>
+        <li>First free tool signups converting to trial</li>
+      </ul>
+
+      <h3>Month 2: Scale (All Automated)</h3>
+      <ul class="checklist">
+        <li>Hermes launches GC Portal outreach (50&ndash;100 GC safety directors/week)</li>
+        <li>Hermes launches permit-triggered outbound for top 10 metros</li>
+        <li>Hermes begins partnership outreach (insurance brokers, trainers)</li>
+        <li>Trial activation playbook live (PostHog + Resend)</li>
+        <li>Referral program launches in-app</li>
+        <li>Hermes adds Mexico, Colombia, Chile (Spanish outbound)</li>
+        <li>Hermes adds Singapore, Philippines, UAE, NZ outbound</li>
+        <li>Hermes learning model forming: knows which angles work per trade/geography</li>
+      </ul>
+
+      <h3>Month 3: Compound Effects (You Do Nothing)</h3>
+      <ul class="checklist">
+        <li>GC viral loop producing sub signups (first GCs signed up in month 2)</li>
+        <li>Hermes adds Saudi Arabia, Hong Kong, India outbound</li>
+        <li>Hermes' email model fully trained: autonomously A/B testing angles</li>
+        <li>5K+ outreach emails/month across 15&ndash;20 countries</li>
+        <li>SEO pages ranking. Organic traffic building</li>
+        <li>First partnership referrals arriving</li>
+        <li>Facebook/LinkedIn engagement driving steady free tool traffic</li>
+      </ul>
+
+      <div class="callout callout-y">
+        <div class="callout-title">Your Ongoing Time Commitment After Day 1 Setup</div>
+        <p class="mb-0"><strong>Weekly:</strong> Review Hermes' performance report (15 minutes). Approve any strategic direction changes (5 minutes). That's it. Everything else runs autonomously 24/7 across all countries.</p>
+      </div>
+
+      <h3>Expected Outcomes at 90 Days</h3>
+      <table>
+        <tr><th>Metric</th><th>Target</th></tr>
+        <tr><td>Email sending volume (month 3)</td><td>3,000&ndash;5,000/day = 90&ndash;150K/month</td></tr>
+        <tr><td>Outbound leads/month</td><td>5,000&ndash;10,000 (all countries)</td></tr>
+        <tr><td>Free tool users/month</td><td>1,000&ndash;3,000</td></tr>
+        <tr><td>SEO pages live</td><td>~3,000 (all countries)</td></tr>
+        <tr><td>Trial signups/month</td><td>100&ndash;300</td></tr>
+        <tr><td style="font-weight:700">Paying customers (cumulative)</td><td style="font-weight:700;color:var(--primary-dark)">80&ndash;200</td></tr>
+        <tr><td style="font-weight:700">MRR at day 90</td><td style="font-weight:700;color:var(--primary-dark)">$16,000&ndash;40,000</td></tr>
+        <tr><td>Countries with active outbound</td><td>15&ndash;20</td></tr>
+        <tr><td>AI discoverability</td><td>llms.txt live, schema markup, G2/Capterra profiles, Reddit presence</td></tr>
+        <tr><td>Total GTM spend (month 3)</td><td>~$1,000&ndash;1,200/month</td></tr>
+      </table>
+    </section>
+
+    <!-- PROFITABILITY -->
+    <section id="profitability">
+      <h2>9. Channel Profitability Rankings</h2>
+
+      <h3>Highest ROI Per Dollar (Automated Channels Only)</h3>
+      <table>
+        <tr><th>#</th><th>Channel</th><th>12-Mo ROI</th><th>Cost/Mo</th><th>Automation</th><th>First Customer</th></tr>
+        <tr><td>1</td><td>OSHA violation email (Hermes)</td><td style="color:var(--pass)">1,000&ndash;3,000%</td><td>$100&ndash;300</td><td>95%</td><td>2&ndash;3 weeks</td></tr>
+        <tr><td>2</td><td>GC Portal viral loop</td><td style="color:var(--pass)">Infinite</td><td>$0</td><td>100%</td><td>Month 2</td></tr>
+        <tr><td>3</td><td>FB group engagement (Hermes)</td><td style="color:var(--pass)">Infinite</td><td>$0</td><td>90%</td><td>2&ndash;4 weeks</td></tr>
+        <tr><td>4</td><td>Referral program</td><td style="color:var(--pass)">500&ndash;2,000%</td><td>$0&ndash;500</td><td>100%</td><td>Needs customers</td></tr>
+        <tr><td>5</td><td>Free tool PLG</td><td style="color:var(--pass)">Infinite</td><td>$0</td><td>100%</td><td>1&ndash;3 months</td></tr>
+        <tr><td>6</td><td>SEO programmatic (Hermes)</td><td>500&ndash;2,000%</td><td>$20</td><td>90%</td><td>3&ndash;6 months</td></tr>
+        <tr><td>7</td><td>Building permit email (Hermes)</td><td>400&ndash;1,000%</td><td>$100&ndash;300</td><td>95%</td><td>3&ndash;6 weeks</td></tr>
+        <tr><td>8</td><td>LinkedIn engagement (Hermes)</td><td>300&ndash;800%</td><td>$0</td><td>85%</td><td>4&ndash;8 weeks</td></tr>
+        <tr><td>9</td><td>Partnership emails (Hermes)</td><td>200&ndash;500%</td><td>$0</td><td>90%</td><td>2&ndash;4 months</td></tr>
+        <tr><td>10</td><td>Document branding (passive)</td><td>Infinite</td><td>$0</td><td>100%</td><td>3&ndash;6 months</td></tr>
+      </table>
+      <p class="text-sm text-muted">Removed from rankings: trade shows, phone calls, in-person partnerships, manual YouTube (on-camera), demo calls. None are needed.</p>
+
+      <div class="callout callout-y">
+        <div class="callout-title">Single Highest-Leverage Activity</div>
+        <p><strong>Set up Hermes with the OSHA violation outbound playbook on Day 1.</strong> Fastest revenue (2&ndash;3 weeks after domain warmup). Validates PMF. Scales globally. Everything else layers on top.</p>
+        <p class="mb-0"><strong>Your only job:</strong> 4 hours on Day 1 to install Hermes + give it logins/API keys. Then review its weekly report. Hermes handles everything else &mdash; scraping, enriching, writing, sending, replying, qualifying, following up &mdash; across every country, 24/7, forever.</p>
+      </div>
+    </section>
+
+    <!-- METRICS -->
+    <section id="metrics">
+      <h2>10. Metrics Dashboard</h2>
+      <h3>North Star: Organic GC Signups as % of Total</h3>
+      <p>When this crosses 50%, the viral loop is the primary growth engine.</p>
+      <table>
+        <tr><th>Category</th><th>Metric</th><th>Target</th></tr>
+        <tr><td style="font-weight:600;color:var(--primary-dark)">Viral Loop</td><td>GC invitation acceptance rate</td><td>&gt; 25%</td></tr>
+        <tr><td></td><td>Sub time-to-first-upload</td><td>&lt; 48 hours</td></tr>
+        <tr><td></td><td>Multi-GC rate</td><td>&gt; 15% by month 12</td></tr>
+        <tr><td style="font-weight:600;color:var(--primary-dark)">Outbound</td><td>Email open rate</td><td>&gt; 40%</td></tr>
+        <tr><td></td><td>Reply rate</td><td>&gt; 3%</td></tr>
+        <tr><td></td><td>Demo booked rate</td><td>&gt; 25%</td></tr>
+        <tr><td style="font-weight:600;color:var(--primary-dark)">Inbound</td><td>Free tool usage/month</td><td>&gt; 500</td></tr>
+        <tr><td></td><td>Tool-to-email capture</td><td>&gt; 10%</td></tr>
+        <tr><td style="font-weight:600;color:var(--primary-dark)">Conversion</td><td>Trial-to-paid</td><td>&gt; 20%</td></tr>
+        <tr><td></td><td>Time to first value</td><td>&lt; 24 hours</td></tr>
+      </table>
+    </section>
+
+    <!-- AD COPY -->
+    <section id="ad-copy">
+      <h2>Appendix: Ad Copy</h2>
+
+      <h3>LinkedIn</h3>
+      <div class="card card-sm"><h4 style="margin-top:0">Variant 1 (Pain)</h4><p class="mb-0">Your safety consultant charges $2,000/month to update templates. Kerf generates a complete site-specific safety plan in 90 seconds. SSSP. JHA. Toolbox talks. Bilingual. $99/month. 14-day free trial.</p></div>
+      <div class="card card-sm"><h4 style="margin-top:0">Variant 2 (Result)</h4><p class="mb-0">A 35-person electrical contractor used Kerf to submit a prequal package to a GC who'd rejected them twice. They got the job. $600K contract.</p></div>
+      <div class="card card-sm"><h4 style="margin-top:0">Variant 3 (Identity)</h4><p class="mb-0">You didn't start a construction company to spend Sunday nights doing safety paperwork. Kerf is an AI safety director. Voice-first. Bilingual. Built for the field.</p></div>
+
+      <h3>Facebook</h3>
+      <div class="card card-sm"><h4 style="margin-top:0">Variant 1 (Casual)</h4><p class="mb-0">Honest question for subs: How many hours a week on safety paperwork? We built an app that does it in minutes. Talk into your phone, it writes the report. Spanish too. $99/month.</p></div>
+      <div class="card card-sm"><h4 style="margin-top:0">Variant 2 (Fear)</h4><p class="mb-0">OSHA fines went up. $16,131 serious. $161,323 willful. If an inspector walked on tomorrow, how confident are you? Kerf runs a mock inspection and tells you what they'd cite.</p></div>
+
+      <h3>YouTube Hooks</h3>
+      <div class="card card-sm">
+        <p><strong>Hook 1:</strong> "If OSHA walked onto your jobsite right now, could you hand them your safety program? If you hesitated, watch this."</p>
+        <p><strong>Hook 2:</strong> "I'm about to generate a 30-page safety plan in less time than it takes to pour a cup of coffee."</p>
+        <p class="mb-0"><strong>Hook 3:</strong> "It's Sunday night. You should be with your kids. Instead you're updating JHAs. Here's how I got my weekends back."</p>
+      </div>
+    </section>
+
+  </div><!-- content -->
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <span>Kerf GTM Strategy v1.0</span>
+    <span>Generated April 2026</span>
+  </footer>
+
+</div><!-- main -->
+
+<script>
+// Highlight active sidebar link on scroll
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.sidebar-link');
+window.addEventListener('scroll', () => {
+  const container = document.querySelector('.content');
+  const scrollY = container.scrollTop;
+  let current = '';
+  sections.forEach(s => { if (s.offsetTop - 100 <= scrollY) current = s.id; });
+  links.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+  });
+}, true);
+document.querySelector('.content').addEventListener('scroll', () => {
+  const container = document.querySelector('.content');
+  let current = '';
+  sections.forEach(s => { if (s.offsetTop - 100 <= container.scrollTop) current = s.id; });
+  links.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

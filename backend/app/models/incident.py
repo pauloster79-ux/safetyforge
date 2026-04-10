@@ -38,6 +38,9 @@ class IncidentCreate(BaseModel):
         ..., min_length=10, max_length=5000, description="Detailed incident description"
     )
     persons_involved: str = Field(default="", max_length=2000, description="Persons involved")
+    involved_worker_ids: list[str] = Field(
+        default_factory=list, description="Worker IDs of persons involved"
+    )
     witnesses: str = Field(default="", max_length=2000, description="Witnesses present")
     immediate_actions_taken: str = Field(
         default="", max_length=2000, description="Immediate response actions taken"
@@ -62,6 +65,7 @@ class IncidentUpdate(BaseModel):
     description: str | None = Field(None, min_length=10, max_length=5000)
     status: IncidentStatus | None = Field(None)
     persons_involved: str | None = Field(None, max_length=2000)
+    involved_worker_ids: list[str] | None = None
     witnesses: str | None = Field(None, max_length=2000)
     immediate_actions_taken: str | None = Field(None, max_length=2000)
     root_cause: str | None = Field(None, max_length=2000)

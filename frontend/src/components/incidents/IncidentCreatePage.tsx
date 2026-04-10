@@ -28,6 +28,8 @@ import { useCreateIncident } from '@/hooks/useIncidents';
 import { useProject } from '@/hooks/useProjects';
 import { ROUTES } from '@/lib/constants';
 import type { Incident } from '@/lib/constants';
+import { VoiceRecorder } from '@/components/voice/VoiceRecorder';
+import { useParseIncident } from '@/hooks/useVoiceTranscription';
 
 const SEVERITY_OPTIONS: { value: Incident['severity']; label: string }[] = [
   { value: 'fatality', label: 'Fatality' },
@@ -99,6 +101,58 @@ function OshaGuidance({ severity, visible }: { severity: Incident['severity']; v
   );
 }
 
+function VoiceIncidentReporter({
+  onParsed,
+}: {
+  onParsed: (data: {
+    location?: string;
+    severity?: string;
+    description?: string;
+    persons_involved?: string;
+    witnesses?: string;
+    immediate_actions_taken?: string;
+  }) => void;
+}) {
+  const parseIncident = useParseIncident();
+
+  const handleTranscript = async (transcript: string) => {
+    try {
+      const result = await parseIncident.mutateAsync({ transcript });
+      onParsed(result);
+    } catch {
+      // Error shown by VoiceRecorder
+    }
+  };
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardContent className="pt-5">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Voice Report</p>
+              <p className="text-xs text-muted-foreground">
+                Describe what happened — AI will fill in the form
+              </p>
+            </div>
+          </div>
+          <VoiceRecorder
+            onTranscript={handleTranscript}
+            placeholder="Record incident report"
+          />
+          {parseIncident.isPending && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Analyzing report and filling form fields...
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function IncidentCreatePage() {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
@@ -125,11 +179,11 @@ export function IncidentCreatePage() {
   const canSubmit =
     form.incident_date &&
     form.incident_time &&
-    form.location &&
+    form.location.trim() &&
     form.severity &&
-    form.description &&
-    form.persons_involved &&
-    form.immediate_actions_taken;
+    form.description.trim() &&
+    form.persons_involved.trim() &&
+    form.immediate_actions_taken.trim();
 
   const handleSubmit = async () => {
     if (!canSubmit || !form.severity) return;
@@ -213,6 +267,20 @@ export function IncidentCreatePage() {
         </div>
       </div>
 
+      <VoiceIncidentReporter
+        onParsed={(data) =>
+          setForm((prev) => ({
+            ...prev,
+            location: data.location || prev.location,
+            severity: (data.severity as Incident['severity']) || prev.severity,
+            description: data.description || prev.description,
+            persons_involved: data.persons_involved || prev.persons_involved,
+            witnesses: data.witnesses || prev.witnesses,
+            immediate_actions_taken: data.immediate_actions_taken || prev.immediate_actions_taken,
+          }))
+        }
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Incident Details</CardTitle>
@@ -282,12 +350,20 @@ export function IncidentCreatePage() {
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="flex items-center gap-1">
-              <FileText className="h-3.5 w-3.5" /> Description
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description" className="flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" /> Description
+              </Label>
+              <VoiceRecorder
+                compact
+                onTranscript={(text) =>
+                  setForm((p) => ({ ...p, description: p.description ? `${p.description}\n${text}` : text }))
+                }
+              />
+            </div>
             <Textarea
               id="description"
-              placeholder="Describe what happened in as much detail as possible. Include the sequence of events leading up to the incident."
+              placeholder="Describe what happened... or tap the mic to dictate"
               className="min-h-[150px]"
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}

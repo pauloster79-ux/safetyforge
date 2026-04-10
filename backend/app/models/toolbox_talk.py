@@ -18,6 +18,7 @@ class Attendee(BaseModel):
     """A worker who attended the toolbox talk."""
 
     worker_name: str = Field(..., min_length=1, max_length=128, description="Name of the attendee")
+    worker_id: str | None = Field(None, description="Worker ID if linked to a worker record")
     signature_data: str = Field(default="", description="Base64 encoded signature or empty")
     signed_at: datetime | None = Field(None, description="Timestamp when the attendee signed")
     language_preference: str = Field(default="en", description="Language preference: en or es")
@@ -96,6 +97,7 @@ class AttendeeCreate(BaseModel):
     """Input model for adding an attendee to a toolbox talk."""
 
     worker_name: str = Field(..., min_length=1, max_length=128, description="Name of the attendee")
+    worker_id: str | None = Field(None, description="Worker ID if linked to a worker record")
     signature_data: str = Field(default="", description="Base64 encoded signature or empty")
     language_preference: str = Field(default="en", description="Language preference: en or es")
 

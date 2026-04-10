@@ -1,52 +1,25 @@
-"""Project CRUD service against Firestore."""
+"""Project CRUD service (Neo4j-backed)."""
 
-import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.exceptions import CompanyNotFoundError, ProjectNotFoundError
+from app.models.actor import Actor
 from app.models.project import (
     Project,
     ProjectCreate,
     ProjectStatus,
     ProjectUpdate,
 )
+from app.services.base_service import BaseService
 
 
-class ProjectService:
-    """Manages construction projects in Firestore.
+class ProjectService(BaseService):
+    """Manages construction projects as Neo4j nodes.
 
-    Args:
-        db: Firestore client instance.
+    Projects connect to companies via (Company)-[:OWNS_PROJECT]->(Project).
+    company_id is NOT stored on the node — it is derived from the relationship.
     """
-
-    def __init__(self, db: firestore.Client) -> None:
-        self.db = db
-
-    def _company_ref(self, company_id: str) -> firestore.DocumentReference:
-        """Return a reference to the company document."""
-        return self.db.collection("companies").document(company_id)
-
-    def _collection(self, company_id: str) -> firestore.CollectionReference:
-        """Return the projects subcollection for a company.
-
-        Args:
-            company_id: The parent company ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._company_ref(company_id).collection("projects")
-
-    def _generate_id(self) -> str:
-        """Generate a unique project ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"proj_{secrets.token_hex(8)}"
 
     def _verify_company_exists(self, company_id: str) -> None:
         """Verify that the parent company exists.
@@ -57,16 +30,20 @@ class ProjectService:
         Raises:
             CompanyNotFoundError: If the company does not exist.
         """
-        if not self._company_ref(company_id).get().exists:
+        result = self._read_tx_single(
+            "MATCH (c:Company {id: $id}) RETURN c.id AS id",
+            {"id": company_id},
+        )
+        if result is None:
             raise CompanyNotFoundError(company_id)
 
     def create(self, company_id: str, data: ProjectCreate, user_id: str) -> Project:
-        """Create a new project.
+        """Create a new project linked to a company.
 
         Args:
             company_id: The owning company ID.
             data: Validated project creation data.
-            user_id: Firebase UID of the creating user.
+            user_id: Clerk user ID of the creating user.
 
         Returns:
             The created Project with all fields populated.
@@ -74,14 +51,11 @@ class ProjectService:
         Raises:
             CompanyNotFoundError: If the company does not exist.
         """
-        self._verify_company_exists(company_id)
+        actor = Actor.human(user_id)
+        project_id = self._generate_id("proj")
 
-        now = datetime.now(timezone.utc)
-        project_id = self._generate_id()
-
-        project_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": project_id,
-            "company_id": company_id,
             "name": data.name,
             "address": data.address,
             "client_name": data.client_name,
@@ -97,15 +71,22 @@ class ProjectService:
             "emergency_contact_phone": data.emergency_contact_phone,
             "status": ProjectStatus.ACTIVE.value,
             "compliance_score": 0,
-            "created_at": now,
-            "created_by": user_id,
-            "updated_at": now,
-            "updated_by": user_id,
             "deleted": False,
+            **self._provenance_create(actor),
         }
 
-        self._collection(company_id).document(project_id).set(project_dict)
-        return Project(**project_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})
+            CREATE (p:Project $props)
+            CREATE (c)-[:OWNS_PROJECT]->(p)
+            RETURN p {.*, company_id: c.id} AS project
+            """,
+            {"company_id": company_id, "props": props},
+        )
+        if result is None:
+            raise CompanyNotFoundError(company_id)
+        return Project(**result["project"])
 
     def get(self, company_id: str, project_id: str) -> Project:
         """Fetch a single project.
@@ -120,15 +101,17 @@ class ProjectService:
         Raises:
             ProjectNotFoundError: If the project does not exist or is soft-deleted.
         """
-        doc = self._collection(company_id).document(project_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            RETURN p {.*, company_id: c.id} AS project
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        if result is None:
             raise ProjectNotFoundError(project_id)
-
-        data = doc.to_dict()
-        if data.get("deleted", False):
-            raise ProjectNotFoundError(project_id)
-
-        return Project(**data)
+        return Project(**result["project"])
 
     def list_projects(
         self,
@@ -148,25 +131,41 @@ class ProjectService:
         Returns:
             A dict with 'projects' list and 'total' count.
         """
-        base_query: firestore.Query = self._collection(company_id).where(
-            "deleted", "==", False
-        )
+        where_clauses = ["p.deleted = false"]
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if status is not None:
-            base_query = base_query.where("status", "==", status.value)
+            where_clauses.append("p.status = $status")
+            params["status"] = status.value
 
-        # Count total matching projects
-        all_docs = [Project(**doc.to_dict()) for doc in base_query.stream()]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
 
-        # Apply sorting, offset, and limit
-        paginated_query = base_query.order_by(
-            "created_at", direction=firestore.Query.DESCENDING
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project)
+            WHERE {where_str}
+            RETURN count(p) AS total
+            """,
+            params,
         )
-        paginated_query = paginated_query.offset(offset).limit(limit)
+        total = count_result["total"] if count_result else 0
 
-        projects = [Project(**doc.to_dict()) for doc in paginated_query.stream()]
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project)
+            WHERE {where_str}
+            RETURN p {{.*, company_id: c.id}} AS project
+            ORDER BY p.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
 
+        projects = [Project(**r["project"]) for r in results]
         return {"projects": projects, "total": total}
 
     def update(
@@ -178,7 +177,7 @@ class ProjectService:
             company_id: The owning company ID.
             project_id: The project ID to update.
             data: Fields to update (only non-None fields are applied).
-            user_id: Firebase UID of the updating user.
+            user_id: Clerk user ID of the updating user.
 
         Returns:
             The updated Project model.
@@ -186,31 +185,30 @@ class ProjectService:
         Raises:
             ProjectNotFoundError: If the project does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id).document(project_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise ProjectNotFoundError(project_id)
-
-        update_data: dict[str, Any] = {}
+        update_fields: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name == "status" and value is not None:
-                update_data[field_name] = value.value if hasattr(value, "value") else value
+                update_fields[field_name] = value.value if hasattr(value, "value") else value
             elif field_name in ("start_date", "end_date") and value is not None:
-                update_data[field_name] = value.isoformat() if hasattr(value, "isoformat") else value
+                update_fields[field_name] = value.isoformat() if hasattr(value, "isoformat") else value
             else:
-                update_data[field_name] = value
+                update_fields[field_name] = value
 
-        if not update_data:
-            return Project(**doc.to_dict())
+        actor = Actor.human(user_id)
+        update_fields.update(self._provenance_update(actor))
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        update_data["updated_by"] = user_id
-
-        doc_ref.update(update_data)
-
-        updated_doc = doc_ref.get()
-        return Project(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            SET p += $props
+            RETURN p {.*, company_id: c.id} AS project
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": update_fields},
+        )
+        if result is None:
+            raise ProjectNotFoundError(project_id)
+        return Project(**result["project"])
 
     def delete(self, company_id: str, project_id: str) -> None:
         """Soft-delete a project by setting the deleted flag.
@@ -222,18 +220,21 @@ class ProjectService:
         Raises:
             ProjectNotFoundError: If the project does not exist.
         """
-        doc_ref = self._collection(company_id).document(project_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise ProjectNotFoundError(project_id)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            SET p.deleted = true, p.updated_at = $now
+            RETURN p.id AS id
+            """,
             {
-                "deleted": True,
-                "updated_at": datetime.now(timezone.utc),
-            }
+                "company_id": company_id,
+                "project_id": project_id,
+                "now": datetime.now(timezone.utc).isoformat(),
+            },
         )
+        if result is None:
+            raise ProjectNotFoundError(project_id)
 
     def get_compliance_score(self, company_id: str, project_id: str) -> int:
         """Calculate a compliance score (0-100) for a project.
@@ -250,55 +251,46 @@ class ProjectService:
         Returns:
             An integer score from 0 to 100.
         """
-        from datetime import timedelta
-
         now = datetime.now(timezone.utc)
-        seven_days_ago = now - timedelta(days=7)
+        seven_days_ago = (now - timedelta(days=7)).isoformat()
 
-        # Get recent inspections
-        inspections_ref = (
-            self._company_ref(company_id)
-            .collection("projects")
-            .document(project_id)
-            .collection("inspections")
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            OPTIONAL MATCH (p)-[:HAS_INSPECTION]->(i:Inspection)
+            WHERE i.deleted = false
+            WITH c, p,
+                 count(i) AS total_inspections,
+                 sum(CASE WHEN i.created_at >= $cutoff THEN 1 ELSE 0 END) AS recent_count,
+                 sum(CASE WHEN i.overall_status = 'pass' THEN 1 ELSE 0 END) AS pass_count
+            OPTIONAL MATCH (c)-[:HAS_DOCUMENT]->(d:Document)
+            WHERE d.deleted = false
+            WITH total_inspections, recent_count, pass_count, count(d) AS doc_count
+            RETURN total_inspections, recent_count, pass_count, doc_count
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "cutoff": seven_days_ago,
+            },
         )
-
-        all_inspections = list(
-            inspections_ref.where("deleted", "==", False).stream()
-        )
+        if result is None:
+            return 0
 
         score = 0
 
-        # Factor 1: Recent inspections (up to 40 points)
-        recent_inspections = []
-        for insp in all_inspections:
-            data = insp.to_dict()
-            created_at = data.get("created_at")
-            if created_at is not None and created_at >= seven_days_ago:
-                recent_inspections.append(data)
+        recent_count = result["recent_count"]
+        if recent_count >= 3:
+            score += 40
+        elif recent_count >= 1:
+            score += 20
 
-        if recent_inspections:
-            # At least 1 recent inspection = 20 pts, 3+ = 40 pts
-            if len(recent_inspections) >= 3:
-                score += 40
-            elif len(recent_inspections) >= 1:
-                score += 20
-
-        # Factor 2: Pass rate of all inspections (up to 40 points)
-        if all_inspections:
-            pass_count = sum(
-                1
-                for insp in all_inspections
-                if insp.to_dict().get("overall_status") == "pass"
-            )
-            pass_rate = pass_count / len(all_inspections)
+        total_inspections = result["total_inspections"]
+        if total_inspections > 0:
+            pass_rate = result["pass_count"] / total_inspections
             score += int(pass_rate * 40)
 
-        # Factor 3: Document completeness (up to 20 points)
-        docs_ref = self._company_ref(company_id).collection("documents")
-        doc_count = sum(
-            1 for _ in docs_ref.where("deleted", "==", False).limit(5).stream()
-        )
+        doc_count = result["doc_count"]
         if doc_count >= 3:
             score += 20
         elif doc_count >= 1:

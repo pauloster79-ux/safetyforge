@@ -1,4 +1,4 @@
-"""FastAPI application entry point for SafetyForge backend."""
+"""FastAPI application entry point for Kerf backend."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -10,7 +10,14 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.middleware.rate_limit import limiter
+from app.services.neo4j_client import (
+    check_neo4j_health,
+    close_async_driver,
+    close_sync_driver,
+    get_sync_driver,
+)
 from app.routers import (
+    agents,
     auth,
     billing,
     companies,
@@ -21,6 +28,7 @@ from app.routers import (
     members,
     pdf,
     templates,
+    voice,
 )
 
 logging.basicConfig(
@@ -32,21 +40,39 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan handler for startup/shutdown events."""
+    """Application lifespan handler for startup/shutdown events.
+
+    On startup: initialises the Neo4j driver and verifies connectivity.
+    On shutdown: closes all Neo4j connections cleanly.
+    """
     settings = get_settings()
     logger.info(
-        "SafetyForge backend starting (environment=%s, project=%s)",
+        "Kerf backend starting (environment=%s, neo4j=%s)",
         settings.environment,
-        settings.google_cloud_project,
+        settings.neo4j_uri,
     )
+
+    # Eagerly create the driver and verify connectivity
+    try:
+        driver = get_sync_driver()
+        driver.verify_connectivity()
+        logger.info("Neo4j connectivity verified")
+    except Exception as exc:
+        logger.error("Neo4j connectivity check failed: %s", exc)
+        # Don't prevent startup — the driver will retry on first query
+
     yield
-    logger.info("SafetyForge backend shutting down")
+
+    # Shutdown: close all drivers
+    close_sync_driver()
+    await close_async_driver()
+    logger.info("Kerf backend shut down — all connections closed")
 
 
 app = FastAPI(
-    title="SafetyForge API",
-    description="AI-powered safety compliance document generator for construction contractors",
-    version="1.0.0",
+    title="Kerf API",
+    description="AI-powered construction operations platform",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
@@ -75,17 +101,25 @@ app.include_router(me.router, prefix="/api/v1")
 app.include_router(jurisdictions.router, prefix="/api/v1")
 app.include_router(members.router, prefix="/api/v1")
 app.include_router(gc_portal.router, prefix="/api/v1")
+app.include_router(voice.router, prefix="/api/v1")
+app.include_router(agents.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["health"])
 async def health_check() -> dict:
     """Health check endpoint for load balancers and monitoring.
 
+    Checks Neo4j connectivity and returns server info.
+
     Returns:
-        A dict with status and version information.
+        A dict with status, version, and database health information.
     """
+    neo4j_health = await check_neo4j_health()
+    overall_status = "healthy" if neo4j_health["status"] == "healthy" else "degraded"
+
     return {
-        "status": "healthy",
-        "version": "1.0.0",
-        "service": "safetyforge-api",
+        "status": overall_status,
+        "version": "1.1.0",
+        "service": "kerf-api",
+        "database": neo4j_health,
     }

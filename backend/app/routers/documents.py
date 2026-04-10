@@ -3,10 +3,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from google.cloud import firestore
+from neo4j import Driver
 
 from app.config import Settings, get_settings
-from app.dependencies import get_current_user, get_firestore_client, verify_company_access
+from app.dependencies import get_current_user, get_neo4j_driver, verify_company_access
 from app.exceptions import (
     CompanyNotFoundError,
     DocumentLimitExceededError,
@@ -39,7 +39,7 @@ async def create_document(
     company_id: str,
     data: DocumentCreate,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Document:
     """Create a new draft document for a company.
@@ -50,15 +50,15 @@ async def create_document(
         company_id: The owning company ID.
         data: Document creation data.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
         settings: Application settings.
 
     Returns:
         The created Document.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    billing_service = BillingService(db, settings)
+    billing_service = BillingService(driver, settings)
     try:
         billing_service.check_document_limit(company_id)
     except DocumentLimitExceededError:
@@ -67,7 +67,7 @@ async def create_document(
             detail="Monthly document limit reached. Upgrade to Pro for unlimited documents.",
         )
 
-    doc_service = DocumentService(db)
+    doc_service = DocumentService(driver)
     try:
         return doc_service.create(company_id, data, current_user["uid"])
     except CompanyNotFoundError:
@@ -81,7 +81,7 @@ async def create_document(
 async def list_documents(
     company_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     document_type: DocumentType | None = Query(None, description="Filter by document type"),
     document_status: DocumentStatus | None = Query(
         None, alias="status", description="Filter by status"
@@ -92,16 +92,16 @@ async def list_documents(
     Args:
         company_id: The owning company ID.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
         document_type: Optional document type filter.
         document_status: Optional status filter.
 
     Returns:
         A DocumentListResponse with matching documents.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    doc_service = DocumentService(db)
+    doc_service = DocumentService(driver)
     result = doc_service.list_documents(company_id, document_type, document_status)
     return DocumentListResponse(documents=result["documents"], total=result["total"])
 
@@ -111,7 +111,7 @@ async def get_document(
     company_id: str,
     document_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> Document:
     """Get a single document by ID.
 
@@ -119,14 +119,14 @@ async def get_document(
         company_id: The owning company ID.
         document_id: The document ID.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
 
     Returns:
         The Document.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    doc_service = DocumentService(db)
+    doc_service = DocumentService(driver)
     try:
         return doc_service.get(company_id, document_id)
     except DocumentNotFoundError:
@@ -142,7 +142,7 @@ async def update_document(
     document_id: str,
     data: DocumentUpdate,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> Document:
     """Update a document's content, title, or status.
 
@@ -151,14 +151,14 @@ async def update_document(
         document_id: The document ID.
         data: Fields to update.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
 
     Returns:
         The updated Document.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    doc_service = DocumentService(db)
+    doc_service = DocumentService(driver)
     try:
         return doc_service.update(company_id, document_id, data, current_user["uid"])
     except DocumentNotFoundError:
@@ -173,7 +173,7 @@ async def delete_document(
     company_id: str,
     document_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> None:
     """Soft-delete a document.
 
@@ -181,11 +181,11 @@ async def delete_document(
         company_id: The owning company ID.
         document_id: The document ID.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    doc_service = DocumentService(db)
+    doc_service = DocumentService(driver)
     try:
         doc_service.delete(company_id, document_id)
     except DocumentNotFoundError:
@@ -200,7 +200,7 @@ async def generate_document_content(
     company_id: str,
     document_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Document:
     """Generate AI content for an existing document.
@@ -211,16 +211,16 @@ async def generate_document_content(
         company_id: The owning company ID.
         document_id: The document to generate content for.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
         settings: Application settings.
 
     Returns:
         The Document with generated content populated.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    doc_service = DocumentService(db)
-    company_service = CompanyService(db)
+    doc_service = DocumentService(driver)
+    company_service = CompanyService(driver)
 
     try:
         document = doc_service.get(company_id, document_id)
@@ -271,7 +271,7 @@ async def create_and_generate_document(
     company_id: str,
     data: DocumentGenerateRequest,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Document:
     """Create a new document and immediately generate its content.
@@ -283,15 +283,15 @@ async def create_and_generate_document(
         company_id: The owning company ID.
         data: Generation request with document type, project info, and title.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
         settings: Application settings.
 
     Returns:
         The created Document with generated content.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    billing_service = BillingService(db, settings)
+    billing_service = BillingService(driver, settings)
     try:
         billing_service.check_document_limit(company_id)
     except DocumentLimitExceededError:
@@ -300,8 +300,8 @@ async def create_and_generate_document(
             detail="Monthly document limit reached. Upgrade to Pro for unlimited documents.",
         )
 
-    doc_service = DocumentService(db)
-    company_service = CompanyService(db)
+    doc_service = DocumentService(driver)
+    company_service = CompanyService(driver)
 
     create_data = DocumentCreate(
         title=data.title,

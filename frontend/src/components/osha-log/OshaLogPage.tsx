@@ -5,6 +5,8 @@ import {
   FileText,
   BarChart3,
   Printer,
+  Download,
+  Loader2 as Loader2Icon,
   ShieldCheck,
   AlertTriangle,
   TrendingDown,
@@ -45,6 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useOshaLogEntries, useOsha300Summary, useCreateOshaLogEntry, useUpdateOshaLogEntry, useDeleteOshaLogEntry, useCertifySummary } from '@/hooks/useOshaLog';
 import { useCompany } from '@/hooks/useCompany';
+import { downloadPdf } from '@/lib/pdf';
 import type { OshaLogEntry } from '@/lib/constants';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -200,6 +203,22 @@ export function OshaLogPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadPdf(
+        `/me/osha-log/${selectedYear}/pdf`,
+        `OSHA-300-Log-${selectedYear}.pdf`,
+      );
+    } catch {
+      // error handling at caller level
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -556,6 +575,10 @@ export function OshaLogPage() {
                   <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print 300A
+                  </Button>
+                  <Button variant="outline" onClick={handleDownloadPdf} disabled={isDownloading}>
+                    {isDownloading ? <Loader2Icon className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    Download PDF
                   </Button>
                 </div>
               </CardContent>

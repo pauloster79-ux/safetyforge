@@ -1,12 +1,11 @@
-"""Document CRUD service against Firestore."""
+"""Document CRUD service against Neo4j."""
 
-import secrets
+import json
 from datetime import datetime, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.exceptions import CompanyNotFoundError, DocumentNotFoundError
+from app.models.actor import Actor
 from app.models.document import (
     Document,
     DocumentCreate,
@@ -14,40 +13,34 @@ from app.models.document import (
     DocumentType,
     DocumentUpdate,
 )
+from app.services.base_service import BaseService
 
 
-class DocumentService:
-    """Manages safety documents in Firestore.
+class DocumentService(BaseService):
+    """Manages safety documents in Neo4j.
 
-    Args:
-        db: Firestore client instance.
+    Graph model:
+        (Company)-[:HAS_DOCUMENT]->(Document)
+        content and project_info stored as _content_json and _project_info_json.
     """
 
-    def __init__(self, db: firestore.Client) -> None:
-        self.db = db
-
-    def _company_ref(self, company_id: str) -> firestore.DocumentReference:
-        """Return a reference to the company document."""
-        return self.db.collection("companies").document(company_id)
-
-    def _collection(self, company_id: str) -> firestore.CollectionReference:
-        """Return the documents subcollection for a company.
+    @staticmethod
+    def _to_model(record: dict[str, Any]) -> Document:
+        """Convert a Neo4j record dict to a Document model.
 
         Args:
-            company_id: The parent company ID.
+            record: Dict with 'doc' and 'company_id' keys from Cypher.
 
         Returns:
-            Firestore collection reference.
+            A Document model instance.
         """
-        return self._company_ref(company_id).collection("documents")
-
-    def _generate_id(self) -> str:
-        """Generate a unique document ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"doc_{secrets.token_hex(8)}"
+        data = dict(record["doc"])
+        content_json = data.pop("_content_json", "{}")
+        data["content"] = json.loads(content_json) if content_json else {}
+        project_info_json = data.pop("_project_info_json", "{}")
+        data["project_info"] = json.loads(project_info_json) if project_info_json else {}
+        data["company_id"] = record["company_id"]
+        return Document(**data)
 
     def _verify_company_exists(self, company_id: str) -> None:
         """Verify that the parent company exists.
@@ -58,7 +51,11 @@ class DocumentService:
         Raises:
             CompanyNotFoundError: If the company does not exist.
         """
-        if not self._company_ref(company_id).get().exists:
+        result = self._read_tx_single(
+            "MATCH (c:Company {id: $id}) RETURN c.id AS id",
+            {"id": company_id},
+        )
+        if result is None:
             raise CompanyNotFoundError(company_id)
 
     def create(self, company_id: str, data: DocumentCreate, user_id: str) -> Document:
@@ -77,28 +74,34 @@ class DocumentService:
         """
         self._verify_company_exists(company_id)
 
-        now = datetime.now(timezone.utc)
-        doc_id = self._generate_id()
+        actor = Actor.human(user_id)
+        doc_id = self._generate_id("doc")
 
-        doc_dict = {
+        props: dict[str, Any] = {
             "id": doc_id,
-            "company_id": company_id,
             "title": data.title,
             "document_type": data.document_type.value,
             "status": DocumentStatus.DRAFT.value,
-            "content": {},
-            "project_info": data.project_info,
+            "_content_json": json.dumps({}),
+            "_project_info_json": json.dumps(data.project_info),
             "generated_at": None,
-            "created_at": now,
-            "created_by": user_id,
-            "updated_at": now,
-            "updated_by": user_id,
             "pdf_url": None,
             "deleted": False,
+            **self._provenance_create(actor),
         }
 
-        self._collection(company_id).document(doc_id).set(doc_dict)
-        return Document(**doc_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})
+            CREATE (d:Document $props)
+            CREATE (c)-[:HAS_DOCUMENT]->(d)
+            RETURN d {.*} AS doc, c.id AS company_id
+            """,
+            {"company_id": company_id, "props": props},
+        )
+        if result is None:
+            raise CompanyNotFoundError(company_id)
+        return self._to_model(result)
 
     def get(self, company_id: str, document_id: str) -> Document:
         """Fetch a single document.
@@ -113,15 +116,17 @@ class DocumentService:
         Raises:
             DocumentNotFoundError: If the document does not exist or is soft-deleted.
         """
-        doc = self._collection(company_id).document(document_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(d:Document {id: $document_id})
+            WHERE d.deleted = false
+            RETURN d {.*} AS doc, c.id AS company_id
+            """,
+            {"company_id": company_id, "document_id": document_id},
+        )
+        if result is None:
             raise DocumentNotFoundError(document_id)
-
-        data = doc.to_dict()
-        if data.get("deleted", False):
-            raise DocumentNotFoundError(document_id)
-
-        return Document(**data)
+        return self._to_model(result)
 
     def list_documents(
         self,
@@ -147,32 +152,46 @@ class DocumentService:
         Returns:
             A dict with 'documents' list and 'total' count.
         """
-        direction = (
-            firestore.Query.DESCENDING
-            if sort_direction == "desc"
-            else firestore.Query.ASCENDING
-        )
-
-        base_query: firestore.Query = self._collection(company_id).where(
-            "deleted", "==", False
-        )
+        where_clauses = ["d.deleted = false"]
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if document_type is not None:
-            base_query = base_query.where("document_type", "==", document_type.value)
+            where_clauses.append("d.document_type = $document_type")
+            params["document_type"] = document_type.value
 
         if status is not None:
-            base_query = base_query.where("status", "==", status.value)
+            where_clauses.append("d.status = $status")
+            params["status"] = status.value
 
-        # Count total matching documents
-        all_docs = [Document(**doc.to_dict()) for doc in base_query.stream()]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
+        order_dir = "DESC" if sort_direction == "desc" else "ASC"
 
-        # Apply sorting, offset, and limit
-        paginated_query = base_query.order_by(sort_field, direction=direction)
-        paginated_query = paginated_query.offset(offset).limit(limit)
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:HAS_DOCUMENT]->(d:Document)
+            WHERE {where_str}
+            RETURN count(d) AS total
+            """,
+            params,
+        )
+        total = count_result["total"] if count_result else 0
 
-        documents = [Document(**doc.to_dict()) for doc in paginated_query.stream()]
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:HAS_DOCUMENT]->(d:Document)
+            WHERE {where_str}
+            RETURN d {{.*}} AS doc, c.id AS company_id
+            ORDER BY d.{sort_field} {order_dir}
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
 
+        documents = [self._to_model(r) for r in results]
         return {"documents": documents, "total": total}
 
     def update(
@@ -192,29 +211,33 @@ class DocumentService:
         Raises:
             DocumentNotFoundError: If the document does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id).document(document_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise DocumentNotFoundError(document_id)
-
         update_data: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name == "status" and value is not None:
                 update_data[field_name] = value.value if hasattr(value, "value") else value
+            elif field_name == "content" and value is not None:
+                update_data["_content_json"] = json.dumps(value)
             else:
                 update_data[field_name] = value
 
         if not update_data:
-            return Document(**doc.to_dict())
+            return self.get(company_id, document_id)
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        update_data["updated_by"] = user_id
+        actor = Actor.human(user_id)
+        update_data.update(self._provenance_update(actor))
 
-        doc_ref.update(update_data)
-
-        updated_doc = doc_ref.get()
-        return Document(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(d:Document {id: $document_id})
+            WHERE d.deleted = false
+            SET d += $props
+            RETURN d {.*} AS doc, c.id AS company_id
+            """,
+            {"company_id": company_id, "document_id": document_id, "props": update_data},
+        )
+        if result is None:
+            raise DocumentNotFoundError(document_id)
+        return self._to_model(result)
 
     def set_generated_content(
         self,
@@ -237,24 +260,32 @@ class DocumentService:
         Raises:
             DocumentNotFoundError: If the document does not exist.
         """
-        doc_ref = self._collection(company_id).document(document_id)
-        doc = doc_ref.get()
+        actor = Actor.human(user_id)
+        now = datetime.now(timezone.utc).isoformat()
 
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise DocumentNotFoundError(document_id)
-
-        now = datetime.now(timezone.utc)
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(d:Document {id: $document_id})
+            WHERE d.deleted = false
+            SET d._content_json = $content_json,
+                d.generated_at = $now,
+                d.updated_at = $now,
+                d.updated_by = $user_id,
+                d.updated_actor_type = $actor_type
+            RETURN d {.*} AS doc, c.id AS company_id
+            """,
             {
-                "content": content,
-                "generated_at": now,
-                "updated_at": now,
-                "updated_by": user_id,
-            }
+                "company_id": company_id,
+                "document_id": document_id,
+                "content_json": json.dumps(content),
+                "now": now,
+                "user_id": actor.id,
+                "actor_type": actor.type,
+            },
         )
-
-        updated_doc = doc_ref.get()
-        return Document(**updated_doc.to_dict())
+        if result is None:
+            raise DocumentNotFoundError(document_id)
+        return self._to_model(result)
 
     def delete(self, company_id: str, document_id: str) -> None:
         """Soft-delete a document by setting the deleted flag.
@@ -266,18 +297,21 @@ class DocumentService:
         Raises:
             DocumentNotFoundError: If the document does not exist.
         """
-        doc_ref = self._collection(company_id).document(document_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise DocumentNotFoundError(document_id)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(d:Document {id: $document_id})
+            WHERE d.deleted = false
+            SET d.deleted = true, d.updated_at = $now
+            RETURN d.id AS id
+            """,
             {
-                "deleted": True,
-                "updated_at": datetime.now(timezone.utc),
-            }
+                "company_id": company_id,
+                "document_id": document_id,
+                "now": datetime.now(timezone.utc).isoformat(),
+            },
         )
+        if result is None:
+            raise DocumentNotFoundError(document_id)
 
     def get_stats(self, company_id: str) -> dict:
         """Get document statistics for a company.
@@ -289,27 +323,33 @@ class DocumentService:
             A dict with total, this_month, by_type, and by_status counts.
         """
         now = datetime.now(timezone.utc)
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
 
-        all_docs = list(
-            self._collection(company_id).where("deleted", "==", False).stream()
+        # Get all non-deleted docs with type and status
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(d:Document)
+            WHERE d.deleted = false
+            RETURN d.document_type AS doc_type, d.status AS doc_status,
+                   d.created_at AS created_at
+            """,
+            {"company_id": company_id},
         )
 
-        total = len(all_docs)
+        total = len(results)
         this_month = 0
         by_type: dict[str, int] = {}
         by_status: dict[str, int] = {}
 
-        for doc_snapshot in all_docs:
-            data = doc_snapshot.to_dict()
-            doc_type = data.get("document_type", "unknown")
-            doc_status = data.get("status", "unknown")
-            created_at = data.get("created_at")
+        for r in results:
+            doc_type = r.get("doc_type", "unknown")
+            doc_status = r.get("doc_status", "unknown")
+            created_at = r.get("created_at", "")
 
             by_type[doc_type] = by_type.get(doc_type, 0) + 1
             by_status[doc_status] = by_status.get(doc_status, 0) + 1
 
-            if created_at is not None and created_at >= month_start:
+            if created_at and created_at >= month_start:
                 this_month += 1
 
         return {
@@ -329,12 +369,16 @@ class DocumentService:
             The number of documents created this month.
         """
         now = datetime.now(timezone.utc)
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        ).isoformat()
 
-        query = (
-            self._collection(company_id)
-            .where("created_at", ">=", month_start)
-            .where("deleted", "==", False)
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(d:Document)
+            WHERE d.deleted = false AND d.created_at >= $month_start
+            RETURN count(d) AS cnt
+            """,
+            {"company_id": company_id, "month_start": month_start},
         )
-
-        return sum(1 for _ in query.stream())
+        return result["cnt"] if result else 0

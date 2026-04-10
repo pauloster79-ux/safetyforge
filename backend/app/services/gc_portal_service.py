@@ -4,11 +4,8 @@ Manages relationships between general contractors and sub-contractors,
 providing real-time compliance visibility for GCs.
 """
 
-import secrets
 from datetime import datetime, timezone
 from typing import Any
-
-from google.cloud import firestore
 
 from app.exceptions import (
     CompanyNotFoundError,
@@ -22,17 +19,22 @@ from app.models.gc_portal import (
     RelationshipStatus,
     SubComplianceSummary,
 )
+from app.services.base_service import BaseService
 from app.services.company_service import CompanyService
 from app.services.document_service import DocumentService
 from app.services.osha_log_service import OshaLogService
 from app.services.worker_service import WorkerService
 
 
-class GcPortalService:
+class GcPortalService(BaseService):
     """Manages GC/Sub relationships and compliance visibility.
 
+    Graph model:
+        (:GcRelationship) — top-level nodes with gc_company_id and sub_company_id
+        (:GcInvitation) — top-level nodes
+
     Args:
-        db: Firestore client instance.
+        driver: Neo4j driver instance.
         company_service: CompanyService for company profile lookups.
         document_service: DocumentService for document counts.
         osha_log_service: OshaLogService for OSHA metrics.
@@ -41,44 +43,17 @@ class GcPortalService:
 
     def __init__(
         self,
-        db: firestore.Client,
+        driver: Any,
         company_service: CompanyService,
         document_service: DocumentService,
         osha_log_service: OshaLogService,
         worker_service: WorkerService,
     ) -> None:
-        self.db = db
+        super().__init__(driver)
         self.company_service = company_service
         self.document_service = document_service
         self.osha_log_service = osha_log_service
         self.worker_service = worker_service
-
-    def _relationships_collection(self) -> firestore.CollectionReference:
-        """Return the top-level gc_relationships collection.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self.db.collection("gc_relationships")
-
-    def _invitations_collection(self) -> firestore.CollectionReference:
-        """Return the top-level gc_invitations collection.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self.db.collection("gc_invitations")
-
-    def _generate_id(self, prefix: str) -> str:
-        """Generate a unique ID with the given prefix.
-
-        Args:
-            prefix: The ID prefix string.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"{prefix}_{secrets.token_hex(8)}"
 
     def create_relationship(
         self,
@@ -97,7 +72,6 @@ class GcPortalService:
         Raises:
             CompanyNotFoundError: If either company does not exist.
         """
-        # Verify both companies exist
         gc_company = self.company_service.get(gc_company_id)
         sub_company = self.company_service.get(data.sub_company_id)
 
@@ -121,12 +95,15 @@ class GcPortalService:
             updated_at=now,
         )
 
-        rel_dict = relationship.model_dump()
-        rel_dict["status"] = relationship.status.value
-        rel_dict["created_at"] = now
-        rel_dict["updated_at"] = now
+        props: dict[str, Any] = relationship.model_dump()
+        props["status"] = relationship.status.value
+        props["created_at"] = now.isoformat()
+        props["updated_at"] = now.isoformat()
 
-        self._relationships_collection().document(rel_id).set(rel_dict)
+        self._write_tx(
+            "CREATE (r:GcRelationship $props)",
+            {"props": props},
+        )
         return relationship
 
     def get_relationships_as_gc(self, gc_company_id: str) -> dict:
@@ -138,15 +115,16 @@ class GcPortalService:
         Returns:
             A dict with 'relationships' list and 'total' count.
         """
-        query = self._relationships_collection().where(
-            "gc_company_id", "==", gc_company_id
+        results = self._read_tx(
+            """
+            MATCH (r:GcRelationship {gc_company_id: $gc_company_id})
+            RETURN r {.*} AS rel
+            ORDER BY r.created_at DESC
+            """,
+            {"gc_company_id": gc_company_id},
         )
-        results = []
-        for doc in query.stream():
-            results.append(GcRelationship(**doc.to_dict()))
-
-        results.sort(key=lambda r: r.created_at, reverse=True)
-        return {"relationships": results, "total": len(results)}
+        relationships = [GcRelationship(**r["rel"]) for r in results]
+        return {"relationships": relationships, "total": len(relationships)}
 
     def get_relationships_as_sub(self, sub_company_id: str) -> dict:
         """List all GC relationships for a sub-contractor.
@@ -157,23 +135,21 @@ class GcPortalService:
         Returns:
             A dict with 'relationships' list and 'total' count.
         """
-        query = self._relationships_collection().where(
-            "sub_company_id", "==", sub_company_id
+        results = self._read_tx(
+            """
+            MATCH (r:GcRelationship {sub_company_id: $sub_company_id})
+            RETURN r {.*} AS rel
+            ORDER BY r.created_at DESC
+            """,
+            {"sub_company_id": sub_company_id},
         )
-        results = []
-        for doc in query.stream():
-            results.append(GcRelationship(**doc.to_dict()))
-
-        results.sort(key=lambda r: r.created_at, reverse=True)
-        return {"relationships": results, "total": len(results)}
+        relationships = [GcRelationship(**r["rel"]) for r in results]
+        return {"relationships": relationships, "total": len(relationships)}
 
     def get_sub_compliance_summary(
         self, gc_company_id: str, sub_company_id: str
     ) -> SubComplianceSummary:
         """Pull live compliance data for a sub-contractor.
-
-        Aggregates data from multiple services to build a compliance
-        summary visible to the GC.
 
         Args:
             gc_company_id: The GC's company ID (for access verification).
@@ -187,19 +163,18 @@ class GcPortalService:
             CompanyNotFoundError: If the sub company does not exist.
         """
         # Verify relationship exists
-        query = (
-            self._relationships_collection()
-            .where("gc_company_id", "==", gc_company_id)
-            .where("sub_company_id", "==", sub_company_id)
-            .where("status", "==", RelationshipStatus.ACTIVE.value)
+        result = self._read_tx_single(
+            """
+            MATCH (r:GcRelationship {gc_company_id: $gc, sub_company_id: $sub, status: 'active'})
+            RETURN r.id AS id
+            """,
+            {"gc": gc_company_id, "sub": sub_company_id},
         )
-        rels = list(query.stream())
-        if not rels:
+        if result is None:
             raise GcRelationshipNotFoundError(
                 f"gc={gc_company_id},sub={sub_company_id}"
             )
 
-        # Get sub company profile
         sub_company = self.company_service.get(sub_company_id)
 
         # Get worker/cert data
@@ -227,70 +202,53 @@ class GcPortalService:
         doc_stats = self.document_service.get_stats(sub_company_id)
         documents_on_file = doc_stats.get("total", 0)
 
-        # Get latest mock inspection
+        # Get latest mock inspection from Neo4j
         mock_score = None
         mock_grade = None
-        mock_ref = (
-            self.db.collection("companies")
-            .document(sub_company_id)
-            .collection("mock_inspection_results")
+        mock_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $sub_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            RETURN r.overall_score AS score, r.grade AS grade
+            ORDER BY r.created_at DESC
+            LIMIT 1
+            """,
+            {"sub_id": sub_company_id},
         )
-        mock_docs = list(
-            mock_ref.order_by(
-                "created_at", direction=firestore.Query.DESCENDING
-            )
-            .limit(1)
-            .stream()
-        )
-        if mock_docs:
-            mock_data = mock_docs[0].to_dict()
-            mock_score = mock_data.get("overall_score")
-            mock_grade = mock_data.get("overall_grade")
+        if mock_result:
+            mock_score = mock_result.get("score")
+            mock_grade = mock_result.get("grade")
 
-        # Get latest inspection date
+        # Get latest inspection and toolbox talk dates from Neo4j
         last_inspection_date = None
         last_talk_date = None
 
-        # Check inspections across projects
-        projects_ref = (
-            self.db.collection("companies")
-            .document(sub_company_id)
-            .collection("projects")
+        insp_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $sub_id})-[:OWNS_PROJECT]->(p:Project)
+                  -[:HAS_INSPECTION]->(i:Inspection)
+            WHERE i.deleted = false
+            RETURN i.created_at AS created_at
+            ORDER BY i.created_at DESC
+            LIMIT 1
+            """,
+            {"sub_id": sub_company_id},
         )
-        for project_doc in projects_ref.stream():
-            # Inspections
-            insp_ref = project_doc.reference.collection("inspections")
-            insp_docs = list(
-                insp_ref.order_by(
-                    "created_at", direction=firestore.Query.DESCENDING
-                )
-                .limit(1)
-                .stream()
-            )
-            if insp_docs:
-                insp_data = insp_docs[0].to_dict()
-                created = insp_data.get("created_at")
-                if isinstance(created, datetime):
-                    dt_str = created.isoformat()
-                    if last_inspection_date is None or dt_str > last_inspection_date:
-                        last_inspection_date = dt_str
+        if insp_result:
+            last_inspection_date = insp_result["created_at"]
 
-            # Toolbox talks
-            talk_ref = project_doc.reference.collection("toolbox_talks")
-            talk_docs = list(
-                talk_ref.order_by(
-                    "created_at", direction=firestore.Query.DESCENDING
-                )
-                .limit(1)
-                .stream()
-            )
-            if talk_docs:
-                talk_data = talk_docs[0].to_dict()
-                created = talk_data.get("created_at")
-                if isinstance(created, datetime):
-                    dt_str = created.isoformat()
-                    if last_talk_date is None or dt_str > last_talk_date:
-                        last_talk_date = dt_str
+        talk_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $sub_id})-[:OWNS_PROJECT]->(p:Project)
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk)
+            WHERE t.deleted = false
+            RETURN t.created_at AS created_at
+            ORDER BY t.created_at DESC
+            LIMIT 1
+            """,
+            {"sub_id": sub_company_id},
+        )
+        if talk_result:
+            last_talk_date = talk_result["created_at"]
 
         # Determine currency (within last 7 days)
         now = datetime.now(timezone.utc)
@@ -300,7 +258,7 @@ class GcPortalService:
         if last_inspection_date:
             try:
                 last_insp_dt = datetime.fromisoformat(last_inspection_date)
-                if hasattr(last_insp_dt, "tzinfo") and last_insp_dt.tzinfo is None:
+                if last_insp_dt.tzinfo is None:
                     last_insp_dt = last_insp_dt.replace(tzinfo=timezone.utc)
                 inspection_current = (now - last_insp_dt).days <= 7
             except (ValueError, TypeError):
@@ -309,7 +267,7 @@ class GcPortalService:
         if last_talk_date:
             try:
                 last_talk_dt = datetime.fromisoformat(last_talk_date)
-                if hasattr(last_talk_dt, "tzinfo") and last_talk_dt.tzinfo is None:
+                if last_talk_dt.tzinfo is None:
                     last_talk_dt = last_talk_dt.replace(tzinfo=timezone.utc)
                 talks_current = (now - last_talk_dt).days <= 7
             except (ValueError, TypeError):
@@ -365,7 +323,6 @@ class GcPortalService:
                 )
                 summaries.append(summary)
             except Exception:
-                # If we can't get data for a sub, include a minimal summary
                 summaries.append(
                     SubComplianceSummary(
                         sub_company_id=rel.sub_company_id,
@@ -410,10 +367,13 @@ class GcPortalService:
             created_at=now,
         )
 
-        inv_dict = invitation.model_dump()
-        inv_dict["created_at"] = now
+        props: dict[str, Any] = invitation.model_dump()
+        props["created_at"] = now.isoformat()
 
-        self._invitations_collection().document(invite_id).set(inv_dict)
+        self._write_tx(
+            "CREATE (i:GcInvitation $props)",
+            {"props": props},
+        )
         return invitation
 
     def accept_invitation(
@@ -432,17 +392,26 @@ class GcPortalService:
             GcInvitationNotFoundError: If the invitation does not exist.
             CompanyNotFoundError: If the sub company does not exist.
         """
-        doc = self._invitations_collection().document(invitation_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (i:GcInvitation {id: $invitation_id})
+            WHERE i.status = 'pending'
+            RETURN i {.*} AS inv
+            """,
+            {"invitation_id": invitation_id},
+        )
+        if result is None:
             raise GcInvitationNotFoundError(invitation_id)
 
-        inv_data = doc.to_dict()
-        if inv_data.get("status") != "pending":
-            raise GcInvitationNotFoundError(invitation_id)
+        inv_data = result["inv"]
 
         # Update invitation status
-        self._invitations_collection().document(invitation_id).update(
-            {"status": "accepted"}
+        self._write_tx(
+            """
+            MATCH (i:GcInvitation {id: $invitation_id})
+            SET i.status = 'accepted'
+            """,
+            {"invitation_id": invitation_id},
         )
 
         # Create the relationship

@@ -12,7 +12,6 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import anthropic
-from google.cloud import firestore
 
 from app.config import Settings
 from app.exceptions import (
@@ -27,6 +26,7 @@ from app.models.mock_inspection import (
     MockInspectionResult,
     MockInspectionResultSummary,
 )
+from app.services.base_service import BaseService
 from app.services.document_service import DocumentService
 from app.services.inspection_service import InspectionService
 from app.services.osha_log_service import OshaLogService
@@ -252,16 +252,15 @@ Use professional, direct language. Reference specific OSHA standards where appli
 Return ONLY the narrative text, no JSON or formatting."""
 
 
-class MockInspectionService:
+class MockInspectionService(BaseService):
     """Orchestrates mock OSHA inspections across all company data.
 
-    Performs a multi-step compliance audit: gathers company data,
-    runs rule-based checks for obvious gaps, optionally runs AI-powered
-    document audits, calculates a compliance score, and generates an
-    executive summary.
+    Graph model:
+        (Company)-[:HAS_MOCK_INSPECTION]->(MockInspectionResult)
+        findings stored as _findings_json, areas_checked as _areas_checked_json.
 
     Args:
-        db: Firestore client instance.
+        driver: Neo4j driver instance.
         settings: Application settings containing the Anthropic API key.
         document_service: Service for fetching company documents.
         worker_service: Service for fetching worker/certification data.
@@ -273,7 +272,7 @@ class MockInspectionService:
 
     def __init__(
         self,
-        db: firestore.Client,
+        driver: Any,
         settings: Settings,
         document_service: DocumentService,
         worker_service: WorkerService,
@@ -282,7 +281,7 @@ class MockInspectionService:
         toolbox_talk_service: ToolboxTalkService,
         osha_log_service: OshaLogService,
     ) -> None:
-        self.db = db
+        super().__init__(driver)
         self.settings = settings
         self.document_service = document_service
         self.worker_service = worker_service
@@ -297,14 +296,6 @@ class MockInspectionService:
             self.ai_client = None
         self.model = "claude-sonnet-4-20250514"
 
-    def _generate_id(self) -> str:
-        """Generate a unique mock inspection result ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"minsp_{secrets.token_hex(8)}"
-
     def _generate_finding_id(self) -> str:
         """Generate a unique finding ID.
 
@@ -313,20 +304,23 @@ class MockInspectionService:
         """
         return f"find_{secrets.token_hex(8)}"
 
-    def _collection(self, company_id: str) -> firestore.CollectionReference:
-        """Return the mock_inspections subcollection for a company.
+    @staticmethod
+    def _to_model(record: dict[str, Any]) -> MockInspectionResult:
+        """Convert a Neo4j record to a MockInspectionResult model.
 
         Args:
-            company_id: The parent company ID.
+            record: Dict with 'result' key from Cypher.
 
         Returns:
-            Firestore collection reference.
+            A MockInspectionResult model instance.
         """
-        return (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("mock_inspections")
-        )
+        data = dict(record["result"])
+        findings_json = data.pop("_findings_json", "[]")
+        data["findings"] = json.loads(findings_json) if findings_json else []
+        areas_json = data.pop("_areas_checked_json", "[]")
+        data["areas_checked"] = json.loads(areas_json) if areas_json else []
+        data["company_id"] = record["company_id"]
+        return MockInspectionResult(**data)
 
     # -----------------------------------------------------------------------
     # Step 2: Rule-based checks
@@ -337,25 +331,18 @@ class MockInspectionService:
     ) -> list[MockInspectionFinding]:
         """Check for missing or outdated required written programs.
 
-        Compares the company's documents against the REQUIRED_PROGRAMS
-        knowledge base.  A document is considered present if its title
-        (case-insensitive) contains any of the program's search terms.
-
         Args:
             company_id: The company ID.
-            documents: List of document dicts from Firestore.
+            documents: List of document dicts.
 
         Returns:
             List of findings for missing programs.
         """
         findings: list[MockInspectionFinding] = []
-        doc_titles_lower = [
-            d.get("title", "").lower() for d in documents
-        ]
+        doc_titles_lower = [d.get("title", "").lower() for d in documents]
         doc_types = [d.get("document_type", "") for d in documents]
 
         for program in REQUIRED_PROGRAMS:
-            # Check if any document matches the search terms
             found = False
             for title in doc_titles_lower:
                 for term in program["search_terms"]:
@@ -365,11 +352,7 @@ class MockInspectionService:
                 if found:
                     break
 
-            # Also check if a document of the right type exists
             if not found and program["document_type"] in doc_types:
-                # The document type exists, but title doesn't match —
-                # it might still cover this program.  Give benefit of doubt
-                # for SSSP documents that typically cover multiple programs.
                 if program["document_type"] == "sssp" and "sssp" in doc_types:
                     continue
 
@@ -412,7 +395,7 @@ class MockInspectionService:
                         can_auto_fix=True,
                         auto_fix_action=(
                             f"Generate a {program['program']} document "
-                            f"using SafetyForge's AI document generator."
+                            f"using Kerf's AI document generator."
                         ),
                     )
                 )
@@ -510,9 +493,6 @@ class MockInspectionService:
     def _check_osha_log(self, company_id: str) -> list[MockInspectionFinding]:
         """Check OSHA 300 log for recordkeeping gaps.
 
-        Verifies that the company has OSHA log entries and that the
-        annual summary (300A) has been certified and posted.
-
         Args:
             company_id: The company ID.
 
@@ -522,11 +502,9 @@ class MockInspectionService:
         findings: list[MockInspectionFinding] = []
         current_year = date.today().year
 
-        # Check if any entries exist for current year
         result = self.osha_log_service.list_entries(company_id, year=current_year, limit=1)
-        has_entries = result["total"] > 0
+        # has_entries = result["total"] > 0  # noqa: ERA001
 
-        # Check the 300A summary for the previous year
         prev_year = current_year - 1
         try:
             summary = self.osha_log_service.get_300a_summary(company_id, prev_year)
@@ -558,7 +536,6 @@ class MockInspectionService:
                     )
                 )
         except Exception:
-            # If summary doesn't exist at all, that's a finding too
             findings.append(
                 MockInspectionFinding(
                     finding_id=self._generate_finding_id(),
@@ -594,9 +571,6 @@ class MockInspectionService:
     ) -> list[MockInspectionFinding]:
         """Check for stale or missing inspections on projects.
 
-        A project should have at least one inspection within the last
-        7 days when it is active.
-
         Args:
             company_id: The company ID.
             project_id: Specific project to check, or None for all.
@@ -615,11 +589,9 @@ class MockInspectionService:
 
             if proj_status != "active":
                 continue
-
             if project_id and pid != project_id:
                 continue
 
-            # Fetch inspections for this project
             try:
                 insp_result = self.inspection_service.list_inspections(
                     company_id, pid, limit=50
@@ -628,7 +600,6 @@ class MockInspectionService:
             except (ProjectNotFoundError, Exception):
                 inspections = []
 
-            # Check for recent inspections
             has_recent = False
             for insp in inspections:
                 created_at = getattr(insp, "created_at", None)
@@ -674,9 +645,6 @@ class MockInspectionService:
     ) -> list[MockInspectionFinding]:
         """Check for missing toolbox talks on active projects.
 
-        Active projects should have at least one toolbox talk in the
-        last 7 days.
-
         Args:
             company_id: The company ID.
             project_id: Specific project to check, or None for all.
@@ -695,7 +663,6 @@ class MockInspectionService:
 
             if proj_status != "active":
                 continue
-
             if project_id and pid != project_id:
                 continue
 
@@ -741,7 +708,7 @@ class MockInspectionService:
                         can_auto_fix=True,
                         auto_fix_action=(
                             f"Generate a toolbox talk for '{proj_name}' "
-                            f"using SafetyForge's AI toolbox talk generator."
+                            f"using Kerf's AI toolbox talk generator."
                         ),
                     )
                 )
@@ -752,9 +719,6 @@ class MockInspectionService:
         self, company_id: str, workers: list[dict[str, Any]]
     ) -> list[MockInspectionFinding]:
         """Check for gaps between worker roles and required certifications.
-
-        Uses ROLE_CERT_REQUIREMENTS to determine what certifications
-        are required for each worker's role and flags any missing ones.
 
         Args:
             company_id: The company ID.
@@ -778,7 +742,6 @@ class MockInspectionService:
             if not required_certs:
                 continue
 
-            # Build set of cert types this worker has
             worker_cert_types = set()
             for cert in worker.get("certifications", []):
                 worker_cert_types.add(cert.get("certification_type", ""))
@@ -832,9 +795,6 @@ class MockInspectionService:
     ) -> list[MockInspectionFinding]:
         """Run AI-powered audit on a single document.
 
-        Sends the document content to Claude for compliance review.
-        Only called during deep_audit mode.
-
         Args:
             document: Document dict with content and metadata.
 
@@ -870,7 +830,6 @@ class MockInspectionService:
 
         raw_text = response.content[0].text.strip()
 
-        # Strip markdown code fences if present
         if raw_text.startswith("```"):
             first_newline = raw_text.index("\n")
             raw_text = raw_text[first_newline + 1:]
@@ -934,9 +893,6 @@ class MockInspectionService:
     ) -> tuple[int, str]:
         """Calculate overall compliance score and letter grade.
 
-        Starts at 100 and deducts points per finding based on severity.
-        Floors at 0.
-
         Args:
             findings: All findings from the inspection.
 
@@ -976,8 +932,6 @@ class MockInspectionService:
     ) -> str:
         """Generate an AI-powered executive summary of findings.
 
-        Falls back to a template-based summary if AI is unavailable.
-
         Args:
             findings: All findings from the inspection.
             score: Overall compliance score.
@@ -997,7 +951,6 @@ class MockInspectionService:
             1 for f in findings if f.severity == FindingSeverity.MEDIUM
         )
 
-        # Try AI summary first
         if self.ai_client and findings:
             findings_summary = "\n".join(
                 f"- [{f.severity.value.upper()}] {f.title} ({f.osha_standard})"
@@ -1023,7 +976,6 @@ class MockInspectionService:
             except Exception as exc:
                 logger.warning("AI executive summary generation failed: %s", exc)
 
-        # Fallback: template-based summary
         if not findings:
             return (
                 f"Mock OSHA inspection of {company_name} resulted in a "
@@ -1066,14 +1018,6 @@ class MockInspectionService:
     ) -> MockInspectionResult:
         """Run a full mock OSHA inspection.
 
-        Orchestrates the multi-step audit:
-        1. Gather all company data
-        2. Rule-based checks (fast, no AI)
-        3. AI-powered document audit (optional, if deep_audit=True)
-        4. Calculate score
-        5. Generate executive summary
-        6. Store and return result
-
         Args:
             company_id: The company to inspect.
             project_id: Scope to a specific project, or None for company-wide.
@@ -1085,42 +1029,33 @@ class MockInspectionService:
         """
         now = datetime.now(timezone.utc)
 
-        # -- Step 1: Gather all company data --------------------------------
+        # -- Step 1: Gather all company data via Neo4j -------------------------
 
-        # Get company info
-        company_ref = self.db.collection("companies").document(company_id)
-        company_doc = company_ref.get()
-        company_data = company_doc.to_dict() if company_doc.exists else {}
-        company_name = company_data.get("name", "Unknown Company")
-
-        # Fetch documents
-        doc_result = self.document_service.list_documents(
-            company_id, limit=200
+        company_result = self._read_tx_single(
+            "MATCH (c:Company {id: $id}) RETURN c.name AS name",
+            {"id": company_id},
         )
+        company_name = company_result["name"] if company_result else "Unknown Company"
+
+        doc_result = self.document_service.list_documents(company_id, limit=200)
         documents = [
             d.model_dump() if hasattr(d, "model_dump") else d
             for d in doc_result.get("documents", [])
         ]
 
-        # Fetch workers
-        worker_result = self.worker_service.list_workers(
-            company_id, limit=500
-        )
+        worker_result = self.worker_service.list_workers(company_id, limit=500)
         workers = [
             w.model_dump() if hasattr(w, "model_dump") else w
             for w in worker_result.get("workers", [])
         ]
 
-        # Fetch projects
-        proj_result = self.project_service.list_projects(
-            company_id, limit=100
-        )
+        proj_result = self.project_service.list_projects(company_id, limit=100)
         projects = [
             p.model_dump() if hasattr(p, "model_dump") else p
             for p in proj_result.get("projects", [])
         ]
 
-        # -- Step 2: Rule-based checks -------------------------------------
+        # -- Step 2: Rule-based checks ----------------------------------------
 
         all_findings: list[MockInspectionFinding] = []
 
@@ -1135,7 +1070,7 @@ class MockInspectionService:
         )
         all_findings.extend(self._check_training_matrix(company_id, workers))
 
-        # -- Step 3: AI-powered document audit (optional) -------------------
+        # -- Step 3: AI-powered document audit (optional) ----------------------
 
         documents_ai_audited = 0
         if deep_audit:
@@ -1146,17 +1081,17 @@ class MockInspectionService:
                     all_findings.extend(ai_findings)
                     documents_ai_audited += 1
 
-        # -- Step 4: Calculate score ----------------------------------------
+        # -- Step 4: Calculate score -------------------------------------------
 
         score, grade = self._calculate_score(all_findings)
 
-        # -- Step 5: Executive summary --------------------------------------
+        # -- Step 5: Executive summary -----------------------------------------
 
         executive_summary = self._generate_executive_summary(
             all_findings, score, grade, company_name
         )
 
-        # -- Count findings by severity ------------------------------------
+        # -- Count findings by severity ----------------------------------------
 
         critical_count = sum(
             1 for f in all_findings if f.severity == FindingSeverity.CRITICAL
@@ -1174,13 +1109,11 @@ class MockInspectionService:
             1 for f in all_findings if f.severity == FindingSeverity.INFO
         )
 
-        # Determine areas checked
         areas_checked = list(
             {p["program"].split(" ")[0] for p in REQUIRED_PROGRAMS}
         )
         areas_checked.sort()
 
-        # Count inspections reviewed
         inspections_reviewed = 0
         for project in projects:
             pid = project.get("id", "")
@@ -1194,9 +1127,9 @@ class MockInspectionService:
             except Exception:
                 pass
 
-        # -- Build result ---------------------------------------------------
+        # -- Build and store result --------------------------------------------
 
-        result_id = self._generate_id()
+        result_id = self._generate_id("minsp")
         result = MockInspectionResult(
             id=result_id,
             company_id=company_id,
@@ -1221,21 +1154,47 @@ class MockInspectionService:
             created_by=user_id,
         )
 
-        # -- Store result in Firestore --------------------------------------
+        # Serialize findings and areas for Neo4j storage
+        findings_data = []
+        for f in all_findings:
+            fd = f.model_dump()
+            if hasattr(fd.get("severity"), "value"):
+                fd["severity"] = fd["severity"].value
+            if hasattr(fd.get("category"), "value"):
+                fd["category"] = fd["category"].value
+            findings_data.append(fd)
 
-        result_dict = result.model_dump()
-        # Convert datetime fields to strings for Firestore
-        for key in ("inspection_date", "created_at"):
-            if isinstance(result_dict.get(key), datetime):
-                result_dict[key] = result_dict[key].isoformat()
-        # Convert finding enums
-        for finding in result_dict.get("findings", []):
-            if hasattr(finding.get("severity"), "value"):
-                finding["severity"] = finding["severity"].value
-            if hasattr(finding.get("category"), "value"):
-                finding["category"] = finding["category"].value
+        props: dict[str, Any] = {
+            "id": result_id,
+            "project_id": project_id,
+            "inspection_date": now.isoformat(),
+            "overall_score": score,
+            "grade": grade,
+            "total_findings": len(all_findings),
+            "critical_findings": critical_count,
+            "high_findings": high_count,
+            "medium_findings": medium_count,
+            "low_findings": low_count,
+            "info_findings": info_count,
+            "_findings_json": json.dumps(findings_data, default=str),
+            "documents_reviewed": len(documents),
+            "training_records_reviewed": len(workers),
+            "inspections_reviewed": inspections_reviewed,
+            "_areas_checked_json": json.dumps(areas_checked),
+            "executive_summary": executive_summary,
+            "deep_audit": deep_audit,
+            "created_at": now.isoformat(),
+            "created_by": user_id,
+        }
 
-        self._collection(company_id).document(result_id).set(result_dict)
+        self._write_tx(
+            """
+            MATCH (c:Company {id: $company_id})
+            CREATE (r:MockInspectionResult $props)
+            CREATE (c)-[:HAS_MOCK_INSPECTION]->(r)
+            """,
+            {"company_id": company_id, "props": props},
+        )
 
         return result
 
@@ -1258,10 +1217,16 @@ class MockInspectionService:
         Raises:
             MockInspectionNotFoundError: If the result does not exist.
         """
-        doc = self._collection(company_id).document(result_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult {id: $result_id})
+            RETURN r {.*} AS result, c.id AS company_id
+            """,
+            {"company_id": company_id, "result_id": result_id},
+        )
+        if result is None:
             raise MockInspectionNotFoundError(result_id)
-        return MockInspectionResult(**doc.to_dict())
+        return self._to_model(result)
 
     def list_results(
         self,
@@ -1279,31 +1244,46 @@ class MockInspectionService:
         Returns:
             A dict with 'results' list and 'total' count.
         """
-        all_docs = list(self._collection(company_id).stream())
-        total = len(all_docs)
-
-        # Sort by created_at descending
-        all_docs_data = [doc.to_dict() for doc in all_docs]
-        all_docs_data.sort(
-            key=lambda d: d.get("created_at", ""), reverse=True
+        count_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            RETURN count(r) AS total
+            """,
+            {"company_id": company_id},
         )
-        paginated = all_docs_data[offset: offset + limit]
+        total = count_result["total"] if count_result else 0
 
-        results = []
-        for d in paginated:
-            results.append(
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            RETURN r.id AS id, r.inspection_date AS inspection_date,
+                   r.overall_score AS overall_score, r.grade AS grade,
+                   r.total_findings AS total_findings,
+                   r.critical_findings AS critical_findings,
+                   r.deep_audit AS deep_audit, r.created_at AS created_at,
+                   r.project_id AS project_id,
+                   $company_id AS company_id
+            ORDER BY r.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            {"company_id": company_id, "limit": limit, "offset": offset},
+        )
+
+        summaries = []
+        for r in results:
+            summaries.append(
                 MockInspectionResultSummary(
-                    id=d["id"],
-                    company_id=d["company_id"],
-                    project_id=d.get("project_id"),
-                    inspection_date=d["inspection_date"],
-                    overall_score=d["overall_score"],
-                    grade=d["grade"],
-                    total_findings=d["total_findings"],
-                    critical_findings=d["critical_findings"],
-                    deep_audit=d.get("deep_audit", False),
-                    created_at=d["created_at"],
+                    id=r["id"],
+                    company_id=r["company_id"],
+                    project_id=r.get("project_id"),
+                    inspection_date=r["inspection_date"],
+                    overall_score=r["overall_score"],
+                    grade=r["grade"],
+                    total_findings=r["total_findings"],
+                    critical_findings=r["critical_findings"],
+                    deep_audit=r.get("deep_audit", False),
+                    created_at=r["created_at"],
                 )
             )
 
-        return {"results": results, "total": total}
+        return {"results": summaries, "total": total}

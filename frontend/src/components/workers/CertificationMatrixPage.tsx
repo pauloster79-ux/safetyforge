@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCertificationMatrix, useWorkers } from '@/hooks/useWorkers';
+import { downloadPdf } from '@/lib/pdf';
 import { ROUTES, CERTIFICATION_TYPES, WORKER_ROLES, TRADE_TYPES } from '@/lib/constants';
 
 // Subset of most common certs for the matrix view
@@ -58,14 +59,14 @@ export function CertificationMatrixPage() {
   const navigate = useNavigate();
   const { data: matrix, isLoading: matrixLoading } = useCertificationMatrix();
   const { data: workers } = useWorkers();
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [tradeFilter, setTradeFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('All');
+  const [tradeFilter, setTradeFilter] = useState<string>('All');
 
   const filteredMatrix = matrix?.filter(row => {
     const worker = workers?.find(w => w.id === row.worker_id);
     if (!worker) return true;
-    if (roleFilter !== 'all' && worker.role !== roleFilter) return false;
-    if (tradeFilter !== 'all' && worker.trade !== tradeFilter) return false;
+    if (!roleFilter.startsWith('All') && worker.role !== roleFilter) return false;
+    if (!tradeFilter.startsWith('All') && worker.trade !== tradeFilter) return false;
     return true;
   }) ?? [];
 
@@ -92,8 +93,24 @@ export function CertificationMatrixPage() {
     return shortNames[certId] || ct.name;
   };
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadPdf(
+        '/me/certifications/matrix/pdf',
+        'Certification-Matrix.pdf',
+      );
+    } catch {
+      // error handling at caller level
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -119,32 +136,32 @@ export function CertificationMatrixPage() {
             <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
-          <Button variant="outline" disabled>
-            <Download className="mr-2 h-4 w-4" />
-            Export
+          <Button variant="outline" onClick={handleDownloadPdf} disabled={isDownloading}>
+            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Download PDF
           </Button>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3 print:hidden">
-        <Select value={roleFilter} onValueChange={v => setRoleFilter(v || 'all')}>
+        <Select value={roleFilter} onValueChange={v => setRoleFilter(v || 'All')}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="All Roles">All Roles</SelectItem>
             {WORKER_ROLES.map(r => (
               <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={tradeFilter} onValueChange={v => setTradeFilter(v || 'all')}>
+        <Select value={tradeFilter} onValueChange={v => setTradeFilter(v || 'All')}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Trades" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Trades</SelectItem>
+            <SelectItem value="All Trades">All Trades</SelectItem>
             {TRADE_TYPES.map(t => (
               <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
             ))}

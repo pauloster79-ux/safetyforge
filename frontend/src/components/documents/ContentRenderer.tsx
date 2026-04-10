@@ -169,7 +169,7 @@ function ObjectContent({ data, depth }: { data: Record<string, unknown>; depth: 
 
 /**
  * Recursive content renderer that handles the structured JSON output
- * from the SafetyForge backend generation service.
+ * from the Kerf backend generation service.
  *
  * Supports:
  * - string: paragraphs (split on \n)

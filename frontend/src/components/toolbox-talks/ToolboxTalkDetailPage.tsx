@@ -9,6 +9,7 @@ import {
   Calendar,
   User,
   Printer,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useToolboxTalk } from '@/hooks/useToolboxTalks';
 import { ROUTES } from '@/lib/constants';
 import type { ToolboxTalkContent } from '@/lib/constants';
+import { downloadPdf } from '@/lib/pdf';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -30,6 +32,21 @@ export function ToolboxTalkDetailPage() {
   const { data: talk, isLoading } = useToolboxTalk(projectId, talkId);
 
   const [contentLang, setContentLang] = useState<ContentLang>('en');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadPdf(
+        `/me/toolbox-talks/${talkId}/pdf`,
+        `ToolboxTalk-${talk?.topic || talkId}.pdf`,
+      );
+    } catch {
+      // error handling at caller level
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -54,7 +71,18 @@ export function ToolboxTalkDetailPage() {
     );
   }
 
-  const content: ToolboxTalkContent = contentLang === 'en' ? talk.content_en : talk.content_es;
+  const hasEnglish = talk.content_en && Object.keys(talk.content_en).length > 0;
+  const hasSpanish = talk.content_es && Object.keys(talk.content_es).length > 0;
+  const hasBoth = hasEnglish && hasSpanish;
+
+  // If only one language exists, force that language selection
+  const effectiveLang: ContentLang = hasBoth
+    ? contentLang
+    : hasEnglish
+      ? 'en'
+      : 'es';
+
+  const content: ToolboxTalkContent = effectiveLang === 'en' ? talk.content_en : talk.content_es;
   const statusConfig = {
     scheduled: { label: 'Scheduled', className: 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]' },
     in_progress: { label: 'In Progress', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
@@ -103,9 +131,13 @@ export function ToolboxTalkDetailPage() {
               Deliver Talk
             </Button>
           )}
-          <Button variant="outline" disabled>
+          <Button variant="outline" onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" />
             Print
+          </Button>
+          <Button variant="outline" onClick={handleDownloadPdf} disabled={isDownloading}>
+            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Download PDF
           </Button>
         </div>
       </div>
@@ -153,41 +185,43 @@ export function ToolboxTalkDetailPage() {
         )}
       </div>
 
-      {/* Language toggle */}
-      <div className="flex justify-center">
-        <div className="inline-flex items-center rounded-lg border border-border bg-muted p-0.5">
-          <button
-            type="button"
-            onClick={() => setContentLang('en')}
-            className={cn(
-              'rounded-md px-4 py-2 text-sm font-medium transition-all',
-              contentLang === 'en'
-                ? 'bg-white text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-[var(--concrete-600)]'
-            )}
-          >
-            English
-          </button>
-          <button
-            type="button"
-            onClick={() => setContentLang('es')}
-            className={cn(
-              'rounded-md px-4 py-2 text-sm font-medium transition-all',
-              contentLang === 'es'
-                ? 'bg-white text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-[var(--concrete-600)]'
-            )}
-          >
-            Espanol
-          </button>
+      {/* Language toggle — only shown when both languages have content */}
+      {hasBoth && (
+        <div className="flex justify-center">
+          <div className="inline-flex items-center rounded-lg border border-border bg-muted p-0.5">
+            <button
+              type="button"
+              onClick={() => setContentLang('en')}
+              className={cn(
+                'rounded-md px-4 py-2 text-sm font-medium transition-all',
+                effectiveLang === 'en'
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-[var(--concrete-600)]'
+              )}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => setContentLang('es')}
+              className={cn(
+                'rounded-md px-4 py-2 text-sm font-medium transition-all',
+                effectiveLang === 'es'
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-[var(--concrete-600)]'
+              )}
+            >
+              Espanol
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {contentLang === 'en' ? 'Topic Overview' : 'Resumen del Tema'}
+            {effectiveLang === 'en' ? 'Topic Overview' : 'Resumen del Tema'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -198,7 +232,7 @@ export function ToolboxTalkDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {contentLang === 'en' ? 'Key Points' : 'Puntos Clave'}
+            {effectiveLang === 'en' ? 'Key Points' : 'Puntos Clave'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -232,7 +266,7 @@ export function ToolboxTalkDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {contentLang === 'en' ? 'Discussion Questions' : 'Preguntas de Discusion'}
+            {effectiveLang === 'en' ? 'Discussion Questions' : 'Preguntas de Discusion'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -248,7 +282,7 @@ export function ToolboxTalkDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {contentLang === 'en' ? 'Safety Reminders' : 'Recordatorios de Seguridad'}
+            {effectiveLang === 'en' ? 'Safety Reminders' : 'Recordatorios de Seguridad'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">

@@ -79,11 +79,11 @@ export function useDeleteOshaLogEntry() {
 }
 
 export function useOsha300Summary(year?: number) {
-  const endpoint = year ? `/me/osha-log/summary?year=${year}` : '/me/osha-log/summary';
+  const effectiveYear = year ?? new Date().getFullYear();
 
   return useQuery<Osha300Summary>({
-    queryKey: ['osha-summary', year],
-    queryFn: () => api.get<Osha300Summary>(endpoint),
+    queryKey: ['osha-summary', effectiveYear],
+    queryFn: () => api.get<Osha300Summary>(`/me/osha-log/summary?year=${effectiveYear}`),
   });
 }
 

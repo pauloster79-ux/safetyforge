@@ -9,7 +9,7 @@ class TestDashboardMetrics:
 
     def test_dashboard_returns_metrics(self, client: TestClient, test_company):
         """Dashboard endpoint returns all metric fields."""
-        response = client.get("/me/analytics/dashboard")
+        response = client.get("/api/v1/me/analytics/dashboard")
         assert response.status_code == 200
         data = response.json()
 
@@ -48,14 +48,14 @@ class TestDashboardMetrics:
         """Dashboard reflects created project data."""
         # Create a project
         client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={
                 "name": "Analytics Test Project",
                 "address": "300 Data Way, TX 75001",
             },
         )
 
-        response = client.get("/me/analytics/dashboard")
+        response = client.get("/api/v1/me/analytics/dashboard")
         assert response.status_code == 200
         data = response.json()
         assert data["total_projects"] >= 1
@@ -68,7 +68,7 @@ class TestEmrEstimate:
     def test_emr_estimate(self, client: TestClient, test_company):
         """EMR estimate returns projected savings and recommendations."""
         response = client.post(
-            "/me/analytics/emr-estimate",
+            "/api/v1/me/analytics/emr-estimate",
             json={
                 "current_emr": 1.2,
                 "annual_payroll": 2000000,

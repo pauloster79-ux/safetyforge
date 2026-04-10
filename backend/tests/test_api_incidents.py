@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 def _create_project(client: TestClient) -> str:
     """Helper to create a project and return its ID."""
     resp = client.post(
-        "/me/projects",
+        "/api/v1/me/projects",
         json={
             "name": "Incident Test Project",
             "address": "200 Hazard Drive, TX 75001",
@@ -28,7 +28,7 @@ def _create_incident(client: TestClient, project_id: str, **overrides) -> dict:
         "description": "Worker slipped on wet surface and sustained minor abrasion to right knee.",
     }
     payload.update(overrides)
-    resp = client.post(f"/me/projects/{project_id}/incidents", json=payload)
+    resp = client.post(f"/api/v1/me/projects/{project_id}/incidents", json=payload)
     assert resp.status_code == 201
     return resp.json()
 
@@ -91,7 +91,7 @@ class TestListIncidents:
             description="Unsecured load nearly struck worker. Near miss event reported.",
         )
 
-        response = client.get(f"/me/projects/{project_id}/incidents")
+        response = client.get(f"/api/v1/me/projects/{project_id}/incidents")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -108,7 +108,7 @@ class TestUpdateIncident:
         incident_id = incident["id"]
 
         response = client.patch(
-            f"/me/projects/{project_id}/incidents/{incident_id}",
+            f"/api/v1/me/projects/{project_id}/incidents/{incident_id}",
             json={"status": "investigating"},
         )
         assert response.status_code == 200
@@ -125,11 +125,11 @@ class TestDeleteIncident:
         incident_id = incident["id"]
 
         response = client.delete(
-            f"/me/projects/{project_id}/incidents/{incident_id}"
+            f"/api/v1/me/projects/{project_id}/incidents/{incident_id}"
         )
         assert response.status_code == 204
 
         get_resp = client.get(
-            f"/me/projects/{project_id}/incidents/{incident_id}"
+            f"/api/v1/me/projects/{project_id}/incidents/{incident_id}"
         )
         assert get_resp.status_code == 404

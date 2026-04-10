@@ -41,6 +41,10 @@ export const ROUTES = {
   EQUIPMENT: '/equipment',
   EQUIPMENT_NEW: '/equipment/new',
   EQUIPMENT_DETAIL: (id: string) => `/equipment/${id}`,
+  INSPECTIONS_LIST: '/inspections',
+  INCIDENTS_LIST: '/incidents',
+  TOOLBOX_TALKS_LIST: '/toolbox-talks',
+  TEAM: '/team',
 } as const;
 
 export interface DocumentTypeConfig {
@@ -229,6 +233,9 @@ export interface Subscription {
   max_projects: number;
   renewal_date: string | null;
   features: string[];
+  is_trial?: boolean;
+  trial_days_remaining?: number | null;
+  trial_end_date?: string | null;
 }
 
 export const SUBSCRIPTION_TIERS = [
@@ -266,7 +273,7 @@ export const SUBSCRIPTION_TIERS = [
   {
     id: 'business',
     name: 'Business',
-    price: 599,
+    price: 499,
     maxProjects: 20,
     features: [
       '20 projects',

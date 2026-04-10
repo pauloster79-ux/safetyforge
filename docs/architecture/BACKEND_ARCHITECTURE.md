@@ -1,8 +1,8 @@
-# SafetyForge Backend Architecture
+# Kerf Backend Architecture
 
 *Version 1.0 -- 2026-03-31*
 
-This document is the definitive backend blueprint for SafetyForge through Phase 4. Engineers build from this. Every schema, endpoint, and service is specified to the level of detail needed to write code.
+This document is the definitive backend blueprint for Kerf through Phase 4. Engineers build from this. Every schema, endpoint, and service is specified to the level of detail needed to write code.
 
 ---
 
@@ -196,7 +196,7 @@ templates/{template_id}
   "reviewed_by": "firebase_uid_abc",
   "reviewed_at": "2026-02-02T08:15:00Z",
   "generated_at": "2026-02-01T10:00:32Z",
-  "pdf_url": "gs://safetyforge-documents/comp_a1b2c3d4e5f6g7h8/proj_b2c3d4e5f6g7h8i9/doc_e5f6g7h8i9j0k1l2/v2.pdf",
+  "pdf_url": "gs://kerf-documents/comp_a1b2c3d4e5f6g7h8/proj_b2c3d4e5f6g7h8i9/doc_e5f6g7h8i9j0k1l2/v2.pdf",
   "created_at": "2026-02-01T10:00:00Z",
   "created_by": "firebase_uid_abc",
   "updated_at": "2026-02-02T08:15:00Z",
@@ -259,7 +259,7 @@ templates/{template_id}
       "response": "fail",
       "notes": "Panel on 2nd floor missing cover plate. Tagged out.",
       "photo_urls": [
-        "gs://safetyforge-photos/comp_a1b2c3d4e5f6g7h8/insp_f6g7h8i9j0k1l2m3/chk_002_001.jpg"
+        "gs://kerf-photos/comp_a1b2c3d4e5f6g7h8/insp_f6g7h8i9j0k1l2m3/chk_002_001.jpg"
       ],
       "osha_standard": "1926.405(b)"
     }
@@ -285,7 +285,7 @@ templates/{template_id}
   "voice_notes": [
     {
       "note_id": "vn_001",
-      "audio_url": "gs://safetyforge-audio/comp_a1b2c3d4e5f6g7h8/insp_f6g7h8i9j0k1l2m3/vn_001.webm",
+      "audio_url": "gs://kerf-audio/comp_a1b2c3d4e5f6g7h8/insp_f6g7h8i9j0k1l2m3/vn_001.webm",
       "transcript": "Second floor panel cover is missing, I tagged it out and will get a replacement from the truck.",
       "duration_seconds": 8
     }
@@ -350,7 +350,7 @@ templates/{template_id}
     {
       "worker_id": "wkr_c3d4e5f6g7h8i9j0",
       "worker_name": "Carlos Mendoza",
-      "signature_url": "gs://safetyforge-signatures/talk_g7h8i9j0k1l2m3n4/carlos.png",
+      "signature_url": "gs://kerf-signatures/talk_g7h8i9j0k1l2m3n4/carlos.png",
       "signed_at": "2026-03-30T06:08:00Z",
       "language_preference": "es"
     }
@@ -400,7 +400,7 @@ templates/{template_id}
   },
   "description_text": "Scaffold missing guardrails on third level north side.",
   "voice_note": {
-    "audio_url": "gs://safetyforge-audio/comp_a1b2c3d4e5f6g7h8/haz_h8i9j0k1l2m3n4o5/voice.webm",
+    "audio_url": "gs://kerf-audio/comp_a1b2c3d4e5f6g7h8/haz_h8i9j0k1l2m3n4o5/voice.webm",
     "transcript": "Andamio en el tercer nivel lado norte no tiene barandillas.",
     "source_language": "es",
     "translated_transcript": "Scaffold on the third level north side does not have guardrails."
@@ -408,8 +408,8 @@ templates/{template_id}
   "photos": [
     {
       "photo_id": "ph_001",
-      "url": "gs://safetyforge-photos/comp_a1b2c3d4e5f6g7h8/haz_h8i9j0k1l2m3n4o5/ph_001.jpg",
-      "thumbnail_url": "gs://safetyforge-photos/comp_a1b2c3d4e5f6g7h8/haz_h8i9j0k1l2m3n4o5/ph_001_thumb.jpg",
+      "url": "gs://kerf-photos/comp_a1b2c3d4e5f6g7h8/haz_h8i9j0k1l2m3n4o5/ph_001.jpg",
+      "thumbnail_url": "gs://kerf-photos/comp_a1b2c3d4e5f6g7h8/haz_h8i9j0k1l2m3n4o5/ph_001_thumb.jpg",
       "uploaded_at": "2026-03-30T09:15:12Z"
     }
   ],
@@ -501,14 +501,14 @@ templates/{template_id}
     }
   ],
   "voice_report": {
-    "audio_url": "gs://safetyforge-audio/comp_a1b2c3d4e5f6g7h8/inc_i9j0k1l2m3n4o5p6/voice.webm",
+    "audio_url": "gs://kerf-audio/comp_a1b2c3d4e5f6g7h8/inc_i9j0k1l2m3n4o5p6/voice.webm",
     "transcript": "Luis Mendoza stepped on a protruding nail near building B...",
     "source_language": "en"
   },
   "photos": [
     {
       "photo_id": "ph_001",
-      "url": "gs://safetyforge-photos/comp_a1b2c3d4e5f6g7h8/inc_i9j0k1l2m3n4o5p6/ph_001.jpg",
+      "url": "gs://kerf-photos/comp_a1b2c3d4e5f6g7h8/inc_i9j0k1l2m3n4o5p6/ph_001.jpg",
       "caption": "Nail protruding from debris pile"
     }
   ],
@@ -637,7 +637,7 @@ templates/{template_id}
   "issue_date": "2024-07-01",
   "expiry_date": "2029-07-01",
   "status": "current",
-  "proof_document_url": "gs://safetyforge-documents/comp_a1b2c3d4e5f6g7h8/certs/cert_j0k1l2m3n4o5p6q7.pdf",
+  "proof_document_url": "gs://kerf-documents/comp_a1b2c3d4e5f6g7h8/certs/cert_j0k1l2m3n4o5p6q7.pdf",
   "notes": "",
   "created_at": "2024-07-05T10:00:00Z",
   "created_by": "firebase_uid_abc",
@@ -716,7 +716,7 @@ templates/{template_id}
       "inspector": "CraneWorks LLC",
       "date": "2025-09-15",
       "expiry": "2026-09-15",
-      "document_url": "gs://safetyforge-documents/comp_a1b2c3d4e5f6g7h8/equip/annual_2025.pdf"
+      "document_url": "gs://kerf-documents/comp_a1b2c3d4e5f6g7h8/equip/annual_2025.pdf"
     }
   ],
   "applicable_standards": ["1926.453"],
@@ -818,7 +818,7 @@ templates/{template_id}
 
 ### 1.14 regulatory_standards/{standard_id}
 
-This is a shared, read-only collection maintained by SafetyForge operations. Not scoped to any company.
+This is a shared, read-only collection maintained by Kerf operations. Not scoped to any company.
 
 ```json
 {
@@ -1158,8 +1158,8 @@ Request: multipart/form-data
 
 Response 201:
 {
-  "photo_url": "gs://safetyforge-photos/...",
-  "thumbnail_url": "gs://safetyforge-photos/.../thumb.jpg"
+  "photo_url": "gs://kerf-photos/...",
+  "thumbnail_url": "gs://kerf-photos/.../thumb.jpg"
 }
 ```
 
@@ -1894,16 +1894,16 @@ Initial seed: approximately 200 standards covering the OSHA Focus Four (falls, s
 
 | Bucket | Purpose | Access |
 |--------|---------|--------|
-| `safetyforge-documents` | Generated PDFs, uploaded documents, cert proofs | Private (signed URLs) |
-| `safetyforge-photos` | Inspection photos, hazard report photos, incident photos | Private (signed URLs) |
-| `safetyforge-audio` | Voice notes, voice reports | Private (signed URLs) |
-| `safetyforge-signatures` | Toolbox talk attendance signatures | Private (signed URLs) |
-| `safetyforge-exports` | Temporary export files (OSHA logs, training matrices) | Private (signed URLs, 24h expiry) |
+| `kerf-documents` | Generated PDFs, uploaded documents, cert proofs | Private (signed URLs) |
+| `kerf-photos` | Inspection photos, hazard report photos, incident photos | Private (signed URLs) |
+| `kerf-audio` | Voice notes, voice reports | Private (signed URLs) |
+| `kerf-signatures` | Toolbox talk attendance signatures | Private (signed URLs) |
+| `kerf-exports` | Temporary export files (OSHA logs, training matrices) | Private (signed URLs, 24h expiry) |
 
 ### 5.2 Naming Conventions
 
 ```
-safetyforge-photos/
+kerf-photos/
   {company_id}/
     inspections/
       {inspection_id}/
@@ -1917,7 +1917,7 @@ safetyforge-photos/
       {incident_id}/
         ph_{sequence}.jpg
 
-safetyforge-audio/
+kerf-audio/
   {company_id}/
     inspections/
       {inspection_id}/
@@ -1929,7 +1929,7 @@ safetyforge-audio/
       {incident_id}/
         voice.webm
 
-safetyforge-documents/
+kerf-documents/
   {company_id}/
     projects/
       {project_id}/
@@ -1941,7 +1941,7 @@ safetyforge-documents/
       osha_300_{year}.pdf
       training_matrix_{date}.pdf
 
-safetyforge-signatures/
+kerf-signatures/
   {talk_id}/
     {worker_id}.png
 ```
@@ -1958,11 +1958,11 @@ safetyforge-signatures/
 
 | Bucket | Policy |
 |--------|--------|
-| `safetyforge-documents` | Move to Nearline after 1 year. Move to Coldline after 3 years. Delete after 8 years. |
-| `safetyforge-photos` | Move to Nearline after 1 year. Delete after 8 years. |
-| `safetyforge-audio` | Move to Nearline after 90 days. Move to Coldline after 1 year. Delete after 8 years. |
-| `safetyforge-signatures` | Move to Nearline after 1 year. Delete after 6 years. |
-| `safetyforge-exports` | Delete after 7 days. |
+| `kerf-documents` | Move to Nearline after 1 year. Move to Coldline after 3 years. Delete after 8 years. |
+| `kerf-photos` | Move to Nearline after 1 year. Delete after 8 years. |
+| `kerf-audio` | Move to Nearline after 90 days. Move to Coldline after 1 year. Delete after 8 years. |
+| `kerf-signatures` | Move to Nearline after 1 year. Delete after 6 years. |
+| `kerf-exports` | Delete after 7 days. |
 
 ### 5.5 Upload Limits
 

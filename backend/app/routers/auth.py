@@ -1,12 +1,12 @@
-"""Authentication router — Firebase token verification."""
+"""Authentication router — Clerk JWT verification."""
 
 import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from google.cloud import firestore
+from neo4j import Driver
 
-from app.dependencies import get_current_user, get_firestore_client
+from app.dependencies import get_current_user, get_neo4j_driver
 from app.models.company import CompanyCreate, TradeType
 from app.services.company_service import CompanyService
 from app.services.member_service import MemberService
@@ -19,17 +19,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/verify-token")
 async def verify_token(
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> dict:
-    """Verify a Firebase ID token and return user info with company association.
+    """Verify a Clerk JWT and return user info with company association.
 
-    The frontend calls this after Firebase sign-in to confirm the token is valid
+    The frontend calls this after Clerk sign-in to confirm the token is valid
     and to retrieve the user's associated company (if any). If no company exists,
     one is auto-created with sensible defaults so the user can proceed to onboarding.
 
     Args:
-        current_user: Decoded Firebase token claims.
-        db: Firestore client for company lookup.
+        current_user: Decoded Clerk JWT claims.
+        driver: Neo4j driver for company lookup.
 
     Returns:
         A dict with user info, company data, and is_new_user flag.
@@ -37,8 +37,8 @@ async def verify_token(
     uid = current_user["uid"]
     email = current_user["email"]
 
-    company_service = CompanyService(db)
-    member_service = MemberService(db)
+    company_service = CompanyService(driver)
+    member_service = MemberService(driver)
 
     company = company_service.get_by_user(uid)
     is_new_user = False

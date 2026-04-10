@@ -3,10 +3,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from google.cloud import firestore
+from neo4j import Driver
 
 from app.config import Settings, get_settings
-from app.dependencies import get_current_user, get_firestore_client
+from app.dependencies import get_current_user, get_neo4j_driver
 from app.exceptions import CompanyNotFoundError, InvalidWebhookSignatureError
 from app.models.billing import SubscriptionInfo
 from app.services.billing_service import BillingService
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 @router.post("/webhooks/paddle", status_code=status.HTTP_200_OK)
 async def paddle_webhook(
     request: Request,
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
     paddle_signature: str = Header(..., alias="Paddle-Signature"),
 ) -> dict:
@@ -29,7 +29,7 @@ async def paddle_webhook(
 
     Args:
         request: The raw FastAPI request for body extraction.
-        db: Firestore client.
+        driver: Neo4j driver.
         settings: Application settings with Paddle webhook secret.
         paddle_signature: The Paddle-Signature header value.
 
@@ -46,7 +46,7 @@ async def paddle_webhook(
             detail="Invalid JSON payload",
         )
 
-    billing_service = BillingService(db, settings)
+    billing_service = BillingService(driver, settings)
 
     try:
         billing_service.handle_webhook(payload, paddle_signature, raw_body)
@@ -68,7 +68,7 @@ async def paddle_webhook(
 async def get_subscription_status(
     company_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> SubscriptionInfo:
     """Get the subscription status and usage for a company.
@@ -76,13 +76,13 @@ async def get_subscription_status(
     Args:
         company_id: The company to check.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
         settings: Application settings.
 
     Returns:
         A SubscriptionInfo model with plan and usage details.
     """
-    company_service = CompanyService(db)
+    company_service = CompanyService(driver)
     try:
         company = company_service.get(company_id)
     except CompanyNotFoundError:
@@ -97,5 +97,5 @@ async def get_subscription_status(
             detail="You do not have access to this company's billing information",
         )
 
-    billing_service = BillingService(db, settings)
+    billing_service = BillingService(driver, settings)
     return billing_service.get_subscription_status(company_id)

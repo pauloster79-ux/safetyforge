@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 def _create_project(client: TestClient) -> str:
     """Helper to create a project and return its ID."""
     resp = client.post(
-        "/me/projects",
+        "/api/v1/me/projects",
         json={
             "name": "Inspection Test Project",
             "address": "789 Safety Blvd, TX 75001",
@@ -25,7 +25,7 @@ class TestCreateInspection:
         project_id = _create_project(client)
 
         response = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -73,7 +73,7 @@ class TestListInspections:
 
         # Create two inspections
         client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-30",
@@ -81,7 +81,7 @@ class TestListInspections:
             },
         )
         client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "scaffold",
                 "inspection_date": "2026-03-31",
@@ -89,7 +89,7 @@ class TestListInspections:
             },
         )
 
-        response = client.get(f"/me/projects/{project_id}/inspections")
+        response = client.get(f"/api/v1/me/projects/{project_id}/inspections")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -98,7 +98,7 @@ class TestListInspections:
     def test_list_inspections_empty(self, client: TestClient, test_company):
         """List inspections for project with no inspections returns empty."""
         project_id = _create_project(client)
-        response = client.get(f"/me/projects/{project_id}/inspections")
+        response = client.get(f"/api/v1/me/projects/{project_id}/inspections")
         assert response.status_code == 200
         data = response.json()
         assert data["inspections"] == []
@@ -113,7 +113,7 @@ class TestGetInspection:
         project_id = _create_project(client)
 
         create_resp = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -123,7 +123,7 @@ class TestGetInspection:
         inspection_id = create_resp.json()["id"]
 
         response = client.get(
-            f"/me/projects/{project_id}/inspections/{inspection_id}"
+            f"/api/v1/me/projects/{project_id}/inspections/{inspection_id}"
         )
         assert response.status_code == 200
         data = response.json()
@@ -134,7 +134,7 @@ class TestGetInspection:
         """Get a non-existent inspection returns 404."""
         project_id = _create_project(client)
         response = client.get(
-            f"/me/projects/{project_id}/inspections/insp_nonexistent123"
+            f"/api/v1/me/projects/{project_id}/inspections/insp_nonexistent123"
         )
         assert response.status_code == 404
 
@@ -147,7 +147,7 @@ class TestInspectionOverallStatus:
         project_id = _create_project(client)
 
         response = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -182,7 +182,7 @@ class TestInspectionOverallStatus:
         project_id = _create_project(client)
 
         response = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -220,7 +220,7 @@ class TestInspectionOverallStatus:
         # Use a status that is neither pass, na, nor fail to trigger PARTIAL
         # In practice "partial" status on an item triggers this
         response = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -249,7 +249,7 @@ class TestInspectionOverallStatus:
         project_id = _create_project(client)
 
         response = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -266,7 +266,7 @@ class TestInspectionTemplate:
 
     def test_inspection_template_returns_items(self, client: TestClient, test_company):
         """Template endpoint returns checklist items for a valid type."""
-        response = client.get("/me/inspection-templates/daily_site")
+        response = client.get("/api/v1/me/inspection-templates/daily_site")
         assert response.status_code == 200
         items = response.json()
         assert isinstance(items, list)
@@ -282,7 +282,7 @@ class TestInspectionTemplate:
 
     def test_inspection_template_scaffold(self, client: TestClient, test_company):
         """Scaffold template returns scaffold-specific items."""
-        response = client.get("/me/inspection-templates/scaffold")
+        response = client.get("/api/v1/me/inspection-templates/scaffold")
         assert response.status_code == 200
         items = response.json()
         assert len(items) > 5
@@ -291,7 +291,7 @@ class TestInspectionTemplate:
 
     def test_inspection_template_invalid_type(self, client: TestClient, test_company):
         """Invalid inspection type returns 422."""
-        response = client.get("/me/inspection-templates/not_a_real_type")
+        response = client.get("/api/v1/me/inspection-templates/not_a_real_type")
         assert response.status_code == 422
 
 
@@ -303,7 +303,7 @@ class TestUpdateInspection:
         project_id = _create_project(client)
 
         create_resp = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -314,7 +314,7 @@ class TestUpdateInspection:
         inspection_id = create_resp.json()["id"]
 
         response = client.patch(
-            f"/me/projects/{project_id}/inspections/{inspection_id}",
+            f"/api/v1/me/projects/{project_id}/inspections/{inspection_id}",
             json={
                 "inspector_name": "Updated Inspector",
                 "weather_conditions": "Rainy",
@@ -336,7 +336,7 @@ class TestDeleteInspection:
         project_id = _create_project(client)
 
         create_resp = client.post(
-            f"/me/projects/{project_id}/inspections",
+            f"/api/v1/me/projects/{project_id}/inspections",
             json={
                 "inspection_type": "daily_site",
                 "inspection_date": "2026-03-31",
@@ -347,16 +347,16 @@ class TestDeleteInspection:
 
         # Delete
         response = client.delete(
-            f"/me/projects/{project_id}/inspections/{inspection_id}"
+            f"/api/v1/me/projects/{project_id}/inspections/{inspection_id}"
         )
         assert response.status_code == 204
 
         # Verify gone from list
-        list_resp = client.get(f"/me/projects/{project_id}/inspections")
+        list_resp = client.get(f"/api/v1/me/projects/{project_id}/inspections")
         assert list_resp.json()["total"] == 0
 
         # Verify direct get 404s
         get_resp = client.get(
-            f"/me/projects/{project_id}/inspections/{inspection_id}"
+            f"/api/v1/me/projects/{project_id}/inspections/{inspection_id}"
         )
         assert get_resp.status_code == 404

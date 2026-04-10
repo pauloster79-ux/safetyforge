@@ -1,12 +1,11 @@
-"""Toolbox talk CRUD service against Firestore."""
+"""Toolbox talk CRUD service against Neo4j."""
 
-import secrets
+import json
 from datetime import datetime, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.exceptions import ProjectNotFoundError, ToolboxTalkNotFoundError
+from app.models.actor import Actor
 from app.models.toolbox_talk import (
     Attendee,
     AttendeeCreate,
@@ -15,50 +14,16 @@ from app.models.toolbox_talk import (
     ToolboxTalkStatus,
     ToolboxTalkUpdate,
 )
+from app.services.base_service import BaseService
 
 
-class ToolboxTalkService:
-    """Manages toolbox talks in Firestore.
+class ToolboxTalkService(BaseService):
+    """Manages toolbox talks in Neo4j.
 
-    Args:
-        db: Firestore client instance.
+    Graph model:
+        (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_TOOLBOX_TALK]->(ToolboxTalk)
+        Content dicts and attendees stored as JSON strings.
     """
-
-    def __init__(self, db: firestore.Client) -> None:
-        self.db = db
-
-    def _project_ref(
-        self, company_id: str, project_id: str
-    ) -> firestore.DocumentReference:
-        """Return a reference to the project document."""
-        return (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("projects")
-            .document(project_id)
-        )
-
-    def _collection(
-        self, company_id: str, project_id: str
-    ) -> firestore.CollectionReference:
-        """Return the toolbox_talks subcollection for a project.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The parent project ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._project_ref(company_id, project_id).collection("toolbox_talks")
-
-    def _generate_id(self) -> str:
-        """Generate a unique toolbox talk ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"talk_{secrets.token_hex(8)}"
 
     def _verify_project_exists(self, company_id: str, project_id: str) -> None:
         """Verify that the parent project exists and is not deleted.
@@ -70,11 +35,40 @@ class ToolboxTalkService:
         Raises:
             ProjectNotFoundError: If the project does not exist or is soft-deleted.
         """
-        doc = self._project_ref(company_id, project_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            RETURN p.id AS id
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        if result is None:
             raise ProjectNotFoundError(project_id)
-        if doc.to_dict().get("deleted", False):
-            raise ProjectNotFoundError(project_id)
+
+    @staticmethod
+    def _to_model(record: dict[str, Any]) -> ToolboxTalk:
+        """Convert a Neo4j record dict to a ToolboxTalk model.
+
+        Args:
+            record: Dict with 'talk', 'company_id', 'project_id' keys.
+
+        Returns:
+            A ToolboxTalk model instance.
+        """
+        data = record["talk"]
+        # Deserialize JSON-encoded fields
+        content_en_json = data.pop("_content_en_json", "{}")
+        data["content_en"] = json.loads(content_en_json) if content_en_json else {}
+        content_es_json = data.pop("_content_es_json", "{}")
+        data["content_es"] = json.loads(content_es_json) if content_es_json else {}
+        attendees_json = data.pop("_attendees_json", "[]")
+        data["attendees"] = json.loads(attendees_json) if attendees_json else []
+        custom_points_json = data.pop("_custom_points_json", "[]")
+        data["custom_points"] = json.loads(custom_points_json) if custom_points_json else []
+        data["company_id"] = record["company_id"]
+        data["project_id"] = record["project_id"]
+        return ToolboxTalk(**data)
 
     def create(
         self,
@@ -89,7 +83,7 @@ class ToolboxTalkService:
             company_id: The owning company ID.
             project_id: The parent project ID.
             data: Validated toolbox talk creation data.
-            user_id: Firebase UID of the creating user.
+            user_id: UID of the creating user.
 
         Returns:
             The created ToolboxTalk with all fields populated.
@@ -99,35 +93,38 @@ class ToolboxTalkService:
         """
         self._verify_project_exists(company_id, project_id)
 
-        now = datetime.now(timezone.utc)
-        talk_id = self._generate_id()
+        actor = Actor.human(user_id)
+        talk_id = self._generate_id("talk")
 
-        talk_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": talk_id,
-            "company_id": company_id,
-            "project_id": project_id,
             "topic": data.topic,
             "scheduled_date": data.scheduled_date.isoformat(),
             "target_audience": data.target_audience,
             "target_trade": data.target_trade,
             "duration_minutes": data.duration_minutes,
-            "custom_points": data.custom_points,
-            "content_en": {},
-            "content_es": {},
+            "_custom_points_json": json.dumps(data.custom_points),
+            "_content_en_json": "{}",
+            "_content_es_json": "{}",
             "status": ToolboxTalkStatus.SCHEDULED.value,
-            "attendees": [],
+            "_attendees_json": "[]",
             "overall_notes": "",
             "presented_at": None,
             "presented_by": "",
-            "created_at": now,
-            "created_by": user_id,
-            "updated_at": now,
-            "updated_by": user_id,
             "deleted": False,
+            **self._provenance_create(actor),
         }
 
-        self._collection(company_id, project_id).document(talk_id).set(talk_dict)
-        return ToolboxTalk(**talk_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            CREATE (t:ToolboxTalk $props)
+            CREATE (p)-[:HAS_TOOLBOX_TALK]->(t)
+            RETURN t {.*} AS talk, c.id AS company_id, p.id AS project_id
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": props},
+        )
+        return self._to_model(result)
 
     def get(
         self, company_id: str, project_id: str, talk_id: str
@@ -145,19 +142,22 @@ class ToolboxTalkService:
         Raises:
             ToolboxTalkNotFoundError: If the talk does not exist or is soft-deleted.
         """
-        doc = (
-            self._collection(company_id, project_id)
-            .document(talk_id)
-            .get()
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            RETURN t {.*} AS talk, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
+            },
         )
-        if not doc.exists:
+        if result is None:
             raise ToolboxTalkNotFoundError(talk_id)
-
-        data = doc.to_dict()
-        if data.get("deleted", False):
-            raise ToolboxTalkNotFoundError(talk_id)
-
-        return ToolboxTalk(**data)
+        return self._to_model(result)
 
     def list_talks(
         self,
@@ -179,27 +179,44 @@ class ToolboxTalkService:
         Returns:
             A dict with 'toolbox_talks' list and 'total' count.
         """
-        base_query: firestore.Query = self._collection(
-            company_id, project_id
-        ).where("deleted", "==", False)
+        where_clauses = ["t.deleted = false"]
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "project_id": project_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if status is not None:
-            base_query = base_query.where("status", "==", status.value)
+            where_clauses.append("t.status = $status")
+            params["status"] = status.value
 
-        # Count total matching talks
-        all_docs = [ToolboxTalk(**doc.to_dict()) for doc in base_query.stream()]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
 
-        # Apply sorting, offset, and limit
-        paginated_query = base_query.order_by(
-            "created_at", direction=firestore.Query.DESCENDING
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk)
+            WHERE {where_str}
+            RETURN count(t) AS total
+            """,
+            params,
         )
-        paginated_query = paginated_query.offset(offset).limit(limit)
+        total = count_result["total"] if count_result else 0
 
-        toolbox_talks = [
-            ToolboxTalk(**doc.to_dict()) for doc in paginated_query.stream()
-        ]
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk)
+            WHERE {where_str}
+            RETURN t {{.*}} AS talk, c.id AS company_id, p.id AS project_id
+            ORDER BY t.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
 
+        toolbox_talks = [self._to_model(r) for r in results]
         return {"toolbox_talks": toolbox_talks, "total": total}
 
     def update(
@@ -217,7 +234,7 @@ class ToolboxTalkService:
             project_id: The parent project ID.
             talk_id: The toolbox talk ID to update.
             data: Fields to update (only non-None fields are applied).
-            user_id: Firebase UID of the updating user.
+            user_id: UID of the updating user.
 
         Returns:
             The updated ToolboxTalk model.
@@ -225,31 +242,43 @@ class ToolboxTalkService:
         Raises:
             ToolboxTalkNotFoundError: If the talk does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id, project_id).document(talk_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise ToolboxTalkNotFoundError(talk_id)
-
-        update_data: dict[str, Any] = {}
+        update_props: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name == "status" and value is not None:
-                update_data[field_name] = (
+                update_props[field_name] = (
                     value.value if hasattr(value, "value") else value
                 )
+            elif field_name == "content_en" and value is not None:
+                update_props["_content_en_json"] = json.dumps(value)
+            elif field_name == "content_es" and value is not None:
+                update_props["_content_es_json"] = json.dumps(value)
             else:
-                update_data[field_name] = value
+                update_props[field_name] = value
 
-        if not update_data:
-            return ToolboxTalk(**doc.to_dict())
+        if not update_props:
+            return self.get(company_id, project_id, talk_id)
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        update_data["updated_by"] = user_id
+        actor = Actor.human(user_id)
+        update_props.update(self._provenance_update(actor))
 
-        doc_ref.update(update_data)
-
-        updated_doc = doc_ref.get()
-        return ToolboxTalk(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            SET t += $props
+            RETURN t {.*} AS talk, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
+                "props": update_props,
+            },
+        )
+        if result is None:
+            raise ToolboxTalkNotFoundError(talk_id)
+        return self._to_model(result)
 
     def delete(
         self, company_id: str, project_id: str, talk_id: str
@@ -264,18 +293,23 @@ class ToolboxTalkService:
         Raises:
             ToolboxTalkNotFoundError: If the talk does not exist.
         """
-        doc_ref = self._collection(company_id, project_id).document(talk_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise ToolboxTalkNotFoundError(talk_id)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            SET t.deleted = true, t.updated_at = $now
+            RETURN t.id AS id
+            """,
             {
-                "deleted": True,
-                "updated_at": datetime.now(timezone.utc),
-            }
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
+                "now": datetime.now(timezone.utc).isoformat(),
+            },
         )
+        if result is None:
+            raise ToolboxTalkNotFoundError(talk_id)
 
     def add_attendee(
         self,
@@ -298,10 +332,21 @@ class ToolboxTalkService:
         Raises:
             ToolboxTalkNotFoundError: If the talk does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id, project_id).document(talk_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
+        # Read current attendees
+        current = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            RETURN t._attendees_json AS attendees_json
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
+            },
+        )
+        if current is None:
             raise ToolboxTalkNotFoundError(talk_id)
 
         now = datetime.now(timezone.utc)
@@ -312,15 +357,27 @@ class ToolboxTalkService:
             language_preference=attendee_data.language_preference,
         )
 
-        doc_ref.update(
-            {
-                "attendees": firestore.ArrayUnion([attendee.model_dump()]),
-                "updated_at": now,
-            }
-        )
+        existing = json.loads(current["attendees_json"] or "[]")
+        existing.append(attendee.model_dump(mode="json"))
+        new_json = json.dumps(existing)
 
-        updated_doc = doc_ref.get()
-        return ToolboxTalk(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            SET t._attendees_json = $attendees_json, t.updated_at = $now
+            RETURN t {.*} AS talk, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
+                "attendees_json": new_json,
+                "now": now.isoformat(),
+            },
+        )
+        return self._to_model(result)
 
     def complete_talk(
         self,
@@ -345,26 +402,30 @@ class ToolboxTalkService:
         Raises:
             ToolboxTalkNotFoundError: If the talk does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id, project_id).document(talk_id)
-        doc = doc_ref.get()
+        now = datetime.now(timezone.utc).isoformat()
 
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise ToolboxTalkNotFoundError(talk_id)
-
-        now = datetime.now(timezone.utc)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            SET t.status = $status, t.presented_at = $now, t.presented_by = $presented_by,
+                t.overall_notes = $notes, t.updated_at = $now
+            RETURN t {.*} AS talk, c.id AS company_id, p.id AS project_id
+            """,
             {
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
                 "status": ToolboxTalkStatus.COMPLETED.value,
-                "presented_at": now,
+                "now": now,
                 "presented_by": presented_by,
-                "overall_notes": notes,
-                "updated_at": now,
-            }
+                "notes": notes,
+            },
         )
-
-        updated_doc = doc_ref.get()
-        return ToolboxTalk(**updated_doc.to_dict())
+        if result is None:
+            raise ToolboxTalkNotFoundError(talk_id)
+        return self._to_model(result)
 
     def set_generated_content(
         self,
@@ -383,7 +444,7 @@ class ToolboxTalkService:
             talk_id: The toolbox talk ID.
             content_en: English content dict.
             content_es: Spanish content dict.
-            user_id: Firebase UID of the user.
+            user_id: UID of the user.
 
         Returns:
             The updated ToolboxTalk with generated content.
@@ -391,23 +452,31 @@ class ToolboxTalkService:
         Raises:
             ToolboxTalkNotFoundError: If the talk does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id, project_id).document(talk_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise ToolboxTalkNotFoundError(talk_id)
-
-        update_data: dict[str, Any] = {
-            "updated_at": datetime.now(timezone.utc),
+        update_props: dict[str, Any] = {
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         if user_id:
-            update_data["updated_by"] = user_id
+            update_props["updated_by"] = user_id
         if content_en is not None:
-            update_data["content_en"] = content_en
+            update_props["_content_en_json"] = json.dumps(content_en)
         if content_es is not None:
-            update_data["content_es"] = content_es
+            update_props["_content_es_json"] = json.dumps(content_es)
 
-        doc_ref.update(update_data)
-
-        updated_doc = doc_ref.get()
-        return ToolboxTalk(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_TOOLBOX_TALK]->(t:ToolboxTalk {id: $talk_id})
+            WHERE t.deleted = false
+            SET t += $props
+            RETURN t {.*} AS talk, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "talk_id": talk_id,
+                "props": update_props,
+            },
+        )
+        if result is None:
+            raise ToolboxTalkNotFoundError(talk_id)
+        return self._to_model(result)

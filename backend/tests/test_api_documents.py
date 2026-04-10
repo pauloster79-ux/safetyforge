@@ -31,7 +31,7 @@ class TestCreateDocument:
         assert data["title"] == "Test SSSP Document"
         assert data["document_type"] == "sssp"
         assert data["status"] == "draft"
-        assert data["company_id"] == test_company.id
+        assert data["company_id"] == test_company["id"]
         assert data["id"].startswith("doc_")
         assert data["created_by"] == "test_user_001"
 
@@ -219,7 +219,7 @@ class TestDocumentStats:
         data = response.json()
         assert data["total"] == 3
         assert data["this_month"] == 3
-        assert data["monthly_limit"] == 3  # Free tier
+        assert data["monthly_limit"] is None  # Professional tier (unlimited)
         assert data["by_type"]["sssp"] == 1
         assert data["by_type"]["jha"] == 1
         assert data["by_type"]["toolbox_talk"] == 1

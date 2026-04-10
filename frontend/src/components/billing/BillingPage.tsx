@@ -1,4 +1,4 @@
-import { Check, Zap, Loader2, CreditCard, ArrowRight } from 'lucide-react';
+import { Check, Zap, Loader2, CreditCard, ArrowRight, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ export function BillingPage() {
   const { data: subscription, isLoading } = useSubscription();
   const upgradeSubscription = useUpgradeSubscription();
 
-  const currentPlanId = subscription?.plan_id || 'free';
+  const currentPlanId = (subscription?.plan_name || 'free').toLowerCase();
   const subscriptionStatus = subscription?.status || company?.subscription_status || 'free';
 
   const handleUpgrade = (tierId: string) => {
@@ -35,6 +35,34 @@ export function BillingPage() {
           Manage your subscription plan and billing details
         </p>
       </div>
+
+      {subscription?.is_trial && subscription.trial_days_remaining != null && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-3 py-4">
+            <Clock className="h-5 w-5 text-primary flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">
+                {subscription.trial_days_remaining > 0
+                  ? `${subscription.trial_days_remaining} day${subscription.trial_days_remaining !== 1 ? 's' : ''} left in your free trial`
+                  : 'Your free trial has ended'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {subscription.trial_days_remaining > 0
+                  ? 'Upgrade to keep full access to all features after your trial ends.'
+                  : 'Upgrade now to continue using Kerf.'}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="bg-primary hover:bg-[var(--machine-dark)] flex-shrink-0"
+              onClick={() => handleUpgrade('professional')}
+              disabled={upgradeSubscription.isPending}
+            >
+              Upgrade Now
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

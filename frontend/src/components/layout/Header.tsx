@@ -1,7 +1,8 @@
-import { Menu, LogOut, User, Settings } from 'lucide-react';
+import { Menu, LogOut, User, Settings, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
-import { useCompany } from '@/hooks/useCompany';
+import { useCompany, useSubscription } from '@/hooks/useCompany';
 import { useProjects } from '@/hooks/useProjects';
 import { ROUTES } from '@/lib/constants';
 import { LocaleToggle } from './LocaleToggle';
@@ -22,6 +23,7 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { data: company } = useCompany();
+  const { data: subscription } = useSubscription();
   const { data: projects } = useProjects();
   const navigate = useNavigate();
 
@@ -55,17 +57,26 @@ export function Header({ onMenuClick }: HeaderProps) {
         </Button>
         <div className="min-w-0">
           <h1 className="text-sm font-bold text-foreground truncate lg:text-base">
-            {currentProject?.name || company?.name || 'SafetyForge'}
+            {currentProject?.name || company?.name || 'Kerf'}
           </h1>
           <p className="font-mono text-[11px] text-muted-foreground truncate hidden sm:block">
-            {currentProject ? `PRJ-${currentProject.id.slice(0, 3).toUpperCase()}` : ''} &bull; Last updated 4 min ago
-            {currentProject ? ` \u2022 ${activeProjects.length} active projects` : ''}
+            {activeProjects.length > 0 ? `${activeProjects.length} active project${activeProjects.length !== 1 ? 's' : ''}` : 'No projects yet'}
           </p>
         </div>
       </div>
 
       {/* Right: actions + avatar */}
       <div className="flex items-center gap-2 flex-shrink-0">
+        {subscription?.is_trial && subscription.trial_days_remaining != null && subscription.trial_days_remaining > 0 && (
+          <Badge
+            className="cursor-pointer bg-primary/10 text-primary hover:bg-primary/20 text-[11px] gap-1 hidden sm:flex"
+            onClick={() => navigate(ROUTES.BILLING)}
+          >
+            <Clock className="h-3 w-3" />
+            {subscription.trial_days_remaining}d trial
+          </Badge>
+        )}
+
         <LocaleToggle />
 
         <Button

@@ -56,7 +56,7 @@ TINY_PNG_BASE64 = (
 def _create_project(client: TestClient) -> str:
     """Helper to create a project and return its ID."""
     resp = client.post(
-        "/me/projects",
+        "/api/v1/me/projects",
         json={
             "name": "Hazard Test Project",
             "address": "456 Safety Lane, TX 75001",
@@ -95,7 +95,7 @@ class TestCreateHazardReport:
 
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             response = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": f"data:image/png;base64,{TINY_PNG_BASE64}",
@@ -125,7 +125,7 @@ class TestCreateHazardReport:
         """Creating a report for a nonexistent project returns 404."""
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             response = client.post(
-                "/me/projects/proj_nonexistent/hazard-reports",
+                "/api/v1/me/projects/proj_nonexistent/hazard-reports",
                 json={
                     "project_id": "proj_nonexistent",
                     "photo_base64": TINY_PNG_BASE64,
@@ -146,7 +146,7 @@ class TestListHazardReports:
         # Create two reports
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -155,7 +155,7 @@ class TestListHazardReports:
                 },
             )
             client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -164,7 +164,7 @@ class TestListHazardReports:
                 },
             )
 
-        response = client.get(f"/me/projects/{project_id}/hazard-reports")
+        response = client.get(f"/api/v1/me/projects/{project_id}/hazard-reports")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -173,7 +173,7 @@ class TestListHazardReports:
     def test_list_hazard_reports_empty(self, client: TestClient, test_company):
         """List reports for a project with no reports returns empty."""
         project_id = _create_project(client)
-        response = client.get(f"/me/projects/{project_id}/hazard-reports")
+        response = client.get(f"/api/v1/me/projects/{project_id}/hazard-reports")
         assert response.status_code == 200
         data = response.json()
         assert data["reports"] == []
@@ -187,7 +187,7 @@ class TestListHazardReports:
 
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             resp = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -198,13 +198,13 @@ class TestListHazardReports:
 
         # Update one to corrected
         client.patch(
-            f"/me/projects/{project_id}/hazard-reports/{report_id}",
+            f"/api/v1/me/projects/{project_id}/hazard-reports/{report_id}",
             json={"status": "corrected", "corrective_action_taken": "Fixed it"},
         )
 
         # Filter by corrected
         response = client.get(
-            f"/me/projects/{project_id}/hazard-reports?status=corrected"
+            f"/api/v1/me/projects/{project_id}/hazard-reports?status=corrected"
         )
         assert response.status_code == 200
         data = response.json()
@@ -213,7 +213,7 @@ class TestListHazardReports:
 
         # Filter by open should return 0
         response = client.get(
-            f"/me/projects/{project_id}/hazard-reports?status=open"
+            f"/api/v1/me/projects/{project_id}/hazard-reports?status=open"
         )
         assert response.status_code == 200
         assert response.json()["total"] == 0
@@ -228,7 +228,7 @@ class TestGetHazardReport:
 
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             create_resp = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -239,7 +239,7 @@ class TestGetHazardReport:
 
         report_id = create_resp.json()["id"]
         response = client.get(
-            f"/me/projects/{project_id}/hazard-reports/{report_id}"
+            f"/api/v1/me/projects/{project_id}/hazard-reports/{report_id}"
         )
         assert response.status_code == 200
         data = response.json()
@@ -250,7 +250,7 @@ class TestGetHazardReport:
         """Get a nonexistent report returns 404."""
         project_id = _create_project(client)
         response = client.get(
-            f"/me/projects/{project_id}/hazard-reports/hzrd_nonexistent"
+            f"/api/v1/me/projects/{project_id}/hazard-reports/hzrd_nonexistent"
         )
         assert response.status_code == 404
 
@@ -264,7 +264,7 @@ class TestUpdateHazardReportStatus:
 
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             create_resp = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -274,7 +274,7 @@ class TestUpdateHazardReportStatus:
 
         report_id = create_resp.json()["id"]
         response = client.patch(
-            f"/me/projects/{project_id}/hazard-reports/{report_id}",
+            f"/api/v1/me/projects/{project_id}/hazard-reports/{report_id}",
             json={
                 "status": "corrected",
                 "corrective_action_taken": "Installed guardrails and provided harnesses",
@@ -293,7 +293,7 @@ class TestUpdateHazardReportStatus:
 
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             create_resp = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -303,7 +303,7 @@ class TestUpdateHazardReportStatus:
 
         report_id = create_resp.json()["id"]
         response = client.patch(
-            f"/me/projects/{project_id}/hazard-reports/{report_id}",
+            f"/api/v1/me/projects/{project_id}/hazard-reports/{report_id}",
             json={"status": "in_progress"},
         )
         assert response.status_code == 200
@@ -315,7 +315,7 @@ class TestUpdateHazardReportStatus:
         """Updating a nonexistent report returns 404."""
         project_id = _create_project(client)
         response = client.patch(
-            f"/me/projects/{project_id}/hazard-reports/hzrd_nonexistent",
+            f"/api/v1/me/projects/{project_id}/hazard-reports/hzrd_nonexistent",
             json={"status": "corrected"},
         )
         assert response.status_code == 404
@@ -330,7 +330,7 @@ class TestDeleteHazardReport:
 
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             create_resp = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -340,13 +340,13 @@ class TestDeleteHazardReport:
 
         report_id = create_resp.json()["id"]
         delete_resp = client.delete(
-            f"/me/projects/{project_id}/hazard-reports/{report_id}"
+            f"/api/v1/me/projects/{project_id}/hazard-reports/{report_id}"
         )
         assert delete_resp.status_code == 204
 
         # Verify it's gone
         get_resp = client.get(
-            f"/me/projects/{project_id}/hazard-reports/{report_id}"
+            f"/api/v1/me/projects/{project_id}/hazard-reports/{report_id}"
         )
         assert get_resp.status_code == 404
 
@@ -354,7 +354,7 @@ class TestDeleteHazardReport:
         """Deleting a nonexistent report returns 404."""
         project_id = _create_project(client)
         response = client.delete(
-            f"/me/projects/{project_id}/hazard-reports/hzrd_nonexistent"
+            f"/api/v1/me/projects/{project_id}/hazard-reports/hzrd_nonexistent"
         )
         assert response.status_code == 404
 
@@ -366,7 +366,7 @@ class TestQuickAnalysis:
         """Quick analysis returns hazards without creating a report."""
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             response = client.post(
-                "/me/analyze-photo",
+                "/api/v1/me/analyze-photo",
                 json={
                     "photo_base64": TINY_PNG_BASE64,
                     "media_type": "image/png",
@@ -388,7 +388,7 @@ class TestQuickAnalysis:
         """Quick analysis correctly strips data URI prefix."""
         with _mock_anthropic_vision(SAMPLE_AI_ANALYSIS):
             response = client.post(
-                "/me/analyze-photo",
+                "/api/v1/me/analyze-photo",
                 json={
                     "photo_base64": f"data:image/jpeg;base64,{TINY_PNG_BASE64}",
                     "media_type": "image/jpeg",
@@ -436,7 +436,7 @@ class TestHazardSeverityRanking:
 
         with _mock_anthropic_vision(imminent_analysis):
             response = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,
@@ -461,7 +461,7 @@ class TestHazardSeverityRanking:
 
         with _mock_anthropic_vision(clean_analysis):
             response = client.post(
-                f"/me/projects/{project_id}/hazard-reports",
+                f"/api/v1/me/projects/{project_id}/hazard-reports",
                 json={
                     "project_id": project_id,
                     "photo_base64": TINY_PNG_BASE64,

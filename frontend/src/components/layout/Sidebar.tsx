@@ -7,6 +7,7 @@ import {
   CreditCard,
   X,
   Users,
+  UsersRound,
   ClipboardList,
   Shield,
   BarChart3,
@@ -18,6 +19,7 @@ import {
   Search,
   Leaf,
   Wrench,
+  BookTemplate,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/lib/constants';
@@ -55,11 +57,12 @@ function useNavSections(): NavSection[] {
     {
       label: 'Safety',
       items: [
-        { label: 'Inspections', icon: Search, path: ROUTES.PROJECTS, badge: '3' },
+        { label: 'Inspections', icon: Search, path: ROUTES.INSPECTIONS_LIST },
         { label: 'Documents', icon: FileText, path: ROUTES.DOCUMENTS },
-        { label: 'Incidents', icon: AlertTriangle, path: ROUTES.PROJECTS, badge: '1' },
+        { label: 'Templates', icon: BookTemplate, path: ROUTES.TEMPLATES },
+        { label: 'Incidents', icon: AlertTriangle, path: ROUTES.INCIDENTS_LIST },
         { label: 'Workers', icon: Users, path: ROUTES.WORKERS },
-        { label: 'Toolbox Talks', icon: MessageSquare, path: ROUTES.PROJECTS },
+        { label: 'Toolbox Talks', icon: MessageSquare, path: ROUTES.TOOLBOX_TALKS_LIST },
         { label: j.complianceAudit.name, icon: Shield, path: ROUTES.MOCK_INSPECTION },
         { label: 'Equipment', icon: Wrench, path: ROUTES.EQUIPMENT },
       ],
@@ -84,6 +87,7 @@ function useNavSections(): NavSection[] {
       label: 'Settings',
       items: [
         { label: 'Settings', icon: Settings, path: ROUTES.SETTINGS },
+        { label: 'Team', icon: UsersRound, path: ROUTES.TEAM },
         { label: 'Billing', icon: CreditCard, path: ROUTES.BILLING },
       ],
     },
@@ -126,8 +130,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               </svg>
             </div>
             <div className="flex items-baseline gap-0">
-              <span className="text-base font-bold text-foreground">Safety</span>
-              <span className="text-base font-bold text-[#F5B800]">Forge</span>
+              <span className="text-base font-bold text-foreground">Kerf</span>
             </div>
           </Link>
           <Button

@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf User Manual - Complete Guide</title>
+<style>
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand-yellow: #F5B800;
+  --brand-yellow-light: #FFF3CC;
+  --brand-yellow-hover: #D9A300;
+  --brand-dark: #1a1a1a;
+  --brand-dark-soft: #2a2a2a;
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --orange-50: #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-600: #ea580c;
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-600: #9333ea;
+  --sidebar-width: 280px;
+  --header-height: 64px;
+  --content-max: 900px;
+  --radius: 8px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+}
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  line-height: 1.7;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--header-height);
+  background: var(--brand-dark);
+  color: var(--white);
+  display: flex; align-items: center; padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.site-header .logo {
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 10px;
+}
+.site-header .logo-icon {
+  width: 32px; height: 32px; background: var(--brand-yellow);
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; color: var(--brand-dark); font-weight: 900;
+}
+.site-header .subtitle {
+  font-size: 0.85rem; color: var(--gray-400); margin-left: auto;
+  font-weight: 400;
+}
+.menu-toggle {
+  display: none; background: none; border: none; color: var(--white);
+  font-size: 1.5rem; cursor: pointer; margin-right: 12px; padding: 4px;
+}
+
+/* ============================================
+   SIDEBAR / TABLE OF CONTENTS
+   ============================================ */
+.sidebar {
+  position: fixed; top: var(--header-height); left: 0; bottom: 0;
+  width: var(--sidebar-width); background: var(--white);
+  border-right: 1px solid var(--gray-200);
+  overflow-y: auto; padding: 20px 0; z-index: 90;
+  transition: transform 0.3s ease;
+}
+.sidebar-title {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--gray-400); padding: 0 20px 12px;
+}
+.sidebar nav a {
+  display: block; padding: 7px 20px; font-size: 0.85rem;
+  color: var(--gray-600); text-decoration: none;
+  border-left: 3px solid transparent; transition: all 0.15s;
+}
+.sidebar nav a:hover {
+  color: var(--brand-dark); background: var(--gray-50);
+  border-left-color: var(--gray-300);
+}
+.sidebar nav a.active {
+  color: var(--brand-dark); font-weight: 600;
+  border-left-color: var(--brand-yellow); background: var(--brand-yellow-light);
+}
+.sidebar nav a.sub {
+  padding-left: 36px; font-size: 0.8rem; color: var(--gray-500);
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+.main-content {
+  margin-left: var(--sidebar-width); padding-top: var(--header-height);
+  min-height: 100vh;
+}
+.content-wrapper {
+  max-width: var(--content-max); margin: 0 auto;
+  padding: 40px 32px 80px;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 { font-size: 2.2rem; font-weight: 800; color: var(--brand-dark); margin-bottom: 12px; letter-spacing: -0.03em; line-height: 1.2; }
+h2 { font-size: 1.7rem; font-weight: 700; color: var(--brand-dark); margin: 56px 0 16px; padding-top: 24px; border-top: 2px solid var(--gray-200); letter-spacing: -0.02em; }
+h3 { font-size: 1.25rem; font-weight: 700; color: var(--gray-800); margin: 36px 0 12px; }
+h4 { font-size: 1.05rem; font-weight: 600; color: var(--gray-700); margin: 24px 0 8px; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 0 0 16px 24px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+code { background: var(--gray-100); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: 'SF Mono', 'Consolas', monospace; }
+
+.lead { font-size: 1.15rem; color: var(--gray-600); margin-bottom: 32px; line-height: 1.8; }
+
+/* ============================================
+   SECTION COLLAPSIBLE
+   ============================================ */
+details.feature-section { margin-bottom: 8px; }
+details.feature-section > summary {
+  cursor: pointer; padding: 14px 20px; background: var(--white);
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  font-size: 1rem; font-weight: 600; color: var(--brand-dark);
+  display: flex; align-items: center; gap: 10px;
+  transition: background 0.15s; list-style: none;
+  box-shadow: var(--shadow-sm);
+}
+details.feature-section > summary::-webkit-details-marker { display: none; }
+details.feature-section > summary::before {
+  content: "\25B6"; font-size: 0.65rem; color: var(--gray-400);
+  transition: transform 0.2s; flex-shrink: 0;
+}
+details.feature-section[open] > summary::before { transform: rotate(90deg); }
+details.feature-section > summary:hover { background: var(--gray-50); }
+details.feature-section[open] > summary {
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+  background: var(--brand-yellow-light); border-color: var(--brand-yellow);
+}
+details.feature-section > .section-body {
+  border: 1px solid var(--gray-200); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 24px; background: var(--white);
+}
+
+/* ============================================
+   SUBSECTION TABS
+   ============================================ */
+.subsection { margin-bottom: 28px; }
+.subsection-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 4px 10px; border-radius: 4px;
+  margin-bottom: 10px;
+}
+.subsection-label.business { background: var(--blue-100); color: var(--blue-700); }
+.subsection-label.regulation { background: var(--red-100); color: var(--red-700); }
+.subsection-label.traditional { background: var(--orange-100); color: var(--orange-600); }
+.subsection-label.kerf { background: var(--brand-yellow-light); color: #8B6914; }
+.subsection-label.benefits { background: var(--green-100); color: var(--green-700); }
+
+/* ============================================
+   JURISDICTION FLAGS
+   ============================================ */
+.jur-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px; margin: 12px 0 20px;
+}
+.jur-card {
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  padding: 14px; background: var(--white);
+}
+.jur-card .jur-flag {
+  font-size: 1.3rem; margin-right: 6px;
+}
+.jur-card .jur-name {
+  font-weight: 700; font-size: 0.95rem; color: var(--brand-dark);
+}
+.jur-card .jur-body {
+  font-size: 0.85rem; color: var(--gray-600); margin-top: 8px; line-height: 1.6;
+}
+
+/* Single jurisdiction badge inline */
+.jur-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.78rem; font-weight: 600; padding: 2px 8px;
+  border-radius: 4px; margin: 0 2px;
+}
+.jur-badge.us { background: #DBEAFE; color: #1E40AF; }
+.jur-badge.uk { background: #FCE7F3; color: #9D174D; }
+.jur-badge.au { background: #D1FAE5; color: #065F46; }
+.jur-badge.ca { background: #FEE2E2; color: #991B1B; }
+
+/* ============================================
+   INFO BOXES / CALLOUTS
+   ============================================ */
+.callout {
+  padding: 16px 20px; border-radius: var(--radius);
+  margin: 16px 0; font-size: 0.92rem; line-height: 1.7;
+  border-left: 4px solid;
+}
+.callout.info { background: var(--blue-50); border-color: var(--blue-600); }
+.callout.warning { background: var(--orange-50); border-color: var(--orange-600); }
+.callout.danger { background: var(--red-50); border-color: var(--red-600); }
+.callout.success { background: var(--green-50); border-color: var(--green-600); }
+.callout.tip { background: var(--purple-50); border-color: var(--purple-600); }
+.callout strong { display: block; margin-bottom: 4px; }
+
+/* ============================================
+   TABLES
+   ============================================ */
+.styled-table {
+  width: 100%; border-collapse: collapse; margin: 16px 0;
+  font-size: 0.88rem;
+}
+.styled-table th, .styled-table td {
+  padding: 10px 14px; text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+.styled-table th {
+  background: var(--gray-100); font-weight: 600;
+  color: var(--gray-700); font-size: 0.82rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.styled-table tbody tr:hover { background: var(--gray-50); }
+
+/* ============================================
+   STEP INDICATORS
+   ============================================ */
+.steps { counter-reset: step; margin: 16px 0; padding: 0; list-style: none; }
+.steps li {
+  counter-increment: step; padding: 10px 0 10px 48px;
+  position: relative; margin-bottom: 4px;
+}
+.steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 8px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--brand-yellow); color: var(--brand-dark);
+  font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ============================================
+   PRICING TABLE
+   ============================================ */
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px; margin: 16px 0;
+}
+.pricing-card {
+  border: 1px solid var(--gray-200); border-radius: var(--radius);
+  padding: 16px; text-align: center; background: var(--white);
+}
+.pricing-card.featured {
+  border-color: var(--brand-yellow); box-shadow: 0 0 0 2px var(--brand-yellow);
+}
+.pricing-card .tier-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+.pricing-card .tier-price { font-size: 1.4rem; font-weight: 800; color: var(--brand-dark); }
+.pricing-card .tier-price span { font-size: 0.8rem; font-weight: 400; color: var(--gray-500); }
+.pricing-card .tier-detail { font-size: 0.8rem; color: var(--gray-500); margin-top: 8px; line-height: 1.5; }
+
+/* ============================================
+   GLOSSARY
+   ============================================ */
+.glossary-grid {
+  display: grid; grid-template-columns: 1fr; gap: 0;
+}
+.glossary-item {
+  padding: 14px 0; border-bottom: 1px solid var(--gray-200);
+}
+.glossary-item dt {
+  font-weight: 700; color: var(--brand-dark); font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.glossary-item dd {
+  font-size: 0.88rem; color: var(--gray-600); line-height: 1.6;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .main-content { margin-left: 0; }
+  .content-wrapper { padding: 24px 16px 60px; }
+  .menu-toggle { display: block; }
+  h1 { font-size: 1.7rem; }
+  h2 { font-size: 1.3rem; }
+  .jur-grid { grid-template-columns: 1fr 1fr; }
+  .pricing-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 500px) {
+  .jur-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+}
+
+/* Print styles */
+@media print {
+  .sidebar, .site-header, .menu-toggle { display: none; }
+  .main-content { margin-left: 0; padding-top: 0; }
+  details.feature-section { break-inside: avoid; }
+  details.feature-section[open] > summary { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==========================================
+     HEADER
+     ========================================== -->
+<header class="site-header">
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Toggle navigation">&#9776;</button>
+  <div class="logo">
+    <div class="logo-icon">SF</div>
+    Kerf
+  </div>
+  <span class="subtitle">Complete User Manual &amp; Regulatory Guide</span>
+</header>
+
+<!-- ==========================================
+     SIDEBAR
+     ========================================== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-title">Contents</div>
+  <nav>
+    <a href="#intro">Introduction</a>
+    <a href="#who" class="sub">Who This Manual Is For</a>
+    <a href="#how-to-read" class="sub">How to Read This Guide</a>
+    <a href="#jurisdictions">Jurisdictions Overview</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#projects">Projects</a>
+    <a href="#morning-brief" class="sub">Morning Safety Brief</a>
+    <a href="#inspections">Inspections</a>
+    <a href="#documents">Documents &amp; AI Generation</a>
+    <a href="#workers">Workers &amp; Certifications</a>
+    <a href="#cert-matrix" class="sub">Certification Matrix</a>
+    <a href="#toolbox-talks">Toolbox Talks</a>
+    <a href="#incidents">Incident Management</a>
+    <a href="#mock-osha">Mock OSHA Inspection</a>
+    <a href="#equipment">Equipment Tracking</a>
+    <a href="#osha-log">OSHA Log (300/300A)</a>
+    <a href="#state-compliance">Regional Compliance</a>
+    <a href="#prequalification">Prequalification</a>
+    <a href="#gc-portal">GC Portal</a>
+    <a href="#environmental">Environmental Programs</a>
+    <a href="#analytics">Analytics &amp; Rates</a>
+    <a href="#settings">Settings &amp; Billing</a>
+    <a href="#glossary">Glossary</a>
+  </nav>
+</aside>
+
+<!-- ==========================================
+     MAIN CONTENT
+     ========================================== -->
+<div class="main-content">
+<div class="content-wrapper">
+
+<!-- ==========================================
+     INTRODUCTION
+     ========================================== -->
+<h1 id="intro">Kerf User Manual</h1>
+<p class="lead">
+  Kerf is a construction safety management platform that helps contractors, general contractors, and subcontractors stay compliant with safety regulations, manage worker certifications, conduct inspections, generate safety documents, and track incidents. This manual explains every feature in the context of the real-world business processes and regulations that make them necessary.
+</p>
+
+<h3 id="who">Who This Manual Is For</h3>
+<p>
+  This guide is written for someone with <strong>no prior construction industry experience</strong>. Every section explains the underlying business problem, the regulatory requirement that creates it, the traditional way companies handle it, and then how Kerf automates or simplifies the process. If you already work in construction safety, you can skip the business-context paragraphs and focus on the "How Kerf Helps" subsections.
+</p>
+
+<h3 id="how-to-read">How to Read This Guide</h3>
+<p>Each feature section is organized into five subsections, each marked with a colored label:</p>
+<ul>
+  <li><span class="subsection-label business">The Business Need</span> Why this process exists in the real world</li>
+  <li><span class="subsection-label regulation">Regulatory Landscape</span> Which laws and agencies require it, across all four jurisdictions</li>
+  <li><span class="subsection-label traditional">Traditional Approach</span> How companies manage this without software</li>
+  <li><span class="subsection-label kerf">How Kerf Helps</span> What the app does and how to use it</li>
+  <li><span class="subsection-label benefits">Key Benefits</span> Measurable advantages</li>
+</ul>
+<p>Click any section heading below to expand it. Use the sidebar on the left (or the hamburger menu on mobile) to jump between sections.</p>
+
+
+<!-- ==========================================
+     JURISDICTIONS OVERVIEW
+     ========================================== -->
+<h2 id="jurisdictions">Jurisdictions Overview</h2>
+<p>Construction safety regulation is not global. Each country has its own enforcement agency, laws, penalty structure, and terminology. Kerf supports four jurisdictions and adapts its forms, document templates, terminology, and compliance checks to match the regulatory framework of the selected jurisdiction.</p>
+
+<div class="jur-grid">
+  <div class="jur-card">
+    <span class="jur-flag">&#127482;&#127480;</span><span class="jur-name">United States</span>
+    <div class="jur-body">
+      <strong>Agency:</strong> OSHA (Occupational Safety and Health Administration)<br>
+      <strong>Primary law:</strong> 29 CFR 1926 (Construction Industry Standards)<br>
+      <strong>Recordkeeping:</strong> 29 CFR 1904 (OSHA 300 Log)<br>
+      <strong>Enforcement:</strong> Federal OSHA + 22 State Plan states (e.g., Cal/OSHA, WA L&amp;I)<br>
+      <strong>Penalty range:</strong> Up to $16,131/serious violation; $161,323/willful or repeat<br>
+      <strong>Key concept:</strong> Multi-employer doctrine (GCs can be cited for subcontractor failures)
+    </div>
+  </div>
+  <div class="jur-card">
+    <span class="jur-flag">&#127468;&#127463;</span><span class="jur-name">United Kingdom</span>
+    <div class="jur-body">
+      <strong>Agency:</strong> HSE (Health and Safety Executive)<br>
+      <strong>Primary law:</strong> Health and Safety at Work Act 1974<br>
+      <strong>Construction-specific:</strong> CDM Regulations 2015 (Construction Design and Management)<br>
+      <strong>Incident reporting:</strong> RIDDOR (Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013)<br>
+      <strong>Substances:</strong> COSHH Regulations 2002<br>
+      <strong>Key concept:</strong> RAMS (Risk Assessments and Method Statements) are required before any work begins
+    </div>
+  </div>
+  <div class="jur-card">
+    <span class="jur-flag">&#127462;&#127482;</span><span class="jur-name">Australia</span>
+    <div class="jur-body">
+      <strong>Agency:</strong> Safe Work Australia (national); SafeWork NSW, WorkSafe Victoria, etc. (state)<br>
+      <strong>Primary law:</strong> WHS Act 2011 (harmonised nationally, except Victoria and WA have their own versions)<br>
+      <strong>Construction-specific:</strong> SWMS (Safe Work Method Statements) required for high-risk construction work<br>
+      <strong>Threshold:</strong> WHS Management Plans for projects over $250,000<br>
+      <strong>Key concept:</strong> Notifiable incidents must be reported to the regulator immediately by phone
+    </div>
+  </div>
+  <div class="jur-card">
+    <span class="jur-flag">&#127464;&#127462;</span><span class="jur-name">Canada</span>
+    <div class="jur-body">
+      <strong>Agency:</strong> Federal: Employment and Social Development Canada. Provincial: e.g., Ontario MOL, WorkSafeBC, Alberta OHS<br>
+      <strong>Primary law:</strong> Canada Labour Code (federal); each province has separate OHS legislation<br>
+      <strong>Construction-specific:</strong> FLHA (Field Level Hazard Assessment) widely used in Alberta/BC<br>
+      <strong>Key concept:</strong> JHSC (Joint Health and Safety Committee) requirements; CSA standards referenced<br>
+      <strong>Workers' comp:</strong> WSIB (Ontario), WorkSafeBC (British Columbia), etc.
+    </div>
+  </div>
+</div>
+
+<div class="callout info">
+  <strong>Why jurisdictions matter in Kerf</strong>
+  When you select a jurisdiction (via the dropdown in Settings or during company onboarding), Kerf adjusts document templates, inspection checklists, terminology (e.g., "OSHA 300 Log" vs. "RIDDOR Report"), penalty references, and compliance thresholds. This means the safety documents you generate are tailored to the laws that actually apply to your worksite.
+</div>
+
+
+<!-- ==========================================
+     DASHBOARD
+     ========================================== -->
+<h2 id="dashboard">Dashboard</h2>
+
+<details class="feature-section" open>
+<summary>Dashboard &mdash; Your Safety Command Center</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>A construction company's safety director needs to see the health of all projects at a glance every morning. Are inspections happening? Are any workers' certifications about to expire? Have there been recent incidents? Is our injury rate trending up? Without a centralized view, this information lives in scattered spreadsheets, filing cabinets, and different people's heads.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p>While no regulation specifically requires a "dashboard," many require <em>proactive monitoring</em> of safety programs. For example:</p>
+  <ul>
+    <li><span class="jur-badge us">US</span> OSHA's General Duty Clause (Section 5(a)(1)) requires employers to maintain a workplace free of recognized hazards. This effectively mandates ongoing safety oversight.</li>
+    <li><span class="jur-badge uk">UK</span> CDM 2015 requires the principal contractor to plan, manage, and monitor safety throughout the project lifecycle.</li>
+    <li><span class="jur-badge au">AU</span> WHS Act 2011 requires PCBUs (Persons Conducting a Business or Undertaking) to ensure worker health and safety so far as is reasonably practicable, which implies active monitoring.</li>
+    <li><span class="jur-badge ca">CA</span> Provincial OHS legislation requires employers to establish and maintain a safety management system, which includes monitoring metrics like injury rates.</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Safety directors typically start each day by making phone calls to site supervisors, reviewing hand-written inspection logs, checking a spreadsheet for upcoming certification expirations, and manually calculating injury rates from paper incident reports. This process is slow, error-prone, and often means problems are discovered after they have already become serious.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>The Kerf dashboard presents everything at a glance:</p>
+  <ul>
+    <li><strong>Status strip</strong> at the top shows five key numbers: Active Projects, Inspections completed, total Workers, Certification Alerts (expiring soon), and your company's TRIR (Total Recordable Incident Rate).</li>
+    <li><strong>Document usage counter</strong> shows how many AI-generated documents you have used this month versus your plan's limit (e.g., "8 of 25 documents used").</li>
+    <li><strong>Recent documents</strong> lists your latest safety documents with their status (DRAFT or FINAL) for quick access.</li>
+    <li><strong>Certification alerts table</strong> highlights workers whose certifications are expiring within 30, 14, 7, or 1 day, color-coded by urgency.</li>
+    <li><strong>Active projects</strong> shows each project with a compliance percentage ring, giving you an immediate sense of which projects need attention.</li>
+    <li><strong>Quick actions</strong>: Three buttons let you jump directly to creating a New Inspection, New Document, or New Project.</li>
+    <li><strong>Language toggle</strong>: Switch between English and Spanish (EN/ES) for the entire interface, important on bilingual construction sites.</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Reduces morning safety review from 30+ minutes to under 2 minutes</li>
+    <li>Ensures no expiring certification goes unnoticed, preventing workers from operating with lapsed credentials</li>
+    <li>TRIR visibility enables proactive intervention before rates climb to levels that affect insurance premiums or bidding eligibility</li>
+    <li>Bilingual support ensures Spanish-speaking supervisors can access the same information without translation delay</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     PROJECTS
+     ========================================== -->
+<h2 id="projects">Projects</h2>
+
+<details class="feature-section">
+<summary>Projects &mdash; Organizing Safety by Jobsite</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction companies manage multiple active projects simultaneously, each at a different physical location, each with different trades, different hazards, and sometimes different regulatory jurisdictions. A high-rise office building in downtown Chicago has completely different safety requirements than a residential subdivision in rural Texas. Safety management must be organized per project because inspections, incidents, workers, and documents all belong to specific jobsites.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <div class="jur-grid">
+    <div class="jur-card">
+      <span class="jur-flag">&#127482;&#127480;</span><span class="jur-name">United States</span>
+      <div class="jur-body">OSHA requires a Site-Specific Safety Plan (SSSP) for each project. Multi-employer worksites must identify the controlling employer, creating employer, exposing employer, and correcting employer. Each project must have an emergency action plan specific to that site (29 CFR 1926.35).</div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127468;&#127463;</span><span class="jur-name">United Kingdom</span>
+      <div class="jur-body">CDM 2015 requires a Construction Phase Plan for every project where construction work is carried out. For projects with more than one contractor, a Principal Designer and Principal Contractor must be appointed. Notification to HSE is required if the project lasts more than 30 working days with more than 20 workers, or exceeds 500 person-days.</div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127462;&#127482;</span><span class="jur-name">Australia</span>
+      <div class="jur-body">WHS Regulations require a WHS Management Plan for construction projects valued at $250,000 or more. The principal contractor must prepare and maintain this plan. Safe Work Method Statements (SWMS) are required for each high-risk activity within a project.</div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127464;&#127462;</span><span class="jur-name">Canada</span>
+      <div class="jur-body">Provincial OHS regulations typically require a project-specific safety plan. In Alberta, a Prime Contractor designation is required for multi-employer sites. Ontario's Construction Projects regulation (O. Reg. 213/91) mandates a project-specific notice of project to the MOL for projects with a cost exceeding $50,000 or a duration exceeding three months.</div>
+    </div>
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Companies maintain manila folders or binders for each project, stored at the job trailer on-site. The safety director drives between sites to review documentation. Project information is duplicated across the safety plan, permit applications, and client submissions. When a worker moves between projects, their certifications must be manually verified at each site. Compliance tracking is done through periodic audits, often weeks or months apart.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p><strong>Project List:</strong> View all your projects with status filters (Active, Completed, On Hold). Each card shows the project name, address, and current compliance percentage.</p>
+  <p><strong>New Project Form</strong> captures all the information needed for regulatory compliance in one place:</p>
+  <ul>
+    <li>Project name and address</li>
+    <li>Client/owner name</li>
+    <li>Project type (Commercial, Residential, Industrial, Infrastructure, Renovation)</li>
+    <li>Estimated worker count and date range</li>
+    <li>14 trade types (Electrical, Plumbing, Structural Steel, Concrete, Carpentry, HVAC, Roofing, Masonry, Painting, Demolition, Excavation, Drywall, Fire Protection, General Labor)</li>
+    <li>Special hazards description (e.g., "lead paint abatement," "confined space entry required")</li>
+    <li>Nearest hospital name and address (required by OSHA for emergency action plans)</li>
+    <li>Emergency contact name and phone</li>
+  </ul>
+  <p><strong>Project Detail</strong> is a comprehensive hub with a compliance ring showing your overall score, plus 9 tabs:</p>
+  <ol class="steps">
+    <li><strong>Overview:</strong> Project summary, dates, trades, and hazard information</li>
+    <li><strong>Inspections:</strong> All inspections conducted at this project, filterable by type and date</li>
+    <li><strong>Toolbox Talks:</strong> Safety briefings delivered at this project, with attendance records</li>
+    <li><strong>Hazards:</strong> Identified hazards specific to this site</li>
+    <li><strong>Incidents:</strong> All incident reports filed at this project</li>
+    <li><strong>Workers:</strong> Workers currently assigned to this project, with their certification status</li>
+    <li><strong>Equipment:</strong> Equipment deployed to this project, with inspection status</li>
+    <li><strong>Documents:</strong> All safety documents (SSSP, JHAs, etc.) generated for this project</li>
+    <li><strong>Settings:</strong> Project-level configuration</li>
+  </ol>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Single source of truth for all safety data per project, accessible from any device</li>
+    <li>Compliance percentage ring provides instant visibility into which projects need attention</li>
+    <li>Pre-structured form ensures no required regulatory information is accidentally omitted</li>
+    <li>Worker assignment tracking means you always know who is on which site and whether their certifications are current for the work being performed</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+<!-- Morning Safety Brief -->
+<h3 id="morning-brief">Morning Safety Brief</h3>
+
+<details class="feature-section">
+<summary>Morning Safety Brief &mdash; Daily Site Risk Assessment</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Every construction morning starts with a brief assessment: What are today's risks? Has anything changed since yesterday? Is the weather going to affect work at height? Are any new trades starting today that introduce different hazards? This "pre-task planning" process is how construction companies prevent the most common cause of incidents: unanticipated hazards.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> OSHA does not explicitly mandate a "morning brief," but pre-shift safety meetings are an industry best practice recognized in OSHA's Voluntary Protection Programs (VPP). Many GCs require daily safety huddles as a contract condition.</p>
+  <p><span class="jur-badge uk">UK</span> CDM 2015 requires site induction and ongoing communication about safety; daily briefings are a standard way to fulfill this.</p>
+  <p><span class="jur-badge au">AU</span> WHS Code of Practice for Construction Work recommends daily pre-start meetings, especially when multiple trades are working simultaneously.</p>
+  <p><span class="jur-badge ca">CA</span> FLHA (Field Level Hazard Assessment) is a daily requirement on many Canadian construction sites, particularly in Alberta and British Columbia.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>A site supervisor stands at the gate with a clipboard, discusses the day's work verbally, and notes any issues on a paper form. Weather checks are done by looking at the sky or a phone app. The form gets filed in the trailer and is rarely reviewed again unless an incident occurs and the company needs to demonstrate it was conducting daily safety briefings.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>The Morning Safety Brief page automatically generates a daily risk assessment for each project, including:</p>
+  <ul>
+    <li><strong>Risk Score (0-10):</strong> A calculated score based on current conditions: weather, active trades, open hazards, recent incidents, and certification alerts</li>
+    <li><strong>Weather conditions:</strong> Current temperature, wind, and precipitation that may affect work at height, concrete pours, or outdoor welding</li>
+    <li><strong>Alerts with action buttons:</strong> Specific warnings (e.g., "2 workers on site have certifications expiring this week") with one-click actions to resolve them</li>
+    <li><strong>Recommended toolbox talk:</strong> Based on today's activities, Kerf suggests a relevant safety topic for the morning briefing</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Transforms a subjective daily ritual into a data-driven risk assessment</li>
+    <li>Catches conditions that humans might overlook (e.g., a certification that expired overnight)</li>
+    <li>Creates a documented record that the company conducted daily safety planning, which is valuable evidence in any enforcement action or litigation</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     INSPECTIONS
+     ========================================== -->
+<h2 id="inspections">Inspections</h2>
+
+<details class="feature-section">
+<summary>Inspections &mdash; Systematic Safety Verification</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction sites change daily. New hazards appear as work progresses: an open excavation that was not there yesterday, scaffolding being erected, electrical systems being energized for the first time. Safety inspections are the mechanism by which someone physically walks the site, checks that safety controls are in place, and documents what they find. Without regular inspections, hazardous conditions go undetected until someone is injured.</p>
+  <p>Inspections also create a paper trail. If OSHA (or equivalent) visits and finds a violation, the company's defense often rests on proving they had a systematic inspection program and took corrective action when issues were found.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <div class="jur-grid">
+    <div class="jur-card">
+      <span class="jur-flag">&#127482;&#127480;</span><span class="jur-name">United States</span>
+      <div class="jur-body">
+        Multiple OSHA standards require inspections at specific intervals:<br>
+        &bull; Scaffolds: "competent person" daily inspection before use (29 CFR 1926.451(f)(3))<br>
+        &bull; Excavations: daily inspection by competent person (29 CFR 1926.651(k))<br>
+        &bull; Fall protection: inspection of personal fall arrest systems before each use (29 CFR 1926.502)<br>
+        &bull; Electrical: assured equipment grounding conductor program requires inspection (29 CFR 1926.404(b)(1))
+      </div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127468;&#127463;</span><span class="jur-name">United Kingdom</span>
+      <div class="jur-body">
+        The Work at Height Regulations 2005 require inspection of work platforms at specified intervals. CDM 2015 requires the principal contractor to ensure the construction phase plan includes arrangements for monitoring compliance. Scaffolding must be inspected before first use, after alteration, after any event likely to have affected stability, and at intervals not exceeding 7 days.
+      </div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127462;&#127482;</span><span class="jur-name">Australia</span>
+      <div class="jur-body">
+        WHS Regulations specify inspection requirements for scaffolds (before first use and every 30 days), excavations, and temporary structures. Codes of Practice published by Safe Work Australia provide detailed guidance on inspection frequencies for each type of work.
+      </div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127464;&#127462;</span><span class="jur-name">Canada</span>
+      <div class="jur-body">
+        Provincial regulations generally require regular workplace inspections. Ontario's Construction Projects regulation requires scaffold inspections by a competent worker before each shift. CSA Z797-18 covers workplace inspection processes. JHSC members have the right to conduct periodic inspections.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>A competent person (a designation with specific meaning in OSHA regulations, referring to someone capable of identifying hazards and authorized to take corrective action) walks the site with a paper checklist. They mark items as satisfactory or deficient, note corrective actions needed, and file the form in the project binder. If a serious deficiency is found, they tell the foreman verbally. The paper form may or may not be reviewed by the safety director at month-end. Patterns across multiple inspections are nearly impossible to identify because the data is trapped on paper.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>Kerf provides <strong>8 inspection types</strong>, each with a tailored checklist:</p>
+  <table class="styled-table">
+    <thead>
+      <tr><th>Inspection Type</th><th>Focus Area</th><th>Typical Items</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Daily Site</td><td>General site conditions</td><td>Housekeeping, barricades, signage, PPE usage, fire extinguishers</td></tr>
+      <tr><td>Scaffold</td><td>Scaffold systems</td><td>Base plates, bracing, planking, guardrails, access ladders, tags</td></tr>
+      <tr><td>Excavation</td><td>Trenches and excavations</td><td>Shoring/sloping, spoil pile distance, access/egress, water accumulation</td></tr>
+      <tr><td>Fall Protection</td><td>Work at height</td><td>Guardrails, safety nets, personal fall arrest systems, anchor points, training verification</td></tr>
+      <tr><td>Electrical</td><td>Electrical safety</td><td>GFCI protection, lockout/tagout, cord condition, panel clearance, grounding</td></tr>
+      <tr><td>Housekeeping</td><td>Site cleanliness and order</td><td>Debris, material storage, walkways, lighting, waste disposal</td></tr>
+      <tr><td>Equipment</td><td>Heavy equipment</td><td>Pre-operation checks, operator certification, safety devices, maintenance records</td></tr>
+      <tr><td>Fire Safety</td><td>Fire prevention</td><td>Extinguisher placement, hot work permits, flammable storage, egress routes</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Creating an inspection:</strong></p>
+  <ol class="steps">
+    <li>Select the inspection type and the project it belongs to</li>
+    <li>Enter the date, inspector name, weather conditions (temperature, wind speed, precipitation), and number of workers on site</li>
+    <li>Work through the checklist, marking each item as <strong>Pass</strong>, <strong>Fail</strong>, or <strong>N/A</strong> (Not Applicable)</li>
+    <li>Add notes and photos for any failed items to document the condition found</li>
+    <li>Save the inspection. Kerf calculates an overall status: Pass (all items pass), Fail (any critical items fail), or Partial (minor items fail)</li>
+  </ol>
+  <p>Voice and Photo input modes are planned for a future release, allowing inspectors to dictate findings and attach photos directly from their mobile device.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Standardized checklists ensure no item is overlooked, even by less experienced inspectors</li>
+    <li>Digital records are searchable and permanent, unlike paper forms that can be lost, damaged, or illegible</li>
+    <li>Trend analysis becomes possible: Kerf can identify that scaffold inspections have failed guardrail checks three times this month, indicating a systemic issue</li>
+    <li>Inspection data feeds into the project compliance score on the dashboard</li>
+    <li>Records are instantly available if OSHA or other regulators request to see your inspection history during a compliance audit</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     DOCUMENTS
+     ========================================== -->
+<h2 id="documents">Documents &amp; AI Generation</h2>
+
+<details class="feature-section">
+<summary>Safety Documents &mdash; AI-Powered Compliance Writing</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction companies must produce extensive written safety documentation for every project. These are not optional paperwork exercises; they are legal documents that define how hazards will be controlled and who is responsible. A typical mid-size commercial project may require a 30-to-50-page Site-Specific Safety Plan, dozens of Job Hazard Analyses (one for each activity), toolbox talk scripts for weekly safety meetings, and various other documents. For companies managing 10+ projects, the documentation burden can overwhelm a safety department.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p>Different jurisdictions require different documents, and call them different names:</p>
+  <table class="styled-table">
+    <thead>
+      <tr><th>Document Type</th><th><span class="jur-badge us">US</span></th><th><span class="jur-badge uk">UK</span></th><th><span class="jur-badge au">AU</span></th><th><span class="jur-badge ca">CA</span></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Site Safety Plan</td>
+        <td>SSSP (Site-Specific Safety Plan); required by most GCs, OSHA VPP programs</td>
+        <td>Construction Phase Plan (CPP); required by CDM 2015</td>
+        <td>WHS Management Plan; required for projects &gt;$250K</td>
+        <td>Project Safety Plan; required by provincial regulations</td>
+      </tr>
+      <tr>
+        <td>Task Risk Assessment</td>
+        <td>JHA (Job Hazard Analysis) or JSA (Job Safety Analysis)</td>
+        <td>RAMS (Risk Assessment and Method Statement)</td>
+        <td>SWMS (Safe Work Method Statement); legally required for high-risk work</td>
+        <td>FLHA (Field Level Hazard Assessment)</td>
+      </tr>
+      <tr>
+        <td>Safety Briefing</td>
+        <td>Toolbox Talk</td>
+        <td>Toolbox Talk</td>
+        <td>Toolbox Talk / Pre-start meeting</td>
+        <td>Tailgate Talk / Toolbox Talk</td>
+      </tr>
+      <tr>
+        <td>Incident Report</td>
+        <td>OSHA Incident Report; reportable events within 8/24 hours</td>
+        <td>RIDDOR Report; to HSE</td>
+        <td>Notifiable Incident Report; to state regulator</td>
+        <td>Provincial Incident Report; to MOL/OHS</td>
+      </tr>
+      <tr>
+        <td>Fall Protection Plan</td>
+        <td>Written Fall Protection Plan (29 CFR 1926.502(k))</td>
+        <td>Work at Height Risk Assessment</td>
+        <td>Fall Prevention Plan per WHS Code of Practice</td>
+        <td>Fall Protection Work Plan</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>A safety director opens a Word document from a previous project, does a find-and-replace on the project name and address, and spends several hours manually updating the content to reflect the current project's specific hazards, trades, and conditions. The result is often a generic document that does not truly address the unique risks of the current site. Worse, many companies use the exact same template for every project, which regulators recognize immediately as a "paper program" that exists only to check a box.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>Kerf uses AI to generate customized safety documents through a <strong>4-step wizard</strong>:</p>
+  <ol class="steps">
+    <li><strong>Select Type:</strong> Choose from 5 document types: SSSP (Site-Specific Safety Plan), JHA (Job Hazard Analysis), Toolbox Talk, Incident Report, or Fall Protection Plan</li>
+    <li><strong>Fill Details:</strong> Provide project-specific information: site address, scope of work, active trades, identified hazards. Kerf pre-populates fields from your project data where possible.</li>
+    <li><strong>Generate:</strong> The AI engine produces a complete, regulation-compliant document customized to your inputs. The content references the applicable regulatory standards for your jurisdiction.</li>
+    <li><strong>Review:</strong> Review the generated content, make any edits, and set the status to Draft or Final. Export to PDF for printing or digital distribution.</li>
+  </ol>
+  <p>Documents go through a lifecycle: <strong>Draft</strong> (being worked on), <strong>Final</strong> (approved and in use), and <strong>Archived</strong> (superseded or project completed). Each document's generation counts against your monthly plan limit.</p>
+
+  <div class="callout tip">
+    <strong>Document generation is tier-limited</strong>
+    The Free plan allows 3 documents per month. Paid plans allow more (see the Billing section). The dashboard's document usage counter shows your current consumption. Viewing and editing existing documents does not count against the limit.
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Reduces document creation time from hours to minutes</li>
+    <li>Every document is customized to the specific project, trades, and hazards, which is a crucial distinction during regulatory audits</li>
+    <li>Documents reference the correct regulatory standards for the selected jurisdiction (OSHA, HSE, Safe Work Australia, or provincial Canadian legislation)</li>
+    <li>PDF export creates professional documents ready for client submission or site posting</li>
+    <li>Version tracking ensures you can always find the current version of any document</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     WORKERS & CERTIFICATIONS
+     ========================================== -->
+<h2 id="workers">Workers &amp; Certifications</h2>
+
+<details class="feature-section">
+<summary>Workers &amp; Certifications &mdash; Credential Management</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction workers must hold specific certifications to perform certain tasks. A forklift operator needs a forklift certification. A scaffold erector needs scaffold competent-person training. A worker entering a confined space needs confined-space entry training. These certifications expire (typically every 1-5 years) and must be renewed. If a worker operates equipment or performs a task without a valid certification, the employer faces significant legal liability and regulatory penalties. On a busy construction site with dozens or hundreds of workers, tracking who holds which certifications and when they expire is a major administrative challenge.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> OSHA requires specific training for virtually every hazardous activity. The OSHA 10-Hour and 30-Hour construction courses are foundational. Beyond that, specialized certifications are required: crane operators must hold NCCCO (National Commission for the Certification of Crane Operators) credentials per 29 CFR 1926 Subpart CC; forklift operators must be trained and evaluated per 29 CFR 1910.178; fall protection training is required under 29 CFR 1926.503.</p>
+  <p><span class="jur-badge uk">UK</span> CSCS (Construction Skills Certification Scheme) cards are the standard proof of competence. CDM 2015 requires that workers have the necessary skills, knowledge, and experience for the work they are doing. Specific certifications like IPAF (International Powered Access Federation) for aerial lifts and CPCS (Construction Plant Competence Scheme) for plant operators are widely required.</p>
+  <p><span class="jur-badge au">AU</span> High-risk work licences are legally required under WHS Regulations for activities such as crane operation, scaffolding, rigging, and forklift operation. These are issued by state regulators and have specific renewal requirements. A White Card (General Construction Induction) is required before any person can enter a construction site.</p>
+  <p><span class="jur-badge ca">CA</span> Provincial requirements vary. Most provinces require an equivalent of basic construction safety training. Ontario requires a Working at Heights training certificate for workers on construction projects. Red Seal certifications apply to specific trades. CSA standards govern equipment operation training requirements.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Companies keep photocopies of worker certification cards in a filing cabinet at the office. A spreadsheet tracks expiration dates, but it is only updated when someone remembers. Before an OSHA inspection or GC audit, the safety director scrambles to verify that every worker on site has current certifications for the tasks they are performing. Workers who change projects must physically show their cards to a new site supervisor, who may or may not verify the expiration date.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p><strong>Worker Profiles</strong> store all relevant information:</p>
+  <ul>
+    <li>Name, role, and trade</li>
+    <li>Language preference (English, Spanish, or Both) to ensure safety communications reach them in a language they understand</li>
+    <li>Employment status (Active, Inactive, Terminated)</li>
+    <li>Project assignments (which projects this worker is currently assigned to)</li>
+  </ul>
+  <p>Kerf tracks <strong>20+ certification types</strong>, including:</p>
+  <table class="styled-table">
+    <thead><tr><th>Certification</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>OSHA 10 / OSHA 30</td><td>Foundational construction safety courses (10-hour for workers, 30-hour for supervisors)</td></tr>
+      <tr><td>Fall Protection</td><td>Training on fall arrest systems, guardrails, safety nets</td></tr>
+      <tr><td>CPR/AED (First Aid)</td><td>Emergency medical response certification</td></tr>
+      <tr><td>Scaffold Competent Person</td><td>Authorization to erect, modify, and inspect scaffolds</td></tr>
+      <tr><td>Confined Space</td><td>Training for entry into tanks, vaults, silos, and other enclosed areas</td></tr>
+      <tr><td>Excavation Competent Person</td><td>Authorization to evaluate soil conditions and protective systems</td></tr>
+      <tr><td>Forklift Operator</td><td>Powered industrial truck certification</td></tr>
+      <tr><td>Crane Operator (NCCCO)</td><td>National certification for crane operation</td></tr>
+      <tr><td>Aerial Lift</td><td>Boom lifts, scissor lifts, and similar elevated work platforms</td></tr>
+      <tr><td>HazCom/GHS</td><td>Hazard Communication and Globally Harmonized System for chemical labeling</td></tr>
+      <tr><td>Silica Competent Person</td><td>Respirable crystalline silica exposure control</td></tr>
+      <tr><td>Electrical Safety</td><td>Arc flash, lockout/tagout, and electrical hazard awareness</td></tr>
+      <tr><td>Respiratory Fit Test</td><td>Annual fit testing for respirator use (required by 29 CFR 1910.134)</td></tr>
+      <tr><td>Rigging/Signal Person</td><td>Qualification for rigging loads and signaling crane operators</td></tr>
+      <tr><td>HAZWOPER</td><td>Hazardous Waste Operations and Emergency Response (29 CFR 1910.120)</td></tr>
+      <tr><td>Fire Watch</td><td>Trained person to monitor for fire during and after hot work</td></tr>
+    </tbody>
+  </table>
+  <p>Each certification record includes the issued date, expiry date, issuing body, certificate number, and space for proof documents.</p>
+  <p><strong>Automatic alerts</strong> fire at 30, 14, 7, and 1 day before any certification expires, appearing on the dashboard and in the project view.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Eliminates the risk of a worker operating with an expired certification, which is one of the most commonly cited OSHA violations</li>
+    <li>Advance alerts at 30/14/7/1 days give the company time to schedule renewal training before the certification lapses</li>
+    <li>Worker profiles are accessible from any device, so site supervisors can verify credentials on the spot</li>
+    <li>Language preference tracking helps ensure safety briefings and documents are delivered in a language each worker understands (a legal requirement under OSHA's Hazard Communication standard)</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+<h3 id="cert-matrix">Certification Matrix</h3>
+
+<details class="feature-section">
+<summary>Certification Matrix &mdash; At-a-Glance Credential Status</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>The Certification Matrix is a grid view showing every worker as a row and every certification type as a column. Each cell is color-coded:</p>
+  <ul>
+    <li><strong style="color: var(--green-600);">Green:</strong> Valid certification, not expiring soon</li>
+    <li><strong style="color: var(--brand-yellow-hover);">Yellow:</strong> Certification expiring within 30 days</li>
+    <li><strong style="color: var(--red-600);">Red:</strong> Certification expired</li>
+    <li><strong style="color: var(--gray-400);">Gray:</strong> Not applicable or not held</li>
+  </ul>
+  <p>This view is particularly valuable during GC audits and OSHA inspections because it demonstrates at a glance that the company has a systematic approach to tracking worker qualifications. Auditors and inspectors can see immediately which workers hold which certifications and whether any have lapsed.</p>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     TOOLBOX TALKS
+     ========================================== -->
+<h2 id="toolbox-talks">Toolbox Talks</h2>
+
+<details class="feature-section">
+<summary>Toolbox Talks &mdash; Bilingual Safety Briefings</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>A "toolbox talk" is a short (typically 10-15 minute) safety discussion conducted at the worksite before a shift begins or before a specific task. The name comes from the tradition of workers gathering around a toolbox to discuss safety. These talks reinforce safety awareness on topics relevant to the work being performed that day. They are one of the most effective ways to reduce incidents because they keep safety top-of-mind for workers. In the United States, the construction workforce is significantly bilingual, with an estimated 30% of construction workers being Spanish-speaking, making bilingual safety communication essential.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> OSHA requires that safety training be delivered "in a language and vocabulary the employee can understand" (multiple standards). Toolbox talks are an accepted method of ongoing training. Many GCs contractually require weekly or daily toolbox talks from their subcontractors, with documented attendance.</p>
+  <p><span class="jur-badge uk">UK</span> CDM 2015 requires that workers are provided with information and instruction regarding health and safety. Toolbox talks are a widely accepted delivery mechanism. HSE publishes guidance on effective communication for construction sites.</p>
+  <p><span class="jur-badge au">AU</span> WHS Act requires workers to be informed and trained about safety matters. Pre-start meetings and toolbox talks are standard practice and referenced in multiple Codes of Practice.</p>
+  <p><span class="jur-badge ca">CA</span> Provincial regulations require ongoing worker education. Alberta OHS requires regular safety meetings, and toolbox talks/tailgate meetings are the standard method of compliance.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>A supervisor downloads a generic toolbox talk PDF from the internet, reads it aloud to workers, and passes around a sign-in sheet on a clipboard. The talk may not be relevant to the specific work being performed that day. For Spanish-speaking workers, the content is either not translated (meaning they do not actually understand it) or poorly machine-translated. The sign-in sheet is filed and forgotten. There is no way to verify that the talk was actually delivered as intended or that workers understood the content.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p><strong>Creating a Toolbox Talk:</strong></p>
+  <ol class="steps">
+    <li>Select a topic (from a library of common construction safety topics or enter a custom topic)</li>
+    <li>Choose the target audience (specific trades, all workers, supervisors)</li>
+    <li>Set the expected duration</li>
+    <li>Add any custom talking points specific to your project</li>
+    <li>Kerf generates a bilingual (English/Spanish) safety briefing using AI, customized to your project context</li>
+  </ol>
+  <p><strong>Delivering a Toolbox Talk:</strong></p>
+  <ul>
+    <li><strong>Delivery mode</strong> presents the talk content in a readable format for the presenter</li>
+    <li><strong>Digital signatures</strong> replace paper sign-in sheets. Each attending worker signs digitally on the device</li>
+    <li><strong>Attendance tracking</strong> records exactly who attended, with timestamps, creating an auditable record</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>AI-generated content is relevant to the actual work and hazards at the project, not generic</li>
+    <li>Bilingual generation ensures Spanish-speaking workers receive the same information, meeting OSHA's language requirement</li>
+    <li>Digital attendance tracking with timestamps creates stronger evidence of compliance than paper sign-in sheets</li>
+    <li>Talks can be linked to projects and included in the project's documentation package for GC or client submissions</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     INCIDENTS
+     ========================================== -->
+<h2 id="incidents">Incident Management</h2>
+
+<details class="feature-section">
+<summary>Incident Management &mdash; From Report to Resolution</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>When a worker is injured, a near-miss occurs, or property is damaged, the company must document what happened, investigate the root cause, implement corrective actions, and report the incident to the appropriate regulatory agency (if it meets reporting thresholds). The quality and speed of incident management directly affects worker safety, insurance costs, and legal exposure. Poor incident management leads to repeat incidents, higher workers' compensation premiums, and regulatory penalties.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <div class="jur-grid">
+    <div class="jur-card">
+      <span class="jur-flag">&#127482;&#127480;</span><span class="jur-name">United States</span>
+      <div class="jur-body">
+        <strong>Recordkeeping (29 CFR 1904):</strong> Employers with 10+ employees must maintain OSHA 300 Log for all recordable injuries/illnesses. A "recordable" injury is one requiring medical treatment beyond first aid.<br>
+        <strong>Reporting:</strong> Fatalities must be reported within 8 hours. In-patient hospitalizations, amputations, and loss of an eye must be reported within 24 hours (29 CFR 1904.39).<br>
+        <strong>Penalty:</strong> Failure to report a fatality within 8 hours can result in penalties up to $161,323.
+      </div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127468;&#127463;</span><span class="jur-name">United Kingdom</span>
+      <div class="jur-body">
+        <strong>RIDDOR:</strong> Certain workplace incidents must be reported to HSE: deaths, specified injuries (fractures, amputations, etc.), over-7-day incapacitations, occupational diseases, and dangerous occurrences. Reports must be filed within 10 days (or 15 days for over-7-day injuries). Online reporting via the HSE website is the standard method.
+      </div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127462;&#127482;</span><span class="jur-name">Australia</span>
+      <div class="jur-body">
+        <strong>Notifiable Incidents:</strong> WHS Act 2011 defines three categories that must be reported to the state regulator immediately by phone: death, serious injury or illness, and dangerous incidents. The site must be preserved until an inspector arrives or directs otherwise. Written notification must follow within 48 hours.
+      </div>
+    </div>
+    <div class="jur-card">
+      <span class="jur-flag">&#127464;&#127462;</span><span class="jur-name">Canada</span>
+      <div class="jur-body">
+        <strong>Provincial reporting:</strong> Each province defines reportable incidents differently. Generally, fatalities and critical injuries must be reported immediately. Ontario requires written notice to the MOL within 48 hours for critical injuries. WSIB or WorkSafeBC claims must be filed within specified periods for workers' compensation purposes.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>A supervisor fills out a paper incident report form, which makes its way to the safety director's desk within a day or two. The safety director determines whether the incident is OSHA-recordable by consulting a flowchart, then manually adds it to the paper OSHA 300 Log. Root cause investigation is informal. Corrective actions are verbal agreements that may or may not be followed up. Near-misses are rarely reported because the paperwork is seen as burdensome and there is no positive incentive for workers to report.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p><strong>Incident Report Form</strong> captures all essential information:</p>
+  <ul>
+    <li>Date, time, and exact location of the incident</li>
+    <li>Severity level: Fatality, Hospitalization, Medical Treatment, First Aid, Near Miss, or Property Damage</li>
+    <li>Detailed description of what happened</li>
+    <li>Persons involved and witnesses</li>
+    <li>Immediate actions taken</li>
+  </ul>
+  <p><strong>Auto-classification</strong> is a significant time-saver. Based on the severity and details you enter, Kerf automatically determines:</p>
+  <ul>
+    <li>Whether the incident is <strong>OSHA recordable</strong> (must be entered on the 300 Log)</li>
+    <li>Whether the incident is <strong>OSHA reportable</strong> (must be called in to OSHA within 8 or 24 hours)</li>
+  </ul>
+  <p><strong>Workflow tracking</strong> moves each incident through four stages:</p>
+  <ol class="steps">
+    <li><strong>Reported:</strong> Initial report filed</li>
+    <li><strong>Investigating:</strong> Root cause analysis underway</li>
+    <li><strong>Corrective Actions:</strong> Fixes identified and being implemented</li>
+    <li><strong>Closed:</strong> Investigation complete, corrective actions verified</li>
+  </ol>
+
+  <div class="callout danger">
+    <strong>Critical timing reminder</strong>
+    In the US, a fatality must be reported to OSHA within 8 hours. A hospitalization, amputation, or loss of an eye must be reported within 24 hours. Kerf's auto-classification flags reportable events immediately so you do not miss these deadlines.
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Auto-classification eliminates the risk of misclassifying an incident, which is one of the most common OSHA citation categories</li>
+    <li>Structured workflow ensures incidents are investigated and closed, not forgotten</li>
+    <li>Near-miss reporting is as easy as reporting an actual injury, encouraging a safety culture where hazards are reported before they cause harm</li>
+    <li>All incident data feeds into TRIR (Total Recordable Incident Rate) calculations on the Analytics page</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     MOCK OSHA INSPECTION
+     ========================================== -->
+<h2 id="mock-osha">Mock OSHA Inspection</h2>
+
+<details class="feature-section">
+<summary>Mock OSHA Inspection &mdash; Simulated Compliance Audit</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>An OSHA compliance officer can arrive at any construction site without advance notice. When they do, they will review your safety documentation, training records, inspection logs, and incident history. They will walk the site looking for hazards. Any violations they find result in citations carrying financial penalties and a public record. Companies that are well-prepared for OSHA inspections have dramatically fewer citations and lower penalties because many issues can be corrected before they become violations. A "mock inspection" is the practice of conducting an internal audit that simulates what OSHA would look for, so the company can identify and fix gaps before the real inspector arrives.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> OSHA's penalty structure makes preparation financially critical. As of 2024, a single serious violation can cost up to $16,131. A willful or repeat violation can reach $161,323. OSHA also considers "good faith" efforts (including systematic self-auditing) as a penalty reduction factor of up to 25%. Having a documented mock inspection program demonstrates good faith.</p>
+  <p><span class="jur-badge uk">UK</span> HSE inspectors follow a similar approach. Demonstrating a proactive safety management system, including internal audits, is recognized under the Enforcement Management Model (EMM) as a mitigating factor.</p>
+  <p><span class="jur-badge au">AU</span> State regulators consider an organization's safety management system when determining enforcement action. Internal auditing is a recognized component of an effective WHS management system.</p>
+  <p><span class="jur-badge ca">CA</span> COR (Certificate of Recognition) programs in provinces like Alberta explicitly require internal audits as part of maintaining certification, which qualifies companies for workers' compensation premium discounts.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Companies hire external safety consultants to conduct mock inspections, typically at $2,000 to $5,000+ per visit. The consultant walks the site, reviews documentation, and produces a report. This happens once or twice a year, leaving months-long gaps where issues can develop undetected. Some companies have internal safety staff perform mock audits, but these are limited by the staff's knowledge and are often less rigorous than what an actual OSHA inspector would examine.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>Kerf's Mock OSHA Inspection feature simulates a compliance officer's review by analyzing your existing data:</p>
+  <ul>
+    <li><strong>Scope selection:</strong> Run the audit company-wide or for a specific project</li>
+    <li><strong>Document review:</strong> Checks that required safety plans (SSSP, JHAs, Fall Protection Plans) exist and are current</li>
+    <li><strong>Training records:</strong> Verifies that workers have the certifications required for the work they are performing</li>
+    <li><strong>Inspection logs:</strong> Confirms that inspections are being conducted at required frequencies</li>
+    <li><strong>Findings in citation format:</strong> Results are presented in the same format OSHA uses for citations, with the applicable regulatory standard cited (e.g., "29 CFR 1926.451(f)(3) - Scaffold inspection not documented within the last 24 hours")</li>
+    <li><strong>Penalty estimates:</strong> Approximate penalty amounts based on current OSHA penalty schedules</li>
+    <li><strong>Readiness score:</strong> A score from 0 to 100, with a letter grade from A to F</li>
+  </ul>
+
+  <div class="callout success">
+    <strong>A score of 85+ (grade A or B) indicates strong compliance.</strong>
+    Most companies that maintain a Kerf readiness score of 85 or above find that actual OSHA inspections result in minimal or no citations.
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Available on-demand at no extra cost beyond your subscription, versus $2,000-$5,000 per external consultant visit</li>
+    <li>Can be run as frequently as desired (weekly, daily), not just once or twice a year</li>
+    <li>Findings reference specific OSHA standards, helping your team understand exactly what needs to be fixed and why</li>
+    <li>Penalty estimates help prioritize corrective actions by financial impact</li>
+    <li>Readiness score trends over time (visible in Analytics) demonstrate continuous improvement to regulators and clients</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     EQUIPMENT
+     ========================================== -->
+<h2 id="equipment">Equipment Tracking</h2>
+
+<details class="feature-section">
+<summary>Equipment &mdash; Fleet and Inspection Management</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction companies operate expensive, potentially dangerous equipment: cranes, forklifts, aerial lifts (boom lifts, scissor lifts), vehicles, and scaffolding systems. This equipment must be regularly inspected, properly maintained, and operated only by certified personnel. Equipment failures are a leading cause of construction fatalities. Beyond safety, equipment represents millions of dollars in assets that must be tracked, maintained, and assigned to projects efficiently.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> OSHA requires pre-operation inspections for most powered equipment (29 CFR 1926 Subpart O for motor vehicles, Subpart CC for cranes, Subpart L for scaffolds). DOT (Department of Transportation) compliance is required for vehicles used on public roads. Annual crane inspections by a qualified inspector are mandatory.</p>
+  <p><span class="jur-badge uk">UK</span> PUWER (Provision and Use of Work Equipment Regulations 1998) requires that all work equipment is maintained in an efficient state. LOLER (Lifting Operations and Lifting Equipment Regulations 1998) requires regular examination of lifting equipment by a competent person.</p>
+  <p><span class="jur-badge au">AU</span> WHS Regulations require regular inspection of plant (the Australian term for equipment) used on construction sites. Registered plant such as cranes requires periodic inspection by a competent person. Design registration is required for certain plant categories.</p>
+  <p><span class="jur-badge ca">CA</span> Provincial regulations require pre-use inspections of equipment. CSA standards (e.g., CSA Z150 for mobile cranes) define inspection and maintenance requirements. Annual crane inspections are mandated in most provinces.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Equipment inspection records are kept in binders at the equipment yard or in the operator's cab. Knowing which equipment is at which project requires phone calls. Maintenance schedules are tracked in spreadsheets or whiteboards. When an inspection is overdue, nobody notices until the equipment has already been used in a non-compliant state.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>Kerf tracks five equipment categories: <strong>Cranes, Forklifts, Aerial Lifts, Vehicles, and Scaffolds</strong>.</p>
+  <ul>
+    <li><strong>Status tracking:</strong> Each piece of equipment has a status: Active, Out of Service, Maintenance, or Retired</li>
+    <li><strong>Inspection schedules:</strong> Define inspection frequencies (daily pre-operation, monthly, annual). Kerf alerts when inspections are overdue</li>
+    <li><strong>Project assignment:</strong> Track which project each piece of equipment is currently deployed to, with assignment history</li>
+    <li><strong>DOT compliance:</strong> For vehicles, track DOT inspection dates and registration status</li>
+    <li><strong>Equipment detail pages:</strong> View inspection history, maintenance records, and current project assignment for each piece of equipment</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Overdue inspection alerts prevent the use of equipment that has not been properly inspected</li>
+    <li>Equipment assignment tracking means you always know where your assets are deployed</li>
+    <li>Maintenance history creates an auditable record that the company maintains its equipment as required by regulation</li>
+    <li>DOT compliance tracking prevents vehicles from operating on public roads with expired inspections</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     OSHA LOG
+     ========================================== -->
+<h2 id="osha-log">OSHA Log (300/300A)</h2>
+
+<details class="feature-section">
+<summary>OSHA Log &mdash; Injury and Illness Recordkeeping</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>In the United States, most employers with 10 or more employees must maintain a log of all work-related injuries and illnesses that meet the recording criteria. This log (OSHA Form 300) and its annual summary (Form 300A) are the primary instruments by which injury rates are calculated and compared across the industry. These rates directly affect a company's EMR (Experience Modification Rate), which in turn determines workers' compensation insurance premiums. A high injury rate can increase premiums by 50% or more and disqualify a company from bidding on many projects.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> 29 CFR 1904 governs recordkeeping. Key requirements:</p>
+  <ul>
+    <li>OSHA Form 300 must be maintained for each establishment (typically each fixed workplace or project office) throughout the year</li>
+    <li>OSHA Form 300A (annual summary) must be posted in a visible location from <strong>February 1 through April 30</strong> of the following year</li>
+    <li>Records must be retained for 5 years following the end of the calendar year they cover</li>
+    <li>Certain industries and establishments with 250+ employees must electronically submit injury/illness data to OSHA annually</li>
+  </ul>
+  <p><span class="jur-badge uk">UK</span> Equivalent recordkeeping is handled through RIDDOR reporting and internal accident books (required under the Social Security (Claims and Payments) Regulations 1979).</p>
+  <p><span class="jur-badge au">AU</span> WHS Regulations require employers to keep records of notifiable incidents and maintain a register of injuries.</p>
+  <p><span class="jur-badge ca">CA</span> Provincial regulations require maintenance of workplace injury/illness records. WSIB (Ontario) and equivalent provincial boards require reporting for workers' compensation purposes.</p>
+
+  <div class="callout warning">
+    <strong>300A Posting Requirement</strong>
+    The OSHA 300A annual summary must be posted in a conspicuous place where employee notices are customarily posted, from February 1 through April 30 each year. Kerf displays a posting reminder during this period to help you stay compliant.
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Companies maintain the OSHA 300 Log as a paper form or Excel spreadsheet. Each recordable injury is manually entered with details about the employee, injury type, and days away from work. At year-end, someone manually tallies the numbers to produce the 300A summary and calculate incidence rates. Errors in classification (recording a first-aid case as recordable, or failing to record a recordable case) are common and are frequently cited by OSHA.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <ul>
+    <li><strong>OSHA Form 300:</strong> A digital log of work-related injuries and illnesses. Entries can be added manually or auto-populated from incident reports that Kerf has classified as OSHA-recordable</li>
+    <li><strong>OSHA Form 300A:</strong> Annual summary is automatically calculated from the 300 Log data. Total hours worked, number of cases, days away from work, and incidence rates are computed for you</li>
+    <li><strong>Incidence rate calculations:</strong> TRIR (Total Recordable Incident Rate), DART (Days Away, Restricted, or Transferred) rate, and other metrics are automatically calculated using the standard formula: (Number of cases x 200,000) / Total hours worked</li>
+    <li><strong>Year selector:</strong> View logs and summaries for any year. Records are retained digitally and can be accessed at any time (OSHA requires 5-year retention)</li>
+    <li><strong>Add/delete entries:</strong> Full CRUD (create, read, update, delete) capability for log entries</li>
+    <li><strong>Posting period warning:</strong> A prominent banner appears between February 1 and April 30 reminding you to print and post the 300A summary</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Automatic incidence rate calculations eliminate math errors that can misrepresent your safety performance</li>
+    <li>Integration with incident reports reduces duplicate data entry and classification errors</li>
+    <li>Digital retention ensures records are available for the required 5-year period and beyond</li>
+    <li>Posting period reminders prevent a common compliance oversight</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     STATE / REGIONAL COMPLIANCE
+     ========================================== -->
+<h2 id="state-compliance">Regional Compliance</h2>
+
+<details class="feature-section">
+<summary>Regional Compliance &mdash; Jurisdiction-Specific Requirements</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Safety regulations are not uniform even within a single country. In the United States, 22 states operate their own OSHA-approved State Plans, which can impose requirements that are stricter than federal OSHA. A company operating in California faces different (and more stringent) requirements than one in Texas. Similarly, Australian states have variations on the harmonised WHS law, and Canadian provinces each have their own OHS legislation. Companies working across multiple states or regions must understand and comply with whichever jurisdiction's rules apply at each worksite.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> Examples of state-specific requirements that go beyond federal OSHA:</p>
+  <ul>
+    <li><strong>California (Cal/OSHA):</strong> Heat Illness Prevention standard, Aerosol Transmissible Diseases standard, Injury and Illness Prevention Program (IIPP) required for all employers</li>
+    <li><strong>Washington (WA L&amp;I):</strong> Safety committee requirements differ from federal, agricultural safety rules are more extensive</li>
+    <li><strong>New York:</strong> Scaffold Safety Act (Labor Law 240) creates strict liability for gravity-related injuries, among the most plaintiff-friendly laws in the country</li>
+  </ul>
+  <p><span class="jur-badge uk">UK</span> While mostly uniform, Scotland has some separate health and safety legislation. Northern Ireland has its own HSE equivalent (HSENI).</p>
+  <p><span class="jur-badge au">AU</span> Victoria and Western Australia have not fully adopted the harmonised WHS Act. Victoria operates under the Occupational Health and Safety Act 2004, and WA under the Work Health and Safety Act 2020 (adopted late with some variations).</p>
+  <p><span class="jur-badge ca">CA</span> Every province has its own OHS legislation, enforcement agency, and specific requirements. Alberta's OHS Act, Ontario's OHSA, and British Columbia's Workers Compensation Act each have unique provisions.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Companies that work in multiple jurisdictions either hire local safety consultants in each region or rely on their safety director to research and understand the differences. This often results in a "highest common denominator" approach where the company applies the strictest rules everywhere, or (worse) applies only federal rules and unknowingly violates state-specific requirements.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <ul>
+    <li><strong>Dropdown selector:</strong> Choose your state/region and Kerf displays the specific requirements that apply beyond the base federal or national standards</li>
+    <li><strong>Multi-jurisdiction support:</strong> View requirements for US states, UK regions, Australian states, and Canadian provinces</li>
+    <li><strong>Gap identification:</strong> See what additional compliance steps are needed when you start a project in a new jurisdiction</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Prevents the common mistake of applying only federal standards in a State Plan state</li>
+    <li>Enables companies to expand into new geographic areas with confidence</li>
+    <li>Reduces dependence on expensive local consultants for basic compliance information</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     PREQUALIFICATION
+     ========================================== -->
+<h2 id="prequalification">Prequalification</h2>
+
+<details class="feature-section">
+<summary>Prequalification &mdash; Contractor Vetting Platforms</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>"Prequalification" is the process by which a general contractor or project owner verifies that a subcontractor meets minimum safety standards before allowing them to work on a project. Third-party platforms like ISNetworld, Avetta, and BROWZ serve as intermediaries: the subcontractor uploads safety documents, training records, insurance certificates, and answers questionnaires. The platform evaluates the submissions and assigns a compliance grade. General contractors then use this grade to decide which subs are qualified to bid on their projects. Being fully prequalified on these platforms is essentially a prerequisite for winning large commercial or industrial construction projects.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p>Prequalification itself is not a legal requirement, but it exists because of legal requirements:</p>
+  <p><span class="jur-badge us">US</span> The multi-employer doctrine means GCs can be cited by OSHA for subcontractor safety failures. This creates a powerful business incentive for GCs to verify that their subs have strong safety programs before they arrive on site. Insurance carriers also require GCs to vet subcontractor safety records to maintain coverage.</p>
+  <p><span class="jur-badge uk">UK</span> CDM 2015 requires the client and principal contractor to ensure that contractors they appoint are competent. Prequalification questionnaires (PQQs) are the standard mechanism for demonstrating competence.</p>
+  <p><span class="jur-badge au">AU</span> Many state government and large private clients require subcontractors to meet prequalification standards. Federal government construction projects require compliance with the WHS Accreditation Scheme.</p>
+  <p><span class="jur-badge ca">CA</span> COR (Certificate of Recognition) programs and ISNetworld are widely used by oil and gas and large construction clients in Alberta and BC to prequalify contractors.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>The safety director spends days or weeks gathering documents from various departments (insurance certificates from accounting, training records from HR, OSHA logs from safety, company information from admin), then manually uploads each document to ISNetworld, Avetta, or BROWZ. The questionnaire sections require answering hundreds of questions about the company's safety programs, policies, and history. This process is repeated (often differently) for each platform. When documents expire or are updated, the safety director must remember to upload the new versions.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <ul>
+    <li><strong>Platform support:</strong> ISNetworld, Avetta, and BROWZ readiness tracking</li>
+    <li><strong>Readiness score with breakdown:</strong> An overall percentage showing how prequalification-ready you are, broken down by category</li>
+    <li><strong>Document checklist by category:</strong> Five categories (Safety Programs, OSHA Records, Training, Insurance, Company Info) with status per document: Ready (current and uploaded), Outdated (expired or needs update), or Missing (not yet provided)</li>
+    <li><strong>Pre-filled questionnaire:</strong> Kerf auto-populates approximately 40 common questionnaire fields from your company profile and safety data, saving hours of repetitive data entry</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Transforms a multi-day administrative ordeal into a streamlined process</li>
+    <li>Readiness score gives immediate visibility into prequalification gaps</li>
+    <li>Document status tracking prevents submissions with expired or missing documents, which can result in account suspensions on prequalification platforms</li>
+    <li>Auto-populated questionnaire fields reduce data entry by an estimated 60-70%</li>
+    <li>Consistent data across platforms prevents discrepancies that auditors flag</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     GC PORTAL
+     ========================================== -->
+<h2 id="gc-portal">GC Portal</h2>
+
+<details class="feature-section">
+<summary>GC Portal &mdash; General Contractor / Subcontractor Coordination</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>On a typical construction project, a General Contractor (GC) manages multiple subcontractors (subs). The GC is legally responsible for overall site safety and must monitor whether their subs are maintaining compliant safety programs. Meanwhile, subcontractors must demonstrate compliance to multiple GCs across different projects. This creates a two-way information flow: GCs need to see sub safety data, and subs need an efficient way to share it.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> Under the multi-employer citation policy, a controlling employer (usually the GC) can be cited for hazards created by subcontractors if the GC failed to exercise reasonable care in monitoring sub safety. This creates a strong incentive for GCs to actively monitor sub compliance.</p>
+  <p><span class="jur-badge uk">UK</span> CDM 2015 places duties on the principal contractor to coordinate the work of all contractors and ensure they comply with site rules.</p>
+  <p><span class="jur-badge au">AU</span> The principal contractor for a construction project has a WHS duty to ensure, so far as is reasonably practicable, the health and safety of all workers on site, including subcontractor workers.</p>
+  <p><span class="jur-badge ca">CA</span> The prime contractor (equivalent designation in most provinces) must ensure coordination of health and safety activities at the worksite.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>GCs hold weekly safety coordination meetings, require subs to submit paper copies of safety documents, and conduct periodic audits of sub safety performance. Information sharing is accomplished through email, physical document submissions, and occasional site walks. The GC's project manager maintains a tracking spreadsheet for each sub's compliance status. When multiple subs are working on multiple projects, this becomes unmanageable.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>The GC Portal provides a <strong>dual-view system</strong>:</p>
+  <p><strong>As GC (General Contractor) view:</strong></p>
+  <ul>
+    <li>Monitor subcontractor compliance status across all your projects</li>
+    <li>Invite subcontractors to connect through Kerf</li>
+    <li>View sub safety data (inspection records, incident rates, certification status) without requiring them to send paper documents</li>
+  </ul>
+  <p><strong>As Sub (Subcontractor) view:</strong></p>
+  <ul>
+    <li>See incoming GC invitations and accept or decline</li>
+    <li>Choose what safety data to share with each GC</li>
+    <li>Manage relationships with multiple GCs from one interface</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Replaces paper-based safety document submissions with real-time data sharing</li>
+    <li>GCs get continuous visibility into sub compliance, not just periodic snapshots</li>
+    <li>Subs maintain control over what data they share</li>
+    <li>Reduces the administrative burden on both parties</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     ENVIRONMENTAL
+     ========================================== -->
+<h2 id="environmental">Environmental Programs</h2>
+
+<details class="feature-section">
+<summary>Environmental &mdash; Hazardous Substance &amp; Environmental Compliance</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction activities frequently involve exposure to hazardous substances (silica dust from concrete cutting, lead paint in renovation, asbestos in demolition) and environmental impacts (stormwater runoff from disturbed soil, noise affecting neighboring communities, hazardous material handling). These require specific management programs with monitoring, training, and documentation. Unlike general safety, environmental compliance often involves both worker protection regulations (OSHA) and environmental protection regulations (EPA or equivalent), creating a dual compliance requirement.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> Key regulations include:</p>
+  <ul>
+    <li><strong>Silica:</strong> 29 CFR 1926.1153 (Respirable Crystalline Silica in Construction). Exposure limit of 50 micrograms per cubic meter as an 8-hour TWA (time-weighted average). Requires a written exposure control plan, exposure monitoring, medical surveillance, and a designated competent person.</li>
+    <li><strong>Lead:</strong> 29 CFR 1926.62 (Lead in Construction). Action level of 30 micrograms per cubic meter. Requires exposure monitoring, medical surveillance, and protective measures.</li>
+    <li><strong>Asbestos:</strong> 29 CFR 1926.1101 (Asbestos in Construction). Requires identification before demolition/renovation, specific work practices, and licensed abatement contractors.</li>
+    <li><strong>Stormwater:</strong> EPA Clean Water Act requires a SWPPP (Stormwater Pollution Prevention Plan) for construction sites disturbing 1+ acre of land.</li>
+    <li><strong>Noise:</strong> 29 CFR 1926.52 (Occupational Noise Exposure). Action level of 85 dBA as an 8-hour TWA.</li>
+    <li><strong>HazMat:</strong> 29 CFR 1926.65 (Hazardous Waste Operations and Emergency Response - HAZWOPER).</li>
+  </ul>
+  <p><span class="jur-badge uk">UK</span> COSHH (Control of Substances Hazardous to Health Regulations 2002) provides the framework for chemical exposure management. The Control of Asbestos Regulations 2012, Control of Lead at Work Regulations 2002, and Environmental Protection Act 1990 cover the equivalent areas.</p>
+  <p><span class="jur-badge au">AU</span> WHS Regulations include specific chapters for hazardous chemicals, asbestos management, noise, and lead. State EPA regulations cover environmental impacts including stormwater management.</p>
+  <p><span class="jur-badge ca">CA</span> Provincial OHS regulations cover workplace chemical exposures. Environmental protection falls under provincial environmental acts. Asbestos regulations vary by province.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>Environmental programs are often the weakest area in a construction company's safety management because they require specialized knowledge (industrial hygiene, environmental engineering) that most safety directors do not have. Companies either hire external industrial hygienists for monitoring or simply neglect exposure monitoring until an incident or complaint forces action. Program documentation is scattered across multiple binders and is rarely updated.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <p>Kerf tracks <strong>7 environmental programs</strong>: Silica, Lead, Asbestos, Stormwater (SWPPP), Dust, Noise, and Hazmat. For each program:</p>
+  <ul>
+    <li><strong>Program status:</strong> Whether the program is active, its compliance status, and any pending actions</li>
+    <li><strong>Exposure monitoring records:</strong> Log monitoring results with dates, locations, measured levels, and comparison to regulatory limits</li>
+    <li><strong>Regulatory references:</strong> Direct references to the applicable CFR sections (e.g., 29 CFR 1926.1153 for silica) so your team knows exactly which standard applies</li>
+  </ul>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Brings environmental compliance into the same platform as general safety, preventing it from falling through the cracks</li>
+    <li>Regulatory references help non-specialist staff understand which rules apply</li>
+    <li>Monitoring records create auditable evidence of compliance for both OSHA and EPA inspectors</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     ANALYTICS
+     ========================================== -->
+<h2 id="analytics">Analytics &amp; Rates</h2>
+
+<details class="feature-section">
+<summary>Analytics &mdash; Safety Performance Metrics</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label business">The Business Need</div>
+  <p>Construction companies are judged by their safety metrics. Clients, GCs, and insurance companies all evaluate contractors based on quantifiable safety performance. The two most important metrics are TRIR (Total Recordable Incident Rate) and EMR (Experience Modification Rate). A TRIR above the industry average can disqualify a company from bidding on projects. An EMR above 1.0 means the company pays higher workers' compensation premiums than the industry average, directly impacting profitability. Understanding these numbers and how to improve them is essential for business survival.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label regulation">Regulatory Landscape</div>
+  <p><span class="jur-badge us">US</span> OSHA requires calculation of incidence rates using the formula: (Number of cases x 200,000) / Total hours worked. The 200,000 figure represents the hours 100 full-time employees would work in a year. This standardization allows comparison across companies of different sizes. The Bureau of Labor Statistics publishes industry average rates annually.</p>
+  <p><span class="jur-badge uk">UK</span> HSE publishes accident rates per 100,000 workers. The HSE's Annual Statistics of Workplace Health and Safety provide industry benchmarks.</p>
+  <p><span class="jur-badge au">AU</span> Safe Work Australia publishes national and state-level statistics on workplace injuries and fatalities. Incidence rates are calculated per 1,000 workers or per million hours worked.</p>
+  <p><span class="jur-badge ca">CA</span> Provincial workers' compensation boards publish industry injury rate statistics. WSIB (Ontario) uses a lost-time injury rate. WorkSafeBC publishes injury rates by industry classification.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label traditional">Traditional Approach</div>
+  <p>At year-end, the safety director manually calculates TRIR and DART from the OSHA 300 Log using a calculator or spreadsheet. The EMR is received from the workers' compensation insurance carrier and is accepted without verification. There is no easy way to see trends over time or to compare the company's rates to industry averages. Strategic decisions about safety investments are made based on gut feeling rather than data.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">How Kerf Helps</div>
+  <ul>
+    <li><strong>TRIR and DART rates:</strong> Automatically calculated in real-time from your OSHA 300 Log data, with comparison to industry average rates so you can see how you stack up</li>
+    <li><strong>EMR Impact Calculator:</strong> Models how different incident scenarios would affect your Experience Modification Rate and therefore your workers' compensation premiums. This helps quantify the financial value of safety investments. For example, the calculator can show that preventing one lost-time injury saves $X in premium increases over the next 3 years.</li>
+    <li><strong>Compliance overview:</strong> Aggregates certification status (percentage of workers with current certs) and mock inspection readiness scores into a single view</li>
+  </ul>
+
+  <div class="callout info">
+    <strong>Understanding EMR</strong>
+    The Experience Modification Rate (EMR) compares your actual losses to the expected losses for a company of your size in your industry. An EMR of 1.0 is average. Below 1.0 means you are safer than average (and pay lower premiums). Above 1.0 means you are worse than average (and pay higher premiums). Many GCs require an EMR below 1.0 or 0.9 to bid on their projects. Kerf's EMR Impact Calculator helps you understand how each incident affects this critical number.
+  </div>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label benefits">Key Benefits</div>
+  <ul>
+    <li>Real-time rate calculations mean you do not have to wait until year-end to know your TRIR</li>
+    <li>Industry comparison provides context: a TRIR of 3.0 means nothing without knowing the industry average is 2.8</li>
+    <li>EMR Impact Calculator turns abstract safety metrics into dollars, helping justify safety investments to company leadership</li>
+    <li>Trend visibility enables proactive intervention before rates climb to levels that affect bidding eligibility or insurance costs</li>
+  </ul>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     SETTINGS & BILLING
+     ========================================== -->
+<h2 id="settings">Settings &amp; Billing</h2>
+
+<details class="feature-section">
+<summary>Settings &amp; Billing &mdash; Company Configuration and Subscription Plans</summary>
+<div class="section-body">
+
+<div class="subsection">
+  <div class="subsection-label kerf">Company Profile</div>
+  <p>The Settings page stores your company information that is used across the platform:</p>
+  <ul>
+    <li><strong>Company name</strong> and license number</li>
+    <li><strong>Address, phone, and email</strong></li>
+    <li><strong>EIN</strong> (Employer Identification Number) for US companies, or equivalent for other jurisdictions</li>
+    <li><strong>Safety officer</strong> name and contact information</li>
+  </ul>
+  <p>This information auto-populates into safety documents, prequalification questionnaires, and reports, ensuring consistency and saving data entry time.</p>
+</div>
+
+<div class="subsection">
+  <div class="subsection-label kerf">Subscription Plans</div>
+  <p>Kerf offers five tiers. <strong>All tiers include unlimited users</strong>, which means you can add as many team members as needed without per-seat charges.</p>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="tier-name">Free</div>
+      <div class="tier-price">$0</div>
+      <div class="tier-detail">3 documents/month<br>Basic features<br>Ideal for trying the platform</div>
+    </div>
+    <div class="pricing-card">
+      <div class="tier-name">Starter</div>
+      <div class="tier-price">$99<span>/mo</span></div>
+      <div class="tier-detail">More documents/month<br>Full inspection types<br>For small contractors</div>
+    </div>
+    <div class="pricing-card featured">
+      <div class="tier-name">Professional</div>
+      <div class="tier-price">$299<span>/mo</span></div>
+      <div class="tier-detail">Expanded document limits<br>Mock OSHA inspections<br>Analytics<br>Most popular tier</div>
+    </div>
+    <div class="pricing-card">
+      <div class="tier-name">Business</div>
+      <div class="tier-price">$599<span>/mo</span></div>
+      <div class="tier-detail">High document limits<br>GC Portal<br>Prequalification<br>Multi-project companies</div>
+    </div>
+    <div class="pricing-card">
+      <div class="tier-name">Enterprise</div>
+      <div class="tier-price">Custom</div>
+      <div class="tier-detail">Unlimited documents<br>Custom integrations<br>Dedicated support<br>Large organizations</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</details>
+
+
+<!-- ==========================================
+     GLOSSARY
+     ========================================== -->
+<h2 id="glossary">Glossary</h2>
+<p>Key terms used throughout this manual and in the construction safety industry:</p>
+
+<dl class="glossary-grid">
+
+<div class="glossary-item">
+<dt>29 CFR 1926</dt>
+<dd>Title 29, Code of Federal Regulations, Part 1926. The primary US federal regulation governing safety in the construction industry. Organized into subparts covering specific hazard categories (e.g., Subpart M for fall protection, Subpart CC for cranes).</dd>
+</div>
+
+<div class="glossary-item">
+<dt>CDM 2015</dt>
+<dd>Construction (Design and Management) Regulations 2015. The UK's primary regulation for managing health and safety on construction projects. Assigns duties to clients, principal designers, principal contractors, contractors, and designers.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>Competent Person</dt>
+<dd>A term with specific legal meaning in OSHA regulations. A person who is capable of identifying existing and predictable hazards in the surroundings or working conditions which are unsanitary, hazardous, or dangerous to employees, and who has authorization to take prompt corrective measures to eliminate them. Many OSHA standards require a "competent person" for specific tasks like scaffold inspection, excavation evaluation, and fall protection planning.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>COR (Certificate of Recognition)</dt>
+<dd>A Canadian program (primarily in western provinces) that certifies employers who have implemented health and safety management systems meeting established standards. COR-certified employers typically qualify for workers' compensation premium discounts.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>COSHH</dt>
+<dd>Control of Substances Hazardous to Health Regulations 2002 (UK). Requires employers to assess and control exposure to hazardous substances in the workplace, including chemicals, fumes, dusts, and biological agents.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>DART Rate</dt>
+<dd>Days Away, Restricted, or Transferred rate. A more specific injury metric than TRIR that counts only cases resulting in days away from work, restricted work activity, or job transfer. Formula: (DART cases x 200,000) / Total hours worked.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>DOT</dt>
+<dd>Department of Transportation (US). Governs the operation of commercial motor vehicles on public roads, including inspection requirements, driver qualifications, and hours-of-service rules.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>EMR (Experience Modification Rate)</dt>
+<dd>A multiplier applied to a company's workers' compensation insurance premium. Calculated by the National Council on Compensation Insurance (NCCI) or state equivalent based on 3 years of loss history compared to industry expected losses. EMR of 1.0 is average; below 1.0 means better-than-average safety performance; above 1.0 means worse. Directly impacts insurance costs and bidding eligibility.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>Fatal Four</dt>
+<dd>The four most common causes of construction worker deaths in the United States, as identified by OSHA: Falls (38.7%), Struck-By Object (9.4%), Electrocution (7.2%), and Caught-In/Between (5.4%). Together, these account for more than 60% of construction fatalities annually.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>FLHA (Field Level Hazard Assessment)</dt>
+<dd>A daily hazard assessment process widely used in Canadian construction (especially Alberta and BC). Workers assess hazards at their specific work location before starting work each day. Similar in purpose to a JHA but focused on real-time field conditions.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>GC (General Contractor)</dt>
+<dd>The company that has the primary contract with the project owner and manages the overall construction project. The GC hires and coordinates subcontractors and is generally the "controlling employer" for OSHA purposes, meaning they have overall responsibility for site safety.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>GFCI</dt>
+<dd>Ground Fault Circuit Interrupter. An electrical safety device that disconnects a circuit when it detects an imbalance between the outgoing and incoming current, protecting against electric shock. Required on all construction sites for 120-volt, single-phase, 15- and 20-ampere receptacle outlets (29 CFR 1926.404(b)(1)).</dd>
+</div>
+
+<div class="glossary-item">
+<dt>HAZWOPER</dt>
+<dd>Hazardous Waste Operations and Emergency Response (29 CFR 1910.120 / 29 CFR 1926.65). OSHA standard governing worker safety at hazardous waste sites, during emergency response to hazardous substance releases, and at treatment, storage, and disposal facilities.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>HSE</dt>
+<dd>Health and Safety Executive (UK). The national regulator for workplace health and safety in Great Britain. Enforces the Health and Safety at Work Act 1974 and related regulations. Can issue improvement notices, prohibition notices, and prosecute employers for safety failures.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>JHA (Job Hazard Analysis)</dt>
+<dd>A systematic process of identifying hazards associated with each step of a job and determining the best way to control those hazards. Also called JSA (Job Safety Analysis). In the UK, the equivalent is a RAMS (Risk Assessment and Method Statement). In Australia, the equivalent for high-risk construction work is a SWMS (Safe Work Method Statement).</dd>
+</div>
+
+<div class="glossary-item">
+<dt>JHSC (Joint Health and Safety Committee)</dt>
+<dd>A Canadian requirement for workplaces over a certain size (varies by province). A committee composed of both employer and worker representatives that meets regularly to address health and safety concerns. Similar to a safety committee but with specific legal requirements for composition and function.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>Multi-Employer Doctrine</dt>
+<dd>An OSHA enforcement policy that allows citations to be issued to employers who did not directly create a hazard. Four employer types are recognized: Creating (created the hazard), Exposing (workers are exposed), Correcting (responsible for correcting), and Controlling (has general supervisory authority). This doctrine is why GCs can be cited for subcontractor safety failures.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>NCCCO</dt>
+<dd>National Commission for the Certification of Crane Operators. The leading US certification body for crane operators. OSHA requires crane operators to be certified by an accredited testing organization, and NCCCO is the most widely recognized.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>OSHA</dt>
+<dd>Occupational Safety and Health Administration (US). A federal agency under the Department of Labor that sets and enforces workplace safety standards. Created by the Occupational Safety and Health Act of 1970. Conducts workplace inspections and can issue citations with monetary penalties.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>OSHA 300 Log</dt>
+<dd>OSHA Form 300, the Log of Work-Related Injuries and Illnesses. A running log maintained throughout the year recording each recordable work-related injury or illness, including the employee's name, job title, date, description, and classification of the case.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>OSHA 300A</dt>
+<dd>OSHA Form 300A, the Summary of Work-Related Injuries and Illnesses. An annual summary that tallies the data from the 300 Log. Must be certified by a company executive and posted in a visible location from February 1 through April 30 each year.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>PCBU</dt>
+<dd>Person Conducting a Business or Undertaking. An Australian WHS Act term that broadens the duty holder beyond just "employers" to include anyone who directs or influences work, including principal contractors, self-employed persons, and companies that engage workers through labor hire arrangements.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>PPE</dt>
+<dd>Personal Protective Equipment. The last line of defense in the hierarchy of controls. Includes hard hats, safety glasses, high-visibility vests, steel-toed boots, gloves, hearing protection, and respiratory protection. OSHA requires employers to provide PPE at no cost to employees (29 CFR 1926.95).</dd>
+</div>
+
+<div class="glossary-item">
+<dt>RAMS</dt>
+<dd>Risk Assessment and Method Statement (UK). A combined document that identifies hazards, assesses risks, and describes the method of work including safety controls. Required for virtually all construction activities in the UK under CDM 2015. Equivalent to a JHA/SWMS in other jurisdictions.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>RIDDOR</dt>
+<dd>Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013 (UK). Requires employers to report certain workplace incidents to HSE, including deaths, specified injuries, over-7-day incapacitations, certain occupational diseases, and dangerous occurrences.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>SSSP</dt>
+<dd>Site-Specific Safety Plan. A comprehensive safety document tailored to a specific construction project. Covers the project scope, identified hazards, safety procedures, emergency plans, training requirements, and roles and responsibilities. While not explicitly mandated by a single OSHA standard, it is required by most GCs and is a key component of OSHA's VPP (Voluntary Protection Programs).</dd>
+</div>
+
+<div class="glossary-item">
+<dt>State Plan State</dt>
+<dd>A US state that has an OSHA-approved State Plan, meaning it operates its own occupational safety and health program instead of (or in addition to) federal OSHA. State Plan standards must be at least as effective as federal OSHA standards but can be more stringent. Currently 22 states plus several territories operate State Plans.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>SWMS</dt>
+<dd>Safe Work Method Statement (Australia). A legally required document for high-risk construction work under WHS Regulations. Identifies the high-risk work, describes the hazards, and sets out the measures to control risks. Must be prepared before high-risk work begins. Roughly equivalent to a JHA (US) or RAMS (UK) but with specific legal requirements.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>SWPPP</dt>
+<dd>Stormwater Pollution Prevention Plan. A plan required under the US Clean Water Act (administered by EPA) for construction sites that disturb one or more acres of land. Describes Best Management Practices (BMPs) for preventing stormwater runoff from carrying sediment and pollutants into waterways.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>TRIR (Total Recordable Incident Rate)</dt>
+<dd>The most widely used safety performance metric in US construction. Calculated as: (Total recordable cases x 200,000) / Total hours worked. The 200,000 represents the approximate hours 100 full-time employees work in a year. The 2023 industry average for construction is approximately 2.8. A lower TRIR indicates better safety performance.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>TWA (Time-Weighted Average)</dt>
+<dd>The average concentration of a substance (chemical, dust, noise) over a specified time period, typically 8 hours. Used to compare workplace exposures to regulatory limits. For example, the OSHA permissible exposure limit for respirable crystalline silica is 50 micrograms per cubic meter as an 8-hour TWA.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>VPP (Voluntary Protection Programs)</dt>
+<dd>An OSHA program that recognizes employers and workers who have implemented effective safety and health management systems and maintain injury/illness rates below national averages. VPP sites are generally exempt from routine OSHA inspections. Participation is voluntary and requires a rigorous application and on-site evaluation.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>WHS Act 2011</dt>
+<dd>Work Health and Safety Act 2011 (Australia). The model legislation developed by Safe Work Australia to harmonise OHS laws across Australian states and territories. Adopted by most jurisdictions, with Victoria and Western Australia having their own versions. Establishes duties for PCBUs, officers, and workers.</dd>
+</div>
+
+<div class="glossary-item">
+<dt>WSIB</dt>
+<dd>Workplace Safety and Insurance Board (Ontario, Canada). The provincial agency that administers the workplace injury insurance system, providing benefits to workers injured on the job and collecting premiums from employers. Equivalent agencies exist in other provinces (WorkSafeBC in British Columbia, WCB in Alberta, etc.).</dd>
+</div>
+
+</dl>
+
+<div style="margin-top: 48px; padding: 24px; background: var(--brand-dark); color: var(--gray-300); border-radius: var(--radius); text-align: center; font-size: 0.85rem;">
+  <div style="font-weight: 700; color: var(--brand-yellow); font-size: 1.1rem; margin-bottom: 8px;">Kerf</div>
+  Construction Safety Management Platform<br>
+  <span style="color: var(--gray-500);">This manual is for informational purposes. It does not constitute legal advice. Always consult with a qualified safety professional and legal counsel regarding your specific compliance obligations.</span>
+</div>
+
+</div><!-- /content-wrapper -->
+</div><!-- /main-content -->
+
+<script>
+// Sidebar active link tracking
+(function() {
+  const links = document.querySelectorAll('.sidebar nav a');
+  const sections = [];
+  links.forEach(function(link) {
+    const id = link.getAttribute('href');
+    if (id && id.startsWith('#')) {
+      const el = document.getElementById(id.substring(1));
+      if (el) sections.push({ el: el, link: link });
+    }
+  });
+
+  function updateActive() {
+    let current = null;
+    const scrollY = window.scrollY + 100;
+    for (let i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) {
+        current = sections[i];
+        break;
+      }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+
+  // Close sidebar on mobile when a link is clicked
+  links.forEach(function(link) {
+    link.addEventListener('click', function() {
+      if (window.innerWidth <= 900) {
+        document.querySelector('.sidebar').classList.remove('open');
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

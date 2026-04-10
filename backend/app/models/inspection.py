@@ -46,6 +46,9 @@ class InspectionCreate(BaseModel):
     inspector_name: str = Field(
         ..., min_length=2, max_length=128, description="Name of the inspector"
     )
+    inspector_id: str | None = Field(
+        None, description="Worker ID of the inspector, if linked to a worker record"
+    )
     weather_conditions: str = Field(
         default="", max_length=256, description="Weather conditions at time of inspection"
     )
@@ -75,6 +78,7 @@ class InspectionUpdate(BaseModel):
     inspection_type: InspectionType | None = None
     inspection_date: date | None = None
     inspector_name: str | None = Field(None, min_length=2, max_length=128)
+    inspector_id: str | None = None
     weather_conditions: str | None = Field(None, max_length=256)
     temperature: str | None = Field(None, max_length=50)
     wind_conditions: str | None = Field(None, max_length=256)

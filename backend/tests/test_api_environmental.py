@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 def _create_project(client: TestClient) -> str:
     """Helper to create a project and return its ID."""
     resp = client.post(
-        "/me/projects",
+        "/api/v1/me/projects",
         json={
             "name": "Environmental Test Project",
             "address": "101 Green Blvd, TX 75001",
@@ -23,7 +23,7 @@ class TestCreateEnvironmentalProgram:
     def test_create_program(self, client: TestClient, test_company):
         """Create an environmental program with valid data returns 201."""
         response = client.post(
-            "/me/environmental/programs",
+            "/api/v1/me/environmental/programs",
             json={
                 "program_type": "silica_exposure_control",
                 "title": "Silica Exposure Control Plan",
@@ -46,21 +46,21 @@ class TestListEnvironmentalPrograms:
     def test_list_programs(self, client: TestClient, test_company):
         """List programs returns created programs."""
         client.post(
-            "/me/environmental/programs",
+            "/api/v1/me/environmental/programs",
             json={
                 "program_type": "silica_exposure_control",
                 "title": "Silica Plan",
             },
         )
         client.post(
-            "/me/environmental/programs",
+            "/api/v1/me/environmental/programs",
             json={
                 "program_type": "lead_compliance",
                 "title": "Lead Plan",
             },
         )
 
-        response = client.get("/me/environmental/programs")
+        response = client.get("/api/v1/me/environmental/programs")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -75,7 +75,7 @@ class TestExposureMonitoringRecords:
         project_id = _create_project(client)
 
         create_resp = client.post(
-            f"/me/projects/{project_id}/exposure-records",
+            f"/api/v1/me/projects/{project_id}/exposure-records",
             json={
                 "monitoring_type": "silica",
                 "monitoring_date": "2026-03-15",
@@ -97,7 +97,7 @@ class TestExposureMonitoringRecords:
         assert record["exceeds_pel"] is False
         assert record["monitoring_type"] == "silica"
 
-        list_resp = client.get(f"/me/projects/{project_id}/exposure-records")
+        list_resp = client.get(f"/api/v1/me/projects/{project_id}/exposure-records")
         assert list_resp.status_code == 200
         assert list_resp.json()["total"] == 1
 
@@ -108,7 +108,7 @@ class TestExposureMonitoringRecords:
         # Create two silica records
         for val in [30.0, 60.0]:
             client.post(
-                f"/me/projects/{project_id}/exposure-records",
+                f"/api/v1/me/projects/{project_id}/exposure-records",
                 json={
                     "monitoring_type": "silica",
                     "monitoring_date": "2026-03-15",
@@ -123,7 +123,7 @@ class TestExposureMonitoringRecords:
                 },
             )
 
-        resp = client.get(f"/me/projects/{project_id}/exposure-records/summary")
+        resp = client.get(f"/api/v1/me/projects/{project_id}/exposure-records/summary")
         assert resp.status_code == 200
         data = resp.json()
         assert data["total_samples"] == 2
@@ -143,7 +143,7 @@ class TestSwpppInspections:
         project_id = _create_project(client)
 
         create_resp = client.post(
-            f"/me/projects/{project_id}/swppp-inspections",
+            f"/api/v1/me/projects/{project_id}/swppp-inspections",
             json={
                 "inspection_date": "2026-03-20",
                 "inspector_name": "Jane Green",
@@ -163,6 +163,6 @@ class TestSwpppInspections:
         assert insp["overall_status"] == "fail"
         assert len(insp["bmp_items"]) == 2
 
-        list_resp = client.get(f"/me/projects/{project_id}/swppp-inspections")
+        list_resp = client.get(f"/api/v1/me/projects/{project_id}/swppp-inspections")
         assert list_resp.status_code == 200
         assert list_resp.json()["total"] == 1

@@ -6,6 +6,7 @@ import { PublicRoute } from '@/components/auth/PublicRoute';
 import { LoginPage } from '@/components/auth/LoginPage';
 import { SignUpPage } from '@/components/auth/SignUpPage';
 import { ForgotPasswordPage } from '@/components/auth/ForgotPasswordPage';
+import { SsoCallbackPage } from '@/components/auth/SsoCallbackPage';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { CompanyOnboarding } from '@/components/onboarding/CompanyOnboarding';
 import { DashboardPage } from '@/components/dashboard/DashboardPage';
@@ -18,8 +19,10 @@ import { BillingPage } from '@/components/billing/BillingPage';
 import { ProjectListPage } from '@/components/projects/ProjectListPage';
 import { ProjectCreatePage } from '@/components/projects/ProjectCreatePage';
 import { ProjectDetailPage } from '@/components/projects/ProjectDetailPage';
+import { InspectionListPage } from '@/components/inspections/InspectionListPage';
 import { InspectionCreatePage } from '@/components/inspections/InspectionCreatePage';
 import { InspectionDetailPage } from '@/components/inspections/InspectionDetailPage';
+import { ToolboxTalkListPage } from '@/components/toolbox-talks/ToolboxTalkListPage';
 import { ToolboxTalkCreatePage } from '@/components/toolbox-talks/ToolboxTalkCreatePage';
 import { ToolboxTalkDeliverPage } from '@/components/toolbox-talks/ToolboxTalkDeliverPage';
 import { ToolboxTalkDetailPage } from '@/components/toolbox-talks/ToolboxTalkDetailPage';
@@ -31,6 +34,7 @@ import { OshaLogPage } from '@/components/osha-log/OshaLogPage';
 import { MockInspectionPage } from '@/components/mock-inspection/MockInspectionPage';
 import { HazardReportPage } from '@/components/hazards/HazardReportPage';
 import { MorningBriefPage } from '@/components/morning-brief/MorningBriefPage';
+import { IncidentListPage } from '@/components/incidents/IncidentListPage';
 import { IncidentCreatePage } from '@/components/incidents/IncidentCreatePage';
 import { IncidentDetailPage } from '@/components/incidents/IncidentDetailPage';
 import { AnalyticsPage } from '@/components/analytics/AnalyticsPage';
@@ -41,6 +45,7 @@ import { EnvironmentalPage } from '@/components/environmental/EnvironmentalPage'
 import { EquipmentPage } from '@/components/equipment/EquipmentPage';
 import { EquipmentCreatePage } from '@/components/equipment/EquipmentCreatePage';
 import { EquipmentDetailPage } from '@/components/equipment/EquipmentDetailPage';
+import { TeamMembersPage } from '@/components/team/TeamMembersPage';
 
 export function App() {
   return (
@@ -81,6 +86,9 @@ export function App() {
           }
         />
 
+        {/* Clerk SSO callback route */}
+        <Route path="/sso-callback" element={<SsoCallbackPage />} />
+
         {/* Onboarding — protected but outside AppLayout */}
         <Route
           path="/onboarding"
@@ -113,6 +121,9 @@ export function App() {
           <Route path="/projects/:projectId/morning-brief" element={<MorningBriefPage />} />
           <Route path="/projects/:projectId/incidents/new" element={<IncidentCreatePage />} />
           <Route path="/projects/:projectId/incidents/:id" element={<IncidentDetailPage />} />
+          <Route path="/inspections" element={<InspectionListPage />} />
+          <Route path="/incidents" element={<IncidentListPage />} />
+          <Route path="/toolbox-talks" element={<ToolboxTalkListPage />} />
           <Route path="/workers" element={<WorkerListPage />} />
           <Route path="/workers/new" element={<WorkerCreatePage />} />
           <Route path="/workers/certification-matrix" element={<CertificationMatrixPage />} />
@@ -134,6 +145,7 @@ export function App() {
           <Route path="/templates" element={<TemplatePickerPage />} />
           <Route path="/settings" element={<CompanySettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />
+          <Route path="/team" element={<TeamMembersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

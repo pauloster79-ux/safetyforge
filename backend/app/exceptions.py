@@ -1,8 +1,8 @@
-"""Custom exception classes for SafetyForge."""
+"""Custom exception classes for Kerf."""
 
 
 class DocumentNotFoundError(Exception):
-    """Raised when a document cannot be found in Firestore."""
+    """Raised when a document cannot be found in the database."""
 
     def __init__(self, document_id: str) -> None:
         self.document_id = document_id
@@ -10,7 +10,7 @@ class DocumentNotFoundError(Exception):
 
 
 class CompanyNotFoundError(Exception):
-    """Raised when a company cannot be found in Firestore."""
+    """Raised when a company cannot be found in the database."""
 
     def __init__(self, company_id: str) -> None:
         self.company_id = company_id
@@ -51,7 +51,7 @@ class InvalidWebhookSignatureError(Exception):
 
 
 class AuthenticationError(Exception):
-    """Raised when Firebase token verification fails."""
+    """Raised when authentication token verification fails."""
 
     def __init__(self, message: str = "Invalid or expired authentication token") -> None:
         super().__init__(message)
@@ -69,7 +69,7 @@ class ProjectLimitExceededError(Exception):
 
 
 class ProjectNotFoundError(Exception):
-    """Raised when a project cannot be found in Firestore."""
+    """Raised when a project cannot be found in the database."""
 
     def __init__(self, project_id: str) -> None:
         self.project_id = project_id
@@ -77,7 +77,7 @@ class ProjectNotFoundError(Exception):
 
 
 class WorkerNotFoundError(Exception):
-    """Raised when a worker cannot be found in Firestore."""
+    """Raised when a worker cannot be found in the database."""
 
     def __init__(self, worker_id: str) -> None:
         self.worker_id = worker_id
@@ -85,7 +85,7 @@ class WorkerNotFoundError(Exception):
 
 
 class InspectionNotFoundError(Exception):
-    """Raised when an inspection cannot be found in Firestore."""
+    """Raised when an inspection cannot be found in the database."""
 
     def __init__(self, inspection_id: str) -> None:
         self.inspection_id = inspection_id
@@ -93,7 +93,7 @@ class InspectionNotFoundError(Exception):
 
 
 class ToolboxTalkNotFoundError(Exception):
-    """Raised when a toolbox talk cannot be found in Firestore."""
+    """Raised when a toolbox talk cannot be found in the database."""
 
     def __init__(self, talk_id: str) -> None:
         self.talk_id = talk_id
@@ -101,7 +101,7 @@ class ToolboxTalkNotFoundError(Exception):
 
 
 class IncidentNotFoundError(Exception):
-    """Raised when an incident cannot be found in Firestore."""
+    """Raised when an incident cannot be found in the database."""
 
     def __init__(self, incident_id: str) -> None:
         self.incident_id = incident_id
@@ -109,7 +109,7 @@ class IncidentNotFoundError(Exception):
 
 
 class HazardReportNotFoundError(Exception):
-    """Raised when a hazard report cannot be found in Firestore."""
+    """Raised when a hazard report cannot be found in the database."""
 
     def __init__(self, report_id: str) -> None:
         self.report_id = report_id
@@ -117,7 +117,7 @@ class HazardReportNotFoundError(Exception):
 
 
 class MorningBriefNotFoundError(Exception):
-    """Raised when a morning brief cannot be found in Firestore."""
+    """Raised when a morning brief cannot be found in the database."""
 
     def __init__(self, brief_id: str) -> None:
         self.brief_id = brief_id
@@ -125,7 +125,7 @@ class MorningBriefNotFoundError(Exception):
 
 
 class OshaLogEntryNotFoundError(Exception):
-    """Raised when an OSHA log entry cannot be found in Firestore."""
+    """Raised when an OSHA log entry cannot be found in the database."""
 
     def __init__(self, entry_id: str) -> None:
         self.entry_id = entry_id
@@ -133,7 +133,7 @@ class OshaLogEntryNotFoundError(Exception):
 
 
 class MockInspectionNotFoundError(Exception):
-    """Raised when a mock inspection result cannot be found in Firestore."""
+    """Raised when a mock inspection result cannot be found in the database."""
 
     def __init__(self, inspection_id: str) -> None:
         self.inspection_id = inspection_id
@@ -141,7 +141,7 @@ class MockInspectionNotFoundError(Exception):
 
 
 class EquipmentNotFoundError(Exception):
-    """Raised when equipment cannot be found in Firestore."""
+    """Raised when equipment cannot be found in the database."""
 
     def __init__(self, equipment_id: str) -> None:
         self.equipment_id = equipment_id
@@ -149,7 +149,7 @@ class EquipmentNotFoundError(Exception):
 
 
 class EnvironmentalProgramNotFoundError(Exception):
-    """Raised when an environmental program cannot be found in Firestore."""
+    """Raised when an environmental program cannot be found in the database."""
 
     def __init__(self, program_id: str) -> None:
         self.program_id = program_id
@@ -157,7 +157,7 @@ class EnvironmentalProgramNotFoundError(Exception):
 
 
 class PrequalPackageNotFoundError(Exception):
-    """Raised when a prequalification package cannot be found in Firestore."""
+    """Raised when a prequalification package cannot be found in the database."""
 
     def __init__(self, package_id: str) -> None:
         self.package_id = package_id
@@ -165,7 +165,7 @@ class PrequalPackageNotFoundError(Exception):
 
 
 class MemberNotFoundError(Exception):
-    """Raised when a member cannot be found in Firestore."""
+    """Raised when a member cannot be found in the database."""
 
     def __init__(self, member_id: str) -> None:
         self.member_id = member_id
@@ -188,7 +188,7 @@ class InsufficientPermissionError(Exception):
 
 
 class InvitationNotFoundError(Exception):
-    """Raised when an invitation cannot be found in Firestore."""
+    """Raised when an invitation cannot be found in the database."""
 
     def __init__(self, invitation_id: str) -> None:
         self.invitation_id = invitation_id
@@ -204,7 +204,7 @@ class InvitationExpiredError(Exception):
 
 
 class GcRelationshipNotFoundError(Exception):
-    """Raised when a GC/Sub relationship cannot be found in Firestore."""
+    """Raised when a GC/Sub relationship cannot be found in the database."""
 
     def __init__(self, relationship_id: str) -> None:
         self.relationship_id = relationship_id
@@ -212,8 +212,40 @@ class GcRelationshipNotFoundError(Exception):
 
 
 class GcInvitationNotFoundError(Exception):
-    """Raised when a GC portal invitation cannot be found in Firestore."""
+    """Raised when a GC portal invitation cannot be found in the database."""
 
     def __init__(self, invitation_id: str) -> None:
         self.invitation_id = invitation_id
         super().__init__(f"GC invitation not found: {invitation_id}")
+
+
+class AssignmentNotFoundError(Exception):
+    """Raised when a project assignment cannot be found in the database."""
+
+    def __init__(self, assignment_id: str) -> None:
+        self.assignment_id = assignment_id
+        super().__init__(f"Assignment not found: {assignment_id}")
+
+
+class AgentNotFoundError(Exception):
+    """Raised when an agent cannot be found in the database."""
+
+    def __init__(self, agent_id: str) -> None:
+        self.agent_id = agent_id
+        super().__init__(f"Agent not found: {agent_id}")
+
+
+class AgentBudgetExceededError(Exception):
+    """Raised when an agent's daily budget is exceeded."""
+
+    def __init__(
+        self, agent_id: str, name: str, spent: int, budget: int
+    ) -> None:
+        self.agent_id = agent_id
+        self.name = name
+        self.spent = spent
+        self.budget = budget
+        super().__init__(
+            f"Agent '{name}' ({agent_id}) exceeded daily budget: "
+            f"spent {spent} cents of {budget} cents"
+        )

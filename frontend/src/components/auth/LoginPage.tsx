@@ -16,17 +16,22 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signInWithEmail, signInWithGoogle, signInDemo, firebaseConfigured, verifyToken } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInDemo, clerkConfigured, verifyToken } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || ROUTES.DASHBOARD;
 
   const navigateAfterAuth = async (defaultDest: string) => {
-    const result = await verifyToken();
-    if (result?.is_new_user) {
-      navigate(ROUTES.ONBOARDING, { replace: true });
-    } else {
+    try {
+      const result = await verifyToken();
+      if (result?.is_new_user) {
+        navigate(ROUTES.ONBOARDING, { replace: true });
+      } else {
+        navigate(defaultDest, { replace: true });
+      }
+    } catch {
+      // Backend may be unavailable — navigate to dashboard anyway
       navigate(defaultDest, { replace: true });
     }
   };
@@ -45,7 +50,7 @@ export function LoginPage() {
       await navigateAfterAuth(from);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sign in';
-      if (message.includes('user-not-found') || message.includes('wrong-password') || message.includes('invalid-credential')) {
+      if (message.includes('not found') || message.includes('password') || message.includes('invalid') || message.includes('credentials')) {
         setError('Invalid email or password. Please try again.');
       } else {
         setError(message);
@@ -63,7 +68,7 @@ export function LoginPage() {
       await navigateAfterAuth(from);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sign in with Google';
-      if (!message.includes('popup-closed-by-user')) {
+      if (!message.includes('popup-closed') && !message.includes('cancelled')) {
         setError(message);
       }
     } finally {
@@ -98,7 +103,7 @@ export function LoginPage() {
               </Alert>
             )}
 
-            {!firebaseConfigured && (
+            {!clerkConfigured && (
               <div className="mb-4">
                 <Button
                   className="w-full bg-primary hover:bg-[var(--machine-dark)] text-primary-foreground text-base py-5"

@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from google.cloud import firestore
+from neo4j import Driver
 
 from app.config import Settings
 from app.exceptions import (
@@ -16,6 +16,7 @@ from app.exceptions import (
 )
 from app.models.billing import SubscriptionInfo
 from app.models.company import Company, SubscriptionStatus
+from app.services.base_service import BaseService
 from app.services.company_service import CompanyService
 from app.services.document_service import DocumentService
 from app.services.project_service import ProjectService
@@ -23,6 +24,7 @@ from app.services.project_service import ProjectService
 logger = logging.getLogger(__name__)
 
 FREE_TIER_MONTHLY_LIMIT = 3
+TRIAL_DURATION_DAYS = 14
 
 # Plan limits: maps plan name to monthly document limit (None = unlimited)
 PLAN_LIMITS: dict[str, dict] = {
@@ -49,28 +51,20 @@ PLAN_LIMITS: dict[str, dict] = {
 }
 
 
-class BillingService:
+class BillingService(BaseService):
     """Manages subscriptions and billing via Paddle webhooks.
 
     Args:
-        db: Firestore client instance.
+        driver: Neo4j driver.
         settings: Application settings with Paddle credentials.
     """
 
-    def __init__(self, db: firestore.Client, settings: Settings) -> None:
-        self.db = db
+    def __init__(self, driver: Driver, settings: Settings) -> None:
+        super().__init__(driver)
         self.settings = settings
-        self.company_service = CompanyService(db)
-        self.document_service = DocumentService(db)
-        self.project_service = ProjectService(db)
-
-    def _webhook_events_collection(self) -> firestore.CollectionReference:
-        """Return the webhook_events collection reference for idempotency tracking.
-
-        Returns:
-            A Firestore collection reference.
-        """
-        return self.db.collection("webhook_events")
+        self.company_service = CompanyService(driver)
+        self.document_service = DocumentService(driver)
+        self.project_service = ProjectService(driver)
 
     def is_webhook_processed(self, event_id: str) -> bool:
         """Check whether a webhook event has already been processed.
@@ -81,8 +75,11 @@ class BillingService:
         Returns:
             True if the event was already processed, False otherwise.
         """
-        doc = self._webhook_events_collection().document(event_id).get()
-        return doc.exists
+        result = self._read_tx_single(
+            "MATCH (e:WebhookEvent {event_id: $event_id}) RETURN e.event_id AS id",
+            {"event_id": event_id},
+        )
+        return result is not None
 
     def mark_webhook_processed(
         self, event_id: str, event_type: str, company_id: str
@@ -94,13 +91,19 @@ class BillingService:
             event_type: The webhook event type (e.g. subscription_created).
             company_id: The company ID associated with the event.
         """
-        self._webhook_events_collection().document(event_id).set(
+        self._write_tx(
+            """
+            MERGE (e:WebhookEvent {event_id: $event_id})
+            SET e.event_type = $event_type,
+                e.processed_at = $now,
+                e.company_id = $company_id
+            """,
             {
                 "event_id": event_id,
                 "event_type": event_type,
-                "processed_at": datetime.now(timezone.utc),
+                "now": datetime.now(timezone.utc).isoformat(),
                 "company_id": company_id,
-            }
+            },
         )
 
     def verify_webhook_signature(self, raw_body: bytes, paddle_signature: str) -> None:
@@ -209,10 +212,15 @@ class BillingService:
                 status=new_status,
                 subscription_id=subscription_id,
             )
-            # Store plan_name if resolved
+            # Store plan_name on the Company node
             if plan_name:
-                doc_ref = self.company_service._collection().document(company_id)
-                doc_ref.update({"plan_name": plan_name})
+                self._write_tx(
+                    """
+                    MATCH (c:Company {id: $id})
+                    SET c.plan_name = $plan_name
+                    """,
+                    {"id": company_id, "plan_name": plan_name},
+                )
 
             self.mark_webhook_processed(event_id, event_type, company_id)
             logger.info(
@@ -263,7 +271,7 @@ class BillingService:
     def _resolve_plan_name(self, company: Company) -> str:
         """Resolve the plan name for a company based on subscription status.
 
-        Checks the company's Firestore data for a stored plan_name field.
+        Checks the Company node for a stored plan_name property.
         Falls back to 'Free' for non-active subscriptions.
 
         Args:
@@ -275,16 +283,42 @@ class BillingService:
         if company.subscription_status != SubscriptionStatus.ACTIVE:
             return "Free"
 
-        # Look for stored plan_name in the Firestore document
-        doc = self.company_service._collection().document(company.id).get()
-        if doc.exists:
-            data = doc.to_dict()
-            stored_plan = data.get("plan_name")
-            if stored_plan and stored_plan in PLAN_LIMITS:
-                return stored_plan
+        # Look for stored plan_name on the Company node
+        result = self._read_tx_single(
+            "MATCH (c:Company {id: $id}) RETURN c.plan_name AS plan_name",
+            {"id": company.id},
+        )
+        if result and result["plan_name"] and result["plan_name"] in PLAN_LIMITS:
+            return result["plan_name"]
 
         # Default paid plan if not stored
         return "Professional"
+
+    def _get_trial_info(self, company: Company) -> tuple[bool, int | None, datetime | None]:
+        """Calculate trial status for a company.
+
+        Free-tier companies get a 14-day trial starting from their created_at date.
+        Paid or cancelled subscriptions are never on trial.
+
+        Args:
+            company: The Company model.
+
+        Returns:
+            A tuple of (is_trial, days_remaining, trial_end_date).
+        """
+        if company.subscription_status != SubscriptionStatus.FREE:
+            return False, None, None
+
+        from datetime import timedelta
+
+        trial_end = company.created_at + timedelta(days=TRIAL_DURATION_DAYS)
+        now = datetime.now(timezone.utc)
+        remaining = (trial_end - now).days
+
+        if remaining < 0:
+            return False, 0, trial_end
+
+        return True, remaining, trial_end
 
     def get_subscription_status(self, company_id: str) -> SubscriptionInfo:
         """Get the current subscription status for a company.
@@ -301,6 +335,8 @@ class BillingService:
         plan_name = self._resolve_plan_name(company)
         plan_config = PLAN_LIMITS.get(plan_name, PLAN_LIMITS["Free"])
 
+        is_trial, trial_days_remaining, trial_end_date = self._get_trial_info(company)
+
         return SubscriptionInfo(
             company_id=company_id,
             status=company.subscription_status.value,
@@ -309,34 +345,49 @@ class BillingService:
             documents_limit=plan_config["document_limit"],
             current_period_end=None,
             cancel_at_period_end=company.subscription_status == SubscriptionStatus.CANCELLED,
+            is_trial=is_trial,
+            trial_days_remaining=trial_days_remaining,
+            trial_end_date=trial_end_date,
         )
 
     def _maybe_reset_billing_period(self, company_id: str) -> None:
         """Reset the monthly document counter if the billing period has rolled over.
 
-        Checks the ``billing_period_start`` field on the company document. If the
+        Checks the ``billing_period_start`` property on the Company node. If the
         current month differs from the stored month, resets
         ``documents_used_this_month`` to 0 and updates ``billing_period_start``
         to the first day of the current month.
 
         Args:
-            company_id: The company document ID.
+            company_id: The company ID.
         """
-        doc_ref = self.company_service._collection().document(company_id)
-        doc = doc_ref.get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $id})
+            RETURN c.billing_period_start AS billing_period_start
+            """,
+            {"id": company_id},
+        )
+        if result is None:
             return
 
-        data = doc.to_dict()
         now = datetime.now(timezone.utc)
-        billing_period_start = data.get("billing_period_start")
+        billing_period_start = result["billing_period_start"]
 
         needs_reset = False
         if billing_period_start is None:
             needs_reset = True
         else:
-            # Firestore may return a datetime or a date string
-            if isinstance(billing_period_start, datetime):
+            # Neo4j may return an ISO string
+            if isinstance(billing_period_start, str):
+                try:
+                    bps = datetime.fromisoformat(billing_period_start)
+                    period_month = bps.month
+                    period_year = bps.year
+                except ValueError:
+                    period_month = None
+                    period_year = None
+            elif isinstance(billing_period_start, datetime):
                 period_month = billing_period_start.month
                 period_year = billing_period_start.year
             else:
@@ -348,11 +399,13 @@ class BillingService:
 
         if needs_reset:
             first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            doc_ref.update(
-                {
-                    "documents_used_this_month": 0,
-                    "billing_period_start": first_of_month,
-                }
+            self._write_tx(
+                """
+                MATCH (c:Company {id: $id})
+                SET c.documents_used_this_month = 0,
+                    c.billing_period_start = $bps
+                """,
+                {"id": company_id, "bps": first_of_month.isoformat()},
             )
             logger.info(
                 "Reset billing period for company %s to %s",
@@ -451,7 +504,7 @@ class BillingService:
             json={
                 "items": [{"price_id": price_id, "quantity": 1}],
                 "custom_data": {"company_id": company_id},
-                "checkout": {"url": "https://app.safetyforge.com/billing?success=true"},
+                "checkout": {"url": "https://app.kerf.build/billing?success=true"},
             },
         )
         response.raise_for_status()

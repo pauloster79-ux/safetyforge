@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.middleware.feature_gate import require_feature
 from app.middleware.rate_limit import limiter
-from app.utils.async_firestore import run_sync
+from app.utils.async_helpers import run_sync
 
 from app.dependencies import (
     get_analytics_service,
@@ -29,12 +29,14 @@ from app.dependencies import (
     get_morning_brief_service,
     get_osha_log_service,
     get_prequalification_service,
+    get_project_assignment_service,
     get_project_service,
     get_state_compliance_service,
     get_toolbox_talk_service,
     get_worker_service,
 )
 from app.exceptions import (
+    AssignmentNotFoundError,
     CompanyNotFoundError,
     DocumentLimitExceededError,
     DocumentNotFoundError,
@@ -185,6 +187,15 @@ from app.models.equipment import (
 )
 from app.services.environmental_service import EnvironmentalService
 from app.services.equipment_service import EquipmentService
+from app.models.project_assignment import (
+    ProjectAssignment,
+    ProjectAssignmentCreate,
+    ProjectAssignmentListResponse,
+    ProjectAssignmentUpdate,
+    AssignmentStatus,
+    ResourceType,
+)
+from app.services.project_assignment_service import ProjectAssignmentService
 
 router = APIRouter(prefix="/me", tags=["me"])
 
@@ -907,6 +918,92 @@ async def delete_my_project(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project not found: {project_id}",
         )
+
+
+# -- Cross-project aggregate endpoints -----------------------------------------------
+
+
+@router.get("/inspections", response_model=InspectionListResponse)
+async def list_all_inspections(
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    project_service: Annotated[ProjectService, Depends(get_project_service)],
+    inspection_service: Annotated[InspectionService, Depends(get_inspection_service)],
+    limit: int = Query(50, ge=1, le=200, description="Max inspections to return"),
+    inspection_type: InspectionType | None = Query(
+        None, alias="type", description="Filter by inspection type"
+    ),
+) -> InspectionListResponse:
+    """List inspections across all projects for the current company."""
+    company = await _resolve_company(current_user, company_service)
+    projects_result = project_service.list_projects(company.id, limit=100)
+    all_inspections = []
+    for project in projects_result["projects"]:
+        result = inspection_service.list_inspections(
+            company_id=company.id,
+            project_id=project.id,
+            inspection_type=inspection_type,
+            limit=limit,
+        )
+        all_inspections.extend(result["inspections"])
+    all_inspections.sort(key=lambda i: i.inspection_date, reverse=True)
+    return InspectionListResponse(
+        inspections=all_inspections[:limit], total=len(all_inspections)
+    )
+
+
+@router.get("/incidents", response_model=IncidentListResponse)
+async def list_all_incidents(
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    project_service: Annotated[ProjectService, Depends(get_project_service)],
+    incident_service: Annotated[IncidentService, Depends(get_incident_service)],
+    limit: int = Query(50, ge=1, le=200, description="Max incidents to return"),
+) -> IncidentListResponse:
+    """List incidents across all projects for the current company."""
+    company = await _resolve_company(current_user, company_service)
+    projects_result = project_service.list_projects(company.id, limit=100)
+    all_incidents = []
+    for project in projects_result["projects"]:
+        result = incident_service.list_incidents(
+            company_id=company.id,
+            project_id=project.id,
+            limit=limit,
+        )
+        all_incidents.extend(result["incidents"])
+    all_incidents.sort(key=lambda i: i.incident_date, reverse=True)
+    return IncidentListResponse(
+        incidents=all_incidents[:limit], total=len(all_incidents)
+    )
+
+
+@router.get("/toolbox-talks", response_model=ToolboxTalkListResponse)
+async def list_all_toolbox_talks(
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    project_service: Annotated[ProjectService, Depends(get_project_service)],
+    toolbox_talk_service: Annotated[ToolboxTalkService, Depends(get_toolbox_talk_service)],
+    limit: int = Query(50, ge=1, le=200, description="Max talks to return"),
+    talk_status: ToolboxTalkStatus | None = Query(
+        None, alias="status", description="Filter by status"
+    ),
+) -> ToolboxTalkListResponse:
+    """List toolbox talks across all projects for the current company."""
+    company = await _resolve_company(current_user, company_service)
+    projects_result = project_service.list_projects(company.id, limit=100)
+    all_talks = []
+    for project in projects_result["projects"]:
+        result = toolbox_talk_service.list_talks(
+            company_id=company.id,
+            project_id=project.id,
+            status=talk_status,
+            limit=limit,
+        )
+        all_talks.extend(result["toolbox_talks"])
+    all_talks.sort(key=lambda t: t.created_at, reverse=True)
+    return ToolboxTalkListResponse(
+        toolbox_talks=all_talks[:limit], total=len(all_talks)
+    )
 
 
 # -- Inspection endpoints ------------------------------------------------------------
@@ -3713,3 +3810,227 @@ async def get_equipment_inspection_template(
         )
     template = EquipmentService.get_inspection_template(equipment.equipment_type.value)
     return {"template": template, "equipment_type": equipment.equipment_type.value}
+
+
+# ---------------------------------------------------------------------------
+# Project Assignments
+# ---------------------------------------------------------------------------
+
+
+@router.get("/assignments", response_model=ProjectAssignmentListResponse)
+async def list_my_assignments(
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    assignment_service: Annotated[
+        ProjectAssignmentService, Depends(get_project_assignment_service)
+    ],
+    project_id: str | None = Query(None, description="Filter by project"),
+    resource_type: ResourceType | None = Query(None, description="Filter: worker or equipment"),
+    resource_id: str | None = Query(None, description="Filter by resource ID"),
+    assignment_status: AssignmentStatus | None = Query(
+        None, alias="status", description="Filter by status"
+    ),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> ProjectAssignmentListResponse:
+    """List project assignments with optional filters.
+
+    Args:
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        assignment_service: ProjectAssignmentService dependency.
+        project_id: Optional project filter.
+        resource_type: Optional worker/equipment filter.
+        resource_id: Optional specific resource filter.
+        assignment_status: Optional status filter.
+        limit: Max results.
+        offset: Pagination offset.
+
+    Returns:
+        ProjectAssignmentListResponse with assignments and total count.
+    """
+    company = await _resolve_company(current_user, company_service)
+    result = assignment_service.list_assignments(
+        company_id=company.id,
+        project_id=project_id,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        status=assignment_status,
+        limit=limit,
+        offset=offset,
+    )
+    return ProjectAssignmentListResponse(
+        assignments=result["assignments"], total=result["total"]
+    )
+
+
+@router.post(
+    "/assignments",
+    response_model=ProjectAssignment,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_my_assignment(
+    data: ProjectAssignmentCreate,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    assignment_service: Annotated[
+        ProjectAssignmentService, Depends(get_project_assignment_service)
+    ],
+) -> ProjectAssignment:
+    """Create a project assignment (assign worker or equipment to a project).
+
+    Args:
+        data: Assignment creation payload.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        assignment_service: ProjectAssignmentService dependency.
+
+    Returns:
+        The created ProjectAssignment.
+    """
+    company = await _resolve_company(current_user, company_service)
+    try:
+        return assignment_service.create(company.id, data, current_user["uid"])
+    except CompanyNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Company not found",
+        )
+
+
+@router.get("/assignments/{assignment_id}", response_model=ProjectAssignment)
+async def get_my_assignment(
+    assignment_id: str,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    assignment_service: Annotated[
+        ProjectAssignmentService, Depends(get_project_assignment_service)
+    ],
+) -> ProjectAssignment:
+    """Fetch a single project assignment.
+
+    Args:
+        assignment_id: The assignment ID.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        assignment_service: ProjectAssignmentService dependency.
+
+    Returns:
+        The ProjectAssignment.
+    """
+    company = await _resolve_company(current_user, company_service)
+    try:
+        return assignment_service.get(company.id, assignment_id)
+    except AssignmentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Assignment not found: {assignment_id}",
+        )
+
+
+@router.patch("/assignments/{assignment_id}", response_model=ProjectAssignment)
+async def update_my_assignment(
+    assignment_id: str,
+    data: ProjectAssignmentUpdate,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    assignment_service: Annotated[
+        ProjectAssignmentService, Depends(get_project_assignment_service)
+    ],
+) -> ProjectAssignment:
+    """Update a project assignment.
+
+    Args:
+        assignment_id: The assignment ID.
+        data: Update payload (only non-None fields applied).
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        assignment_service: ProjectAssignmentService dependency.
+
+    Returns:
+        The updated ProjectAssignment.
+    """
+    company = await _resolve_company(current_user, company_service)
+    try:
+        return assignment_service.update(
+            company.id, assignment_id, data, current_user["uid"]
+        )
+    except AssignmentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Assignment not found: {assignment_id}",
+        )
+
+
+@router.delete(
+    "/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_my_assignment(
+    assignment_id: str,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    assignment_service: Annotated[
+        ProjectAssignmentService, Depends(get_project_assignment_service)
+    ],
+) -> None:
+    """Soft-delete a project assignment.
+
+    Args:
+        assignment_id: The assignment ID.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        assignment_service: ProjectAssignmentService dependency.
+    """
+    company = await _resolve_company(current_user, company_service)
+    try:
+        assignment_service.delete(company.id, assignment_id)
+    except AssignmentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Assignment not found: {assignment_id}",
+        )
+
+
+@router.get(
+    "/projects/{project_id}/assignments",
+    response_model=ProjectAssignmentListResponse,
+)
+async def list_project_assignments(
+    project_id: str,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    assignment_service: Annotated[
+        ProjectAssignmentService, Depends(get_project_assignment_service)
+    ],
+    resource_type: ResourceType | None = Query(None),
+    assignment_status: AssignmentStatus | None = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> ProjectAssignmentListResponse:
+    """List assignments for a specific project.
+
+    Args:
+        project_id: The project to list assignments for.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        assignment_service: ProjectAssignmentService dependency.
+        resource_type: Optional worker/equipment filter.
+        assignment_status: Optional status filter.
+        limit: Max results.
+        offset: Pagination offset.
+
+    Returns:
+        ProjectAssignmentListResponse with assignments and total count.
+    """
+    company = await _resolve_company(current_user, company_service)
+    result = assignment_service.list_assignments(
+        company_id=company.id,
+        project_id=project_id,
+        resource_type=resource_type,
+        status=assignment_status,
+        limit=limit,
+        offset=offset,
+    )
+    return ProjectAssignmentListResponse(
+        assignments=result["assignments"], total=result["total"]
+    )

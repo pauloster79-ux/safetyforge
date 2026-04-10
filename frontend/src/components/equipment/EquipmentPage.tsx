@@ -73,14 +73,14 @@ function InspectionIndicator({ equipment }: { equipment: Equipment }) {
 
 export function EquipmentPage() {
   const navigate = useNavigate();
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [alertsExpanded, setAlertsExpanded] = useState(false);
 
   const params: Record<string, string> = {};
-  if (typeFilter !== 'all') params.type = typeFilter;
-  if (statusFilter !== 'all') params.status = statusFilter;
+  if (!typeFilter.startsWith('All')) params.type = typeFilter;
+  if (!statusFilter.startsWith('All')) params.status = statusFilter;
 
   const { data: equipment, isLoading } = useEquipment(
     Object.keys(params).length > 0 ? params : undefined
@@ -179,23 +179,23 @@ export function EquipmentPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v || 'all')}>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v || 'All')}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="All Types">All Types</SelectItem>
             {EQUIPMENT_TYPES.map(t => (
               <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'all')}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'All')}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="All Status">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="out_of_service">Out of Service</SelectItem>
             <SelectItem value="maintenance">Maintenance</SelectItem>

@@ -4,9 +4,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from google.cloud import firestore
+from neo4j import Driver
 
-from app.dependencies import get_current_user, get_firestore_client, verify_company_access
+from app.dependencies import get_current_user, get_neo4j_driver, verify_company_access
 from app.exceptions import CompanyNotFoundError, DocumentNotFoundError
 from app.services.company_service import CompanyService
 from app.services.document_service import DocumentService
@@ -26,18 +26,18 @@ async def export_document_pdf(
     company_id: str,
     document_id: str,
     current_user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated[firestore.Client, Depends(get_firestore_client)],
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
 ) -> StreamingResponse:
     """Generate and return a PDF for a safety document.
 
-    Fetches the document from Firestore, generates a branded PDF
+    Fetches the document from Neo4j, generates a branded PDF
     using WeasyPrint, and returns it as a downloadable file.
 
     Args:
         company_id: The owning company ID.
         document_id: The document ID to export.
         current_user: Authenticated user claims.
-        db: Firestore client.
+        driver: Neo4j driver.
 
     Returns:
         StreamingResponse with PDF bytes and content-disposition header.
@@ -45,9 +45,9 @@ async def export_document_pdf(
     Raises:
         HTTPException: 404 if company or document not found, 403 if access denied.
     """
-    _verify_company_access(company_id, current_user["uid"], db)
+    _verify_company_access(company_id, current_user["uid"], driver)
 
-    doc_service = DocumentService(db)
+    doc_service = DocumentService(driver)
     try:
         document = doc_service.get(company_id, document_id)
     except DocumentNotFoundError:
@@ -56,7 +56,7 @@ async def export_document_pdf(
             detail=f"Document not found: {document_id}",
         )
 
-    company_service = CompanyService(db)
+    company_service = CompanyService(driver)
     try:
         company = company_service.get(company_id)
     except CompanyNotFoundError:

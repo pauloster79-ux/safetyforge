@@ -1,13 +1,12 @@
 """Morning safety brief service that aggregates data from multiple sources."""
 
-import secrets
+import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.exceptions import MorningBriefNotFoundError, ProjectNotFoundError
 from app.models.morning_brief import BriefAlert, MorningBrief, RiskLevel
+from app.services.base_service import BaseService
 from app.services.inspection_service import InspectionService
 from app.services.toolbox_talk_service import ToolboxTalkService
 from app.services.worker_service import WorkerService
@@ -34,11 +33,15 @@ _TOPIC_RECOMMENDATIONS: dict[str, str] = {
 }
 
 
-class MorningBriefService:
+class MorningBriefService(BaseService):
     """Assembles morning safety briefs from multiple data sources.
 
+    Graph model:
+        (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_MORNING_BRIEF]->(MorningBrief)
+        weather and alerts stored as _weather_json and _alerts_json.
+
     Args:
-        db: Firestore client instance.
+        driver: Neo4j driver instance.
         worker_service: WorkerService for certification queries.
         inspection_service: InspectionService for recent inspection queries.
         toolbox_talk_service: ToolboxTalkService for recent talk queries.
@@ -46,56 +49,15 @@ class MorningBriefService:
 
     def __init__(
         self,
-        db: firestore.Client,
+        driver: Any,
         worker_service: WorkerService,
         inspection_service: InspectionService,
         toolbox_talk_service: ToolboxTalkService,
     ) -> None:
-        self.db = db
+        super().__init__(driver)
         self.worker_service = worker_service
         self.inspection_service = inspection_service
         self.toolbox_talk_service = toolbox_talk_service
-
-    def _project_ref(
-        self, company_id: str, project_id: str
-    ) -> firestore.DocumentReference:
-        """Return a reference to the project document.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The project ID.
-
-        Returns:
-            Firestore document reference.
-        """
-        return (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("projects")
-            .document(project_id)
-        )
-
-    def _collection(
-        self, company_id: str, project_id: str
-    ) -> firestore.CollectionReference:
-        """Return the morning_briefs subcollection for a project.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The parent project ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._project_ref(company_id, project_id).collection("morning_briefs")
-
-    def _generate_id(self) -> str:
-        """Generate a unique morning brief ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"brief_{secrets.token_hex(8)}"
 
     def _verify_project_exists(self, company_id: str, project_id: str) -> None:
         """Verify that the parent project exists and is not deleted.
@@ -107,11 +69,35 @@ class MorningBriefService:
         Raises:
             ProjectNotFoundError: If the project does not exist or is soft-deleted.
         """
-        doc = self._project_ref(company_id, project_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            RETURN p.id AS id
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        if result is None:
             raise ProjectNotFoundError(project_id)
-        if doc.to_dict().get("deleted", False):
-            raise ProjectNotFoundError(project_id)
+
+    @staticmethod
+    def _to_model(record: dict[str, Any]) -> MorningBrief:
+        """Convert a Neo4j record to a MorningBrief model.
+
+        Args:
+            record: Dict with 'brief', 'company_id', and 'project_id' keys.
+
+        Returns:
+            A MorningBrief model instance.
+        """
+        data = dict(record["brief"])
+        weather_json = data.pop("_weather_json", "{}")
+        data["weather"] = json.loads(weather_json) if weather_json else {}
+        alerts_json = data.pop("_alerts_json", "[]")
+        data["alerts"] = json.loads(alerts_json) if alerts_json else []
+        data["company_id"] = record["company_id"]
+        data["project_id"] = record["project_id"]
+        return MorningBrief(**data)
 
     def _get_certification_alerts(self, company_id: str) -> list[BriefAlert]:
         """Build alerts for expiring and expired certifications.
@@ -223,7 +209,6 @@ class MorningBriefService:
         """
         alerts: list[BriefAlert] = []
 
-        # Check for talks in the last 7 days
         result = self.toolbox_talk_service.list_talks(
             company_id=company_id,
             project_id=project_id,
@@ -322,7 +307,6 @@ class MorningBriefService:
         """
         score = 3.0  # Base score
 
-        # Weather factors
         temp = weather.get("temperature", 0)
         wind = weather.get("wind_speed", 0)
         if temp > 95:
@@ -330,7 +314,6 @@ class MorningBriefService:
         if wind > 20:
             score += 1.0
 
-        # Certification factors
         has_expired = any(
             a.severity == "critical" and a.alert_type == "certification"
             for a in cert_alerts
@@ -344,11 +327,9 @@ class MorningBriefService:
         if has_expiring:
             score += 1.0
 
-        # Inspection factor
         if inspection_alerts:
             score += 1.5
 
-        # Toolbox talk factor
         if toolbox_alerts:
             score += 0.5
 
@@ -392,7 +373,6 @@ class MorningBriefService:
         Returns:
             A recommended topic string.
         """
-        # Priority order: weather heat > expired certs > inspection > wind > expiring > toolbox
         for alert in weather_alerts:
             if "Heat" in alert.title:
                 return _TOPIC_RECOMMENDATIONS["weather_heat"]
@@ -469,9 +449,6 @@ class MorningBriefService:
     ) -> MorningBrief:
         """Assemble and persist a morning safety brief.
 
-        Aggregates weather, certification, inspection, and toolbox talk data
-        to produce a risk-scored brief with actionable alerts.
-
         Args:
             company_id: The owning company ID.
             project_id: The parent project ID.
@@ -487,7 +464,6 @@ class MorningBriefService:
 
         weather = weather_override if weather_override is not None else dict(_DEFAULT_WEATHER)
 
-        # Collect alerts from all sources
         weather_alerts = self._get_weather_alerts(weather)
         cert_alerts = self._get_certification_alerts(company_id)
         inspection_alerts = self._get_inspection_alerts(company_id, project_id)
@@ -495,40 +471,43 @@ class MorningBriefService:
 
         all_alerts = weather_alerts + cert_alerts + inspection_alerts + toolbox_alerts
 
-        # Calculate risk
         risk_score = self._calculate_risk_score(
             weather, cert_alerts, inspection_alerts, toolbox_alerts
         )
         risk_level = self._determine_risk_level(risk_score)
 
-        # Recommend topic
         topic = self._recommend_topic(
             weather_alerts, cert_alerts, inspection_alerts, toolbox_alerts
         )
 
-        # Generate summary
         summary = self._generate_summary(risk_level, risk_score, all_alerts, weather)
 
         now = datetime.now(timezone.utc)
-        brief_id = self._generate_id()
+        brief_id = self._generate_id("brief")
         today = date.today()
 
-        brief_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": brief_id,
-            "company_id": company_id,
-            "project_id": project_id,
             "date": today.isoformat(),
             "risk_score": round(risk_score, 1),
             "risk_level": risk_level.value,
-            "weather": weather,
-            "alerts": [a.model_dump() for a in all_alerts],
+            "_weather_json": json.dumps(weather),
+            "_alerts_json": json.dumps([a.model_dump() for a in all_alerts]),
             "recommended_toolbox_talk_topic": topic,
             "summary": summary,
-            "created_at": now,
+            "created_at": now.isoformat(),
         }
 
-        self._collection(company_id, project_id).document(brief_id).set(brief_dict)
-        return MorningBrief(**brief_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            CREATE (b:MorningBrief $props)
+            CREATE (p)-[:HAS_MORNING_BRIEF]->(b)
+            RETURN b {.*} AS brief, c.id AS company_id, p.id AS project_id
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": props},
+        )
+        return self._to_model(result)
 
     def get_brief(self, company_id: str, project_id: str, brief_id: str) -> MorningBrief:
         """Fetch a single morning brief.
@@ -544,10 +523,21 @@ class MorningBriefService:
         Raises:
             MorningBriefNotFoundError: If the brief does not exist.
         """
-        doc = self._collection(company_id, project_id).document(brief_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_MORNING_BRIEF]->(b:MorningBrief {id: $brief_id})
+            RETURN b {.*} AS brief, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "brief_id": brief_id,
+            },
+        )
+        if result is None:
             raise MorningBriefNotFoundError(brief_id)
-        return MorningBrief(**doc.to_dict())
+        return self._to_model(result)
 
     def list_briefs(
         self,
@@ -565,14 +555,28 @@ class MorningBriefService:
         Returns:
             A dict with 'briefs' list and 'total' count.
         """
-        query: firestore.Query = self._collection(company_id, project_id).order_by(
-            "created_at", direction=firestore.Query.DESCENDING
+        count_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_MORNING_BRIEF]->(b:MorningBrief)
+            RETURN count(b) AS total
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        total = count_result["total"] if count_result else 0
+
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_MORNING_BRIEF]->(b:MorningBrief)
+            RETURN b {.*} AS brief, c.id AS company_id, p.id AS project_id
+            ORDER BY b.created_at DESC
+            LIMIT $limit
+            """,
+            {"company_id": company_id, "project_id": project_id, "limit": limit},
         )
 
-        all_docs = list(query.stream())
-        total = len(all_docs)
-
-        briefs = [MorningBrief(**doc.to_dict()) for doc in all_docs[:limit]]
+        briefs = [self._to_model(r) for r in results]
         return {"briefs": briefs, "total": total}
 
     def get_today_brief(
@@ -590,10 +594,19 @@ class MorningBriefService:
             The existing MorningBrief for today, or None.
         """
         today = date.today()
-        query = self._collection(company_id, project_id).where(
-            "date", "==", today.isoformat()
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_MORNING_BRIEF]->(b:MorningBrief)
+            WHERE b.date = $today
+            RETURN b {.*} AS brief, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "today": today.isoformat(),
+            },
         )
-        docs = list(query.stream())
-        if docs:
-            return MorningBrief(**docs[0].to_dict())
-        return None
+        if result is None:
+            return None
+        return self._to_model(result)

@@ -18,13 +18,27 @@ from tests.conftest import TEST_SETTINGS, TEST_USER
 class TestFreeTierLimitEnforcement:
     """Tests for free tier document limits."""
 
+    def _create_free_company(self, company_service: CompanyService) -> Company:
+        """Create a company on the free tier (not upgraded like test_company)."""
+        data = CompanyCreate(
+            name="Free Tier Co",
+            address="999 Free Street, Testville, TX 75001",
+            license_number="TX-FREE",
+            trade_type=TradeType.GENERAL,
+            owner_name="Free Owner",
+            phone="555-000-0000",
+            email="free@testconstruction.com",
+        )
+        return company_service.create(data, "free_user_001")
+
     def test_free_tier_limit_enforcement(
         self,
         billing_service: BillingService,
         document_service: DocumentService,
-        test_company: Company,
+        company_service: CompanyService,
     ) -> None:
         """Free tier users are blocked after reaching the monthly limit."""
+        free_company = self._create_free_company(company_service)
         # Create documents up to the limit
         for i in range(FREE_TIER_MONTHLY_LIMIT):
             data = DocumentCreate(
@@ -32,29 +46,30 @@ class TestFreeTierLimitEnforcement:
                 document_type=DocumentType.SSSP,
                 project_info={"name": f"Project {i}"},
             )
-            document_service.create(test_company.id, data, TEST_USER["uid"])
+            document_service.create(free_company.id, data, "free_user_001")
 
         # The next attempt should raise
         with pytest.raises(DocumentLimitExceededError):
-            billing_service.check_document_limit(test_company.id)
+            billing_service.check_document_limit(free_company.id)
 
     def test_free_tier_under_limit_allowed(
         self,
         billing_service: BillingService,
         document_service: DocumentService,
-        test_company: Company,
+        company_service: CompanyService,
     ) -> None:
         """Free tier users below the limit can create documents."""
+        free_company = self._create_free_company(company_service)
         # Create one document (under the limit of 3)
         data = DocumentCreate(
             title="Single Doc",
             document_type=DocumentType.JHA,
             project_info={"task": "Task"},
         )
-        document_service.create(test_company.id, data, TEST_USER["uid"])
+        document_service.create(free_company.id, data, "free_user_001")
 
         # Should not raise
-        billing_service.check_document_limit(test_company.id)
+        billing_service.check_document_limit(free_company.id)
 
 
 class TestPaidTierNoLimit:
@@ -72,7 +87,7 @@ class TestPaidTierNoLimit:
 
         # Upgrade company to active subscription
         company_service.update_subscription(
-            test_company.id, SubscriptionStatus.ACTIVE, "sub_test_123"
+            test_company["id"], SubscriptionStatus.ACTIVE, "sub_test_123"
         )
 
         # Create more documents than free tier allows
@@ -82,10 +97,10 @@ class TestPaidTierNoLimit:
                 document_type=DocumentType.SSSP,
                 project_info={"name": f"Project {i}"},
             )
-            document_service.create(test_company.id, data, TEST_USER["uid"])
+            document_service.create(test_company["id"], data, TEST_USER["uid"])
 
         # Should not raise for paid tier
-        billing_service.check_document_limit(test_company.id)
+        billing_service.check_document_limit(test_company["id"])
 
 
 class TestWebhookSignatureVerification:

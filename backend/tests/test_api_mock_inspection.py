@@ -25,7 +25,7 @@ def _create_worker(client: TestClient, **overrides) -> dict:
         "trade": "general",
     }
     payload.update(overrides)
-    r = client.post("/me/workers", json=payload)
+    r = client.post("/api/v1/me/workers", json=payload)
     assert r.status_code == 201
     return r.json()
 
@@ -45,7 +45,7 @@ def _create_project(client: TestClient, **overrides) -> dict:
         "address": "789 Build Rd, Houston TX 77001",
     }
     payload.update(overrides)
-    r = client.post("/me/projects", json=payload)
+    r = client.post("/api/v1/me/projects", json=payload)
     assert r.status_code == 201
     return r.json()
 
@@ -66,7 +66,7 @@ def _create_document(client: TestClient, **overrides) -> dict:
         "project_info": {},
     }
     payload.update(overrides)
-    r = client.post("/me/documents", json=payload)
+    r = client.post("/api/v1/me/documents", json=payload)
     assert r.status_code == 201
     return r.json()
 
@@ -76,12 +76,12 @@ class TestRunBasicInspection:
 
     def test_run_basic_inspection(self, client: TestClient, test_company):
         """Running a basic mock inspection returns 201 with a result."""
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         assert response.status_code == 201
 
         data = response.json()
         assert data["id"].startswith("minsp_")
-        assert data["company_id"] == test_company.id
+        assert data["company_id"] == test_company["id"]
         assert data["project_id"] is None
         assert data["deep_audit"] is False
         assert 0 <= data["overall_score"] <= 100
@@ -95,7 +95,7 @@ class TestRunBasicInspection:
 
     def test_run_inspection_no_body(self, client: TestClient, test_company):
         """Running without a request body still works (defaults)."""
-        response = client.post("/me/mock-inspection/run")
+        response = client.post("/api/v1/me/mock-inspection/run")
         assert response.status_code == 201
         data = response.json()
         assert data["deep_audit"] is False
@@ -107,7 +107,7 @@ class TestRunBasicInspection:
         """Running scoped to a project sets project_id on the result."""
         project = _create_project(client)
         response = client.post(
-            "/me/mock-inspection/run",
+            "/api/v1/me/mock-inspection/run",
             json={"project_id": project["id"]},
         )
         assert response.status_code == 201
@@ -122,7 +122,7 @@ class TestInspectionFindsGaps:
         self, client: TestClient, test_company
     ):
         """A company with no documents should have many missing-program findings."""
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         assert response.status_code == 201
 
         data = response.json()
@@ -161,12 +161,12 @@ class TestInspectionFindsGaps:
             "issuing_body": "OSHA",
         }
         r = client.post(
-            f"/me/workers/{worker_id}/certifications", json=cert_payload
+            f"/api/v1/me/workers/{worker_id}/certifications", json=cert_payload
         )
-        assert r.status_code == 200
+        assert r.status_code == 201
 
         # Run inspection
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         assert response.status_code == 201
 
         data = response.json()
@@ -185,7 +185,7 @@ class TestInspectionFindsGaps:
         """An active project with no recent inspection generates a finding."""
         _create_project(client, name="Stale Inspection Site")
 
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         assert response.status_code == 201
 
         data = response.json()
@@ -209,7 +209,7 @@ class TestInspectionFindsGaps:
             role="foreman",
         )
 
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         assert response.status_code == 201
 
         data = response.json()
@@ -226,7 +226,7 @@ class TestInspectionFindsGaps:
     ):
         """Having an SSSP document should reduce missing program findings."""
         # First run without any documents
-        r1 = client.post("/me/mock-inspection/run", json={})
+        r1 = client.post("/api/v1/me/mock-inspection/run", json={})
         findings_without = len([
             f for f in r1.json()["findings"]
             if f["category"] == FindingCategory.MISSING_DOCUMENT.value
@@ -240,7 +240,7 @@ class TestInspectionFindsGaps:
         )
 
         # Run again
-        r2 = client.post("/me/mock-inspection/run", json={})
+        r2 = client.post("/api/v1/me/mock-inspection/run", json={})
         findings_with = len([
             f for f in r2.json()["findings"]
             if f["category"] == FindingCategory.MISSING_DOCUMENT.value
@@ -257,7 +257,7 @@ class TestScoreCalculation:
         self, client: TestClient, test_company
     ):
         """Score should be 100 minus deductions, floored at 0."""
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         data = response.json()
 
         score = data["overall_score"]
@@ -269,7 +269,7 @@ class TestScoreCalculation:
 
     def test_grade_assignment(self, client: TestClient, test_company):
         """Grade should correspond to the score ranges."""
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         data = response.json()
 
         score = data["overall_score"]
@@ -288,7 +288,7 @@ class TestScoreCalculation:
 
     def test_finding_counts_match(self, client: TestClient, test_company):
         """Finding severity counts should add up to total_findings."""
-        response = client.post("/me/mock-inspection/run", json={})
+        response = client.post("/api/v1/me/mock-inspection/run", json={})
         data = response.json()
 
         total = data["total_findings"]
@@ -308,7 +308,7 @@ class TestListResults:
 
     def test_list_results_empty(self, client: TestClient, test_company):
         """Listing results with none returns empty list."""
-        response = client.get("/me/mock-inspection/results")
+        response = client.get("/api/v1/me/mock-inspection/results")
         assert response.status_code == 200
         data = response.json()
         assert data["results"] == []
@@ -317,9 +317,9 @@ class TestListResults:
     def test_list_results_after_run(self, client: TestClient, test_company):
         """Results appear in list after running an inspection."""
         # Run an inspection
-        client.post("/me/mock-inspection/run", json={})
+        client.post("/api/v1/me/mock-inspection/run", json={})
 
-        response = client.get("/me/mock-inspection/results")
+        response = client.get("/api/v1/me/mock-inspection/results")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
@@ -333,17 +333,17 @@ class TestListResults:
     def test_list_results_pagination(self, client: TestClient, test_company):
         """Pagination limits and offsets work correctly."""
         # Run two inspections
-        client.post("/me/mock-inspection/run", json={})
-        client.post("/me/mock-inspection/run", json={})
+        client.post("/api/v1/me/mock-inspection/run", json={})
+        client.post("/api/v1/me/mock-inspection/run", json={})
 
         # Get first page
-        r1 = client.get("/me/mock-inspection/results?limit=1&offset=0")
+        r1 = client.get("/api/v1/me/mock-inspection/results?limit=1&offset=0")
         assert r1.status_code == 200
         assert r1.json()["total"] == 2
         assert len(r1.json()["results"]) == 1
 
         # Get second page
-        r2 = client.get("/me/mock-inspection/results?limit=1&offset=1")
+        r2 = client.get("/api/v1/me/mock-inspection/results?limit=1&offset=1")
         assert r2.status_code == 200
         assert len(r2.json()["results"]) == 1
 
@@ -357,11 +357,11 @@ class TestGetResult:
     def test_get_result(self, client: TestClient, test_company):
         """Fetching a result by ID returns the full result."""
         # Run an inspection
-        run_response = client.post("/me/mock-inspection/run", json={})
+        run_response = client.post("/api/v1/me/mock-inspection/run", json={})
         result_id = run_response.json()["id"]
 
         # Fetch it
-        response = client.get(f"/me/mock-inspection/results/{result_id}")
+        response = client.get(f"/api/v1/me/mock-inspection/results/{result_id}")
         assert response.status_code == 200
 
         data = response.json()
@@ -372,7 +372,7 @@ class TestGetResult:
     def test_get_result_not_found(self, client: TestClient, test_company):
         """Fetching a non-existent result returns 404."""
         response = client.get(
-            "/me/mock-inspection/results/minsp_nonexistent"
+            "/api/v1/me/mock-inspection/results/minsp_nonexistent"
         )
         assert response.status_code == 404
 
@@ -380,11 +380,11 @@ class TestGetResult:
         self, client: TestClient, test_company
     ):
         """The stored result should match what was returned at run time."""
-        run_response = client.post("/me/mock-inspection/run", json={})
+        run_response = client.post("/api/v1/me/mock-inspection/run", json={})
         run_data = run_response.json()
 
         get_response = client.get(
-            f"/me/mock-inspection/results/{run_data['id']}"
+            f"/api/v1/me/mock-inspection/results/{run_data['id']}"
         )
         get_data = get_response.json()
 

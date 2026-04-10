@@ -1,12 +1,11 @@
-"""Inspection CRUD service against Firestore."""
+"""Inspection CRUD service against Neo4j."""
 
-import secrets
+import json
 from datetime import date, datetime, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.exceptions import InspectionNotFoundError, ProjectNotFoundError
+from app.models.actor import Actor
 from app.models.inspection import (
     Inspection,
     InspectionCreate,
@@ -15,66 +14,16 @@ from app.models.inspection import (
     InspectionType,
     InspectionUpdate,
 )
+from app.services.base_service import BaseService
 
 
-class InspectionService:
-    """Manages daily inspection logs in Firestore.
+class InspectionService(BaseService):
+    """Manages daily inspection logs in Neo4j.
 
-    Args:
-        db: Firestore client instance.
+    Graph model:
+        (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_INSPECTION]->(Inspection)
+        Items stored as _items_json (JSON string) on the Inspection node.
     """
-
-    def __init__(self, db: firestore.Client) -> None:
-        self.db = db
-
-    def _project_ref(
-        self, company_id: str, project_id: str
-    ) -> firestore.DocumentReference:
-        """Return a reference to the project document."""
-        return (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("projects")
-            .document(project_id)
-        )
-
-    def _collection(
-        self, company_id: str, project_id: str
-    ) -> firestore.CollectionReference:
-        """Return the inspections subcollection for a project.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The parent project ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._project_ref(company_id, project_id).collection("inspections")
-
-    def _generate_id(self) -> str:
-        """Generate a unique inspection ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"insp_{secrets.token_hex(8)}"
-
-    def _verify_project_exists(self, company_id: str, project_id: str) -> None:
-        """Verify that the parent project exists and is not deleted.
-
-        Args:
-            company_id: The company ID.
-            project_id: The project ID to check.
-
-        Raises:
-            ProjectNotFoundError: If the project does not exist or is soft-deleted.
-        """
-        doc = self._project_ref(company_id, project_id).get()
-        if not doc.exists:
-            raise ProjectNotFoundError(project_id)
-        if doc.to_dict().get("deleted", False):
-            raise ProjectNotFoundError(project_id)
 
     @staticmethod
     def calculate_overall_status(items: list[InspectionItem]) -> InspectionStatus:
@@ -105,6 +54,45 @@ class InspectionService:
 
         return InspectionStatus.PARTIAL
 
+    def _verify_project_exists(self, company_id: str, project_id: str) -> None:
+        """Verify that the parent project exists and is not deleted.
+
+        Args:
+            company_id: The company ID.
+            project_id: The project ID to check.
+
+        Raises:
+            ProjectNotFoundError: If the project does not exist or is soft-deleted.
+        """
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            RETURN p.id AS id
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        if result is None:
+            raise ProjectNotFoundError(project_id)
+
+    @staticmethod
+    def _to_model(record: dict[str, Any]) -> Inspection:
+        """Convert a Neo4j record dict to an Inspection model.
+
+        Args:
+            record: Dict with 'inspection' and 'company_id' keys from Cypher.
+
+        Returns:
+            An Inspection model instance.
+        """
+        data = record["inspection"]
+        items_json = data.pop("_items_json", "[]")
+        items = json.loads(items_json) if items_json else []
+        data["items"] = items
+        data["company_id"] = record["company_id"]
+        data["project_id"] = record["project_id"]
+        return Inspection(**data)
+
     def create(
         self,
         company_id: str,
@@ -118,7 +106,7 @@ class InspectionService:
             company_id: The owning company ID.
             project_id: The parent project ID.
             data: Validated inspection creation data.
-            user_id: Firebase UID of the creating user.
+            user_id: UID of the creating user.
 
         Returns:
             The created Inspection with all fields populated.
@@ -128,36 +116,41 @@ class InspectionService:
         """
         self._verify_project_exists(company_id, project_id)
 
-        now = datetime.now(timezone.utc)
-        insp_id = self._generate_id()
+        actor = Actor.human(user_id)
+        insp_id = self._generate_id("insp")
         overall_status = self.calculate_overall_status(data.items)
+        items_json = json.dumps([item.model_dump() for item in data.items])
 
-        insp_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": insp_id,
-            "company_id": company_id,
-            "project_id": project_id,
             "inspection_type": data.inspection_type.value,
             "inspection_date": data.inspection_date.isoformat(),
             "inspector_name": data.inspector_name,
+            "inspector_id": data.inspector_id,
             "weather_conditions": data.weather_conditions,
             "temperature": data.temperature,
             "wind_conditions": data.wind_conditions,
             "workers_on_site": data.workers_on_site,
-            "items": [item.model_dump() for item in data.items],
+            "_items_json": items_json,
             "overall_notes": data.overall_notes,
             "corrective_actions_needed": data.corrective_actions_needed,
             "gps_latitude": data.gps_latitude,
             "gps_longitude": data.gps_longitude,
             "overall_status": overall_status.value,
-            "created_at": now,
-            "created_by": user_id,
-            "updated_at": now,
-            "updated_by": user_id,
             "deleted": False,
+            **self._provenance_create(actor),
         }
 
-        self._collection(company_id, project_id).document(insp_id).set(insp_dict)
-        return Inspection(**insp_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            CREATE (i:Inspection $props)
+            CREATE (p)-[:HAS_INSPECTION]->(i)
+            RETURN i {.*} AS inspection, c.id AS company_id, p.id AS project_id
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": props},
+        )
+        return self._to_model(result)
 
     def get(
         self, company_id: str, project_id: str, inspection_id: str
@@ -175,19 +168,22 @@ class InspectionService:
         Raises:
             InspectionNotFoundError: If the inspection does not exist or is soft-deleted.
         """
-        doc = (
-            self._collection(company_id, project_id)
-            .document(inspection_id)
-            .get()
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INSPECTION]->(i:Inspection {id: $inspection_id})
+            WHERE i.deleted = false
+            RETURN i {.*} AS inspection, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "inspection_id": inspection_id,
+            },
         )
-        if not doc.exists:
+        if result is None:
             raise InspectionNotFoundError(inspection_id)
-
-        data = doc.to_dict()
-        if data.get("deleted", False):
-            raise InspectionNotFoundError(inspection_id)
-
-        return Inspection(**data)
+        return self._to_model(result)
 
     def list_inspections(
         self,
@@ -213,39 +209,54 @@ class InspectionService:
         Returns:
             A dict with 'inspections' list and 'total' count.
         """
-        base_query: firestore.Query = self._collection(
-            company_id, project_id
-        ).where("deleted", "==", False)
+        where_clauses = ["i.deleted = false"]
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "project_id": project_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if inspection_type is not None:
-            base_query = base_query.where(
-                "inspection_type", "==", inspection_type.value
-            )
+            where_clauses.append("i.inspection_type = $inspection_type")
+            params["inspection_type"] = inspection_type.value
 
         if date_from is not None:
-            base_query = base_query.where(
-                "inspection_date", ">=", date_from.isoformat()
-            )
+            where_clauses.append("i.inspection_date >= $date_from")
+            params["date_from"] = date_from.isoformat()
 
         if date_to is not None:
-            base_query = base_query.where(
-                "inspection_date", "<=", date_to.isoformat()
-            )
+            where_clauses.append("i.inspection_date <= $date_to")
+            params["date_to"] = date_to.isoformat()
 
-        # Count total matching inspections
-        all_docs = [Inspection(**doc.to_dict()) for doc in base_query.stream()]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
 
-        # Apply sorting, offset, and limit
-        paginated_query = base_query.order_by(
-            "created_at", direction=firestore.Query.DESCENDING
+        # Count query
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+                  -[:HAS_INSPECTION]->(i:Inspection)
+            WHERE {where_str}
+            RETURN count(i) AS total
+            """,
+            params,
         )
-        paginated_query = paginated_query.offset(offset).limit(limit)
+        total = count_result["total"] if count_result else 0
 
-        inspections = [
-            Inspection(**doc.to_dict()) for doc in paginated_query.stream()
-        ]
+        # Data query
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+                  -[:HAS_INSPECTION]->(i:Inspection)
+            WHERE {where_str}
+            RETURN i {{.*}} AS inspection, c.id AS company_id, p.id AS project_id
+            ORDER BY i.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
 
+        inspections = [self._to_model(r) for r in results]
         return {"inspections": inspections, "total": total}
 
     def update(
@@ -263,7 +274,7 @@ class InspectionService:
             project_id: The parent project ID.
             inspection_id: The inspection ID to update.
             data: Fields to update (only non-None fields are applied).
-            user_id: Firebase UID of the updating user.
+            user_id: UID of the updating user.
 
         Returns:
             The updated Inspection model.
@@ -271,50 +282,53 @@ class InspectionService:
         Raises:
             InspectionNotFoundError: If the inspection does not exist or is soft-deleted.
         """
-        doc_ref = self._collection(company_id, project_id).document(inspection_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise InspectionNotFoundError(inspection_id)
-
-        update_data: dict[str, Any] = {}
+        # Build update props from non-None fields
+        update_props: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name == "inspection_type" and value is not None:
-                update_data[field_name] = (
+                update_props[field_name] = (
                     value.value if hasattr(value, "value") else value
                 )
             elif field_name == "inspection_date" and value is not None:
-                update_data[field_name] = (
+                update_props[field_name] = (
                     value.isoformat() if hasattr(value, "isoformat") else value
                 )
             elif field_name == "items" and value is not None:
-                update_data[field_name] = [
-                    item.model_dump() if hasattr(item, "model_dump") else item
+                items = [
+                    InspectionItem(**item) if isinstance(item, dict) else item
                     for item in value
                 ]
+                update_props["_items_json"] = json.dumps(
+                    [item.model_dump() if hasattr(item, "model_dump") else item for item in value]
+                )
+                update_props["overall_status"] = self.calculate_overall_status(items).value
             else:
-                update_data[field_name] = value
+                update_props[field_name] = value
 
-        if not update_data:
-            return Inspection(**doc.to_dict())
+        if not update_props:
+            return self.get(company_id, project_id, inspection_id)
 
-        # Recalculate overall status if items were updated
-        if "items" in update_data:
-            items = [
-                InspectionItem(**item) if isinstance(item, dict) else item
-                for item in update_data["items"]
-            ]
-            update_data["overall_status"] = self.calculate_overall_status(
-                items
-            ).value
+        actor = Actor.human(user_id)
+        update_props.update(self._provenance_update(actor))
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        update_data["updated_by"] = user_id
-
-        doc_ref.update(update_data)
-
-        updated_doc = doc_ref.get()
-        return Inspection(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INSPECTION]->(i:Inspection {id: $inspection_id})
+            WHERE i.deleted = false
+            SET i += $props
+            RETURN i {.*} AS inspection, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "inspection_id": inspection_id,
+                "props": update_props,
+            },
+        )
+        if result is None:
+            raise InspectionNotFoundError(inspection_id)
+        return self._to_model(result)
 
     def delete(
         self, company_id: str, project_id: str, inspection_id: str
@@ -329,15 +343,20 @@ class InspectionService:
         Raises:
             InspectionNotFoundError: If the inspection does not exist.
         """
-        doc_ref = self._collection(company_id, project_id).document(inspection_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise InspectionNotFoundError(inspection_id)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INSPECTION]->(i:Inspection {id: $inspection_id})
+            WHERE i.deleted = false
+            SET i.deleted = true, i.updated_at = $now
+            RETURN i.id AS id
+            """,
             {
-                "deleted": True,
-                "updated_at": datetime.now(timezone.utc),
-            }
+                "company_id": company_id,
+                "project_id": project_id,
+                "inspection_id": inspection_id,
+                "now": datetime.now(timezone.utc).isoformat(),
+            },
         )
+        if result is None:
+            raise InspectionNotFoundError(inspection_id)

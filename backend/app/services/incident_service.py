@@ -1,16 +1,15 @@
-"""Incident CRUD service with OSHA recordability determination against Firestore."""
+"""Incident CRUD service with OSHA recordability determination against Neo4j."""
 
 import json
 import logging
-import secrets
 from datetime import datetime, timezone
 from typing import Any
 
 import anthropic
-from google.cloud import firestore
 
 from app.config import Settings
 from app.exceptions import GenerationError, IncidentNotFoundError, ProjectNotFoundError
+from app.models.actor import Actor
 from app.models.incident import (
     Incident,
     IncidentCreate,
@@ -18,62 +17,26 @@ from app.models.incident import (
     IncidentStatus,
     IncidentUpdate,
 )
+from app.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 
 
-class IncidentService:
-    """Manages incident reports in Firestore with OSHA compliance features.
+class IncidentService(BaseService):
+    """Manages incident reports in Neo4j with OSHA compliance features.
+
+    Graph model:
+        (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_INCIDENT]->(Incident)
+        Lists (photo_urls, involved_worker_ids) stored as JSON strings.
 
     Args:
-        db: Firestore client instance.
+        driver: Neo4j driver instance.
         settings: Application settings containing the Anthropic API key.
     """
 
-    def __init__(self, db: firestore.Client, settings: Settings) -> None:
-        self.db = db
+    def __init__(self, driver: Any, settings: Settings) -> None:
+        super().__init__(driver)
         self.settings = settings
-
-    def _project_ref(
-        self, company_id: str, project_id: str
-    ) -> firestore.DocumentReference:
-        """Return a reference to the project document.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The project ID.
-
-        Returns:
-            Firestore document reference.
-        """
-        return (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("projects")
-            .document(project_id)
-        )
-
-    def _collection(
-        self, company_id: str, project_id: str
-    ) -> firestore.CollectionReference:
-        """Return the incidents subcollection for a project.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The parent project ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._project_ref(company_id, project_id).collection("incidents")
-
-    def _generate_id(self) -> str:
-        """Generate a unique incident ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"inc_{secrets.token_hex(8)}"
 
     def _verify_project_exists(self, company_id: str, project_id: str) -> None:
         """Verify that the parent project exists and is not deleted.
@@ -85,10 +48,15 @@ class IncidentService:
         Raises:
             ProjectNotFoundError: If the project does not exist or is soft-deleted.
         """
-        doc = self._project_ref(company_id, project_id).get()
-        if not doc.exists:
-            raise ProjectNotFoundError(project_id)
-        if doc.to_dict().get("deleted", False):
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            RETURN p.id AS id
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        if result is None:
             raise ProjectNotFoundError(project_id)
 
     @staticmethod
@@ -115,6 +83,28 @@ class IncidentService:
             return {"osha_recordable": True, "osha_reportable": False}
         return {"osha_recordable": False, "osha_reportable": False}
 
+    @staticmethod
+    def _to_model(record: dict[str, Any]) -> Incident:
+        """Convert a Neo4j record dict to an Incident model.
+
+        Args:
+            record: Dict with 'incident', 'company_id', 'project_id' keys.
+
+        Returns:
+            An Incident model instance.
+        """
+        data = record["incident"]
+        # Deserialize JSON-encoded list fields
+        photo_urls_json = data.pop("_photo_urls_json", "[]")
+        data["photo_urls"] = json.loads(photo_urls_json) if photo_urls_json else []
+        involved_json = data.pop("_involved_worker_ids_json", "[]")
+        data["involved_worker_ids"] = json.loads(involved_json) if involved_json else []
+        ai_json = data.pop("_ai_analysis_json", "{}")
+        data["ai_analysis"] = json.loads(ai_json) if ai_json else {}
+        data["company_id"] = record["company_id"]
+        data["project_id"] = record["project_id"]
+        return Incident(**data)
+
     def create(
         self,
         company_id: str,
@@ -130,7 +120,7 @@ class IncidentService:
             company_id: The owning company ID.
             project_id: The parent project ID.
             data: Validated incident creation data.
-            user_id: Firebase UID of the creating user.
+            user_id: UID of the creating user.
 
         Returns:
             The created Incident with all fields populated.
@@ -140,38 +130,42 @@ class IncidentService:
         """
         self._verify_project_exists(company_id, project_id)
 
-        now = datetime.now(timezone.utc)
-        inc_id = self._generate_id()
+        actor = Actor.human(user_id)
+        inc_id = self._generate_id("inc")
         recordability = self.determine_recordability(data.severity)
 
-        inc_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": inc_id,
-            "company_id": company_id,
-            "project_id": project_id,
             "incident_date": data.incident_date.isoformat(),
             "incident_time": data.incident_time,
             "location": data.location,
             "severity": data.severity.value,
             "description": data.description,
             "persons_involved": data.persons_involved,
+            "_involved_worker_ids_json": json.dumps(data.involved_worker_ids),
             "witnesses": data.witnesses,
             "immediate_actions_taken": data.immediate_actions_taken,
             "root_cause": data.root_cause,
             "corrective_actions": data.corrective_actions,
             "voice_transcript": data.voice_transcript,
-            "photo_urls": data.photo_urls,
+            "_photo_urls_json": json.dumps(data.photo_urls),
             "status": IncidentStatus.REPORTED.value,
             "osha_recordable": recordability["osha_recordable"],
             "osha_reportable": recordability["osha_reportable"],
-            "ai_analysis": {},
-            "created_at": now,
-            "created_by": user_id,
-            "updated_at": now,
-            "updated_by": user_id,
+            "_ai_analysis_json": "{}",
+            **self._provenance_create(actor),
         }
 
-        self._collection(company_id, project_id).document(inc_id).set(inc_dict)
-        return Incident(**inc_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            CREATE (i:Incident $props)
+            CREATE (p)-[:HAS_INCIDENT]->(i)
+            RETURN i {.*} AS incident, c.id AS company_id, p.id AS project_id
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": props},
+        )
+        return self._to_model(result)
 
     def get(
         self, company_id: str, project_id: str, incident_id: str
@@ -189,14 +183,21 @@ class IncidentService:
         Raises:
             IncidentNotFoundError: If the incident does not exist.
         """
-        doc = (
-            self._collection(company_id, project_id)
-            .document(incident_id)
-            .get()
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INCIDENT]->(i:Incident {id: $incident_id})
+            RETURN i {.*} AS incident, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "incident_id": incident_id,
+            },
         )
-        if not doc.exists:
+        if result is None:
             raise IncidentNotFoundError(incident_id)
-        return Incident(**doc.to_dict())
+        return self._to_model(result)
 
     def list_incidents(
         self,
@@ -216,17 +217,35 @@ class IncidentService:
         Returns:
             A dict with 'incidents' list and 'total' count.
         """
-        base_query: firestore.Query = self._collection(company_id, project_id)
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "project_id": project_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
-        all_docs = list(base_query.stream())
-        total = len(all_docs)
+        count_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INCIDENT]->(i:Incident)
+            RETURN count(i) AS total
+            """,
+            params,
+        )
+        total = count_result["total"] if count_result else 0
 
-        # Sort by created_at descending, then paginate
-        all_docs_data = [doc.to_dict() for doc in all_docs]
-        all_docs_data.sort(key=lambda d: d.get("created_at", ""), reverse=True)
-        paginated = all_docs_data[offset: offset + limit]
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INCIDENT]->(i:Incident)
+            RETURN i {.*} AS incident, c.id AS company_id, p.id AS project_id
+            ORDER BY i.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
 
-        incidents = [Incident(**d) for d in paginated]
+        incidents = [self._to_model(r) for r in results]
         return {"incidents": incidents, "total": total}
 
     def update(
@@ -244,7 +263,7 @@ class IncidentService:
             project_id: The parent project ID.
             incident_id: The incident ID to update.
             data: Fields to update (only non-None fields are applied).
-            user_id: Firebase UID of the updating user.
+            user_id: UID of the updating user.
 
         Returns:
             The updated Incident model.
@@ -252,48 +271,58 @@ class IncidentService:
         Raises:
             IncidentNotFoundError: If the incident does not exist.
         """
-        doc_ref = self._collection(company_id, project_id).document(incident_id)
-        doc = doc_ref.get()
-
-        if not doc.exists:
-            raise IncidentNotFoundError(incident_id)
-
-        update_data: dict[str, Any] = {}
+        update_props: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name == "incident_date" and value is not None:
-                update_data[field_name] = (
+                update_props[field_name] = (
                     value.isoformat() if hasattr(value, "isoformat") else value
                 )
             elif field_name == "severity" and value is not None:
-                update_data[field_name] = (
+                update_props[field_name] = (
                     value.value if hasattr(value, "value") else value
                 )
-                # Recalculate recordability if severity changes
                 recordability = self.determine_recordability(value)
-                update_data["osha_recordable"] = recordability["osha_recordable"]
-                update_data["osha_reportable"] = recordability["osha_reportable"]
+                update_props["osha_recordable"] = recordability["osha_recordable"]
+                update_props["osha_reportable"] = recordability["osha_reportable"]
             elif field_name == "status" and value is not None:
-                update_data[field_name] = (
+                update_props[field_name] = (
                     value.value if hasattr(value, "value") else value
                 )
+            elif field_name == "photo_urls" and value is not None:
+                update_props["_photo_urls_json"] = json.dumps(value)
+            elif field_name == "involved_worker_ids" and value is not None:
+                update_props["_involved_worker_ids_json"] = json.dumps(value)
             else:
-                update_data[field_name] = value
+                update_props[field_name] = value
 
-        if not update_data:
-            return Incident(**doc.to_dict())
+        if not update_props:
+            return self.get(company_id, project_id, incident_id)
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
-        update_data["updated_by"] = user_id
+        actor = Actor.human(user_id)
+        update_props.update(self._provenance_update(actor))
 
-        doc_ref.update(update_data)
-
-        updated_doc = doc_ref.get()
-        return Incident(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INCIDENT]->(i:Incident {id: $incident_id})
+            SET i += $props
+            RETURN i {.*} AS incident, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "incident_id": incident_id,
+                "props": update_props,
+            },
+        )
+        if result is None:
+            raise IncidentNotFoundError(incident_id)
+        return self._to_model(result)
 
     def delete(
         self, company_id: str, project_id: str, incident_id: str
     ) -> None:
-        """Permanently delete an incident report.
+        """Permanently delete an incident report (DETACH DELETE).
 
         Args:
             company_id: The owning company ID.
@@ -303,13 +332,22 @@ class IncidentService:
         Raises:
             IncidentNotFoundError: If the incident does not exist.
         """
-        doc_ref = self._collection(company_id, project_id).document(incident_id)
-        doc = doc_ref.get()
-
-        if not doc.exists:
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INCIDENT]->(i:Incident {id: $incident_id})
+            WITH i, i.id AS deleted_id
+            DETACH DELETE i
+            RETURN deleted_id AS id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "incident_id": incident_id,
+            },
+        )
+        if result is None:
             raise IncidentNotFoundError(incident_id)
-
-        doc_ref.delete()
 
     def generate_investigation(
         self,
@@ -324,7 +362,7 @@ class IncidentService:
             company_id: The owning company ID.
             project_id: The parent project ID.
             incident_id: The incident ID to analyze.
-            user_id: Firebase UID of the requesting user.
+            user_id: UID of the requesting user.
 
         Returns:
             The Incident with ai_analysis populated.
@@ -378,7 +416,6 @@ Return ONLY valid JSON."""
 
         raw_text = response.content[0].text.strip()
 
-        # Strip markdown code fences if present
         if raw_text.startswith("```"):
             first_newline = raw_text.index("\n")
             raw_text = raw_text[first_newline + 1:]
@@ -394,15 +431,25 @@ Return ONLY valid JSON."""
                 detail=f"JSON parse error: {exc}",
             )
 
-        # Store the analysis on the incident
-        doc_ref = self._collection(company_id, project_id).document(incident_id)
-        now = datetime.now(timezone.utc)
-        doc_ref.update({
-            "ai_analysis": analysis,
+        actor = Actor.human(user_id)
+        update_props = {
+            "_ai_analysis_json": json.dumps(analysis),
             "status": IncidentStatus.INVESTIGATING.value,
-            "updated_at": now,
-            "updated_by": user_id,
-        })
+            **self._provenance_update(actor),
+        }
 
-        updated_doc = doc_ref.get()
-        return Incident(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_INCIDENT]->(i:Incident {id: $incident_id})
+            SET i += $props
+            RETURN i {.*} AS incident, c.id AS company_id, p.id AS project_id
+            """,
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "incident_id": incident_id,
+                "props": update_props,
+            },
+        )
+        return self._to_model(result)

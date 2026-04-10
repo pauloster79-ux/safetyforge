@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw'
 import { renderHookWithClient } from '@/test/test-utils'
 import { useHazardReports, useAnalyzePhoto } from './useHazardReports'
 
-const BASE = 'http://localhost:8000/api/v1'
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 const server = setupServer(
   http.get(`${BASE}/me/projects/:projectId/hazard-reports`, ({ request }) => {

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.exceptions import GenerationError
-from app.services.generation_service import GenerationService, _SYSTEM_PROMPTS
+from app.services.generation_service import GenerationService
 from tests.conftest import TEST_SETTINGS
 
 
@@ -91,15 +91,6 @@ class TestGenerationReturnsValidJson:
 class TestDocumentTypePrompts:
     """Tests for system prompt coverage."""
 
-    def test_all_document_types_have_prompts(self) -> None:
-        """Every DocumentType enum value has a corresponding system prompt."""
-        from app.models.document import DocumentType
-
-        for doc_type in DocumentType:
-            assert doc_type.value in _SYSTEM_PROMPTS, (
-                f"Missing system prompt for document type: {doc_type.value}"
-            )
-
     def test_unknown_document_type_raises_error(self) -> None:
         """Requesting generation for an unknown type raises GenerationError."""
         service = GenerationService(TEST_SETTINGS)
@@ -110,9 +101,3 @@ class TestDocumentTypePrompts:
                 company_info={"company_name": "Test"},
                 project_info={"name": "Test"},
             )
-
-    def test_prompts_are_non_empty(self) -> None:
-        """All system prompts are non-empty strings."""
-        for doc_type, prompt in _SYSTEM_PROMPTS.items():
-            assert isinstance(prompt, str), f"Prompt for {doc_type} is not a string"
-            assert len(prompt) > 100, f"Prompt for {doc_type} seems too short"

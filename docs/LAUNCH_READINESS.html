@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf — Launch Readiness Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f5f3;
+    --fg: #0d0e0c;
+    --card: #ffffff;
+    --border: #e6e8e3;
+    --concrete-50: #fafaf9;
+    --concrete-300: #c4c7c0;
+    --concrete-500: #71766b;
+    --concrete-700: #3e423a;
+    --concrete-800: #2e312b;
+    --muted: #71766b;
+    --machine: #F5B800;
+    --machine-dark: #D9A200;
+    --machine-bright: #FFCA18;
+    --machine-wash: rgba(245,184,0,0.1);
+    --pass: #2d8a4e;
+    --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030;
+    --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b;
+    --warn-bg: rgba(184,134,11,0.08);
+    --info: #2563eb;
+    --info-bg: rgba(37,99,235,0.08);
+    --radius: 3px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Navbar ── */
+  .navbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+  }
+  @media (min-width: 1024px) { .navbar { padding: 12px 32px; } }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+  .logo-mark {
+    width: 28px; height: 28px; background: var(--machine);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 15px; height: 15px; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--fg); }
+  .nav-subtitle { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .last-updated { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+
+  /* ── Container ── */
+  .container { max-width: 1120px; margin: 0 auto; padding: 16px; }
+  @media (min-width: 1024px) { .container { padding: 24px 32px; } }
+
+  /* ── Urgent Banner ── */
+  .urgent-banner {
+    background: var(--fail-bg); border: 1px solid var(--fail);
+    padding: 12px 16px; margin-bottom: 16px;
+  }
+  .urgent-banner .banner-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--fail); margin-bottom: 8px;
+  }
+  .urgent-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 4px 0; font-size: 13px; color: var(--concrete-800);
+  }
+  .urgent-item .bullet {
+    flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--fail); margin-top: 7px;
+  }
+
+  /* ── Status Strip ── */
+  .status-strip {
+    display: flex; background: var(--card); border: 1px solid var(--border);
+    margin-bottom: 16px; overflow-x: auto;
+  }
+  .stat {
+    flex: 1; padding: 12px 16px; border-right: 1px solid var(--border);
+    min-width: 130px;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-bottom: 4px;
+  }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Overall Progress Bar ── */
+  .progress-bar-container {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 10px 16px; margin-bottom: 16px;
+  }
+  .progress-label { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .progress-track { flex: 1; height: 6px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--machine); transition: width 0.3s; }
+  .progress-pct { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--fg); }
+
+  /* ── Timeline ── */
+  .timeline {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    background: var(--card); border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  @media (max-width: 640px) { .timeline { grid-template-columns: repeat(2, 1fr); } }
+  .timeline-week {
+    padding: 12px 16px; border-right: 1px solid var(--border);
+  }
+  .timeline-week:last-child { border-right: none; }
+  @media (max-width: 640px) { .timeline-week:nth-child(2) { border-right: none; } .timeline-week:nth-child(3), .timeline-week:nth-child(4) { border-top: 1px solid var(--border); } }
+  .timeline-week-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .timeline-week-title { font-size: 13px; font-weight: 600; color: var(--concrete-800); }
+  .timeline-week-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .wk-active .timeline-week-label { color: var(--machine-dark); }
+  .wk-future .timeline-week-label { color: var(--concrete-500); }
+  .wk-done .timeline-week-label { color: var(--pass); }
+
+  /* ── Workstream Section ── */
+  .ws-section { background: var(--card); border: 1px solid var(--border); margin-bottom: 12px; }
+  .ws-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--concrete-50); cursor: pointer; user-select: none;
+  }
+  .ws-header:hover { background: #f0f1ee; }
+  .ws-chevron { flex-shrink: 0; width: 16px; height: 16px; color: var(--muted); transition: transform 0.2s; }
+  .ws-section.collapsed .ws-chevron { transform: rotate(-90deg); }
+  .ws-section.collapsed .ws-body { display: none; }
+  .ws-title {
+    flex: 1; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--concrete-700);
+  }
+  .ws-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 2px 6px; flex-shrink: 0;
+  }
+  .badge-p0 { color: var(--fail); background: var(--fail-bg); }
+  .badge-p1 { color: var(--warn); background: var(--warn-bg); }
+  .badge-p2 { color: var(--info); background: var(--info-bg); }
+  .ws-progress-mini {
+    width: 60px; height: 4px; background: var(--border); overflow: hidden; flex-shrink: 0;
+  }
+  .ws-progress-mini-fill { height: 100%; background: var(--pass); transition: width 0.3s; }
+  .ws-count { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+  /* ── Item rows ── */
+  .ws-body {}
+  .ws-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 16px; border-bottom: 1px solid var(--concrete-50);
+    transition: background 0.15s;
+  }
+  .ws-item:last-child { border-bottom: none; }
+  .ws-item:hover { background: var(--concrete-50); }
+  .ws-item.checked { opacity: 0.6; }
+  .ws-item.checked .item-text { text-decoration: line-through; }
+  .ws-checkbox {
+    flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px;
+    border: 1.5px solid var(--concrete-300); background: var(--card);
+    border-radius: 2px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.15s;
+  }
+  .ws-checkbox:hover { border-color: var(--machine); }
+  .ws-checkbox.is-checked {
+    background: var(--pass); border-color: var(--pass);
+  }
+  .ws-checkbox.is-checked svg { display: block; }
+  .ws-checkbox svg { display: none; width: 12px; height: 12px; }
+  .item-content { flex: 1; min-width: 0; }
+  .item-text { font-size: 13px; font-weight: 500; color: var(--concrete-800); }
+  .item-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .item-file {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--concrete-500); margin-top: 2px;
+  }
+  .item-status {
+    flex-shrink: 0; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 2px 6px; margin-top: 2px;
+  }
+  .status-done { color: var(--pass); background: var(--pass-bg); }
+  .status-wip { color: var(--warn); background: var(--warn-bg); }
+  .status-todo { color: var(--muted); background: var(--concrete-50); }
+  .status-blocked { color: var(--fail); background: var(--fail-bg); }
+
+  /* ── Notes Section ── */
+  .notes-section { background: var(--card); border: 1px solid var(--border); margin-top: 16px; }
+  .notes-header {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--concrete-50);
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--concrete-700);
+  }
+  .notes-body { padding: 16px; }
+  .notes-textarea {
+    width: 100%; min-height: 80px; border: 1px solid var(--border);
+    padding: 8px 12px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--fg); background: var(--concrete-50);
+    resize: vertical; outline: none;
+  }
+  .notes-textarea:focus { border-color: var(--machine); }
+
+  /* ── Decision Log ── */
+  .decision-item {
+    display: flex; gap: 12px; padding: 8px 16px;
+    border-bottom: 1px solid var(--concrete-50); font-size: 13px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  .decision-text { color: var(--concrete-800); }
+
+  /* ── Print ── */
+  @media print {
+    .navbar { position: static; }
+    .ws-section.collapsed .ws-body { display: block !important; }
+    .notes-textarea { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 18 18" fill="none"><path d="M4 9.5L7.5 13L14 5.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="logo-text">Kerf</span>
+    <span class="nav-subtitle">Launch Readiness</span>
+  </div>
+  <span class="last-updated" id="lastUpdated">Updated: 2026-04-07</span>
+</nav>
+
+<div class="container">
+
+  <!-- ── Urgent Banner ── -->
+  <div class="urgent-banner" id="urgentBanner">
+    <div class="banner-title">3 Urgent Items — Immediate Action Required</div>
+    <div class="urgent-item"><span class="bullet"></span><span><strong>Service account key in repo</strong> — Rotate in GCP console, remove from git history, verify .gitignore</span></div>
+    <div class="urgent-item"><span class="bullet"></span><span><strong>Microphone blocked by Vercel headers</strong> — Permissions-Policy blocks voice input. Change to <code>microphone=(self)</code> in vercel.json</span></div>
+    <div class="urgent-item"><span class="bullet"></span><span><strong>Domain mismatch: kerf.build &rarr; kerf.build</strong> — 30+ references to kerf.build across config, CI, docs. Global find-replace needed</span></div>
+  </div>
+
+  <!-- ── Status Strip ── -->
+  <div class="status-strip" id="statusStrip">
+    <div class="stat">
+      <div class="stat-label">Overall</div>
+      <div class="stat-value" id="overallPct" style="color: var(--machine-dark);">0%</div>
+      <div class="stat-sub" id="overallSub">0 of 0 items</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">P0 Critical</div>
+      <div class="stat-value" id="p0Pct" style="color: var(--fail);">0%</div>
+      <div class="stat-sub" id="p0Sub">0 of 0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">P1 Should Have</div>
+      <div class="stat-value" id="p1Pct" style="color: var(--warn);">0%</div>
+      <div class="stat-sub" id="p1Sub">0 of 0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">P2 Follow-up</div>
+      <div class="stat-value" id="p2Pct" style="color: var(--info);">0%</div>
+      <div class="stat-sub" id="p2Sub">0 of 0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Target</div>
+      <div class="stat-value" style="color: var(--fg);">3wk</div>
+      <div class="stat-sub">To first paying customer</div>
+    </div>
+  </div>
+
+  <!-- ── Overall Progress ── -->
+  <div class="progress-bar-container">
+    <span class="progress-label">Launch Progress</span>
+    <div class="progress-track"><div class="progress-fill" id="overallBar" style="width: 0%;"></div></div>
+    <span class="progress-pct" id="overallBarPct">0%</span>
+  </div>
+
+  <!-- ── Timeline ── -->
+  <div class="timeline">
+    <div class="timeline-week wk-active">
+      <div class="timeline-week-label">Week 1</div>
+      <div class="timeline-week-title">Foundation</div>
+      <div class="timeline-week-desc">Security, infra, DNS, Paddle, legal, CI/CD</div>
+    </div>
+    <div class="timeline-week wk-future">
+      <div class="timeline-week-label">Week 2</div>
+      <div class="timeline-week-title">Product</div>
+      <div class="timeline-week-desc">Voice UI, team mgmt, trial logic, billing E2E</div>
+    </div>
+    <div class="timeline-week wk-future">
+      <div class="timeline-week-label">Week 3</div>
+      <div class="timeline-week-title">Polish & Launch</div>
+      <div class="timeline-week-desc">Monitoring, onboarding, GTM prep, E2E tests</div>
+    </div>
+    <div class="timeline-week wk-future">
+      <div class="timeline-week-label">Week 4+</div>
+      <div class="timeline-week-title">Growth</div>
+      <div class="timeline-week-desc">Hermes support + lead gen, analytics, content</div>
+    </div>
+  </div>
+
+  <!-- ── Workstreams ── -->
+  <div id="workstreams"></div>
+
+  <!-- ── Decision Log ── -->
+  <div class="ws-section" style="margin-top: 16px;">
+    <div class="ws-header" onclick="this.parentElement.classList.toggle('collapsed')">
+      <svg class="ws-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="ws-title">Decision Log</span>
+    </div>
+    <div class="ws-body">
+      <div class="decision-item"><span class="decision-date">2026-04-07</span><span class="decision-text">Business tier confirmed at <strong>$499/mo</strong> (was $599 in code, $499 in strategy doc)</span></div>
+      <div class="decision-item"><span class="decision-date">2026-04-07</span><span class="decision-text">Root domain <strong>kerf.build</strong> serves marketing/landing page; <strong>app.kerf.build</strong> is the authenticated app</span></div>
+      <div class="decision-item"><span class="decision-date">2026-04-07</span><span class="decision-text">Hermes: build <strong>both tracks in parallel</strong> — support chatbot + lead gen agents</span></div>
+    </div>
+  </div>
+
+  <!-- ── Notes ── -->
+  <div class="notes-section">
+    <div class="notes-header">Session Notes</div>
+    <div class="notes-body">
+      <textarea class="notes-textarea" id="notesArea" placeholder="Add notes during working sessions... (auto-saved to localStorage)"></textarea>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Workstream Data ──
+const WORKSTREAMS = [
+  {
+    id: 'ws1', title: 'WS1: Critical Product Gaps', priority: 'p0', effort: '5-7 days',
+    items: [
+      { id: 'ws1-1', text: 'Wire voice input into inspection create form', detail: 'useVoiceRecorder hook exists, needs UI integration', file: 'frontend/src/components/inspections/InspectionCreatePage.tsx' },
+      { id: 'ws1-2', text: 'Wire voice input into incident create form', detail: 'Same pattern as inspections', file: 'frontend/src/components/incidents/IncidentCreatePage.tsx' },
+      { id: 'ws1-3', text: 'Build team member management UI in Settings', detail: 'Backend router exists at /members, need Settings UI section', file: 'frontend/src/components/settings/' },
+      { id: 'ws1-4', text: 'Fix API contract: path convention mismatch', detail: 'Frontend uses flat paths, backend uses nested. Align to /me/* pattern', file: 'frontend/src/lib/api.ts, backend/app/routers/me.py' },
+      { id: 'ws1-5', text: 'Fix API contract: document type ID mismatch', detail: 'Frontend and backend use different type identifiers' },
+      { id: 'ws1-6', text: 'Fix API contract: content structure mismatch', detail: 'Normalize to sections[] format' },
+      { id: 'ws1-7', text: 'Add 14-day trial countdown and logic', detail: 'Show trial status in billing page and header, handle expiry' },
+      { id: 'ws1-8', text: 'Wire cross-project list views into router', detail: 'InspectionListPage.tsx, IncidentListPage.tsx, ToolboxTalkListPage.tsx exist but not routed', file: 'frontend/src/App.tsx' },
+      { id: 'ws1-9', text: 'Global find-replace kerf.build to kerf.build', detail: '30+ references across config.py, ci.yml, INFRASTRUCTURE.md, GTM_STRATEGY.md, USER_MANUAL.md' },
+      { id: 'ws1-10', text: 'Update Business tier price to $499/mo', detail: 'Currently $599 in billing_service.py and constants.ts', file: 'backend/app/services/billing_service.py' },
+    ]
+  },
+  {
+    id: 'ws2', title: 'WS2: Infrastructure & Environments', priority: 'p0', effort: '2-3 days',
+    items: [
+      { id: 'ws2-1', text: 'Create kerf-dev GCP project', detail: 'Enable required APIs, configure billing' },
+      { id: 'ws2-2', text: 'Create kerf-staging GCP project', detail: 'Enable required APIs, configure billing' },
+      { id: 'ws2-3', text: 'Create kerf-prod GCP project', detail: 'Enable required APIs, configure billing' },
+      { id: 'ws2-4', text: 'Create Firestore database (Native mode) in prod', detail: 'Deploy security rules and indexes' },
+      { id: 'ws2-5', text: 'Deploy backend to Cloud Run (staging)', detail: 'First deployment using deploy.sh', file: 'backend/deploy.sh' },
+      { id: 'ws2-6', text: 'Deploy backend to Cloud Run (production)', detail: 'After staging validation' },
+      { id: 'ws2-7', text: 'Connect frontend repo to Vercel', detail: 'Set environment variables for staging + prod' },
+      { id: 'ws2-8', text: 'Set up GCP Secret Manager', detail: 'Store Anthropic key, Paddle keys, Firebase admin credentials' },
+      { id: 'ws2-9', text: 'Configure Firebase Auth for production', detail: 'Add app.kerf.build to authorized domains, configure providers' },
+      { id: 'ws2-10', text: 'Deploy Firestore rules and indexes', detail: 'firestore.rules + firestore.indexes.json' },
+    ]
+  },
+  {
+    id: 'ws3', title: 'WS3: Domain & DNS', priority: 'p0', effort: '1 day',
+    items: [
+      { id: 'ws3-1', text: 'Configure kerf.build DNS records', detail: 'Root domain serves landing/marketing page' },
+      { id: 'ws3-2', text: 'Set up app.kerf.build CNAME to Vercel', detail: 'CNAME -> cname.vercel-dns.com' },
+      { id: 'ws3-3', text: 'Set up api.kerf.build CNAME to Cloud Run', detail: 'CNAME -> ghs.googlehosted.com via custom domain mapping' },
+      { id: 'ws3-4', text: 'Set up staging subdomains', detail: 'staging.kerf.build + api-staging.kerf.build' },
+      { id: 'ws3-5', text: 'Configure email (support@, noreply@kerf.build)', detail: 'Google Workspace or similar for business email' },
+      { id: 'ws3-6', text: 'Set up SPF/DKIM/DMARC records', detail: 'Required for transactional email deliverability' },
+      { id: 'ws3-7', text: 'Verify SSL certificates active', detail: 'Auto-provisioned by Vercel + Cloud Run, verify working' },
+    ]
+  },
+  {
+    id: 'ws4', title: 'WS4: Payments — Paddle Production', priority: 'p0', effort: '2-3 days',
+    items: [
+      { id: 'ws4-1', text: 'Create Paddle production account', detail: 'Complete business verification process' },
+      { id: 'ws4-2', text: 'Create products and prices in Paddle', detail: 'Starter $99, Professional $299, Business $499 (monthly + annual at 25% off)' },
+      { id: 'ws4-3', text: 'Set production webhook URL', detail: 'api.kerf.build/api/v1/billing/webhook' },
+      { id: 'ws4-4', text: 'Add annual billing price IDs', detail: 'Currently only monthly implemented', file: 'backend/app/services/billing_service.py' },
+      { id: 'ws4-5', text: 'Configure Paddle tax settings', detail: 'Paddle is merchant of record, but verify tax config for US/UK/AU/CA' },
+      { id: 'ws4-6', text: 'End-to-end payment test', detail: 'Full flow: select plan -> checkout -> webhook -> subscription active in Firestore' },
+      { id: 'ws4-7', text: 'Test subscription lifecycle', detail: 'Upgrade, downgrade, cancel, pause, resume, payment failure' },
+    ]
+  },
+  {
+    id: 'ws5', title: 'WS5: Security Hardening', priority: 'p0', effort: '2-3 days',
+    items: [
+      { id: 'ws5-1', text: 'Rotate exposed service account key', detail: 'CRITICAL: Key was exposed in conversation history. Rotate in GCP console immediately' },
+      { id: 'ws5-2', text: 'Remove service account key from git history', detail: 'Use BFG Repo-Cleaner or git filter-repo' },
+      { id: 'ws5-3', text: 'Fix Permissions-Policy to allow microphone', detail: 'Change microphone=() to microphone=(self)', file: 'frontend/vercel.json' },
+      { id: 'ws5-4', text: 'Add Content-Security-Policy header', detail: 'Full CSP defined in INFRASTRUCTURE.md, add to vercel.json', file: 'frontend/vercel.json' },
+      { id: 'ws5-5', text: 'Run npm audit on frontend', detail: 'Fix any high/critical vulnerabilities' },
+      { id: 'ws5-6', text: 'Run pip-audit on backend', detail: 'Fix any high/critical vulnerabilities' },
+      { id: 'ws5-7', text: 'Review rate limiting for production', detail: 'Currently 100/min via slowapi. Verify per-endpoint limits', file: 'backend/app/middleware/rate_limit.py' },
+      { id: 'ws5-8', text: 'Use Workload Identity Federation in prod', detail: 'Replace service account key files with WIF for Cloud Run' },
+    ]
+  },
+  {
+    id: 'ws6', title: 'WS6: Testing & Quality', priority: 'p1', effort: '3-5 days',
+    items: [
+      { id: 'ws6-1', text: 'E2E test: signup and onboarding flow', detail: 'Playwright test for new user registration through company setup' },
+      { id: 'ws6-2', text: 'E2E test: create project and run inspection', detail: 'Core workflow end-to-end' },
+      { id: 'ws6-3', text: 'E2E test: generate document and export PDF', detail: 'Verify Claude API integration and WeasyPrint output' },
+      { id: 'ws6-4', text: 'E2E test: billing upgrade flow', detail: 'Select plan -> Paddle checkout -> subscription active' },
+      { id: 'ws6-5', text: 'Voice input testing with real audio', detail: 'Test MediaRecorder API across Chrome, Safari, mobile browsers' },
+      { id: 'ws6-6', text: 'Cross-browser testing (Safari, Firefox, mobile)', detail: 'Especially Safari for MediaRecorder API compatibility' },
+      { id: 'ws6-7', text: 'PDF export verification all document types', detail: 'Confirm valid PDF output for SSSP, JHA, Toolbox Talk, Incident Report, Fall Protection' },
+      { id: 'ws6-8', text: 'Basic load testing on Cloud Run', detail: 'k6 or similar, verify scaling behavior under concurrent requests' },
+    ]
+  },
+  {
+    id: 'ws7', title: 'WS7: Monitoring & Observability', priority: 'p1', effort: '1-2 days',
+    items: [
+      { id: 'ws7-1', text: 'Add Sentry to backend (FastAPI)', detail: 'Error tracking with environment tags' },
+      { id: 'ws7-2', text: 'Add Sentry to frontend (React)', detail: 'Error boundary + performance monitoring' },
+      { id: 'ws7-3', text: 'Configure uptime monitoring', detail: 'UptimeRobot or Cloud Monitoring on /health endpoint' },
+      { id: 'ws7-4', text: 'Set up structured logging', detail: 'JSON logging to Cloud Logging with request IDs' },
+      { id: 'ws7-5', text: 'Configure alerts', detail: 'Error rate spikes, API latency, billing webhook failures, Cloud Run scaling' },
+    ]
+  },
+  {
+    id: 'ws8', title: 'WS8: Legal & Compliance', priority: 'p0', effort: '2-3 days',
+    items: [
+      { id: 'ws8-1', text: 'Draft Terms of Service', detail: 'Cover AI-generated content liability, data ownership, SLA expectations' },
+      { id: 'ws8-2', text: 'Draft Privacy Policy', detail: 'Must cover US, UK, AU, CA data handling. Worker PII, OSHA records, certification data' },
+      { id: 'ws8-3', text: 'Implement cookie consent banner', detail: 'PostHog + Firebase analytics require consent in UK/EU/AU' },
+      { id: 'ws8-4', text: 'Define data retention policy', detail: 'How long safety docs, PII, OSHA logs are stored and when deleted' },
+      { id: 'ws8-5', text: 'Implement GDPR data export/deletion', detail: 'Account data export + right to deletion for UK/AU compliance' },
+      { id: 'ws8-6', text: 'Draft Acceptable Use Policy', detail: 'Important for AI-generated content — limits on misuse' },
+      { id: 'ws8-7', text: 'Add legal pages to app', detail: 'ToS, Privacy, AUP accessible from footer + signup flow' },
+    ]
+  },
+  {
+    id: 'ws9', title: 'WS9: Marketing Site & SEO', priority: 'p1', effort: '2-3 days',
+    items: [
+      { id: 'ws9-1', text: 'Review and finalize landing page copy', detail: 'Update pricing to $499 Business tier, verify all messaging' },
+      { id: 'ws9-2', text: 'Create robots.txt', detail: 'Allow search engines, disallow admin/api paths', file: 'frontend/public/robots.txt' },
+      { id: 'ws9-3', text: 'Generate sitemap.xml', detail: 'Landing page + key public pages' },
+      { id: 'ws9-4', text: 'Create OG images for social sharing', detail: 'kerf.build share image, feature-specific images' },
+      { id: 'ws9-5', text: 'Add per-page meta tags', detail: 'Title, description, OG tags for landing, login, signup' },
+      { id: 'ws9-6', text: 'Set up Google Search Console', detail: 'Verify kerf.build domain, submit sitemap' },
+      { id: 'ws9-7', text: 'Implement web analytics', detail: 'PostHog or GA4 for traffic and conversion tracking' },
+      { id: 'ws9-8', text: 'Create social media accounts', detail: 'Twitter/X + LinkedIn company page minimum' },
+    ]
+  },
+  {
+    id: 'ws10', title: 'WS10: Onboarding & Training', priority: 'p1', effort: '2-3 days',
+    items: [
+      { id: 'ws10-1', text: 'Set up transactional email service', detail: 'SendGrid, Postmark, or Resend for welcome + notification emails' },
+      { id: 'ws10-2', text: 'Build welcome email template', detail: 'Sent on signup with getting-started guide' },
+      { id: 'ws10-3', text: 'Build sub invitation email template', detail: 'GTM strategy calls this "the single most important piece of copy"' },
+      { id: 'ws10-4', text: 'Build trial expiry email sequence', detail: 'Day 7 check-in, Day 12 reminder, Day 14 expiry notice' },
+      { id: 'ws10-5', text: 'Add product tour for first-time users', detail: 'Shepherd.js or similar for guided walkthrough' },
+      { id: 'ws10-6', text: 'Convert USER_MANUAL.md to help center', detail: '42KB manual is excellent foundation. Host on GitBook, Notion, or custom' },
+      { id: 'ws10-7', text: 'Add contextual help tooltips', detail: 'Key features should have ? icons linking to relevant help' },
+    ]
+  },
+  {
+    id: 'ws11', title: 'WS11: GTM Execution', priority: 'p1', effort: '3-5 days',
+    items: [
+      { id: 'ws11-1', text: 'Select launch metro', detail: 'Strategy suggests Houston, Dallas, Phoenix, or Atlanta' },
+      { id: 'ws11-2', text: 'Build target GC list (10-20 in launch metro)', detail: 'Research general contractors with active subcontractor networks' },
+      { id: 'ws11-3', text: 'Finalize cold email outreach templates', detail: '4-email sequence per GTM strategy, personalized with OSHA data' },
+      { id: 'ws11-4', text: 'Add "Generated with Kerf" footer to PDFs', detail: 'Viral distribution via shared safety documents', file: 'backend/app/services/pdf_service.py' },
+      { id: 'ws11-5', text: 'Build Mock OSHA quiz as standalone free tool', detail: 'Key free-tier conversion tool per GTM strategy' },
+      { id: 'ws11-6', text: 'Set up first 30 days content calendar', detail: 'Social media posts, blog content, newsletter plan' },
+      { id: 'ws11-7', text: 'Set up Instantly.ai for cold outreach', detail: '$30/mo outbound email platform per GTM strategy' },
+      { id: 'ws11-8', text: 'Build simple referral mechanism', detail: '"Invite a contractor" flow with tracking' },
+    ]
+  },
+  {
+    id: 'ws12', title: 'WS12: Support & Hermes', priority: 'p1', effort: '3-5 days',
+    items: [
+      { id: 'ws12-1', text: 'Set up support@kerf.build email', detail: 'Basic inbound support channel' },
+      { id: 'ws12-2', text: 'Design Hermes agent architecture', detail: 'Define scope: support triage, onboarding assist, churn prevention, lead gen' },
+      { id: 'ws12-3', text: 'Build in-app support chat widget', detail: 'Hermes-powered or start with Intercom/Crisp' },
+      { id: 'ws12-4', text: 'Build knowledge base for Hermes', detail: 'Ingest USER_MANUAL.md, help docs, FAQ content' },
+      { id: 'ws12-5', text: 'Build OSHA violation lead gen agent', detail: 'Monitor enforcedata.dol.gov, generate qualified leads', },
+      { id: 'ws12-6', text: 'Build cold email personalization agent', detail: 'Enrich leads with OSHA data, generate personalized sequences' },
+      { id: 'ws12-7', text: 'Set up status page', detail: 'Betteruptime, Instatus, or similar for public uptime visibility' },
+      { id: 'ws12-8', text: 'Add in-app feedback mechanism', detail: 'Feedback button or NPS survey for early user insights' },
+    ]
+  },
+  {
+    id: 'ws13', title: 'WS13: CI/CD Pipeline', priority: 'p0', effort: '2 days',
+    items: [
+      { id: 'ws13-1', text: 'Add staging deploy job to GitHub Actions', detail: 'Auto-deploy backend to Cloud Run staging on merge to main', file: '.github/workflows/ci.yml' },
+      { id: 'ws13-2', text: 'Add production deploy job (manual trigger)', detail: 'Deploy to prod Cloud Run on git tag or workflow_dispatch', file: '.github/workflows/ci.yml' },
+      { id: 'ws13-3', text: 'Connect Vercel GitHub integration', detail: 'Auto-deploy frontend on push, preview deploys on PRs' },
+      { id: 'ws13-4', text: 'Configure environment-specific build configs', detail: 'Separate env var sets for dev/staging/prod in GitHub + Vercel' },
+      { id: 'ws13-5', text: 'Add Firestore rules/indexes deployment to CI', detail: 'Deploy rules and indexes as part of backend pipeline' },
+      { id: 'ws13-6', text: 'Add GitHub Actions secrets', detail: 'GCP deployer service account key, Vercel token' },
+    ]
+  },
+  {
+    id: 'ws14', title: 'WS14: Data & Analytics', priority: 'p2', effort: '2-3 days',
+    items: [
+      { id: 'ws14-1', text: 'Implement PostHog for product analytics', detail: 'Feature usage tracking, user identification' },
+      { id: 'ws14-2', text: 'Build signup -> onboard -> first doc -> upgrade funnel', detail: 'Track conversion rates at each step' },
+      { id: 'ws14-3', text: 'Implement real analytics from Firestore data', detail: 'Replace demo data in analytics dashboard with real queries' },
+      { id: 'ws14-4', text: 'Configure Firestore automated daily backups', detail: 'GCP scheduled export to Cloud Storage' },
+      { id: 'ws14-5', text: 'Build internal admin metrics dashboard', detail: 'Customer count, MRR, churn, feature adoption' },
+    ]
+  },
+];
+
+// ── State Management ──
+const STORAGE_KEY = 'kerf-launch-readiness';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadNotes() {
+  return localStorage.getItem(STORAGE_KEY + '-notes') || '';
+}
+
+function saveNotes(text) {
+  localStorage.setItem(STORAGE_KEY + '-notes', text);
+}
+
+// ── Render ──
+function render() {
+  const state = loadState();
+  const container = document.getElementById('workstreams');
+  container.innerHTML = '';
+
+  let totalItems = 0, totalChecked = 0;
+  const priorityCounts = { p0: { total: 0, checked: 0 }, p1: { total: 0, checked: 0 }, p2: { total: 0, checked: 0 } };
+
+  WORKSTREAMS.forEach(ws => {
+    const wsChecked = ws.items.filter(it => state[it.id]).length;
+    const wsTotal = ws.items.length;
+    totalItems += wsTotal;
+    totalChecked += wsChecked;
+    priorityCounts[ws.priority].total += wsTotal;
+    priorityCounts[ws.priority].checked += wsChecked;
+
+    const section = document.createElement('div');
+    section.className = 'ws-section' + (state[ws.id + '-collapsed'] ? ' collapsed' : '');
+
+    const pctDone = wsTotal > 0 ? Math.round((wsChecked / wsTotal) * 100) : 0;
+
+    section.innerHTML = `
+      <div class="ws-header" onclick="toggleSection('${ws.id}')">
+        <svg class="ws-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="ws-title">${ws.title}</span>
+        <span class="ws-badge badge-${ws.priority}">${ws.priority.toUpperCase()} &middot; ${ws.effort}</span>
+        <div class="ws-progress-mini"><div class="ws-progress-mini-fill" style="width: ${pctDone}%;"></div></div>
+        <span class="ws-count">${wsChecked}/${wsTotal}</span>
+      </div>
+      <div class="ws-body">
+        ${ws.items.map(it => {
+          const checked = !!state[it.id];
+          return `
+            <div class="ws-item ${checked ? 'checked' : ''}">
+              <div class="ws-checkbox ${checked ? 'is-checked' : ''}" onclick="toggleItem('${it.id}')">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="item-content">
+                <div class="item-text">${it.text}</div>
+                ${it.detail ? `<div class="item-detail">${it.detail}</div>` : ''}
+                ${it.file ? `<div class="item-file">${it.file}</div>` : ''}
+              </div>
+              <span class="item-status ${checked ? 'status-done' : 'status-todo'}">${checked ? 'Done' : 'Todo'}</span>
+            </div>`;
+        }).join('')}
+      </div>`;
+
+    container.appendChild(section);
+  });
+
+  // Update stats
+  const overallPct = totalItems > 0 ? Math.round((totalChecked / totalItems) * 100) : 0;
+  document.getElementById('overallPct').textContent = overallPct + '%';
+  document.getElementById('overallSub').textContent = `${totalChecked} of ${totalItems} items`;
+  document.getElementById('overallBar').style.width = overallPct + '%';
+  document.getElementById('overallBarPct').textContent = overallPct + '%';
+
+  ['p0', 'p1', 'p2'].forEach(p => {
+    const pct = priorityCounts[p].total > 0 ? Math.round((priorityCounts[p].checked / priorityCounts[p].total) * 100) : 0;
+    document.getElementById(p + 'Pct').textContent = pct + '%';
+    document.getElementById(p + 'Sub').textContent = `${priorityCounts[p].checked} of ${priorityCounts[p].total}`;
+  });
+
+  // Hide urgent banner if all urgent items addressed (ws5-1, ws5-3, ws1-9 checked)
+  const urgentDone = state['ws5-1'] && state['ws5-3'] && state['ws1-9'];
+  document.getElementById('urgentBanner').style.display = urgentDone ? 'none' : 'block';
+}
+
+function toggleItem(id) {
+  const state = loadState();
+  state[id] = !state[id];
+  saveState(state);
+  render();
+}
+
+function toggleSection(wsId) {
+  const state = loadState();
+  state[wsId + '-collapsed'] = !state[wsId + '-collapsed'];
+  saveState(state);
+  render();
+}
+
+// ── Notes ──
+document.addEventListener('DOMContentLoaded', () => {
+  render();
+  const notes = document.getElementById('notesArea');
+  notes.value = loadNotes();
+  notes.addEventListener('input', () => saveNotes(notes.value));
+});
+</script>
+
+</body>
+</html>

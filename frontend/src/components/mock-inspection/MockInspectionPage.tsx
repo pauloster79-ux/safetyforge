@@ -352,7 +352,7 @@ export function MockInspectionPage() {
                 Run a Mock OSHA Inspection
               </h2>
               <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-                SafetyForge will review all your documents, training records, inspection logs, and
+                Kerf will review all your documents, training records, inspection logs, and
                 OSHA recordkeeping — then return findings formatted exactly like real OSHA citations.
               </p>
 

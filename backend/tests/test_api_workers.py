@@ -12,7 +12,7 @@ class TestCreateWorker:
     def test_create_worker(self, client: TestClient, test_company):
         """Create a worker with valid data returns 201."""
         response = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={
                 "first_name": "Carlos",
                 "last_name": "Martinez",
@@ -38,7 +38,7 @@ class TestCreateWorker:
         assert data["emergency_contact_name"] == "Maria Martinez"
         assert data["status"] == "active"
         assert data["id"].startswith("wkr_")
-        assert data["company_id"] == test_company.id
+        assert data["company_id"] == test_company["id"]
         assert data["certifications"] == []
         assert data["total_certifications"] == 0
         assert data["expiring_soon"] == 0
@@ -53,15 +53,15 @@ class TestListWorkers:
         """List workers returns created workers."""
         # Create two workers
         client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "John", "last_name": "Doe"},
         )
         client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Jane", "last_name": "Smith"},
         )
 
-        response = client.get("/me/workers")
+        response = client.get("/api/v1/me/workers")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -70,27 +70,27 @@ class TestListWorkers:
     def test_list_workers_search_by_name(self, client: TestClient, test_company):
         """Search workers by name filters results correctly."""
         client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "John", "last_name": "Doe"},
         )
         client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Maria", "last_name": "Garcia"},
         )
 
         # Search by first name
-        response = client.get("/me/workers?search=Carlos")
+        response = client.get("/api/v1/me/workers?search=Carlos")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
         assert data["workers"][0]["first_name"] == "Carlos"
 
         # Search by last name (case insensitive)
-        response = client.get("/me/workers?search=garcia")
+        response = client.get("/api/v1/me/workers?search=garcia")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
@@ -103,12 +103,12 @@ class TestGetWorker:
     def test_get_worker(self, client: TestClient, test_company):
         """Get a worker by ID returns the worker."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
-        response = client.get(f"/me/workers/{worker_id}")
+        response = client.get(f"/api/v1/me/workers/{worker_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == worker_id
@@ -122,13 +122,13 @@ class TestUpdateWorker:
     def test_update_worker(self, client: TestClient, test_company):
         """Update a worker's fields returns the updated worker."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez", "role": "laborer"},
         )
         worker_id = create_resp.json()["id"]
 
         response = client.patch(
-            f"/me/workers/{worker_id}",
+            f"/api/v1/me/workers/{worker_id}",
             json={"role": "foreman", "trade": "electrical"},
         )
         assert response.status_code == 200
@@ -144,16 +144,16 @@ class TestDeleteWorker:
     def test_delete_worker(self, client: TestClient, test_company):
         """Soft-delete a worker sets status to terminated."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
-        response = client.delete(f"/me/workers/{worker_id}")
+        response = client.delete(f"/api/v1/me/workers/{worker_id}")
         assert response.status_code == 204
 
         # Worker should no longer be accessible
-        get_resp = client.get(f"/me/workers/{worker_id}")
+        get_resp = client.get(f"/api/v1/me/workers/{worker_id}")
         assert get_resp.status_code == 404
 
 
@@ -163,13 +163,13 @@ class TestAddCertification:
     def test_add_certification(self, client: TestClient, test_company):
         """Add a certification without expiry returns worker with cert."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
         response = client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "osha_10",
                 "issued_date": "2024-01-15",
@@ -190,14 +190,14 @@ class TestAddCertification:
     def test_add_certification_with_expiry(self, client: TestClient, test_company):
         """Add a certification with a future expiry date."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "John", "last_name": "Doe"},
         )
         worker_id = create_resp.json()["id"]
 
         future_date = (date.today() + timedelta(days=365)).isoformat()
         response = client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "fall_protection",
                 "issued_date": "2024-06-01",
@@ -219,21 +219,21 @@ class TestCertificationStatus:
     def test_certification_status_valid(self, client: TestClient, test_company):
         """Certification with no expiry or far future expiry is valid."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
         # No expiry = valid forever
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "osha_10",
                 "issued_date": "2024-01-15",
             },
         )
 
-        response = client.get(f"/me/workers/{worker_id}")
+        response = client.get(f"/api/v1/me/workers/{worker_id}")
         data = response.json()
         assert data["certifications"][0]["status"] == "valid"
         assert data["expired"] == 0
@@ -242,14 +242,14 @@ class TestCertificationStatus:
     def test_certification_status_expired(self, client: TestClient, test_company):
         """Certification with past expiry date is expired."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
         past_date = (date.today() - timedelta(days=10)).isoformat()
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "first_aid_cpr",
                 "issued_date": "2022-01-01",
@@ -257,7 +257,7 @@ class TestCertificationStatus:
             },
         )
 
-        response = client.get(f"/me/workers/{worker_id}")
+        response = client.get(f"/api/v1/me/workers/{worker_id}")
         data = response.json()
         assert data["certifications"][0]["status"] == "expired"
         assert data["expired"] == 1
@@ -266,14 +266,14 @@ class TestCertificationStatus:
     def test_certification_status_expiring_soon(self, client: TestClient, test_company):
         """Certification expiring within 30 days is expiring_soon."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
         soon_date = (date.today() + timedelta(days=15)).isoformat()
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "forklift_operator",
                 "issued_date": "2023-06-01",
@@ -281,7 +281,7 @@ class TestCertificationStatus:
             },
         )
 
-        response = client.get(f"/me/workers/{worker_id}")
+        response = client.get(f"/api/v1/me/workers/{worker_id}")
         data = response.json()
         assert data["certifications"][0]["status"] == "expiring_soon"
         assert data["expiring_soon"] == 1
@@ -294,14 +294,14 @@ class TestRemoveCertification:
     def test_remove_certification(self, client: TestClient, test_company):
         """Remove a certification from a worker."""
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
         # Add two certifications
         add_resp1 = client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "osha_10",
                 "issued_date": "2024-01-15",
@@ -310,7 +310,7 @@ class TestRemoveCertification:
         cert_id = add_resp1.json()["certifications"][0]["id"]
 
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "fall_protection",
                 "issued_date": "2024-03-01",
@@ -319,7 +319,7 @@ class TestRemoveCertification:
 
         # Remove the first certification
         response = client.delete(
-            f"/me/workers/{worker_id}/certifications/{cert_id}"
+            f"/api/v1/me/workers/{worker_id}/certifications/{cert_id}"
         )
         assert response.status_code == 200
         data = response.json()
@@ -334,7 +334,7 @@ class TestExpiringCertifications:
         """Get expiring certifications returns certs expiring within N days."""
         # Create worker with an expiring cert
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
@@ -344,7 +344,7 @@ class TestExpiringCertifications:
 
         # Add one expiring soon cert
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "first_aid_cpr",
                 "issued_date": "2023-01-01",
@@ -353,7 +353,7 @@ class TestExpiringCertifications:
         )
         # Add one valid cert (far future)
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "osha_30",
                 "issued_date": "2024-01-01",
@@ -361,7 +361,7 @@ class TestExpiringCertifications:
             },
         )
 
-        response = client.get("/me/workers/expiring-certifications?days=30")
+        response = client.get("/api/v1/me/workers/expiring-certifications?days=30")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
@@ -376,20 +376,20 @@ class TestCertificationMatrix:
         """Get certification matrix returns workers x cert types grid."""
         # Create a worker with one cert
         create_resp = client.post(
-            "/me/workers",
+            "/api/v1/me/workers",
             json={"first_name": "Carlos", "last_name": "Martinez"},
         )
         worker_id = create_resp.json()["id"]
 
         client.post(
-            f"/me/workers/{worker_id}/certifications",
+            f"/api/v1/me/workers/{worker_id}/certifications",
             json={
                 "certification_type": "osha_10",
                 "issued_date": "2024-01-15",
             },
         )
 
-        response = client.get("/me/workers/certification-matrix")
+        response = client.get("/api/v1/me/workers/certification-matrix")
         assert response.status_code == 200
         data = response.json()
 

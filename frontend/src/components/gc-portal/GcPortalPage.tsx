@@ -137,7 +137,7 @@ function InviteSubDialog() {
         <DialogHeader>
           <DialogTitle>Invite Subcontractor</DialogTitle>
           <DialogDescription>
-            Send an invitation to a subcontractor to connect their SafetyForge account.
+            Send an invitation to a subcontractor to connect their Kerf account.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -179,13 +179,25 @@ function InviteSubDialog() {
 }
 
 function AsGcView() {
-  const { data: dashboard, isLoading } = useGcDashboard();
+  const { data: dashboard, isLoading, isError } = useGcDashboard();
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
 
-  if (isLoading || !dashboard) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError || !dashboard) {
+    return (
+      <div className="flex flex-col items-center py-16 text-center">
+        <Building2 className="h-16 w-16 text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-medium text-muted-foreground">No subcontractors yet</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Invite subcontractors to monitor their safety compliance
+        </p>
       </div>
     );
   }

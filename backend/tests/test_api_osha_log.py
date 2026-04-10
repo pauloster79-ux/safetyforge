@@ -37,7 +37,7 @@ class TestCreateEntry:
 
     def test_create_entry(self, client: TestClient, test_company):
         """Create an OSHA log entry with valid data returns 201."""
-        response = client.post("/me/osha-log/entries", json=_make_entry_payload())
+        response = client.post("/api/v1/me/osha-log/entries", json=_make_entry_payload())
         assert response.status_code == 201
         data = response.json()
         assert data["employee_name"] == "Carlos Martinez"
@@ -51,18 +51,18 @@ class TestCreateEntry:
         assert data["died"] is False
         assert data["privacy_case"] is False
         assert data["id"].startswith("osha_")
-        assert data["company_id"] == test_company.id
+        assert data["company_id"] == test_company["id"]
         assert data["year"] == 2026
         assert data["case_number"] == 1
 
     def test_create_entry_auto_case_number(self, client: TestClient, test_company):
         """Sequential entries in the same year get incrementing case numbers."""
-        r1 = client.post("/me/osha-log/entries", json=_make_entry_payload())
+        r1 = client.post("/api/v1/me/osha-log/entries", json=_make_entry_payload())
         assert r1.status_code == 201
         assert r1.json()["case_number"] == 1
 
         r2 = client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="John Doe",
                 description="Worker cut hand on sheet metal while framing",
@@ -72,7 +72,7 @@ class TestCreateEntry:
         assert r2.json()["case_number"] == 2
 
         r3 = client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Jane Smith",
                 description="Worker experienced hearing loss from jackhammer operation",
@@ -93,9 +93,9 @@ class TestListEntries:
     def test_list_entries_by_year(self, client: TestClient, test_company):
         """List entries filtered by year returns only matching entries."""
         # Create entries in different years
-        client.post("/me/osha-log/entries", json=_make_entry_payload())
+        client.post("/api/v1/me/osha-log/entries", json=_make_entry_payload())
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="John Doe",
                 description="Worker fell from scaffold and broke arm",
@@ -105,21 +105,21 @@ class TestListEntries:
         )
 
         # Filter by 2026
-        response = client.get("/me/osha-log/entries?year=2026")
+        response = client.get("/api/v1/me/osha-log/entries?year=2026")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
         assert data["entries"][0]["year"] == 2026
 
         # Filter by 2025
-        response = client.get("/me/osha-log/entries?year=2025")
+        response = client.get("/api/v1/me/osha-log/entries?year=2025")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
         assert data["entries"][0]["year"] == 2025
 
         # No filter returns all
-        response = client.get("/me/osha-log/entries")
+        response = client.get("/api/v1/me/osha-log/entries")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -131,11 +131,11 @@ class TestGetEntry:
     def test_get_entry(self, client: TestClient, test_company):
         """Get a specific entry by ID returns full details."""
         create_response = client.post(
-            "/me/osha-log/entries", json=_make_entry_payload()
+            "/api/v1/me/osha-log/entries", json=_make_entry_payload()
         )
         entry_id = create_response.json()["id"]
 
-        response = client.get(f"/me/osha-log/entries/{entry_id}")
+        response = client.get(f"/api/v1/me/osha-log/entries/{entry_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == entry_id
@@ -143,7 +143,7 @@ class TestGetEntry:
 
     def test_get_entry_not_found(self, client: TestClient, test_company):
         """Get a nonexistent entry returns 404."""
-        response = client.get("/me/osha-log/entries/osha_nonexistent")
+        response = client.get("/api/v1/me/osha-log/entries/osha_nonexistent")
         assert response.status_code == 404
 
 
@@ -153,12 +153,12 @@ class TestUpdateEntry:
     def test_update_entry(self, client: TestClient, test_company):
         """Update entry fields returns updated data."""
         create_response = client.post(
-            "/me/osha-log/entries", json=_make_entry_payload()
+            "/api/v1/me/osha-log/entries", json=_make_entry_payload()
         )
         entry_id = create_response.json()["id"]
 
         response = client.patch(
-            f"/me/osha-log/entries/{entry_id}",
+            f"/api/v1/me/osha-log/entries/{entry_id}",
             json={
                 "days_away_from_work": 10,
                 "description": "Updated: Worker slipped on wet surface, more severe than initially thought",
@@ -174,7 +174,7 @@ class TestUpdateEntry:
     def test_update_entry_not_found(self, client: TestClient, test_company):
         """Update a nonexistent entry returns 404."""
         response = client.patch(
-            "/me/osha-log/entries/osha_nonexistent",
+            "/api/v1/me/osha-log/entries/osha_nonexistent",
             json={"days_away_from_work": 10},
         )
         assert response.status_code == 404
@@ -186,20 +186,20 @@ class TestDeleteEntry:
     def test_delete_entry(self, client: TestClient, test_company):
         """Delete an entry returns 204 and entry is gone."""
         create_response = client.post(
-            "/me/osha-log/entries", json=_make_entry_payload()
+            "/api/v1/me/osha-log/entries", json=_make_entry_payload()
         )
         entry_id = create_response.json()["id"]
 
-        response = client.delete(f"/me/osha-log/entries/{entry_id}")
+        response = client.delete(f"/api/v1/me/osha-log/entries/{entry_id}")
         assert response.status_code == 204
 
         # Verify it's gone
-        get_response = client.get(f"/me/osha-log/entries/{entry_id}")
+        get_response = client.get(f"/api/v1/me/osha-log/entries/{entry_id}")
         assert get_response.status_code == 404
 
     def test_delete_entry_not_found(self, client: TestClient, test_company):
         """Delete a nonexistent entry returns 404."""
-        response = client.delete("/me/osha-log/entries/osha_nonexistent")
+        response = client.delete("/api/v1/me/osha-log/entries/osha_nonexistent")
         assert response.status_code == 404
 
 
@@ -214,7 +214,7 @@ class TestOsha300aSummary:
         """
         # Entry 1: Days away (injury)
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Worker One",
                 days_away_from_work=5,
@@ -225,7 +225,7 @@ class TestOsha300aSummary:
         )
         # Entry 2: Restricted (skin disorder)
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Worker Two",
                 days_away_from_work=0,
@@ -237,7 +237,7 @@ class TestOsha300aSummary:
         )
         # Entry 3: Other recordable (respiratory)
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Worker Three",
                 days_away_from_work=0,
@@ -249,7 +249,7 @@ class TestOsha300aSummary:
         )
         # Entry 4: Death (injury)
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Worker Four",
                 days_away_from_work=0,
@@ -265,7 +265,7 @@ class TestOsha300aSummary:
         """Summary correctly aggregates entry counts and types."""
         self._create_test_entries(client)
 
-        response = client.get("/me/osha-log/summary?year=2026")
+        response = client.get("/api/v1/me/osha-log/summary?year=2026")
         assert response.status_code == 200
         data = response.json()
 
@@ -290,7 +290,7 @@ class TestOsha300aSummary:
         # Certify with hours data: 4 recordable cases, 400,000 hours
         # TRIR = (4 * 200,000) / 400,000 = 2.0
         client.post(
-            "/me/osha-log/summary/certify?year=2026",
+            "/api/v1/me/osha-log/summary/certify?year=2026",
             json={
                 "certified_by": "Safety Director",
                 "annual_average_employees": 50,
@@ -298,7 +298,7 @@ class TestOsha300aSummary:
             },
         )
 
-        response = client.get("/me/osha-log/summary?year=2026")
+        response = client.get("/api/v1/me/osha-log/summary?year=2026")
         assert response.status_code == 200
         data = response.json()
         assert data["trir"] == 2.0
@@ -310,7 +310,7 @@ class TestOsha300aSummary:
         # DART cases: days_away (1) + restricted (1) = 2
         # DART = (2 * 200,000) / 400,000 = 1.0
         client.post(
-            "/me/osha-log/summary/certify?year=2026",
+            "/api/v1/me/osha-log/summary/certify?year=2026",
             json={
                 "certified_by": "Safety Director",
                 "annual_average_employees": 50,
@@ -318,14 +318,14 @@ class TestOsha300aSummary:
             },
         )
 
-        response = client.get("/me/osha-log/summary?year=2026")
+        response = client.get("/api/v1/me/osha-log/summary?year=2026")
         assert response.status_code == 200
         data = response.json()
         assert data["dart"] == 1.0
 
     def test_summary_empty_year(self, client: TestClient, test_company):
         """Summary for a year with no entries returns zero counts."""
-        response = client.get("/me/osha-log/summary?year=2020")
+        response = client.get("/api/v1/me/osha-log/summary?year=2020")
         assert response.status_code == 200
         data = response.json()
         assert data["year"] == 2020
@@ -341,10 +341,10 @@ class TestCertifySummary:
     def test_certify_summary(self, client: TestClient, test_company):
         """Certify summary stores certification data and recalculates rates."""
         # Create one entry first
-        client.post("/me/osha-log/entries", json=_make_entry_payload())
+        client.post("/api/v1/me/osha-log/entries", json=_make_entry_payload())
 
         response = client.post(
-            "/me/osha-log/summary/certify?year=2026",
+            "/api/v1/me/osha-log/summary/certify?year=2026",
             json={
                 "certified_by": "John Smith, Safety Manager",
                 "annual_average_employees": 25,
@@ -367,9 +367,9 @@ class TestListYears:
 
     def test_list_years(self, client: TestClient, test_company):
         """List years returns all years with entries, sorted descending."""
-        client.post("/me/osha-log/entries", json=_make_entry_payload())
+        client.post("/api/v1/me/osha-log/entries", json=_make_entry_payload())
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Old Entry",
                 date_of_injury="2024-01-10",
@@ -377,7 +377,7 @@ class TestListYears:
             ),
         )
         client.post(
-            "/me/osha-log/entries",
+            "/api/v1/me/osha-log/entries",
             json=_make_entry_payload(
                 employee_name="Another Entry",
                 date_of_injury="2025-06-15",
@@ -385,14 +385,14 @@ class TestListYears:
             ),
         )
 
-        response = client.get("/me/osha-log/years")
+        response = client.get("/api/v1/me/osha-log/years")
         assert response.status_code == 200
         data = response.json()
         assert data["years"] == [2026, 2025, 2024]
 
     def test_list_years_empty(self, client: TestClient, test_company):
         """List years with no entries returns empty list."""
-        response = client.get("/me/osha-log/years")
+        response = client.get("/api/v1/me/osha-log/years")
         assert response.status_code == 200
         data = response.json()
         assert data["years"] == []

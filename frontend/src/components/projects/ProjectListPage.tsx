@@ -37,10 +37,10 @@ function StatusBadge({ status }: { status: Project['status'] }) {
 
 export function ProjectListPage() {
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
 
   const { data: projects, isLoading } = useProjects(
-    statusFilter !== 'all' ? { status: statusFilter } : undefined
+    !statusFilter.startsWith('All') ? { status: statusFilter } : undefined
   );
 
   return (
@@ -62,12 +62,12 @@ export function ProjectListPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'all')}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'All')}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="All Status">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="on_hold">On Hold</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>

@@ -12,6 +12,7 @@ interface CreateToolboxTalkPayload {
   target_trade?: string | null;
   duration_minutes: number;
   custom_points?: string;
+  language?: 'en' | 'es' | 'both';
 }
 
 interface UpdateToolboxTalkPayload {

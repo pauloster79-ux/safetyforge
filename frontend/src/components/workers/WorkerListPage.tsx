@@ -77,16 +77,16 @@ function CertHealthIndicator({ worker }: { worker: Worker }) {
 
 export function WorkerListPage() {
   const navigate = useNavigate();
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [tradeFilter, setTradeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('All Roles');
+  const [tradeFilter, setTradeFilter] = useState<string>('All Trades');
+  const [statusFilter, setStatusFilter] = useState<string>('All Status');
   const [searchQuery, setSearchQuery] = useState('');
   const [alertsExpanded, setAlertsExpanded] = useState(false);
 
   const params: Record<string, string> = {};
-  if (statusFilter !== 'all') params.status = statusFilter;
-  if (roleFilter !== 'all') params.role = roleFilter;
-  if (tradeFilter !== 'all') params.trade = tradeFilter;
+  if (!statusFilter.startsWith('All')) params.status = statusFilter;
+  if (!roleFilter.startsWith('All')) params.role = roleFilter;
+  if (!tradeFilter.startsWith('All')) params.trade = tradeFilter;
   if (searchQuery) params.search = searchQuery;
 
   const { data: workers, isLoading } = useWorkers(
@@ -220,34 +220,34 @@ export function WorkerListPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v || 'all')}>
+        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v || 'All')}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="All Roles">All Roles</SelectItem>
             {WORKER_ROLES.map(r => (
               <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={tradeFilter} onValueChange={(v) => setTradeFilter(v || 'all')}>
+        <Select value={tradeFilter} onValueChange={(v) => setTradeFilter(v || 'All')}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="All Trades" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Trades</SelectItem>
+            <SelectItem value="All Trades">All Trades</SelectItem>
             {TRADE_TYPES.map(t => (
               <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'all')}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || 'All')}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="All Status">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
             <SelectItem value="terminated">Terminated</SelectItem>

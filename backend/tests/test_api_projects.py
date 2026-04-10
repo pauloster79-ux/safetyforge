@@ -10,7 +10,7 @@ class TestCreateProject:
     def test_create_project(self, client: TestClient, test_company):
         """Create a project with valid data returns 201."""
         response = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={
                 "name": "Downtown Office Tower",
                 "address": "100 Main Street, Dallas, TX 75201",
@@ -35,13 +35,13 @@ class TestCreateProject:
         assert data["estimated_workers"] == 50
         assert data["status"] == "active"
         assert data["id"].startswith("proj_")
-        assert data["company_id"] == test_company.id
+        assert data["company_id"] == test_company["id"]
         assert data["deleted"] is False
 
     def test_create_project_minimal(self, client: TestClient, test_company):
         """Create a project with only required fields returns 201."""
         response = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={
                 "name": "Small Reno Job",
                 "address": "200 Oak Lane, Austin, TX 78701",
@@ -61,7 +61,7 @@ class TestListProjects:
 
     def test_list_projects_empty(self, client: TestClient, test_company):
         """List projects when none exist returns empty list."""
-        response = client.get("/me/projects")
+        response = client.get("/api/v1/me/projects")
         assert response.status_code == 200
         data = response.json()
         assert data["projects"] == []
@@ -71,15 +71,15 @@ class TestListProjects:
         """List projects returns created projects."""
         # Create two projects
         client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={"name": "Project Alpha", "address": "100 Alpha St, TX 75001"},
         )
         client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={"name": "Project Beta", "address": "200 Beta Ave, TX 75002"},
         )
 
-        response = client.get("/me/projects")
+        response = client.get("/api/v1/me/projects")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 2
@@ -89,31 +89,31 @@ class TestListProjects:
         """List projects with status filter returns only matching projects."""
         # Create a project
         create_resp = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={"name": "Active Project", "address": "100 Active St, TX 75001"},
         )
         project_id = create_resp.json()["id"]
 
         # Create another and set to completed
         create_resp2 = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={"name": "Done Project", "address": "200 Done Ave, TX 75002"},
         )
         project_id2 = create_resp2.json()["id"]
         client.patch(
-            f"/me/projects/{project_id2}",
+            f"/api/v1/me/projects/{project_id2}",
             json={"status": "completed"},
         )
 
         # Filter active only
-        response = client.get("/me/projects?status=active")
+        response = client.get("/api/v1/me/projects?status=active")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
         assert data["projects"][0]["name"] == "Active Project"
 
         # Filter completed only
-        response = client.get("/me/projects?status=completed")
+        response = client.get("/api/v1/me/projects?status=completed")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 1
@@ -126,7 +126,7 @@ class TestGetProject:
     def test_get_project(self, client: TestClient, test_company):
         """Get an existing project returns 200 with data."""
         create_resp = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={
                 "name": "My Project",
                 "address": "123 Test Rd, TX 75001",
@@ -135,7 +135,7 @@ class TestGetProject:
         )
         project_id = create_resp.json()["id"]
 
-        response = client.get(f"/me/projects/{project_id}")
+        response = client.get(f"/api/v1/me/projects/{project_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == project_id
@@ -145,7 +145,7 @@ class TestGetProject:
 
     def test_get_project_not_found(self, client: TestClient, test_company):
         """Get a non-existent project returns 404."""
-        response = client.get("/me/projects/proj_nonexistent1234")
+        response = client.get("/api/v1/me/projects/proj_nonexistent1234")
         assert response.status_code == 404
 
 
@@ -155,13 +155,13 @@ class TestUpdateProject:
     def test_update_project(self, client: TestClient, test_company):
         """Update project fields returns updated data."""
         create_resp = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={"name": "Original Name", "address": "100 Old St, TX 75001"},
         )
         project_id = create_resp.json()["id"]
 
         response = client.patch(
-            f"/me/projects/{project_id}",
+            f"/api/v1/me/projects/{project_id}",
             json={
                 "name": "Updated Name",
                 "client_name": "New Client",
@@ -181,19 +181,19 @@ class TestDeleteProject:
     def test_delete_project(self, client: TestClient, test_company):
         """Soft-delete a project returns 204 and hides it from list."""
         create_resp = client.post(
-            "/me/projects",
+            "/api/v1/me/projects",
             json={"name": "To Delete", "address": "100 Delete St, TX 75001"},
         )
         project_id = create_resp.json()["id"]
 
         # Delete
-        response = client.delete(f"/me/projects/{project_id}")
+        response = client.delete(f"/api/v1/me/projects/{project_id}")
         assert response.status_code == 204
 
         # Verify it's gone from list
-        list_resp = client.get("/me/projects")
+        list_resp = client.get("/api/v1/me/projects")
         assert list_resp.json()["total"] == 0
 
         # Verify direct get also 404s
-        get_resp = client.get(f"/me/projects/{project_id}")
+        get_resp = client.get(f"/api/v1/me/projects/{project_id}")
         assert get_resp.status_code == 404

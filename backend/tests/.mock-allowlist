@@ -1,0 +1,9 @@
+# Mock Allowlist — external dependencies that may be mocked in tests
+#
+# Only external APIs go here — internal services must use real implementations.
+# See CLAUDE.md test conventions: "No internal mocks — only mock external dependencies"
+#
+# Format: one dependency per line
+
+# Anthropic API — external LLM service (mocked in BriefingAgent tests)
+anthropic.Anthropic

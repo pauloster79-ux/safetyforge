@@ -1,16 +1,15 @@
-"""Environmental compliance service against Firestore."""
+"""Environmental compliance service against Neo4j."""
 
-import secrets
+import json
 from datetime import date, datetime, timezone
 from typing import Any
-
-from google.cloud import firestore
 
 from app.exceptions import (
     CompanyNotFoundError,
     EnvironmentalProgramNotFoundError,
     ProjectNotFoundError,
 )
+from app.models.actor import Actor
 from app.models.environmental import (
     EnvironmentalProgram,
     EnvironmentalProgramCreate,
@@ -21,6 +20,7 @@ from app.models.environmental import (
     SwpppInspection,
     SwpppInspectionCreate,
 )
+from app.services.base_service import BaseService
 
 # OSHA exposure limits by substance type
 OSHA_EXPOSURE_LIMITS: dict[str, dict[str, Any]] = {
@@ -47,110 +47,14 @@ OSHA_EXPOSURE_LIMITS: dict[str, dict[str, Any]] = {
 }
 
 
-class EnvironmentalService:
+class EnvironmentalService(BaseService):
     """Manages environmental compliance programs, exposure records, and SWPPP inspections.
 
-    Args:
-        db: Firestore client instance.
+    Graph model:
+        (Company)-[:HAS_ENV_PROGRAM]->(EnvironmentalProgram)
+        (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_EXPOSURE_RECORD]->(ExposureRecord)
+        (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_SWPPP_INSPECTION]->(SwpppInspection)
     """
-
-    def __init__(self, db: firestore.Client) -> None:
-        self.db = db
-
-    def _company_ref(self, company_id: str) -> firestore.DocumentReference:
-        """Return a reference to the company document.
-
-        Args:
-            company_id: The parent company ID.
-
-        Returns:
-            Firestore document reference.
-        """
-        return self.db.collection("companies").document(company_id)
-
-    def _programs_collection(self, company_id: str) -> firestore.CollectionReference:
-        """Return the environmental_programs subcollection for a company.
-
-        Args:
-            company_id: The parent company ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._company_ref(company_id).collection("environmental_programs")
-
-    def _project_ref(
-        self, company_id: str, project_id: str
-    ) -> firestore.DocumentReference:
-        """Return a reference to the project document.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The project ID.
-
-        Returns:
-            Firestore document reference.
-        """
-        return (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("projects")
-            .document(project_id)
-        )
-
-    def _exposure_collection(
-        self, company_id: str, project_id: str
-    ) -> firestore.CollectionReference:
-        """Return the exposure_records subcollection for a project.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The parent project ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._project_ref(company_id, project_id).collection("exposure_records")
-
-    def _swppp_collection(
-        self, company_id: str, project_id: str
-    ) -> firestore.CollectionReference:
-        """Return the swppp_inspections subcollection for a project.
-
-        Args:
-            company_id: The parent company ID.
-            project_id: The parent project ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._project_ref(company_id, project_id).collection(
-            "swppp_inspections"
-        )
-
-    def _generate_program_id(self) -> str:
-        """Generate a unique environmental program ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"envp_{secrets.token_hex(8)}"
-
-    def _generate_exposure_id(self) -> str:
-        """Generate a unique exposure record ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"expr_{secrets.token_hex(8)}"
-
-    def _generate_swppp_id(self) -> str:
-        """Generate a unique SWPPP inspection ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"swpp_{secrets.token_hex(8)}"
 
     def _verify_company_exists(self, company_id: str) -> None:
         """Verify that the parent company exists.
@@ -161,7 +65,11 @@ class EnvironmentalService:
         Raises:
             CompanyNotFoundError: If the company does not exist.
         """
-        if not self._company_ref(company_id).get().exists:
+        result = self._read_tx_single(
+            "MATCH (c:Company {id: $id}) RETURN c.id AS id",
+            {"id": company_id},
+        )
+        if result is None:
             raise CompanyNotFoundError(company_id)
 
     def _verify_project_exists(self, company_id: str, project_id: str) -> None:
@@ -174,13 +82,36 @@ class EnvironmentalService:
         Raises:
             ProjectNotFoundError: If the project does not exist or is soft-deleted.
         """
-        doc = self._project_ref(company_id, project_id).get()
-        if not doc.exists:
-            raise ProjectNotFoundError(project_id)
-        if doc.to_dict().get("deleted", False):
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            WHERE p.deleted = false
+            RETURN p.id AS id
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        if result is None:
             raise ProjectNotFoundError(project_id)
 
     # -- Environmental Programs --------------------------------------------------------
+
+    @staticmethod
+    def _program_to_model(record: dict[str, Any]) -> EnvironmentalProgram:
+        """Convert a Neo4j record to an EnvironmentalProgram model.
+
+        Args:
+            record: Dict with 'prog' and 'company_id' keys.
+
+        Returns:
+            An EnvironmentalProgram model instance.
+        """
+        data = dict(record["prog"])
+        content_json = data.pop("_content_json", "{}")
+        data["content"] = json.loads(content_json) if content_json else {}
+        applicable_json = data.pop("_applicable_projects_json", "[]")
+        data["applicable_projects"] = json.loads(applicable_json) if applicable_json else []
+        data["company_id"] = record["company_id"]
+        return EnvironmentalProgram(**data)
 
     def create_program(
         self,
@@ -203,28 +134,36 @@ class EnvironmentalService:
         """
         self._verify_company_exists(company_id)
 
-        now = datetime.now(timezone.utc)
-        program_id = self._generate_program_id()
+        actor = Actor.human(user_id)
+        program_id = self._generate_id("envp")
 
-        program_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": program_id,
-            "company_id": company_id,
             "program_type": data.program_type.value,
             "title": data.title,
-            "content": data.content,
-            "applicable_projects": data.applicable_projects,
+            "_content_json": json.dumps(data.content),
+            "_applicable_projects_json": json.dumps(data.applicable_projects),
             "last_reviewed": None,
             "next_review_due": (
                 data.next_review_due.isoformat() if data.next_review_due else None
             ),
             "status": "active",
-            "created_at": now,
-            "updated_at": now,
             "deleted": False,
+            **self._provenance_create(actor),
         }
 
-        self._programs_collection(company_id).document(program_id).set(program_dict)
-        return EnvironmentalProgram(**program_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})
+            CREATE (p:EnvironmentalProgram $props)
+            CREATE (c)-[:HAS_ENV_PROGRAM]->(p)
+            RETURN p {.*} AS prog, c.id AS company_id
+            """,
+            {"company_id": company_id, "props": props},
+        )
+        if result is None:
+            raise CompanyNotFoundError(company_id)
+        return self._program_to_model(result)
 
     def get_program(self, company_id: str, program_id: str) -> EnvironmentalProgram:
         """Fetch a single environmental program.
@@ -239,15 +178,17 @@ class EnvironmentalService:
         Raises:
             EnvironmentalProgramNotFoundError: If not found or soft-deleted.
         """
-        doc = self._programs_collection(company_id).document(program_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram {id: $program_id})
+            WHERE p.deleted = false
+            RETURN p {.*} AS prog, c.id AS company_id
+            """,
+            {"company_id": company_id, "program_id": program_id},
+        )
+        if result is None:
             raise EnvironmentalProgramNotFoundError(program_id)
-
-        data = doc.to_dict()
-        if data.get("deleted", False):
-            raise EnvironmentalProgramNotFoundError(program_id)
-
-        return EnvironmentalProgram(**data)
+        return self._program_to_model(result)
 
     def list_programs(
         self,
@@ -267,20 +208,42 @@ class EnvironmentalService:
         Returns:
             A dict with 'programs' list and 'total' count.
         """
-        base_query: firestore.Query = self._programs_collection(company_id).where(
-            "deleted", "==", False
-        )
+        where_clauses = ["p.deleted = false"]
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if program_type is not None:
-            base_query = base_query.where("program_type", "==", program_type.value)
+            where_clauses.append("p.program_type = $program_type")
+            params["program_type"] = program_type.value
 
-        all_docs = [EnvironmentalProgram(**doc.to_dict()) for doc in base_query.stream()]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
 
-        all_docs.sort(key=lambda p: p.created_at, reverse=True)
-        paginated = all_docs[offset : offset + limit]
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram)
+            WHERE {where_str}
+            RETURN count(p) AS total
+            """,
+            params,
+        )
+        total = count_result["total"] if count_result else 0
 
-        return {"programs": paginated, "total": total}
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram)
+            WHERE {where_str}
+            RETURN p {{.*}} AS prog, c.id AS company_id
+            ORDER BY p.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
+
+        programs = [self._program_to_model(r) for r in results]
+        return {"programs": programs, "total": total}
 
     def update_program(
         self,
@@ -303,29 +266,37 @@ class EnvironmentalService:
         Raises:
             EnvironmentalProgramNotFoundError: If not found or soft-deleted.
         """
-        doc_ref = self._programs_collection(company_id).document(program_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise EnvironmentalProgramNotFoundError(program_id)
-
         update_data: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name == "next_review_due" and value is not None:
                 update_data[field_name] = (
                     value.isoformat() if hasattr(value, "isoformat") else value
                 )
+            elif field_name == "content" and value is not None:
+                update_data["_content_json"] = json.dumps(value)
+            elif field_name == "applicable_projects" and value is not None:
+                update_data["_applicable_projects_json"] = json.dumps(value)
             else:
                 update_data[field_name] = value
 
         if not update_data:
-            return EnvironmentalProgram(**doc.to_dict())
+            return self.get_program(company_id, program_id)
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
+        actor = Actor.human(user_id)
+        update_data.update(self._provenance_update(actor))
 
-        doc_ref.update(update_data)
-        updated_doc = doc_ref.get()
-        return EnvironmentalProgram(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram {id: $program_id})
+            WHERE p.deleted = false
+            SET p += $props
+            RETURN p {.*} AS prog, c.id AS company_id
+            """,
+            {"company_id": company_id, "program_id": program_id, "props": update_data},
+        )
+        if result is None:
+            raise EnvironmentalProgramNotFoundError(program_id)
+        return self._program_to_model(result)
 
     def delete_program(self, company_id: str, program_id: str) -> None:
         """Soft-delete an environmental program.
@@ -337,18 +308,21 @@ class EnvironmentalService:
         Raises:
             EnvironmentalProgramNotFoundError: If not found or already deleted.
         """
-        doc_ref = self._programs_collection(company_id).document(program_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise EnvironmentalProgramNotFoundError(program_id)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram {id: $program_id})
+            WHERE p.deleted = false
+            SET p.deleted = true, p.updated_at = $now
+            RETURN p.id AS id
+            """,
             {
-                "deleted": True,
-                "updated_at": datetime.now(timezone.utc),
-            }
+                "company_id": company_id,
+                "program_id": program_id,
+                "now": datetime.now(timezone.utc).isoformat(),
+            },
         )
+        if result is None:
+            raise EnvironmentalProgramNotFoundError(program_id)
 
     # -- Exposure Monitoring Records ---------------------------------------------------
 
@@ -375,16 +349,14 @@ class EnvironmentalService:
         """
         self._verify_project_exists(company_id, project_id)
 
-        now = datetime.now(timezone.utc)
-        record_id = self._generate_exposure_id()
+        actor = Actor.human(user_id)
+        record_id = self._generate_id("expr")
 
         exceeds_action = data.result_value >= data.action_level
         exceeds_pel = data.result_value >= data.pel
 
-        record_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": record_id,
-            "company_id": company_id,
-            "project_id": project_id,
             "monitoring_type": data.monitoring_type,
             "monitoring_date": data.monitoring_date.isoformat(),
             "location": data.location,
@@ -400,14 +372,23 @@ class EnvironmentalService:
             "exceeds_pel": exceeds_pel,
             "controls_in_place": data.controls_in_place,
             "notes": data.notes,
-            "created_at": now,
-            "created_by": user_id,
+            "created_by": actor.id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        self._exposure_collection(company_id, project_id).document(record_id).set(
-            record_dict
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            CREATE (r:ExposureRecord $props)
+            CREATE (p)-[:HAS_EXPOSURE_RECORD]->(r)
+            RETURN r {.*} AS rec, c.id AS company_id, p.id AS project_id
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": props},
         )
-        return ExposureMonitoringRecord(**record_dict)
+        data_dict = dict(result["rec"])
+        data_dict["company_id"] = result["company_id"]
+        data_dict["project_id"] = result["project_id"]
+        return ExposureMonitoringRecord(**data_dict)
 
     def list_exposure_records(
         self,
@@ -431,25 +412,56 @@ class EnvironmentalService:
         Returns:
             A dict with 'records' list and 'total' count.
         """
-        base_query: firestore.Query = self._exposure_collection(
-            company_id, project_id
-        )
+        where_clauses: list[str] = []
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "project_id": project_id,
+            "limit": limit,
+            "offset": offset,
+        }
 
         if monitoring_type is not None:
-            base_query = base_query.where("monitoring_type", "==", monitoring_type)
+            where_clauses.append("r.monitoring_type = $monitoring_type")
+            params["monitoring_type"] = monitoring_type
 
         if worker_id is not None:
-            base_query = base_query.where("worker_id", "==", worker_id)
+            where_clauses.append("r.worker_id = $worker_id")
+            params["worker_id"] = worker_id
 
-        all_docs = [
-            ExposureMonitoringRecord(**doc.to_dict()) for doc in base_query.stream()
-        ]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
+        where_clause = f"WHERE {where_str}" if where_str else ""
 
-        all_docs.sort(key=lambda r: r.created_at, reverse=True)
-        paginated = all_docs[offset : offset + limit]
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+                  -[:HAS_EXPOSURE_RECORD]->(r:ExposureRecord)
+            {where_clause}
+            RETURN count(r) AS total
+            """,
+            params,
+        )
+        total = count_result["total"] if count_result else 0
 
-        return {"records": paginated, "total": total}
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+                  -[:HAS_EXPOSURE_RECORD]->(r:ExposureRecord)
+            {where_clause}
+            RETURN r {{.*}} AS rec, c.id AS company_id, p.id AS project_id
+            ORDER BY r.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
+
+        records = []
+        for r in results:
+            data_dict = dict(r["rec"])
+            data_dict["company_id"] = r["company_id"]
+            data_dict["project_id"] = r["project_id"]
+            records.append(ExposureMonitoringRecord(**data_dict))
+
+        return {"records": records, "total": total}
 
     def get_exposure_summary(self, company_id: str, project_id: str) -> dict:
         """Get a summary of exposure monitoring results by type for a project.
@@ -461,34 +473,40 @@ class EnvironmentalService:
         Returns:
             A dict with 'summaries' list and 'total_samples' count.
         """
-        all_records = list(
-            self._exposure_collection(company_id, project_id).stream()
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_EXPOSURE_RECORD]->(r:ExposureRecord)
+            RETURN r.monitoring_type AS mtype,
+                   r.result_value AS result_value,
+                   r.exceeds_action_level AS exceeds_action,
+                   r.exceeds_pel AS exceeds_pel,
+                   r.result_unit AS result_unit,
+                   r.action_level AS action_level,
+                   r.pel AS pel
+            """,
+            {"company_id": company_id, "project_id": project_id},
         )
 
         type_data: dict[str, list[dict]] = {}
-        for doc in all_records:
-            record = doc.to_dict()
-            mtype = record.get("monitoring_type", "unknown")
+        for r in results:
+            mtype = r.get("mtype", "unknown")
             if mtype not in type_data:
                 type_data[mtype] = []
-            type_data[mtype].append(record)
+            type_data[mtype].append(r)
 
         summaries = []
         total_samples = 0
 
         for mtype, records in type_data.items():
             values = [r.get("result_value", 0) for r in records]
-            above_action = sum(
-                1 for r in records if r.get("exceeds_action_level", False)
-            )
+            above_action = sum(1 for r in records if r.get("exceeds_action", False))
             above_pel = sum(1 for r in records if r.get("exceeds_pel", False))
             avg_val = sum(values) / len(values) if values else 0.0
             max_val = max(values) if values else 0.0
             total_samples += len(records)
 
-            # Use first record for unit/limits reference
             first = records[0]
-
             summaries.append(
                 {
                     "monitoring_type": mtype,
@@ -530,27 +548,52 @@ class EnvironmentalService:
         """
         self._verify_project_exists(company_id, project_id)
 
-        now = datetime.now(timezone.utc)
-        insp_id = self._generate_swppp_id()
+        actor = Actor.human(user_id)
+        insp_id = self._generate_id("swpp")
 
-        insp_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": insp_id,
-            "company_id": company_id,
-            "project_id": project_id,
             "inspection_date": data.inspection_date.isoformat(),
             "inspector_name": data.inspector_name,
             "inspection_type": data.inspection_type,
             "precipitation_last_24h": data.precipitation_last_24h,
-            "bmp_items": data.bmp_items,
+            "_bmp_items_json": json.dumps(data.bmp_items),
             "corrective_actions": data.corrective_actions,
             "overall_status": data.overall_status,
-            "photo_urls": data.photo_urls,
-            "created_at": now,
-            "created_by": user_id,
+            "_photo_urls_json": json.dumps(data.photo_urls),
+            "created_by": actor.id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        self._swppp_collection(company_id, project_id).document(insp_id).set(insp_dict)
-        return SwpppInspection(**insp_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            CREATE (s:SwpppInspection $props)
+            CREATE (p)-[:HAS_SWPPP_INSPECTION]->(s)
+            RETURN s {.*} AS insp, c.id AS company_id, p.id AS project_id
+            """,
+            {"company_id": company_id, "project_id": project_id, "props": props},
+        )
+        return self._swppp_to_model(result)
+
+    @staticmethod
+    def _swppp_to_model(record: dict[str, Any]) -> SwpppInspection:
+        """Convert a Neo4j record to a SwpppInspection model.
+
+        Args:
+            record: Dict with 'insp', 'company_id', and 'project_id' keys.
+
+        Returns:
+            A SwpppInspection model instance.
+        """
+        data = dict(record["insp"])
+        bmp_json = data.pop("_bmp_items_json", "[]")
+        data["bmp_items"] = json.loads(bmp_json) if bmp_json else []
+        photo_json = data.pop("_photo_urls_json", "[]")
+        data["photo_urls"] = json.loads(photo_json) if photo_json else []
+        data["company_id"] = record["company_id"]
+        data["project_id"] = record["project_id"]
+        return SwpppInspection(**data)
 
     def list_swppp_inspections(
         self,
@@ -570,16 +613,29 @@ class EnvironmentalService:
         Returns:
             A dict with 'inspections' list and 'total' count.
         """
-        all_docs = [
-            SwpppInspection(**doc.to_dict())
-            for doc in self._swppp_collection(company_id, project_id).stream()
-        ]
-        total = len(all_docs)
+        count_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_SWPPP_INSPECTION]->(s:SwpppInspection)
+            RETURN count(s) AS total
+            """,
+            {"company_id": company_id, "project_id": project_id},
+        )
+        total = count_result["total"] if count_result else 0
 
-        all_docs.sort(key=lambda i: i.created_at, reverse=True)
-        paginated = all_docs[offset : offset + limit]
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+                  -[:HAS_SWPPP_INSPECTION]->(s:SwpppInspection)
+            RETURN s {.*} AS insp, c.id AS company_id, p.id AS project_id
+            ORDER BY s.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            {"company_id": company_id, "project_id": project_id, "limit": limit, "offset": offset},
+        )
 
-        return {"inspections": paginated, "total": total}
+        inspections = [self._swppp_to_model(r) for r in results]
+        return {"inspections": inspections, "total": total}
 
     # -- Compliance Status -------------------------------------------------------------
 
@@ -596,17 +652,22 @@ class EnvironmentalService:
             A dict with overall_status, areas, and summary counts.
         """
         # Get all programs
-        programs_query = self._programs_collection(company_id).where(
-            "deleted", "==", False
+        prog_results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram)
+            WHERE p.deleted = false
+            RETURN p.program_type AS program_type, p.status AS status,
+                   p.next_review_due AS next_review_due
+            """,
+            {"company_id": company_id},
         )
-        all_programs = [doc.to_dict() for doc in programs_query.stream()]
 
-        total_programs = len(all_programs)
-        active_programs = sum(1 for p in all_programs if p.get("status") == "active")
+        total_programs = len(prog_results)
+        active_programs = sum(1 for p in prog_results if p.get("status") == "active")
         today = date.today()
 
         overdue_reviews = 0
-        for p in all_programs:
+        for p in prog_results:
             review_due = p.get("next_review_due")
             if review_due:
                 if isinstance(review_due, str):
@@ -614,28 +675,27 @@ class EnvironmentalService:
                 if review_due < today:
                     overdue_reviews += 1
 
-        # Scan projects for exposure exceedances
-        total_exceedances = 0
-        projects_ref = self._company_ref(company_id).collection("projects")
-        for proj_doc in projects_ref.stream():
-            proj_id = proj_doc.id
-            exposure_ref = self._exposure_collection(company_id, proj_id)
-            for exp_doc in exposure_ref.stream():
-                record = exp_doc.to_dict()
-                if record.get("exceeds_pel", False):
-                    total_exceedances += 1
+        # Count exposure exceedances across all projects
+        exc_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(proj:Project)
+                  -[:HAS_EXPOSURE_RECORD]->(r:ExposureRecord)
+            WHERE r.exceeds_pel = true
+            RETURN count(r) AS total_exceedances
+            """,
+            {"company_id": company_id},
+        )
+        total_exceedances = exc_result["total_exceedances"] if exc_result else 0
 
         # Build area-level status
         areas = []
-        program_types_found = set()
-        for p in all_programs:
-            ptype = p.get("program_type", "")
-            program_types_found.add(ptype)
-
         for ptype_enum in EnvironmentalProgramType:
             ptype_programs = [
-                p for p in all_programs if p.get("program_type") == ptype_enum.value
+                p for p in prog_results if p.get("program_type") == ptype_enum.value
             ]
+            if not ptype_programs:
+                continue
+
             ptype_overdue = 0
             for p in ptype_programs:
                 review_due = p.get("next_review_due")
@@ -645,21 +705,20 @@ class EnvironmentalService:
                     if review_due < today:
                         ptype_overdue += 1
 
-            if ptype_programs:
-                area_status = "compliant"
-                if ptype_overdue > 0:
-                    area_status = "needs_attention"
+            area_status = "compliant"
+            if ptype_overdue > 0:
+                area_status = "needs_attention"
 
-                areas.append(
-                    {
-                        "area": ptype_enum.value,
-                        "status": area_status,
-                        "details": f"{len(ptype_programs)} program(s), {ptype_overdue} overdue review(s)",
-                        "programs_count": len(ptype_programs),
-                        "overdue_reviews": ptype_overdue,
-                        "exposure_exceedances": 0,
-                    }
-                )
+            areas.append(
+                {
+                    "area": ptype_enum.value,
+                    "status": area_status,
+                    "details": f"{len(ptype_programs)} program(s), {ptype_overdue} overdue review(s)",
+                    "programs_count": len(ptype_programs),
+                    "overdue_reviews": ptype_overdue,
+                    "exposure_exceedances": 0,
+                }
+            )
 
         # Determine overall status
         overall = "compliant"

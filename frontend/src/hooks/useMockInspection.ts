@@ -24,7 +24,14 @@ export function useRunMockInspection() {
 export function useMockInspectionResults() {
   return useQuery<MockInspectionResult[]>({
     queryKey: ['mock-inspection-results'],
-    queryFn: () => api.get<MockInspectionResult[]>('/me/mock-inspection/results'),
+    queryFn: async () => {
+      const response = await api.get<{ results: MockInspectionResult[]; total: number } | MockInspectionResult[]>(
+        '/me/mock-inspection/results',
+      );
+      // Handle both envelope and raw array responses
+      if (Array.isArray(response)) return response;
+      return response.results ?? [];
+    },
   });
 }
 

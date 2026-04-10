@@ -171,7 +171,7 @@ function QuestionnaireSection({ questionnaire }: { questionnaire: Record<string,
       <CardHeader>
         <CardTitle className="text-lg">Pre-Filled Questionnaire</CardTitle>
         <CardDescription>
-          {entries.length} answers auto-filled from your SafetyForge data. All fields are editable.
+          {entries.length} answers auto-filled from your Kerf data. All fields are editable.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

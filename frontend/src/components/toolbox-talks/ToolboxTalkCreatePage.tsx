@@ -28,6 +28,7 @@ export function ToolboxTalkCreatePage() {
   const [targetAudience, setTargetAudience] = useState('all_workers');
   const [duration, setDuration] = useState('15');
   const [customPoints, setCustomPoints] = useState('');
+  const [language, setLanguage] = useState<'en' | 'es' | 'both'>('both');
 
   const isValid = topic.trim().length > 0;
 
@@ -39,6 +40,7 @@ export function ToolboxTalkCreatePage() {
         target_audience: targetAudience,
         duration_minutes: parseInt(duration, 10) || 15,
         custom_points: customPoints.trim(),
+        language,
       });
       navigate(ROUTES.TOOLBOX_TALK_DELIVER(projectId, talk.id));
     } catch {
@@ -107,6 +109,20 @@ export function ToolboxTalkCreatePage() {
               min="5"
               max="60"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language">Language</Label>
+            <Select value={language} onValueChange={(v) => v && setLanguage(v as 'en' | 'es' | 'both')}>
+              <SelectTrigger className="h-12 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="both">Both (English &amp; Spanish)</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Spanish</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

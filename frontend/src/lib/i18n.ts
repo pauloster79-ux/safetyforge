@@ -141,7 +141,7 @@ interface LocaleContextValue {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 function getDefaultLocale(): Locale {
-  const stored = localStorage.getItem('safetyforge_locale');
+  const stored = localStorage.getItem('kerf_locale');
   if (stored === 'en' || stored === 'es') return stored;
   if (typeof navigator !== 'undefined' && navigator.language.startsWith('es')) return 'es';
   return 'en';
@@ -152,7 +152,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('safetyforge_locale', newLocale);
+    localStorage.setItem('kerf_locale', newLocale);
   }, []);
 
   const t = useCallback(
@@ -169,7 +169,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    localStorage.setItem('safetyforge_locale', locale);
+    localStorage.setItem('kerf_locale', locale);
   }, [locale]);
 
   return React.createElement(

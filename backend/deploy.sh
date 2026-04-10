@@ -3,9 +3,9 @@ set -euo pipefail
 
 # ── Configuration ────────────────────────────────────────────────
 PROJECT_ID="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID environment variable}"
-REGION="${GCP_REGION:-europe-west2}"
-SERVICE_NAME="safetyforge-api"
-REPO_NAME="safetyforge"
+REGION="${GCP_REGION:-us-central1}"
+SERVICE_NAME="kerf-api"
+REPO_NAME="kerf"
 IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$SERVICE_NAME"
 
 # ── Ensure Artifact Registry repo exists ─────────────────────────
@@ -17,7 +17,7 @@ gcloud artifacts repositories create "$REPO_NAME" \
   --project="$PROJECT_ID" \
   --location="$REGION" \
   --repository-format=docker \
-  --description="SafetyForge Docker images"
+  --description="Kerf Docker images"
 
 # ── Build and push ───────────────────────────────────────────────
 echo "==> Building Docker image..."

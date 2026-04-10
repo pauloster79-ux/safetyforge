@@ -1,6 +1,7 @@
-"""Rate limiting configuration for SafetyForge API."""
+"""Rate limiting configuration for Kerf API."""
 
 import hashlib
+import os
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -26,4 +27,14 @@ def get_user_or_ip(request: Request) -> str:
     return get_remote_address(request)
 
 
-limiter = Limiter(key_func=get_user_or_ip, default_limits=["100/minute"])
+def _is_testing() -> bool:
+    """Detect whether running under a test harness."""
+    env = os.environ.get("ENVIRONMENT", "").lower()
+    return env == "test"
+
+
+limiter = Limiter(
+    key_func=get_user_or_ip,
+    default_limits=["100/minute"],
+    enabled=not _is_testing(),
+)

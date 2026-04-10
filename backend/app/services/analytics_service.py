@@ -1,11 +1,10 @@
 """Safety analytics and EMR estimation service."""
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.models.analytics import EmrEstimate, SafetyDashboardMetrics
+from app.services.base_service import BaseService
 from app.services.inspection_service import InspectionService
 from app.services.osha_log_service import OshaLogService
 from app.services.project_service import ProjectService
@@ -13,11 +12,11 @@ from app.services.toolbox_talk_service import ToolboxTalkService
 from app.services.worker_service import WorkerService
 
 
-class AnalyticsService:
+class AnalyticsService(BaseService):
     """Aggregates safety data across services for dashboard analytics.
 
     Args:
-        db: Firestore client instance.
+        driver: Neo4j driver instance.
         project_service: ProjectService for project queries.
         inspection_service: InspectionService for inspection queries.
         toolbox_talk_service: ToolboxTalkService for talk queries.
@@ -27,14 +26,14 @@ class AnalyticsService:
 
     def __init__(
         self,
-        db: firestore.Client,
+        driver: Any,
         project_service: ProjectService,
         inspection_service: InspectionService,
         toolbox_talk_service: ToolboxTalkService,
         worker_service: WorkerService,
         osha_log_service: OshaLogService,
     ) -> None:
-        self.db = db
+        super().__init__(driver)
         self.project_service = project_service
         self.inspection_service = inspection_service
         self.toolbox_talk_service = toolbox_talk_service
@@ -84,7 +83,6 @@ class AnalyticsService:
                     if created.year == current_year and created.month == current_month:
                         inspections_this_month += 1
 
-            # Compliance score per active project
             if project.status.value == "active":
                 score = self.project_service.get_compliance_score(
                     company_id, project.id
@@ -130,45 +128,35 @@ class AnalyticsService:
             if worker.expiring_soon > 0:
                 workers_with_expiring += 1
 
-        # -- Hazard report metrics --
-        total_hazard_reports = 0
-        open_hazard_reports = 0
+        # -- Hazard report metrics (Neo4j) --
+        hazard_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project)
+                  -[:HAS_HAZARD_REPORT]->(h:HazardReport)
+            WHERE h.deleted = false
+            RETURN count(h) AS total,
+                   sum(CASE WHEN h.status IN ['open', 'in_progress'] THEN 1 ELSE 0 END) AS open_count
+            """,
+            {"company_id": company_id},
+        )
+        total_hazard_reports = hazard_result["total"] if hazard_result else 0
+        open_hazard_reports = hazard_result["open_count"] if hazard_result else 0
 
-        for project in all_projects:
-            hazard_ref = (
-                self.db.collection("companies")
-                .document(company_id)
-                .collection("projects")
-                .document(project.id)
-                .collection("hazard_reports")
-            )
-            for doc in hazard_ref.stream():
-                data = doc.to_dict()
-                if data.get("deleted", False):
-                    continue
-                total_hazard_reports += 1
-                if data.get("status") in ("open", "in_progress"):
-                    open_hazard_reports += 1
-
-        # -- Incident metrics --
-        total_incidents = 0
-        incidents_this_month = 0
-
-        for project in all_projects:
-            inc_ref = (
-                self.db.collection("companies")
-                .document(company_id)
-                .collection("projects")
-                .document(project.id)
-                .collection("incidents")
-            )
-            for doc in inc_ref.stream():
-                data = doc.to_dict()
-                total_incidents += 1
-                created = data.get("created_at")
-                if isinstance(created, datetime):
-                    if created.year == current_year and created.month == current_month:
-                        incidents_this_month += 1
+        # -- Incident metrics (Neo4j) --
+        month_start = now.replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        ).isoformat()
+        incident_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project)
+                  -[:HAS_INCIDENT]->(i:Incident)
+            RETURN count(i) AS total,
+                   sum(CASE WHEN i.created_at >= $month_start THEN 1 ELSE 0 END) AS this_month
+            """,
+            {"company_id": company_id, "month_start": month_start},
+        )
+        total_incidents = incident_result["total"] if incident_result else 0
+        incidents_this_month = incident_result["this_month"] if incident_result else 0
 
         # -- OSHA metrics --
         try:
@@ -181,28 +169,24 @@ class AnalyticsService:
             trir = 0.0
             dart = 0.0
 
-        # -- Mock inspection metrics --
+        # -- Mock inspection metrics (Neo4j) --
         last_mock_score = None
         last_mock_grade = None
         last_mock_date = None
 
-        mock_ref = (
-            self.db.collection("companies")
-            .document(company_id)
-            .collection("mock_inspection_results")
+        mock_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            RETURN r.overall_score AS score, r.grade AS grade, r.created_at AS created_at
+            ORDER BY r.created_at DESC
+            LIMIT 1
+            """,
+            {"company_id": company_id},
         )
-        mock_docs = list(
-            mock_ref.order_by(
-                "created_at", direction=firestore.Query.DESCENDING
-            )
-            .limit(1)
-            .stream()
-        )
-        if mock_docs:
-            mock_data = mock_docs[0].to_dict()
-            last_mock_score = mock_data.get("overall_score")
-            last_mock_grade = mock_data.get("overall_grade")
-            created = mock_data.get("created_at")
+        if mock_result:
+            last_mock_score = mock_result.get("score")
+            last_mock_grade = mock_result.get("grade")
+            created = mock_result.get("created_at")
             if isinstance(created, datetime):
                 last_mock_date = created.isoformat()
             elif isinstance(created, str):
@@ -242,10 +226,6 @@ class AnalyticsService:
     ) -> EmrEstimate:
         """Calculate EMR impact and projected savings.
 
-        The EMR projection is simplified for MVP: if current TRIR is below
-        industry average (~3.0), the projected EMR decreases; if above, it
-        increases.
-
         Args:
             current_emr: The company's current EMR value.
             annual_payroll: Annual payroll in dollars.
@@ -255,22 +235,16 @@ class AnalyticsService:
         Returns:
             An EmrEstimate with financial projections.
         """
-        # Calculate base premium
         premium_base = annual_payroll * (workers_comp_rate / 100)
         current_premium = premium_base * current_emr
 
-        # Project EMR based on TRIR trend
-        # Industry average TRIR is approximately 3.0
         industry_avg_trir = 3.0
         if trir <= 0:
-            # No incidents — trending toward lower EMR
             projected_emr = max(current_emr * 0.90, 0.60)
         elif trir < industry_avg_trir:
-            # Below average — EMR should decrease
             ratio = trir / industry_avg_trir
             projected_emr = max(current_emr * (0.90 + 0.10 * ratio), 0.60)
         else:
-            # Above average — EMR may increase
             ratio = min(trir / industry_avg_trir, 2.0)
             projected_emr = min(current_emr * (0.90 + 0.10 * ratio), 2.0)
 
@@ -278,7 +252,6 @@ class AnalyticsService:
         projected_premium = premium_base * projected_emr
         potential_savings = current_premium - projected_premium
 
-        # Generate recommendations
         recommendations: list[str] = []
 
         if trir > industry_avg_trir:

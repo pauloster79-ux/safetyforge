@@ -1,12 +1,11 @@
-"""Equipment and fleet management service against Firestore."""
+"""Equipment and fleet management service (Neo4j-backed)."""
 
-import secrets
+import json
 from datetime import date, datetime, timezone
 from typing import Any
 
-from google.cloud import firestore
-
 from app.exceptions import CompanyNotFoundError, EquipmentNotFoundError
+from app.models.actor import Actor
 from app.models.equipment import (
     Equipment,
     EquipmentCreate,
@@ -16,6 +15,7 @@ from app.models.equipment import (
     EquipmentType,
     EquipmentUpdate,
 )
+from app.services.base_service import BaseService
 
 # Pre-built inspection checklists per equipment type
 EQUIPMENT_INSPECTION_TEMPLATES: dict[str, list[dict[str, str]]] = {
@@ -72,113 +72,21 @@ EQUIPMENT_INSPECTION_TEMPLATES: dict[str, list[dict[str, str]]] = {
 }
 
 
-class EquipmentService:
-    """Manages equipment and fleet records in Firestore.
+class EquipmentService(BaseService):
+    """Manages equipment and fleet records as Neo4j nodes.
 
-    Args:
-        db: Firestore client instance.
+    Equipment connects to companies via (Company)-[:OWNS_EQUIPMENT]->(Equipment).
+    Inspection logs connect via (Equipment)-[:HAS_INSPECTION_LOG]->(EquipmentInspectionLog).
     """
 
-    def __init__(self, db: firestore.Client) -> None:
-        self.db = db
-
-    def _company_ref(self, company_id: str) -> firestore.DocumentReference:
-        """Return a reference to the company document.
-
-        Args:
-            company_id: The parent company ID.
-
-        Returns:
-            Firestore document reference.
-        """
-        return self.db.collection("companies").document(company_id)
-
-    def _collection(self, company_id: str) -> firestore.CollectionReference:
-        """Return the equipment subcollection for a company.
-
-        Args:
-            company_id: The parent company ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return self._company_ref(company_id).collection("equipment")
-
-    def _inspection_logs_collection(
-        self, company_id: str, equipment_id: str
-    ) -> firestore.CollectionReference:
-        """Return the inspection_logs subcollection for an equipment item.
-
-        Args:
-            company_id: The parent company ID.
-            equipment_id: The equipment ID.
-
-        Returns:
-            Firestore collection reference.
-        """
-        return (
-            self._collection(company_id)
-            .document(equipment_id)
-            .collection("inspection_logs")
-        )
-
-    def _generate_id(self) -> str:
-        """Generate a unique equipment ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"eqp_{secrets.token_hex(8)}"
-
-    def _generate_log_id(self) -> str:
-        """Generate a unique inspection log ID.
-
-        Returns:
-            A prefixed hex ID string.
-        """
-        return f"eqlog_{secrets.token_hex(8)}"
-
-    def _verify_company_exists(self, company_id: str) -> None:
-        """Verify that the parent company exists.
-
-        Args:
-            company_id: The company ID to check.
-
-        Raises:
-            CompanyNotFoundError: If the company does not exist.
-        """
-        if not self._company_ref(company_id).get().exists:
-            raise CompanyNotFoundError(company_id)
-
-    @staticmethod
-    def _serialize_dates(data: dict[str, Any]) -> dict[str, Any]:
-        """Serialize date fields to ISO format strings for Firestore.
-
-        Args:
-            data: Dict with potential date fields.
-
-        Returns:
-            Dict with date fields as ISO strings.
-        """
-        date_fields = [
-            "last_inspection_date",
-            "next_inspection_due",
-            "annual_inspection_date",
-            "annual_inspection_due",
-            "dot_inspection_date",
-            "dot_inspection_due",
-            "last_maintenance_date",
-            "next_maintenance_due",
-            "inspection_date",
+    def _date_fields(self) -> list[str]:
+        """Return list of date field names that need serialization."""
+        return [
+            "last_inspection_date", "next_inspection_due",
+            "annual_inspection_date", "annual_inspection_due",
+            "dot_inspection_date", "dot_inspection_due",
+            "last_maintenance_date", "next_maintenance_due",
         ]
-        result = dict(data)
-        for field in date_fields:
-            value = result.get(field)
-            if value is not None and hasattr(value, "isoformat"):
-                result[field] = value.isoformat()
-        return result
-
-    # -- Equipment CRUD ----------------------------------------------------------------
 
     def create(
         self, company_id: str, data: EquipmentCreate, user_id: str
@@ -188,7 +96,7 @@ class EquipmentService:
         Args:
             company_id: The owning company ID.
             data: Validated equipment creation data.
-            user_id: Firebase UID of the creating user.
+            user_id: Clerk user ID of the creating user.
 
         Returns:
             The created Equipment with all fields populated.
@@ -196,14 +104,11 @@ class EquipmentService:
         Raises:
             CompanyNotFoundError: If the company does not exist.
         """
-        self._verify_company_exists(company_id)
+        actor = Actor.human(user_id)
+        equip_id = self._generate_id("eqp")
 
-        now = datetime.now(timezone.utc)
-        equip_id = self._generate_id()
-
-        equip_dict: dict[str, Any] = {
+        props: dict[str, Any] = {
             "id": equip_id,
-            "company_id": company_id,
             "name": data.name,
             "equipment_type": data.equipment_type.value,
             "make": data.make,
@@ -217,49 +122,34 @@ class EquipmentService:
             "last_inspection_date": None,
             "next_inspection_due": None,
             "inspection_frequency": data.inspection_frequency.value,
-            "annual_inspection_date": (
-                data.annual_inspection_date.isoformat()
-                if data.annual_inspection_date
-                else None
-            ),
-            "annual_inspection_due": (
-                data.annual_inspection_due.isoformat()
-                if data.annual_inspection_due
-                else None
-            ),
+            "annual_inspection_date": data.annual_inspection_date.isoformat() if data.annual_inspection_date else None,
+            "annual_inspection_due": data.annual_inspection_due.isoformat() if data.annual_inspection_due else None,
             "annual_inspection_vendor": data.annual_inspection_vendor,
             "annual_inspection_cert_url": data.annual_inspection_cert_url,
-            "dot_inspection_date": (
-                data.dot_inspection_date.isoformat()
-                if data.dot_inspection_date
-                else None
-            ),
-            "dot_inspection_due": (
-                data.dot_inspection_due.isoformat()
-                if data.dot_inspection_due
-                else None
-            ),
+            "dot_inspection_date": data.dot_inspection_date.isoformat() if data.dot_inspection_date else None,
+            "dot_inspection_due": data.dot_inspection_due.isoformat() if data.dot_inspection_due else None,
             "dot_number": data.dot_number,
-            "last_maintenance_date": (
-                data.last_maintenance_date.isoformat()
-                if data.last_maintenance_date
-                else None
-            ),
-            "next_maintenance_due": (
-                data.next_maintenance_due.isoformat()
-                if data.next_maintenance_due
-                else None
-            ),
+            "last_maintenance_date": data.last_maintenance_date.isoformat() if data.last_maintenance_date else None,
+            "next_maintenance_due": data.next_maintenance_due.isoformat() if data.next_maintenance_due else None,
             "maintenance_notes": data.maintenance_notes,
             "required_certifications": data.required_certifications,
             "notes": data.notes,
-            "created_at": now,
-            "updated_at": now,
             "deleted": False,
+            **self._provenance_create(actor),
         }
 
-        self._collection(company_id).document(equip_id).set(equip_dict)
-        return Equipment(**equip_dict)
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})
+            CREATE (e:Equipment $props)
+            CREATE (c)-[:OWNS_EQUIPMENT]->(e)
+            RETURN e {.*, company_id: c.id} AS equipment
+            """,
+            {"company_id": company_id, "props": props},
+        )
+        if result is None:
+            raise CompanyNotFoundError(company_id)
+        return Equipment(**result["equipment"])
 
     def get(self, company_id: str, equipment_id: str) -> Equipment:
         """Fetch a single equipment record.
@@ -274,15 +164,17 @@ class EquipmentService:
         Raises:
             EquipmentNotFoundError: If not found or soft-deleted.
         """
-        doc = self._collection(company_id).document(equipment_id).get()
-        if not doc.exists:
+        result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment {id: $id})
+            WHERE e.deleted = false
+            RETURN e {.*, company_id: c.id} AS equipment
+            """,
+            {"company_id": company_id, "id": equipment_id},
+        )
+        if result is None:
             raise EquipmentNotFoundError(equipment_id)
-
-        data = doc.to_dict()
-        if data.get("deleted", False):
-            raise EquipmentNotFoundError(equipment_id)
-
-        return Equipment(**data)
+        return Equipment(**result["equipment"])
 
     def list_equipment(
         self,
@@ -306,28 +198,44 @@ class EquipmentService:
         Returns:
             A dict with 'equipment' list and 'total' count.
         """
-        base_query: firestore.Query = self._collection(company_id).where(
-            "deleted", "==", False
-        )
+        where_clauses = ["e.deleted = false"]
+        params: dict[str, Any] = {"company_id": company_id, "limit": limit, "offset": offset}
 
         if equipment_type is not None:
-            base_query = base_query.where(
-                "equipment_type", "==", equipment_type.value
-            )
-
+            where_clauses.append("e.equipment_type = $etype")
+            params["etype"] = equipment_type.value
         if equipment_status is not None:
-            base_query = base_query.where("status", "==", equipment_status.value)
-
+            where_clauses.append("e.status = $estatus")
+            params["estatus"] = equipment_status.value
         if project_id is not None:
-            base_query = base_query.where("current_project_id", "==", project_id)
+            where_clauses.append("e.current_project_id = $project_id")
+            params["project_id"] = project_id
 
-        all_docs = [Equipment(**doc.to_dict()) for doc in base_query.stream()]
-        total = len(all_docs)
+        where_str = " AND ".join(where_clauses)
 
-        all_docs.sort(key=lambda e: e.created_at, reverse=True)
-        paginated = all_docs[offset : offset + limit]
+        count_result = self._read_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_EQUIPMENT]->(e:Equipment)
+            WHERE {where_str}
+            RETURN count(e) AS total
+            """,
+            params,
+        )
+        total = count_result["total"] if count_result else 0
 
-        return {"equipment": paginated, "total": total}
+        results = self._read_tx(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_EQUIPMENT]->(e:Equipment)
+            WHERE {where_str}
+            RETURN e {{.*, company_id: c.id}} AS equipment
+            ORDER BY e.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            params,
+        )
+
+        equipment = [Equipment(**r["equipment"]) for r in results]
+        return {"equipment": equipment, "total": total}
 
     def update(
         self, company_id: str, equipment_id: str, data: EquipmentUpdate, user_id: str
@@ -338,7 +246,7 @@ class EquipmentService:
             company_id: The owning company ID.
             equipment_id: The equipment ID to update.
             data: Fields to update (only non-None fields are applied).
-            user_id: Firebase UID of the updating user.
+            user_id: Clerk user ID of the updating user.
 
         Returns:
             The updated Equipment model.
@@ -346,40 +254,30 @@ class EquipmentService:
         Raises:
             EquipmentNotFoundError: If not found or soft-deleted.
         """
-        doc_ref = self._collection(company_id).document(equipment_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise EquipmentNotFoundError(equipment_id)
-
-        update_data: dict[str, Any] = {}
+        update_fields: dict[str, Any] = {}
         for field_name, value in data.model_dump(exclude_none=True).items():
             if field_name in ("equipment_type", "status", "inspection_frequency"):
-                update_data[field_name] = (
-                    value.value if hasattr(value, "value") else value
-                )
-            elif field_name in (
-                "annual_inspection_date",
-                "annual_inspection_due",
-                "dot_inspection_date",
-                "dot_inspection_due",
-                "last_maintenance_date",
-                "next_maintenance_due",
-            ):
-                update_data[field_name] = (
-                    value.isoformat() if hasattr(value, "isoformat") else value
-                )
+                update_fields[field_name] = value.value if hasattr(value, "value") else value
+            elif field_name in self._date_fields():
+                update_fields[field_name] = value.isoformat() if hasattr(value, "isoformat") else value
             else:
-                update_data[field_name] = value
+                update_fields[field_name] = value
 
-        if not update_data:
-            return Equipment(**doc.to_dict())
+        actor = Actor.human(user_id)
+        update_fields.update(self._provenance_update(actor))
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
-
-        doc_ref.update(update_data)
-        updated_doc = doc_ref.get()
-        return Equipment(**updated_doc.to_dict())
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment {id: $id})
+            WHERE e.deleted = false
+            SET e += $props
+            RETURN e {.*, company_id: c.id} AS equipment
+            """,
+            {"company_id": company_id, "id": equipment_id, "props": update_fields},
+        )
+        if result is None:
+            raise EquipmentNotFoundError(equipment_id)
+        return Equipment(**result["equipment"])
 
     def delete(self, company_id: str, equipment_id: str) -> None:
         """Soft-delete an equipment record.
@@ -391,19 +289,22 @@ class EquipmentService:
         Raises:
             EquipmentNotFoundError: If not found or already deleted.
         """
-        doc_ref = self._collection(company_id).document(equipment_id)
-        doc = doc_ref.get()
-
-        if not doc.exists or doc.to_dict().get("deleted", False):
-            raise EquipmentNotFoundError(equipment_id)
-
-        doc_ref.update(
+        result = self._write_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment {id: $id})
+            WHERE e.deleted = false
+            SET e.deleted = true, e.status = $retired, e.updated_at = $now
+            RETURN e.id AS id
+            """,
             {
-                "deleted": True,
-                "status": EquipmentStatus.RETIRED.value,
-                "updated_at": datetime.now(timezone.utc),
-            }
+                "company_id": company_id,
+                "id": equipment_id,
+                "retired": EquipmentStatus.RETIRED.value,
+                "now": datetime.now(timezone.utc).isoformat(),
+            },
         )
+        if result is None:
+            raise EquipmentNotFoundError(equipment_id)
 
     # -- Inspection Logs ---------------------------------------------------------------
 
@@ -423,7 +324,7 @@ class EquipmentService:
             company_id: The owning company ID.
             equipment_id: The equipment ID.
             data: Validated inspection log data.
-            user_id: Firebase UID of the creating user.
+            user_id: Clerk user ID of the creating user.
 
         Returns:
             The created EquipmentInspectionLog.
@@ -431,49 +332,53 @@ class EquipmentService:
         Raises:
             EquipmentNotFoundError: If equipment not found or soft-deleted.
         """
-        # Verify equipment exists
-        equip_doc_ref = self._collection(company_id).document(equipment_id)
-        equip_doc = equip_doc_ref.get()
+        actor = Actor.human(user_id)
+        log_id = self._generate_id("eqlog")
+        now = datetime.now(timezone.utc).isoformat()
 
-        if not equip_doc.exists or equip_doc.to_dict().get("deleted", False):
-            raise EquipmentNotFoundError(equipment_id)
-
-        now = datetime.now(timezone.utc)
-        log_id = self._generate_log_id()
-
-        log_dict: dict[str, Any] = {
+        log_props: dict[str, Any] = {
             "id": log_id,
-            "company_id": company_id,
-            "equipment_id": equipment_id,
             "project_id": data.project_id,
             "inspection_date": data.inspection_date.isoformat(),
             "inspector_name": data.inspector_name,
             "inspection_type": data.inspection_type,
-            "items": data.items,
+            "_items_json": json.dumps(data.items),
             "overall_status": data.overall_status,
             "deficiencies_found": data.deficiencies_found,
             "corrective_action": data.corrective_action,
             "out_of_service": data.out_of_service,
-            "created_at": now,
-            "created_by": user_id,
+            **self._provenance_create(actor),
         }
 
-        self._inspection_logs_collection(company_id, equipment_id).document(
-            log_id
-        ).set(log_dict)
-
-        # Update equipment's last inspection date
-        equip_update: dict[str, Any] = {
-            "last_inspection_date": data.inspection_date.isoformat(),
-            "updated_at": now,
-        }
-
+        equip_update = f", e.last_inspection_date = '{data.inspection_date.isoformat()}', e.updated_at = '{now}'"
         if data.out_of_service:
-            equip_update["status"] = EquipmentStatus.OUT_OF_SERVICE.value
+            equip_update += f", e.status = '{EquipmentStatus.OUT_OF_SERVICE.value}'"
 
-        equip_doc_ref.update(equip_update)
+        result = self._write_tx_single(
+            f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_EQUIPMENT]->(e:Equipment {{id: $equipment_id}})
+            WHERE e.deleted = false
+            CREATE (log:EquipmentInspectionLog $log_props)
+            CREATE (e)-[:HAS_INSPECTION_LOG]->(log)
+            SET e.updated_at = $now{', e.status = $oos_status' if data.out_of_service else ''}
+            , e.last_inspection_date = $insp_date
+            RETURN log {{.*, company_id: c.id, equipment_id: e.id}} AS log_result
+            """,
+            {
+                "company_id": company_id,
+                "equipment_id": equipment_id,
+                "log_props": log_props,
+                "now": now,
+                "insp_date": data.inspection_date.isoformat(),
+                **({"oos_status": EquipmentStatus.OUT_OF_SERVICE.value} if data.out_of_service else {}),
+            },
+        )
+        if result is None:
+            raise EquipmentNotFoundError(equipment_id)
 
-        return EquipmentInspectionLog(**log_dict)
+        log_data = result["log_result"]
+        log_data["items"] = json.loads(log_data.pop("_items_json", "[]"))
+        return EquipmentInspectionLog(**log_data)
 
     def list_inspection_logs(
         self,
@@ -493,18 +398,34 @@ class EquipmentService:
         Returns:
             A dict with 'logs' list and 'total' count.
         """
-        all_docs = [
-            EquipmentInspectionLog(**doc.to_dict())
-            for doc in self._inspection_logs_collection(
-                company_id, equipment_id
-            ).stream()
-        ]
-        total = len(all_docs)
+        count_result = self._read_tx_single(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment {id: $eid})
+                  -[:HAS_INSPECTION_LOG]->(log:EquipmentInspectionLog)
+            RETURN count(log) AS total
+            """,
+            {"company_id": company_id, "eid": equipment_id},
+        )
+        total = count_result["total"] if count_result else 0
 
-        all_docs.sort(key=lambda l: l.created_at, reverse=True)
-        paginated = all_docs[offset : offset + limit]
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment {id: $eid})
+                  -[:HAS_INSPECTION_LOG]->(log:EquipmentInspectionLog)
+            RETURN log {.*, company_id: c.id, equipment_id: e.id} AS log_result
+            ORDER BY log.created_at DESC
+            SKIP $offset LIMIT $limit
+            """,
+            {"company_id": company_id, "eid": equipment_id, "offset": offset, "limit": limit},
+        )
 
-        return {"logs": paginated, "total": total}
+        logs = []
+        for r in results:
+            log_data = r["log_result"]
+            log_data["items"] = json.loads(log_data.pop("_items_json", "[]"))
+            logs.append(EquipmentInspectionLog(**log_data))
+
+        return {"logs": logs, "total": total}
 
     # -- Fleet Queries -----------------------------------------------------------------
 
@@ -517,33 +438,36 @@ class EquipmentService:
         Returns:
             A dict with 'equipment' list and 'total' count.
         """
-        today = date.today()
-        base_query = self._collection(company_id).where("deleted", "==", False)
+        today_str = date.today().isoformat()
 
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment)
+            WHERE e.deleted = false AND e.next_inspection_due IS NOT NULL
+                  AND e.next_inspection_due < $today
+            RETURN e.id AS equipment_id, e.name AS equipment_name,
+                   e.equipment_type AS equipment_type,
+                   e.next_inspection_due AS next_inspection_due
+            ORDER BY e.next_inspection_due ASC
+            """,
+            {"company_id": company_id, "today": today_str},
+        )
+
+        today = date.today()
         overdue = []
-        for doc in base_query.stream():
-            data = doc.to_dict()
-            next_due = data.get("next_inspection_due")
-            if next_due is None:
-                continue
+        for r in results:
+            next_due = r["next_inspection_due"]
             if isinstance(next_due, str):
                 next_due = date.fromisoformat(next_due)
+            days_overdue = (today - next_due).days
+            overdue.append({
+                "equipment_id": r["equipment_id"],
+                "equipment_name": r["equipment_name"],
+                "equipment_type": r["equipment_type"],
+                "next_inspection_due": next_due.isoformat() if hasattr(next_due, "isoformat") else next_due,
+                "days_overdue": days_overdue,
+            })
 
-            if next_due < today:
-                days_overdue = (today - next_due).days
-                overdue.append(
-                    {
-                        "equipment_id": data.get("id", ""),
-                        "equipment_name": data.get("name", ""),
-                        "equipment_type": data.get("equipment_type", "other"),
-                        "next_inspection_due": next_due.isoformat()
-                        if hasattr(next_due, "isoformat")
-                        else next_due,
-                        "days_overdue": days_overdue,
-                    }
-                )
-
-        overdue.sort(key=lambda e: e.get("days_overdue", 0), reverse=True)
         return {"equipment": overdue, "total": len(overdue)}
 
     def get_equipment_by_project(self, company_id: str, project_id: str) -> dict:
@@ -567,8 +491,18 @@ class EquipmentService:
         Returns:
             A dict with total, by_type, by_status, overdue counts.
         """
-        today = date.today()
-        base_query = self._collection(company_id).where("deleted", "==", False)
+        today_str = date.today().isoformat()
+
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment)
+            WHERE e.deleted = false
+            RETURN e.equipment_type AS etype, e.status AS estatus,
+                   e.next_inspection_due AS next_insp,
+                   e.next_maintenance_due AS next_maint
+            """,
+            {"company_id": company_id},
+        )
 
         by_type: dict[str, int] = {}
         by_status: dict[str, int] = {}
@@ -576,29 +510,21 @@ class EquipmentService:
         overdue_maintenance = 0
         total = 0
 
-        for doc in base_query.stream():
-            data = doc.to_dict()
+        for r in results:
             total += 1
-
-            etype = data.get("equipment_type", "other")
+            etype = r.get("etype", "other")
             by_type[etype] = by_type.get(etype, 0) + 1
 
-            estatus = data.get("status", "active")
+            estatus = r.get("estatus", "active")
             by_status[estatus] = by_status.get(estatus, 0) + 1
 
-            next_insp = data.get("next_inspection_due")
-            if next_insp:
-                if isinstance(next_insp, str):
-                    next_insp = date.fromisoformat(next_insp)
-                if next_insp < today:
-                    overdue_inspections += 1
+            next_insp = r.get("next_insp")
+            if next_insp and str(next_insp) < today_str:
+                overdue_inspections += 1
 
-            next_maint = data.get("next_maintenance_due")
-            if next_maint:
-                if isinstance(next_maint, str):
-                    next_maint = date.fromisoformat(next_maint)
-                if next_maint < today:
-                    overdue_maintenance += 1
+            next_maint = r.get("next_maint")
+            if next_maint and str(next_maint) < today_str:
+                overdue_maintenance += 1
 
         return {
             "total_equipment": total,
@@ -618,8 +544,15 @@ class EquipmentService:
             A dict with vehicles list and compliance counts.
         """
         today = date.today()
-        base_query = self._collection(company_id).where("deleted", "==", False).where(
-            "equipment_type", "==", EquipmentType.VEHICLE.value
+
+        results = self._read_tx(
+            """
+            MATCH (c:Company {id: $company_id})-[:OWNS_EQUIPMENT]->(e:Equipment)
+            WHERE e.deleted = false AND e.equipment_type = $vehicle_type
+            RETURN e.id AS id, e.name AS name, e.dot_number AS dot_number,
+                   e.dot_inspection_date AS dot_date, e.dot_inspection_due AS dot_due
+            """,
+            {"company_id": company_id, "vehicle_type": EquipmentType.VEHICLE.value},
         )
 
         vehicles = []
@@ -627,35 +560,33 @@ class EquipmentService:
         overdue_count = 0
         missing_count = 0
 
-        for doc in base_query.stream():
-            data = doc.to_dict()
-
-            dot_due = data.get("dot_inspection_due")
-            dot_date = data.get("dot_inspection_date")
+        for r in results:
+            dot_due = r.get("dot_due")
+            dot_date = r.get("dot_date")
 
             if dot_due is None and dot_date is None:
                 entry_status = "missing"
                 missing_count += 1
             else:
                 if dot_due and isinstance(dot_due, str):
-                    dot_due = date.fromisoformat(dot_due)
-                if dot_due and dot_due < today:
+                    dot_due_parsed = date.fromisoformat(dot_due)
+                else:
+                    dot_due_parsed = dot_due
+                if dot_due_parsed and dot_due_parsed < today:
                     entry_status = "overdue"
                     overdue_count += 1
                 else:
                     entry_status = "compliant"
                     compliant_count += 1
 
-            vehicles.append(
-                {
-                    "equipment_id": data.get("id", ""),
-                    "equipment_name": data.get("name", ""),
-                    "dot_number": data.get("dot_number", ""),
-                    "dot_inspection_date": data.get("dot_inspection_date"),
-                    "dot_inspection_due": data.get("dot_inspection_due"),
-                    "status": entry_status,
-                }
-            )
+            vehicles.append({
+                "equipment_id": r["id"],
+                "equipment_name": r["name"],
+                "dot_number": r.get("dot_number", ""),
+                "dot_inspection_date": r.get("dot_date"),
+                "dot_inspection_due": r.get("dot_due"),
+                "status": entry_status,
+            })
 
         return {
             "vehicles": vehicles,

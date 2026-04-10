@@ -28,6 +28,7 @@ import {
   INSPECTION_TYPES,
   DAILY_SITE_INSPECTION_TEMPLATE,
 } from '@/lib/constants';
+import { VoiceRecorder } from '@/components/voice/VoiceRecorder';
 import { cn } from '@/lib/utils';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -532,10 +533,19 @@ export function InspectionCreatePage() {
       <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="space-y-2">
-            <Label htmlFor="overall_notes">Overall Notes</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="overall_notes">Overall Notes</Label>
+              <VoiceRecorder
+                compact
+                placeholder="Dictate notes"
+                onTranscript={(text) =>
+                  setOverallNotes((prev) => (prev ? `${prev}\n${text}` : text))
+                }
+              />
+            </div>
             <Textarea
               id="overall_notes"
-              placeholder="General observations about site conditions..."
+              placeholder="General observations about site conditions... or tap the mic to dictate"
               value={overallNotes}
               onChange={(e) => setOverallNotes(e.target.value)}
               rows={3}
@@ -545,10 +555,19 @@ export function InspectionCreatePage() {
 
           {failedCount > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="corrective_actions">Corrective Actions Needed</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="corrective_actions">Corrective Actions Needed</Label>
+                <VoiceRecorder
+                  compact
+                  placeholder="Dictate actions"
+                  onTranscript={(text) =>
+                    setCorrectiveActions((prev) => (prev ? `${prev}\n${text}` : text))
+                  }
+                />
+              </div>
               <Textarea
                 id="corrective_actions"
-                placeholder="Describe required corrective actions..."
+                placeholder="Describe required corrective actions... or tap the mic to dictate"
                 value={correctiveActions}
                 onChange={(e) => setCorrectiveActions(e.target.value)}
                 rows={3}

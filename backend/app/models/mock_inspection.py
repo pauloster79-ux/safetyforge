@@ -56,7 +56,7 @@ class MockInspectionFinding(BaseModel):
     estimated_penalty: str = Field(..., description="Penalty range, e.g. '$4,000 - $16,131' or 'N/A'")
     can_auto_fix: bool = Field(
         default=False,
-        description="Whether SafetyForge can fix this automatically",
+        description="Whether Kerf can fix this automatically",
     )
     auto_fix_action: str = Field(
         default="",

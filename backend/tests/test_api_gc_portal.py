@@ -2,7 +2,6 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from google.cloud import firestore
 
 from app.models.company import CompanyCreate, TradeType
 from app.services.company_service import CompanyService
@@ -37,7 +36,7 @@ class TestCreateRelationship:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["gc_company_id"] == test_company.id
+        assert data["gc_company_id"] == test_company["id"]
         assert data["sub_company_id"] == sub_company.id
         assert data["project_name"] == "Downtown Tower"
         assert data["status"] == "active"
@@ -111,7 +110,7 @@ class TestInviteSub:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["gc_company_id"] == test_company.id
+        assert data["gc_company_id"] == test_company["id"]
         assert data["sub_email"] == "newsub@construction.com"
         assert data["project_name"] == "Highway Project"
         assert data["status"] == "pending"

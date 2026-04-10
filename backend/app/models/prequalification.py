@@ -32,7 +32,7 @@ class PrequalDocument(BaseModel):
         category: Grouping category for the document requirement.
         required: Whether this document is mandatory for submission.
         status: Current readiness status of the document.
-        source: Which SafetyForge module provides this data.
+        source: Which Kerf module provides this data.
         source_id: ID of the existing document/record if available.
         notes: Additional context or instructions.
     """

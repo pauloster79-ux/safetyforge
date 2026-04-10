@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 def _create_project(client: TestClient) -> str:
     """Helper to create a project and return its ID."""
     resp = client.post(
-        "/me/projects",
+        "/api/v1/me/projects",
         json={
             "name": "Morning Brief Test Project",
             "address": "100 Safety Lane, TX 75001",
@@ -24,7 +24,7 @@ class TestGetTodayMorningBrief:
         """First request generates a new brief for today and returns 200."""
         project_id = _create_project(client)
 
-        response = client.get(f"/me/projects/{project_id}/morning-brief")
+        response = client.get(f"/api/v1/me/projects/{project_id}/morning-brief")
         assert response.status_code == 200
         data = response.json()
         assert data["id"].startswith("brief_")
@@ -42,11 +42,11 @@ class TestGetTodayMorningBrief:
         """Second call on the same day returns the existing brief."""
         project_id = _create_project(client)
 
-        first = client.get(f"/me/projects/{project_id}/morning-brief")
+        first = client.get(f"/api/v1/me/projects/{project_id}/morning-brief")
         assert first.status_code == 200
         first_id = first.json()["id"]
 
-        second = client.get(f"/me/projects/{project_id}/morning-brief")
+        second = client.get(f"/api/v1/me/projects/{project_id}/morning-brief")
         assert second.status_code == 200
         assert second.json()["id"] == first_id
 
@@ -54,7 +54,7 @@ class TestGetTodayMorningBrief:
         self, client: TestClient, test_company
     ):
         """Requesting a brief for a nonexistent project returns 404."""
-        response = client.get("/me/projects/proj_nonexistent/morning-brief")
+        response = client.get("/api/v1/me/projects/proj_nonexistent/morning-brief")
         assert response.status_code == 404
 
 
@@ -66,9 +66,9 @@ class TestListMorningBriefs:
         project_id = _create_project(client)
 
         # Generate one brief
-        client.get(f"/me/projects/{project_id}/morning-brief")
+        client.get(f"/api/v1/me/projects/{project_id}/morning-brief")
 
-        response = client.get(f"/me/projects/{project_id}/morning-briefs")
+        response = client.get(f"/api/v1/me/projects/{project_id}/morning-briefs")
         assert response.status_code == 200
         data = response.json()
         assert data["total"] >= 1

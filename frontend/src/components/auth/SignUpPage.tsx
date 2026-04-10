@@ -49,9 +49,9 @@ export function SignUpPage() {
       await navigateAfterAuth();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create account';
-      if (message.includes('email-already-in-use')) {
+      if (message.includes('already') || message.includes('taken') || message.includes('exists')) {
         setError('An account with this email already exists. Please sign in instead.');
-      } else if (message.includes('weak-password')) {
+      } else if (message.includes('weak') || message.includes('password')) {
         setError('Password is too weak. Please use at least 8 characters with a mix of letters and numbers.');
       } else {
         setError(message);

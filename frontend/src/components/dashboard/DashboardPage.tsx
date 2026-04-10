@@ -201,7 +201,7 @@ export function DashboardPage() {
                 className="grid grid-cols-[1fr_70px_60px] items-center px-3 py-2 border-b border-[var(--concrete-50)] last:border-b-0 lg:grid-cols-[1fr_80px_80px_60px] lg:px-[18px]"
               >
                 <span className="text-[13px] font-semibold text-[var(--concrete-800)] truncate">{item.worker_name}</span>
-                <span className="text-[12px] text-muted-foreground truncate hidden lg:block">{'—'}</span>
+                <span className="text-[12px] text-muted-foreground truncate hidden lg:block">{item.certification.certification_type?.replace(/_/g, ' ') || '—'}</span>
                 <span className="font-mono text-[11px] text-[var(--concrete-500)]">
                   {item.certification.expiry_date
                     ? format(new Date(item.certification.expiry_date), 'MMM d')
