@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kerf — Knowledge Graph Ontology</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f5f3; --surface: #ffffff; --surface-2: #e6e8e3; --border: #e6e8e3;
+      --text: #0d0e0c; --text-muted: #71766b; --text-secondary: #3e423a;
+      --primary: #D9A200; --primary-dark: #b8860b; --primary-wash: rgba(245,184,0,0.08);
+      --pass: #2d8a4e; --pass-bg: rgba(45,138,78,0.1);
+      --fail: #c53030; --fail-bg: rgba(197,48,48,0.1);
+      --warn: #b8860b; --warn-bg: rgba(184,134,11,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; font-size: 14px; }
+    header { padding: 2rem 2rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 1rem; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+    header .sub { color: var(--text-muted); font-size: 0.9rem; }
+    .tab-bar { display: flex; gap: 1px; padding: 0.75rem 2rem 0; border-bottom: 2px solid var(--primary); overflow-x: auto; background: var(--bg); position: sticky; top: 0; z-index: 100; }
+    .tab-btn { padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 3px 3px 0 0; color: var(--text-muted); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.8rem; font-weight: 500; white-space: nowrap; transition: all 0.12s; }
+    .tab-btn:hover { color: var(--text); background: var(--surface-2); }
+    .tab-btn.active { color: var(--primary); background: var(--surface-2); border-color: var(--primary); border-bottom: 2px solid var(--surface-2); margin-bottom: -2px; }
+    .tab-btn .n { display: inline-block; background: var(--surface-2); color: var(--primary); width: 1.3em; height: 1.3em; line-height: 1.3em; text-align: center; border-radius: 2px; font-size: 0.7rem; margin-right: 0.35rem; font-weight: 600; }
+    .tab-btn.active .n { background: var(--primary); color: #fff; }
+    .tp { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+    .tp.active { display: block; }
+    h2 { font-size: 1.15rem; color: var(--primary); margin: 2rem 0 0.6rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); font-weight: 600; }
+    h2:first-child { margin-top: 0; }
+    h3 { font-size: 0.95rem; color: var(--text); margin: 1.25rem 0 0.4rem; font-weight: 600; }
+    p { margin-bottom: 0.7rem; color: var(--text-secondary); }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; font-size: 0.82rem; }
+    th, td { padding: 0.45rem 0.65rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--surface); color: var(--primary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    tr:hover td { background: var(--surface-2); }
+    td { color: var(--text-secondary); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 1rem; margin-bottom: 1rem; }
+    .cg { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .cg .card { margin-bottom: 0; }
+    .card h4 { color: var(--primary); font-size: 0.85rem; margin-bottom: 0.3rem; font-weight: 600; }
+    .co { border-left: 3px solid var(--primary); background: var(--surface); padding: 0.7rem 0.9rem; border-radius: 0 3px 3px 0; margin: 0.8rem 0; font-size: 0.85rem; }
+    .co.info { border-left-color: var(--text-muted); }
+    .co.good { border-left-color: var(--pass); }
+    .co strong { display: block; margin-bottom: 0.15rem; color: var(--primary); font-size: 0.82rem; }
+    .co.good strong { color: var(--pass); }
+    .co.info strong { color: var(--text-muted); }
+    ul, ol { margin-bottom: 0.7rem; padding-left: 1.3rem; color: var(--text-secondary); }
+    li { margin-bottom: 0.25rem; }
+    code { background: var(--surface-2); padding: 0.1em 0.3em; border-radius: 2px; font-size: 0.82em; font-family: 'IBM Plex Mono', monospace; color: var(--primary-dark); }
+    .dg { background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px; padding: 1rem; margin: 0.8rem 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; line-height: 1.5; white-space: pre; overflow-x: auto; color: var(--text-secondary); }
+    .b { display: inline-block; padding: 0.12em 0.45em; border-radius: 2px; font-size: 0.7em; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+    .b1 { background: var(--primary-wash); color: var(--primary-dark); }
+    .b2 { background: var(--surface-2); color: var(--text-muted); }
+    .bn { background: var(--pass-bg); color: var(--pass); }
+    .be { background: var(--surface-2); color: var(--text-muted); }
+    .bc { background: var(--warn-bg); color: var(--warn); }
+    .bt { background: var(--primary-wash); color: var(--primary-dark); }
+    .ba { background: rgba(113,118,107,0.15); color: var(--text-secondary); }
+    .br { background: var(--fail-bg); color: var(--fail); }
+    .bl { background: var(--pass-bg); color: var(--pass); }
+    .rq { color: var(--primary-dark); font-weight: 600; }
+    .sr { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .st { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 0.75rem 1.2rem; text-align: center; flex: 1; min-width: 90px; }
+    .st .num { font-size: 1.6rem; font-weight: 700; color: var(--primary); display: block; font-family: 'IBM Plex Mono', monospace; }
+    .st .lb { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .en { font-family: 'IBM Plex Mono', monospace; color: var(--primary-dark); font-weight: 600; }
+    .pt td:first-child { font-family: 'IBM Plex Mono', monospace; color: var(--text); font-size: 0.8rem; }
+    .pt td:nth-child(2) { font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); font-size: 0.78rem; }
+    footer { text-align: center; padding: 1.5rem; border-top: 1px solid var(--border); margin-top: 2rem; color: var(--text-muted); font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+
+<header><h1>Kerf</h1><span class="sub">Knowledge Graph Ontology Design</span></header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="T('scope')"><span class="n">1</span>Scope</button>
+  <button class="tab-btn" onclick="T('cqs')"><span class="n">2</span>Questions</button>
+  <button class="tab-btn" onclick="T('ent')"><span class="n">3</span>Entities</button>
+  <button class="tab-btn" onclick="T('dec')"><span class="n">4</span>Decisions</button>
+  <button class="tab-btn" onclick="T('sch')"><span class="n">5</span>Schema</button>
+  <button class="tab-btn" onclick="T('rev')"><span class="n">6</span>Reviews</button>
+  <button class="tab-btn" onclick="T('vis')"><span class="n">7</span>Graph</button>
+  <button class="tab-btn" onclick="T('art')"><span class="n">8</span>Artefacts</button>
+</div>
+
+<!-- ============ TAB 1: SCOPE ============ -->
+<div id="scope" class="tp active">
+  <h2>Domain</h2>
+  <p>Construction business operations — the complete lifecycle of a contractor running projects. All sizes, all trades. Data structures are scale-invariant.</p>
+  <h3>The Universal Contractor Lifecycle</h3>
+  <table><thead><tr><th>Stage</th><th>What Happens</th></tr></thead><tbody>
+    <tr><td><strong>1. Find & qualify</strong></td><td>Lead comes in, decide if it's worth pursuing</td></tr>
+    <tr><td><strong>2. Estimate & price</strong></td><td>Figure out cost and markup</td></tr>
+    <tr><td><strong>3. Propose & win</strong></td><td>Send quote, negotiate, get agreement</td></tr>
+    <tr><td><strong>4. Plan & mobilise</strong></td><td>Schedule, assign crew, order items</td></tr>
+    <tr><td><strong>5. Execute & document</strong></td><td>Do the work, record what happens daily</td></tr>
+    <tr><td><strong>6. Manage money</strong></td><td>Track costs, process variations, invoice</td></tr>
+    <tr><td><strong>7. Close out</strong></td><td>Deficiency list, final inspection, warranty</td></tr>
+    <tr><td><strong>8. Get paid</strong></td><td>Collect money</td></tr>
+    <tr><td><strong>9. Learn</strong></td><td>Did we make money? What went wrong?</td></tr>
+  </tbody></table>
+  <p>Cross-cutting: <strong>Safety, Quality, Compliance, Communication, Documents.</strong></p>
+  <h2>Boundaries</h2>
+  <div class="cg">
+    <div class="card"><h4>In Scope</h4><ul>
+      <li>All 9 lifecycle stages</li><li>Safety, quality, compliance, communication, documents</li>
+      <li>Conversation memory + vector embeddings</li><li>Document intelligence</li>
+      <li>Agentic infrastructure</li><li>Multi-jurisdiction regulatory knowledge</li>
+      <li>Multi-tenancy, graph-native isolation</li><li>Basic invoicing (receivable + payable)</li>
+      <li>Globalisation (language, currency, measurement)</li>
+    </ul></div>
+    <div class="card"><h4>Out of Scope</h4><ul>
+      <li>UI / frontend architecture</li><li>Deployment / infrastructure</li><li>Auth system internals</li>
+      <li>Full accounting (sync to QB/Xero)</li><li>BIM / 3D modelling</li><li>Full procurement / supply chain</li>
+    </ul></div>
+  </div>
+  <h2>Target</h2>
+  <p><strong>Neo4j</strong> with native vector indexes (5.11+). Consumers: AI agents, human UI, REST API, analytics.</p>
+  <div class="co good"><strong>Agentic overlay active</strong>Provenance, permissions, temporal facts, and cost tracking patterns throughout.</div>
+</div>
+
+<!-- ============ TAB 2: CQs ============ -->
+<div id="cqs" class="tp">
+  <div class="sr">
+    <div class="st"><span class="num">91</span><span class="lb">Total</span></div>
+    <div class="st"><span class="num">83</span><span class="lb">P1</span></div>
+    <div class="st"><span class="num">8</span><span class="lb">P2</span></div>
+    <div class="st"><span class="num">36</span><span class="lb">Traverse</span></div>
+    <div class="st"><span class="num">25</span><span class="lb">Aggregate</span></div>
+    <div class="st"><span class="num">9</span><span class="lb">Rule</span></div>
+    <div class="st"><span class="num">8</span><span class="lb">Lookup</span></div>
+  </div>
+  <h2>1. Find & Qualify</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>001</td><td>Who is this client, and what's our history with them?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>002</td><td>Have we done similar work before, and how did it go?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>003</td><td>Do we have the certifications and capacity?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>004</td><td>How quickly does this client pay?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+  </tbody></table>
+  <h2>2. Estimate & Price</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>005</td><td>What did similar work actually cost us?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>006</td><td>What are our real labour rates for this type of work?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>007</td><td>What regulatory requirements apply here?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>008</td><td>What does the plan/spec say about what's needed? <span class="b b2">P2</span></td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>009</td><td>What's a reasonable cost based on our history? <span class="b b2">P2</span></td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>010</td><td>What items does this work need and what do they cost us?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+  </tbody></table>
+  <h2>3. Propose & Win</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>011</td><td>What's our win rate with this client?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>012</td><td>What's our effective margin at this price?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>013</td><td>What are the key contract terms? <span class="b b2">P2</span></td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>014</td><td>What's the status of all outstanding quotes?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+  </tbody></table>
+  <h2>4. Plan & Mobilise</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>015</td><td>Who is available and qualified next week?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>016</td><td>Are certifications valid through the work dates?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>017</td><td>Is equipment available and inspection-current?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>018</td><td>What items need ordering and when?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>019</td><td>Any scheduling conflicts across projects?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>020</td><td>What's scheduled this week across all projects?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>021</td><td>What's the critical path? <span class="b b2">P2</span></td><td><span class="b bt">TRAVERSE</span></td></tr>
+  </tbody></table>
+  <h2>5. Execute & Document</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>022</td><td>What happened on this project today?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>023</td><td>What work remains on this job?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>024</td><td>How much of this work is complete vs agreed?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>025</td><td>Is this worker / project / site compliant?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>026</td><td>What hazards are identified and resolved?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>027</td><td>Which corrective actions are overdue?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>028</td><td>Who was on site today and how long?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>029</td><td>Is any worker at fatigue risk?</td><td><span class="b br">RULE+APP</span></td></tr>
+    <tr><td>030</td><td>What quality deficiencies are open?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>031</td><td>Which work items are blocked and why?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>032</td><td>What did we discuss about this previously?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>033</td><td>What decisions were made and why?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>034</td><td>When were we supposed to finish this?</td><td><span class="b bl">LOOKUP</span></td></tr>
+    <tr><td>035</td><td>Is a specific worker available next week?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+  </tbody></table>
+  <h2>6. Manage Money</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>036</td><td>Is this job on budget?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>037</td><td>Where exactly are we over/under?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>038</td><td>Is this work in scope or additional?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>039</td><td>What evidence supports this variation?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>040</td><td>What completed work hasn't been invoiced?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>041</td><td>What's been invoiced but not paid?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>042</td><td>Total outstanding and how old?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+  </tbody></table>
+  <h2>7–9. Close Out, Get Paid, Learn</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>043</td><td>What deficiency items are still open?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>044</td><td>Are all closeout documents complete?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>045</td><td>Is all sub compliance documentation current?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>046</td><td>What warranty obligations exist? <span class="b b2">P2</span></td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>047</td><td>What retention is held and when can we claim it?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>048</td><td>Are all payment release documents collected?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>049</td><td>Total owed across all projects?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>050</td><td>Did we make money, and why or why not?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>051</td><td>How does this job compare to similar past jobs?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>052</td><td>Which crews are most productive? <span class="b b2">P2</span></td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>053</td><td>What's my incident rate trend?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>054</td><td>Which subs perform best/worst?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+  </tbody></table>
+  <h2>Cross-Cutting: Safety, Communication, Documents, Global, Access, Agentic</h2>
+  <table><thead><tr><th>#</th><th>Question</th><th>Type</th></tr></thead><tbody>
+    <tr><td>055</td><td>What regulations apply to this activity in this jurisdiction?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>056</td><td>What certs does a worker need for this work?</td><td><span class="b br">RULE</span></td></tr>
+    <tr><td>057</td><td>Compliance score across all projects?</td><td><span class="b ba">AGGREGATE</span></td></tr>
+    <tr><td>058</td><td>What should today's safety briefing cover?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>059</td><td>What hazardous substances are present?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>060</td><td>What regulatory records are required and current?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>061</td><td>What has the contractor told us about their patterns?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>062</td><td>Find relevant past conversations (semantic search)</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>063–065</td><td>Overdue queries, who must respond, submissions awaiting review</td><td><span class="b ba">AGG</span> / <span class="b bl">LOOKUP</span></td></tr>
+    <tr><td>066</td><td>What does the spec say about [topic]? (semantic search)</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>067</td><td>Does the estimate match plan quantities? <span class="b b2">P2</span></td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>068</td><td>When does this insurance cert expire?</td><td><span class="b bl">LOOKUP</span></td></tr>
+    <tr><td>069</td><td>What documents are required and which are missing?</td><td><span class="b bt">TRAVERSE</span></td></tr>
+    <tr><td>070–073</td><td>Jurisdiction, languages, currency, measurement system</td><td><span class="b bl">LOOKUP</span></td></tr>
+    <tr><td>074–081</td><td>Access & permissions: what can this user see, role-based depth, external access, grant overrides</td><td><span class="b bt">TRAVERSE</span> / <span class="b br">RULE</span></td></tr>
+    <tr><td>A01–A05</td><td>Agentic: who performed this action, can agent access data, historical regulations, agent costs, budget check</td><td><span class="b bt">TRAVERSE</span> / <span class="b ba">AGG</span> / <span class="b bl">LOOKUP</span></td></tr>
+  </tbody></table>
+</div>
+
+<!-- ============ TAB 3: ENTITIES ============ -->
+<div id="ent" class="tp">
+  <div class="sr">
+    <div class="st"><span class="num">~73</span><span class="lb">Entities</span></div>
+    <div class="st"><span class="num">~23</span><span class="lb">New</span></div>
+    <div class="st"><span class="num">~50</span><span class="lb">Existing</span></div>
+    <div class="st"><span class="num">5</span><span class="lb">Consolidated</span></div>
+  </div>
+
+  <h2>The Work Model &mdash; Two Layers + Detail</h2>
+  <div class="co"><strong>Two structural layers. Everything else is detail.</strong> Project (the job) and WorkItem(s) (the work within it). WorkPackage is an optional folder. All other entities attach as detail to one of these two layers.</div>
+
+  <div class="dg">The spine (always present):
+  (Company) &rarr; (Project) &rarr; (WorkItem) + (Contact)
+
+Optional grouping:
+  (Project) &rarr; (WorkPackage) &rarr; (WorkItem)
+
+Detail on Project:  Contract, DailyLog, Inspection, Invoice, Variation, Milestone...
+Detail on WorkItem: Items, Workers, Crew, TimeEntries, Equipment...
+
+Jake:   Project &rarr; 1 WorkItem ("Kitchen electrics, &pound;2,400")
+Dave:   Project &rarr; WorkPackages by trade &rarr; WorkItems
+Sarah:  Project &rarr; WorkPackages &rarr; 200 WorkItems with Items, TimeEntries, Crew</div>
+
+  <div class="co info"><strong>No separate Estimate entity.</strong> Work items at "quoted" status ARE the estimate. Change history via conversation memory + provenance.</div>
+
+  <h2>Work Model</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Project</code></td><td>A job or piece of work for a client, progressing through states: lead, quoted, active, complete, closed, or lost.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>WorkItem</code></td><td>A discrete piece of deliverable construction work &mdash; the atomic unit of the platform. Every project has at least one.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>WorkPackage</code></td><td>An optional folder for organising work items by trade, phase, or area. Not required for simple projects.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>WorkCategory</code></td><td>A hierarchical classification of work types (e.g. electrical, plumbing, concrete) that links to the regulatory graph.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Item</code></td><td>A thing you buy and use on a job &mdash; wood, a bath, cable, screws. Global shared catalogue, not tenant-scoped.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Milestone</code></td><td>A key date or deliverable marker on a project. Not a work item &mdash; a project-level target.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Commercial</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Contract</code></td><td>A formalised agreement between two parties for the delivery of work items, covering value, retention, and payment schedule. Direction (client or sub) is implied by relationships.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Financial</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>TimeEntry</code></td><td>A continuous period of time worked by one worker on one project, with clock-in/out times and optional GPS verification.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Variation</code></td><td>A change to the original agreed scope or cost of a project, with an evidence chain linking to daily logs, time entries, and documents.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Invoice</code></td><td>A request for payment, either receivable (sent to a client) or payable (received from a subcontractor).</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>InvoiceLine</code></td><td>A single line on an invoice, linked to the work item(s) it covers.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Payment</code></td><td>A payment received from a client or made to a subcontractor, linked to the invoice it settles.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>PaymentApplication</code></td><td>A formal progress claim or draw request used for staged billing on commercial projects.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Organisational</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Company</code></td><td>The tenant root &mdash; a contractor, GC, subcontractor, or client organisation. Carries jurisdiction, currency, measurement system, and language settings.</td><td><span class="b be">Enriched</span></td></tr>
+    <tr><td><code>Member</code></td><td>A person with a system login who belongs to a company, with an access role controlling what they can see and do.</td><td><span class="b be">Enriched</span></td></tr>
+    <tr><td><code>Contact</code></td><td>An external person the company interacts with (client, architect, GC project manager, inspector) who may not have a system account.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Workforce</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Worker</code></td><td>A person who does physical work on projects, with trade, certifications, and language preference.</td><td><span class="b be">Enriched</span></td></tr>
+    <tr><td><code>Certification</code></td><td>An instance of a worker holding a specific certification, with an expiry date and issuing body.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>Crew</code></td><td>A named group of workers who typically work together, with a foreman or lead identified.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Safety</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Inspection</code></td><td>A site inspection event covering safety, quality, environmental, equipment, or simulated categories. Links to the inspector via CONDUCTED_BY.</td><td><span class="b bc">Consolidated</span></td></tr>
+    <tr><td><code>InspectionItem</code></td><td>A single checklist item within an inspection, with a pass/fail/na status and optional photo evidence.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>Incident</code></td><td>A safety incident such as an injury, near-miss, property damage, or environmental spill, with severity classification.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>HazardReport</code></td><td>A hazard observation reported by anyone on site, with severity assessment. REPORTED_BY links to the person who identified it.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>HazardObservation</code></td><td>A specific hazard identified within a hazard report, following the same parent-child pattern as InspectionItem.</td><td><span class="b bc">Renamed</span></td></tr>
+    <tr><td><code>CorrectiveAction</code></td><td>An action required to fix a finding from an inspection, incident, or hazard report, assigned to a responsible party with a due date.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>ToolboxTalk</code></td><td>A safety briefing delivered to workers before starting work, with topic, attendance tracking, and multilingual content.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>ExposureRecord</code></td><td>A record of a worker's exposure to a hazardous substance, linked to jurisdiction-specific exposure limits.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>MorningBrief</code></td><td>An AI-generated daily briefing summarising risks, schedule, expiring certifications, weather, and required actions.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>IncidentLogEntry</code></td><td>An entry in a jurisdiction-required incident record (OSHA 300 in US, accident book in UK, incident register in AU).</td><td><span class="b bc">Renamed</span></td></tr>
+  </tbody></table>
+
+  <h2>Quality</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>DeficiencyList</code></td><td>A list of deficiencies or snags to be resolved before a project can close out, tracked through to completion.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>DeficiencyItem</code></td><td>A single deficiency on a list, progressing through identified, assigned, corrected, verified, and closed.</td><td><span class="b be">Existing</span></td></tr>
+  </tbody></table>
+
+  <h2>Daily Operations</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>DailyLog</code></td><td>The daily project record &mdash; the most legally important document a contractor produces. Assembled from the day's graph data.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>MaterialDelivery</code></td><td>A record of materials received on site, captured as part of the daily log.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>DelayRecord</code></td><td>A documented delay event with cause, duration, and impact &mdash; used as evidence for variations and claims.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>VisitorRecord</code></td><td>A record of a visitor to the project site, with name, company, purpose, and time in/out.</td><td><span class="b be">Existing</span></td></tr>
+  </tbody></table>
+
+  <h2>Project Coordination</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>ProjectQuery</code></td><td>A formal tracked question between project participants requiring a written response (known as RFI in the US, Technical Query in the UK).</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>QueryResponse</code></td><td>A written response to a project query, with the responder and date recorded for audit.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>ReviewSubmission</code></td><td>A document or product specification submitted for review and approval before work proceeds (known as Submittal in the US).</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Warranty</code></td><td>A warranty obligation on completed work, with scope, dates, and terms.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Subcontractor Management</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>GcRelationship</code></td><td>A general contractor to subcontractor relationship between two companies, carrying status and permission metadata.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>InsuranceCertificate</code></td><td>A certificate of insurance held by a company, with carrier, policy number, coverage limits, and expiry date.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>PrequalPackage</code></td><td>A prequalification submission from a subcontractor to a general contractor, demonstrating capability and compliance.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>PaymentRelease</code></td><td>A payment release document associated with a payment &mdash; the global term for what is called a lien waiver in the US.</td><td><span class="b bc">Renamed</span></td></tr>
+  </tbody></table>
+
+  <h2>Conversation &amp; Memory</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Conversation</code></td><td>A chat or voice interaction session between a user and the system, linked to the projects and entities discussed.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Message</code></td><td>A single message within a conversation, carrying a vector embedding for semantic similarity search across past interactions.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Decision</code></td><td>A decision extracted from a conversation, recording what was decided, the reasoning, and which entities are affected.</td><td><span class="b bn">New</span></td></tr>
+    <tr><td><code>Insight</code></td><td>Institutional knowledge expressed in conversation &mdash; rates, preferences, and patterns that accumulate over time.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Documents &amp; Intelligence</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Document</code></td><td>An uploaded or generated document of any type &mdash; safety plan, specification, drawing, contract, permit, or report.</td><td><span class="b bc">Consolidated</span></td></tr>
+    <tr><td><code>DocumentChunk</code></td><td>A semantic segment of a document with a vector embedding, preserving reading order and linking to entities mentioned in the text.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Equipment &amp; Spatial</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>Equipment</code></td><td>A piece of equipment or vehicle owned or rented by the company, with type, serial number, and maintenance status.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>EquipmentInspectionLog</code></td><td>An inspection record for a piece of equipment, with result, inspector, and next due date.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>Location</code></td><td>A physical location with structured address and GPS coordinates &mdash; project sites, offices, or areas within a site.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>SafetyZone</code></td><td>A designated zone within a project site requiring specific safety measures (permit-required, fall hazard, restricted access).</td><td><span class="b be">Existing</span></td></tr>
+  </tbody></table>
+
+  <h2>Access &amp; Permissions</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>AccessGrant</code></td><td>An explicit grant of access beyond a user's default role &mdash; used for GC compliance access, client portals, or temporary role elevation. Carries scopes, expiry, and who granted it.</td><td><span class="b bn">New</span></td></tr>
+  </tbody></table>
+
+  <h2>Agentic</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th><th>Status</th></tr></thead><tbody>
+    <tr><td><code>AgentIdentity</code></td><td>An AI agent registered in the system with defined scopes, budget limits, and version tracking for provenance.</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>ComplianceAlert</code></td><td>An alert generated by the compliance agent when a safety or regulatory issue is detected (e.g. expiring certification, missed inspection).</td><td><span class="b be">Existing</span></td></tr>
+    <tr><td><code>BriefingSummary</code></td><td>A summary generated by the briefing agent assembling the day's risks, schedule, and required actions into a narrative.</td><td><span class="b be">Existing</span></td></tr>
+  </tbody></table>
+
+  <h2>Regulatory (17 entities, shared across tenants)</h2>
+  <table><thead><tr><th>Entity</th><th>Definition</th></tr></thead><tbody>
+    <tr><td><code>Jurisdiction</code></td><td>A regulatory jurisdiction (US, UK, AU, CA) carrying locale defaults: languages, currency, measurement system, and date format.</td></tr>
+    <tr><td><code>Region</code></td><td>A sub-jurisdiction (state, province, territory) with additional or overriding requirements beyond the base jurisdiction.</td></tr>
+    <tr><td><code>RegulatoryGroup</code></td><td>A grouping of related regulations (e.g. a chapter or subpart within a regulatory framework).</td></tr>
+    <tr><td><code>Regulation</code></td><td>A specific regulatory requirement with source citation, temporal validity, and jurisdiction linkage.</td></tr>
+    <tr><td><code>CertificationType</code></td><td>A type of certification that workers can hold (e.g. working at height, confined space entry), linked to the jurisdiction that requires it.</td></tr>
+    <tr><td><code>TradeType</code></td><td>A construction trade (electrical, plumbing, concrete, carpentry) &mdash; jurisdiction-neutral, maps to local terminology.</td></tr>
+    <tr><td><code>Role</code></td><td>A defined site role with regulatory significance (e.g. competent person, site supervisor, safety officer).</td></tr>
+    <tr><td><code>Activity</code></td><td>A type of construction activity (e.g. working at height, trenching, hot work) that links to the regulations governing it.</td></tr>
+    <tr><td><code>HazardCategory</code></td><td>A jurisdiction-neutral classification of hazard types (fall, struck-by, electrical, chemical exposure).</td></tr>
+    <tr><td><code>Substance</code></td><td>A hazardous substance with jurisdiction-specific exposure limits.</td></tr>
+    <tr><td><code>DocumentType</code></td><td>A type of document required by regulation in a specific jurisdiction (e.g. safety plan, risk assessment, method statement).</td></tr>
+    <tr><td><code>InspectionType</code></td><td>A type of inspection defined by regulation, linked via REQUIRES_INSPECTION with a frequency property.</td></tr>
+    <tr><td><code>RegionalRequirement</code></td><td>An additional requirement that applies in a specific region beyond the base jurisdiction rules.</td></tr>
+    <tr><td><code>ViolationType</code></td><td>A classification of regulatory violation with associated severity and penalty structure.</td></tr>
+    <tr><td><code>IncidentClassification</code></td><td>How incidents are categorised in a jurisdiction (recordable vs first-aid in US, RIDDOR-reportable in UK, notifiable in AU).</td></tr>
+    <tr><td><code>RecordForm</code></td><td>A regulatory record-keeping form required in a jurisdiction, mapping to local equivalents.</td></tr>
+    <tr><td><code>RegulatoryVersion</code></td><td>A version of a regulation for tracking amendments over time, supporting temporal queries about what rules applied on a given date.</td></tr>
+  </tbody></table>
+</div>
+
+
+<!-- ============ TAB 4: DECISIONS ============ -->
+<div id="dec" class="tp">
+  <h2>14 Design Decisions</h2>
+  <table><thead><tr><th>#</th><th>Decision</th><th>Choice</th></tr></thead><tbody>
+    <tr><td>01</td><td>Naming</td><td>PascalCase nodes, UPPER_SNAKE_CASE rels, snake_case props, <code>prefix_hex</code> IDs</td></tr>
+    <tr><td>02</td><td>Inheritance</td><td>Category property, not multi-label. Exception: WorkCategory tree</td></tr>
+    <tr><td>03</td><td>Temporal</td><td>valid_from/valid_until for regulations. Provenance + conversation memory for business entity changes</td></tr>
+    <tr><td>04</td><td>Multi-tenancy</td><td>Graph-native via Company traversal root</td></tr>
+    <tr><td>05</td><td>WorkItem lifecycle</td><td><code>state</code> (lifecycle position) + <code>status</code> (current condition, free text). Progressive enrichment</td></tr>
+    <tr><td>06</td><td>No Estimate entity</td><td>Work items at "quoted" status ARE the estimate. No separate node</td></tr>
+    <tr><td>07</td><td>Work hierarchy</td><td>WorkPackage optional. WorkItem can attach directly to Project</td></tr>
+    <tr><td>08</td><td>WorkCategory</td><td>Tree with PARENT_CATEGORY. Links to regulatory via Activity</td></tr>
+    <tr><td>09</td><td>Provenance</td><td>Actor fields on all mutable entities. Same for humans and agents</td></tr>
+    <tr><td>10</td><td>Permissions</td><td>Traversability + role depth + AccessGrant exceptions</td></tr>
+    <tr><td>11</td><td>Vectors</td><td>Neo4j native indexes on Message and DocumentChunk</td></tr>
+    <tr><td>12</td><td>Currency</td><td>Integer smallest unit. Currency on Company, overridable on Project and Contract</td></tr>
+    <tr><td>13</td><td>Deletion</td><td>Soft delete. Never hard delete tenant data</td></tr>
+    <tr><td>14</td><td>KG depth</td><td>Layer 3 for safety/regulatory rules only. Everything else in app code</td></tr>
+  </tbody></table>
+
+  <h2>WorkItem: State + Status</h2>
+  <div class="dg">state (lifecycle, always set):
+  draft → scheduled → in_progress → complete → invoiced
+  + on_hold, cancelled
+
+status (current condition, optional, free text):
+  "Waiting on materials", "Blocked by framing", "Ready for inspection"
+  Null when progressing normally. Set by agent from conversation.</div>
+
+  <h2>Permission Model</h2>
+  <div class="cg">
+    <div class="card"><h4>Traversability</h4><p>No path = no data. You only reach what you're connected to.</p></div>
+    <div class="card"><h4>Role Depth</h4><p><strong>owner/admin</strong> — everything<br><strong>manager</strong> — assigned projects, full depth<br><strong>foreman</strong> — operational only, no commercial<br><strong>worker</strong> — own data + safety</p></div>
+    <div class="card"><h4>AccessGrant</h4><p>Exceptions: GC compliance access, client portal, architect queries, temporary elevation.</p></div>
+  </div>
+
+  <h2>Competitor Gap Decisions</h2>
+  <table><thead><tr><th>Gap</th><th>Competitor approach</th><th>Our decision</th></tr></thead><tbody>
+    <tr><td>Contract split</td><td>Separate upstream/downstream</td><td>Single Contract, direction from relationships</td></tr>
+    <tr><td>Schedule of Values</td><td>Separate SOV entity</td><td>WorkPackage IS the billing unit</td></tr>
+    <tr><td>Selections</td><td>Dedicated entities</td><td>Existing WorkItem + USES_ITEM + Variation</td></tr>
+    <tr><td>Inspection scheduling</td><td>InspectionSchedule entity</td><td>Frequency on REQUIRES_INSPECTION + project override</td></tr>
+    <tr><td>Item pricing</td><td>Company-scoped catalog</td><td>Agent surfaces historical pricing from USES_ITEM data</td></tr>
+    <tr><td>Change Event</td><td>Separate entity</td><td>Variation evidence chain + conversation memory</td></tr>
+    <tr><td>Drawing management</td><td>Versioned plans with spatial pins</td><td>Document with type "drawing". Future feature</td></tr>
+    <tr><td>Daily log sub-types</td><td>12+ typed sections</td><td>Assembled view of day's graph data. No hardcoded types</td></tr>
+    <tr><td>Conditional inspections</td><td>Template if/then rules</td><td>Agent traverses regulatory graph dynamically</td></tr>
+    <tr><td>Custom statuses</td><td>20 configurable per project</td><td>Fixed state + free-text status</td></tr>
+    <tr><td>Pricing model</td><td>Project-level setting</td><td>Added pricing_model property on Project</td></tr>
+    <tr><td>Payment schedules</td><td>Dedicated entities</td><td>Milestones + Contract terms + agent intelligence</td></tr>
+  </tbody></table>
+  <div class="co good"><strong>Key insight</strong>Graph architecture handles every gap without new entities. Competitors need separate entities because relational databases require explicit join tables. Our graph uses relationships and traversals.</div>
+</div>
+
+<!-- ============ TAB 5: SCHEMA ============ -->
+<div id="sch" class="tp">
+  <h2>All Entity Properties</h2>
+  <p>Every property on every entity. <span class="rq">Required</span> marked. Money as integers (smallest unit). Provenance on all mutable tenant entities.</p>
+
+  <h3 class="en">Project</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>proj_{hex}</code></td></tr>
+    <tr><td>name</td><td>String</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>status</td><td>String</td><td><span class="rq">Req</span> Indexed. lead, quoted, active, complete, closed, lost</td></tr>
+    <tr><td>type</td><td>String</td><td>Indexed. residential, commercial, industrial, renovation, etc.</td></tr>
+    <tr><td>pricing_model</td><td>String</td><td>fixed_price, cost_plus, time_and_materials</td></tr>
+    <tr><td>address</td><td>String</td><td></td></tr>
+    <tr><td>latitude, longitude</td><td>Float</td><td></td></tr>
+    <tr><td>jurisdiction_code</td><td>String</td><td>Indexed. Override company jurisdiction. Null = inherit</td></tr>
+    <tr><td>currency</td><td>String</td><td>ISO 4217. Null = inherit from Company</td></tr>
+    <tr><td>planned_start, planned_end</td><td>Date</td><td></td></tr>
+    <tr><td>actual_start, actual_end</td><td>Date</td><td></td></tr>
+    <tr><td>contract_value</td><td>Integer</td><td>Agreed price, smallest currency unit</td></tr>
+    <tr><td>margin_pct</td><td>Float</td><td>Overall margin</td></tr>
+    <tr><td>quoted_at</td><td>DateTime</td><td></td></tr>
+    <tr><td>won_at</td><td>DateTime</td><td></td></tr>
+  </tbody></table>
+
+  <h3 class="en">WorkItem</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>wi_{hex}</code></td></tr>
+    <tr><td>description</td><td>String</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>state</td><td>String</td><td><span class="rq">Req</span> Indexed. draft, scheduled, in_progress, complete, invoiced, on_hold, cancelled</td></tr>
+    <tr><td>status</td><td>String</td><td>Current condition. Free text from conversation. Null = progressing normally</td></tr>
+    <tr><td>labour_hours</td><td>Float</td><td>Estimated hours</td></tr>
+    <tr><td>labour_rate</td><td>Integer</td><td>Per hour, smallest currency unit</td></tr>
+    <tr><td>materials_allowance</td><td>Integer</td><td>Sundries lump sum</td></tr>
+    <tr><td>margin_pct</td><td>Float</td><td>Optional</td></tr>
+    <tr><td>planned_start</td><td>Date</td><td>Indexed</td></tr>
+    <tr><td>planned_end</td><td>Date</td><td>Indexed</td></tr>
+    <tr><td>actual_start, actual_end</td><td>Date</td><td></td></tr>
+    <tr><td>notes</td><td>String</td><td></td></tr>
+  </tbody></table>
+  <div class="co info"><strong>Calculated values not stored</strong>Labour cost = hours × rate. Materials cost = sum of USES_ITEM. Total = all summed. Actual hours = sum of TimeEntries.</div>
+
+  <h3 class="en">Item <span style="color:var(--text-muted);font-weight:400;font-size:0.8rem">(global shared catalogue)</span></h3>
+  <p>Things you buy and use — wood, a bath, cable, screws. Shared across all tenants. Items you've used before surface first.</p>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>item_{hex}</code></td></tr>
+    <tr><td>name</td><td>String</td><td><span class="rq">Req</span> Indexed</td></tr>
+    <tr><td>description</td><td>String</td><td></td></tr>
+    <tr><td>category</td><td>String</td><td>Indexed. Future: material, product, consumable</td></tr>
+    <tr><td>default_unit</td><td>String</td><td><span class="rq">Req</span> each, m, kg, roll, box</td></tr>
+  </tbody></table>
+
+  <h3>How Items connect to WorkItems</h3>
+  <div class="dg">(WorkItem: "Install receptacles in reception")
+  →[:USES_ITEM {quantity: 6, unit: "each", unit_cost: 235}]→ (Item: "Leviton receptacle")
+  →[:USES_ITEM {quantity: 30, unit: "m", unit_cost: 85}]→   (Item: "12/2 NM-B cable")
+
+(WorkItem: "Strip out old bathroom")    // no items — labour only
+(WorkItem: "Tile bathroom walls")       // no items — sundries in materials_allowance</div>
+
+  <h3>USES_ITEM relationship</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>quantity</td><td>Float</td><td>How many</td></tr>
+    <tr><td>unit</td><td>String</td><td>each, m, kg, etc.</td></tr>
+    <tr><td>unit_cost</td><td>Integer</td><td>Estimated, smallest currency unit</td></tr>
+    <tr><td>actual_cost</td><td>Integer</td><td>What was paid. Defaults to estimate</td></tr>
+  </tbody></table>
+
+  <h3 class="en">Contract</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>ctr_{hex}</code></td></tr>
+    <tr><td>status</td><td>String</td><td><span class="rq">Req</span> Indexed. draft, active, complete, terminated</td></tr>
+    <tr><td>value</td><td>Integer</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>currency</td><td>String</td><td>ISO 4217. Null = inherit</td></tr>
+    <tr><td>retention_pct</td><td>Float</td><td></td></tr>
+    <tr><td>payment_terms</td><td>String</td><td></td></tr>
+    <tr><td>payment_schedule</td><td>String</td><td></td></tr>
+    <tr><td>scope_description</td><td>String</td><td></td></tr>
+    <tr><td>start_date, end_date</td><td>Date</td><td></td></tr>
+  </tbody></table>
+
+  <h3 class="en">TimeEntry</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>te_{hex}</code></td></tr>
+    <tr><td>clock_in</td><td>DateTime</td><td><span class="rq">Req</span> Indexed</td></tr>
+    <tr><td>clock_out</td><td>DateTime</td><td>Null if still clocked in</td></tr>
+    <tr><td>break_minutes</td><td>Integer</td><td></td></tr>
+    <tr><td>source</td><td>String</td><td><span class="rq">Req</span> worker_self, foreman_entry, auto_detected</td></tr>
+    <tr><td>status</td><td>String</td><td><span class="rq">Req</span> Indexed. draft, submitted, approved</td></tr>
+    <tr><td>clock_in_lat, clock_in_lon</td><td>Float</td><td>GPS</td></tr>
+    <tr><td>clock_out_lat, clock_out_lon</td><td>Float</td><td>GPS</td></tr>
+    <tr><td>notes</td><td>String</td><td></td></tr>
+  </tbody></table>
+  <div class="co info"><strong>Hours calculated, not stored</strong>Regular/overtime computed from clock_in, clock_out, break_minutes at query time.</div>
+
+  <h3 class="en">Invoice</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>inv_{hex}</code></td></tr>
+    <tr><td>direction</td><td>String</td><td><span class="rq">Req</span> Indexed. receivable (to client) or payable (from sub)</td></tr>
+    <tr><td>number</td><td>String</td><td><span class="rq">Req</span> Indexed</td></tr>
+    <tr><td>status</td><td>String</td><td><span class="rq">Req</span> Indexed. draft, sent, paid, partially_paid, overdue, cancelled</td></tr>
+    <tr><td>amount</td><td>Integer</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>due_date</td><td>Date</td><td><span class="rq">Req</span> Indexed</td></tr>
+    <tr><td>sent_date, paid_date</td><td>Date</td><td></td></tr>
+  </tbody></table>
+
+  <h3 class="en">Conversation</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>conv_{hex}</code></td></tr>
+    <tr><td>mode</td><td>String</td><td><span class="rq">Req</span> chat, voice</td></tr>
+    <tr><td>title</td><td>String</td><td></td></tr>
+    <tr><td>started_at</td><td>DateTime</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>ended_at</td><td>DateTime</td><td></td></tr>
+  </tbody></table>
+
+  <h3 class="en">Message</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>msg_{hex}</code></td></tr>
+    <tr><td>role</td><td>String</td><td><span class="rq">Req</span> user, assistant, system</td></tr>
+    <tr><td>content</td><td>String</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>timestamp</td><td>DateTime</td><td><span class="rq">Req</span> Indexed</td></tr>
+    <tr><td>embedding</td><td>List&lt;Float&gt;</td><td>Vector index. 1536 dims, cosine</td></tr>
+  </tbody></table>
+
+  <h3 class="en">DocumentChunk</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>dchk_{hex}</code></td></tr>
+    <tr><td>text</td><td>String</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>page</td><td>Integer</td><td></td></tr>
+    <tr><td>chunk_index</td><td>Integer</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>embedding</td><td>List&lt;Float&gt;</td><td>Vector index. 1536 dims, cosine</td></tr>
+  </tbody></table>
+
+  <h3 class="en">AccessGrant</h3>
+  <table class="pt"><thead><tr><th>Property</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>id</td><td>String</td><td><span class="rq">Req</span> Unique. <code>ag_{hex}</code></td></tr>
+    <tr><td>scopes</td><td>List&lt;String&gt;</td><td><span class="rq">Req</span> compliance, progress, invoices, queries, safety</td></tr>
+    <tr><td>granted_at</td><td>DateTime</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>granted_by</td><td>String</td><td><span class="rq">Req</span></td></tr>
+    <tr><td>expires_at</td><td>DateTime</td><td>Null = no expiry</td></tr>
+    <tr><td>status</td><td>String</td><td><span class="rq">Req</span> active, expired, revoked</td></tr>
+  </tbody></table>
+
+  <p style="margin-top:2rem;color:var(--text-muted)">Remaining entities (Company, Member, Contact, Worker, Crew, Certification, WorkPackage, WorkCategory, Variation, InvoiceLine, Payment, PaymentApplication, Inspection, Incident, HazardReport, CorrectiveAction, ToolboxTalk, DailyLog, Equipment, Location, all regulatory, all agentic) — full properties in <code>05-schema-definition.md</code>.</p>
+
+  <h2>Vector Indexes</h2>
+  <div class="dg">CREATE VECTOR INDEX message_embeddings IF NOT EXISTS
+FOR (m:Message) ON (m.embedding)
+OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' } }
+
+CREATE VECTOR INDEX chunk_embeddings IF NOT EXISTS
+FOR (c:DocumentChunk) ON (c.embedding)
+OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' } }</div>
+
+  <h2>Sample Queries</h2>
+  <h3>What work remains?</h3>
+  <div class="dg">MATCH (p:Project {id: $projectId})-[:HAS_WORK_ITEM|HAS_WORK_PACKAGE*1..2]->(wi:WorkItem)
+WHERE wi.state IN ['draft', 'scheduled', 'in_progress', 'on_hold']
+RETURN wi.description, wi.state, wi.status</div>
+
+  <h3>Semantic search over conversations</h3>
+  <div class="dg">CALL db.index.vector.queryNodes('message_embeddings', 5, $queryEmbedding)
+YIELD node AS msg, score WHERE score > 0.75
+MATCH (msg)-[:PART_OF]->(conv)-[:ABOUT_PROJECT]->(p:Project)
+RETURN msg.content, conv.title, score</div>
+
+  <h3>What regulations apply?</h3>
+  <div class="dg">MATCH (a:Activity {id: $activityId})-[:REGULATED_BY]->(reg:Regulation)
+WHERE reg.jurisdiction_code = $jCode AND reg.valid_until > date()
+RETURN reg.reference, reg.title, reg.source</div>
+</div>
+
+<!-- ============ TAB 6: REVIEWS ============ -->
+<div id="rev" class="tp">
+  <h2>Adversarial Review</h2>
+  <p>Independent review found 5 blockers, 17 issues, 10 notes. All blockers and structural issues have been resolved. Full report: <code>adversarial-review.md</code></p>
+
+  <h3>Blockers Resolved</h3>
+  <table><thead><tr><th>ID</th><th>Issue</th><th>Fix</th></tr></thead><tbody>
+    <tr><td>A-01</td><td>Estimate entity contradiction between DD-06 and schema</td><td>DD-06 rewritten: no Estimate entity</td></tr>
+    <tr><td>A-02</td><td>ID prefix collision: ProjectQuery and PrequalPackage both <code>pq_</code></td><td>PrequalPackage → <code>prq_</code></td></tr>
+    <tr><td>A-03</td><td>No Incident → Worker relationship</td><td>Added INVOLVED_IN with role property</td></tr>
+    <tr><td>A-04</td><td>No Inspection → Conductor relationship</td><td>Added CONDUCTED_BY</td></tr>
+    <tr><td>B-01</td><td>Fatigue rules not answerable via graph</td><td>Reclassified as RULE+APP. Regulatory thresholds where available, app defaults otherwise</td></tr>
+  </tbody></table>
+
+  <h3>Structural Issues Resolved</h3>
+  <table><thead><tr><th>ID</th><th>Fix</th></tr></thead><tbody>
+    <tr><td>A-05</td><td>Added REPORTED_BY on HazardReport</td></tr>
+    <tr><td>A-06</td><td>Added RECORDED_ON linking TimeEntry/Inspection/Incident to DailyLog</td></tr>
+    <tr><td>A-08</td><td>crew_count_sub JSON → HAS_SUB_CREW relationship</td></tr>
+    <tr><td>D-01</td><td>LINKS_TO_CATEGORY → LINKS_TO_ACTIVITY throughout</td></tr>
+    <tr><td>D-03</td><td>ASSIGNED_TO disambiguated → ASSIGNED_TO_PROJECT, RESOLVE_BY, ASSIGNED_TO_RESPONDER</td></tr>
+    <tr><td>D-06</td><td>agent_id/alert_id/briefing_id → id on all entities</td></tr>
+    <tr><td>E-02</td><td>Added indexes on WorkItem.planned_start/end, Milestone.planned_date</td></tr>
+    <tr><td>F-01</td><td>Added jurisdiction_code on Project (override, null = inherit)</td></tr>
+    <tr><td>F-02</td><td>Added currency on Project and Contract</td></tr>
+    <tr><td>F-03</td><td>LienWaiver → PaymentRelease</td></tr>
+  </tbody></table>
+
+  <h2>Competitor Analysis</h2>
+  <p>Researched Procore, JobTread, Buildertrend, CoConstruct, Fieldwire, SafetyCulture. Full report: <code>competitor-data-models.md</code></p>
+
+  <h3>What's Validated</h3>
+  <ul>
+    <li>Two-layer model (Project → WorkItems) — universal pattern</li>
+    <li>Bottom-up costing — universal</li>
+    <li>No separate Estimate entity — confirmed</li>
+    <li>Global-first naming — genuine differentiator, no competitor does this</li>
+    <li>Regulatory knowledge graph (Layer 3) — completely unique</li>
+    <li>Conversation memory — completely unique</li>
+    <li>Graph-native permissions — no competitor uses this</li>
+  </ul>
+
+  <h3>What's Unique to Kerf</h3>
+  <p>The graph architecture handles every competitor gap without adding entities. Competitors need separate entities because relational databases require explicit join tables. Our graph uses relationships and traversals. The agent's ability to traverse dynamically replaces static template logic, version tracking, and billing structures.</p>
+</div>
+
+<!-- ============ TAB 7: GRAPH VIS ============ -->
+<div id="vis" class="tp">
+  <h2>Entity Relationship Graph</h2>
+  <p>Interactive visualisation. Drag nodes to rearrange. Scroll to zoom. Hover for properties.</p>
+  <div id="graph-wrap" style="position:relative;width:100%;height:700px;border:1px solid var(--border);border-radius:3px;background:#0d0e0c;overflow:hidden;">
+    <canvas id="graph-canvas"></canvas>
+    <div id="tooltip" style="position:absolute;display:none;background:#191b17;border:1px solid #2e312b;border-radius:4px;padding:10px 14px;max-width:300px;font-size:12px;line-height:1.5;color:#e8e9e6;box-shadow:0 4px 12px rgba(0,0,0,0.5);z-index:100;pointer-events:none;font-family:'IBM Plex Sans',sans-serif;">
+    </div>
+    <div id="g-controls" style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:3px;z-index:50;">
+      <button onclick="gZoom(1.2)" style="width:32px;height:32px;border:1px solid #2e312b;background:#191b17;color:#e8e9e6;border-radius:3px;cursor:pointer;font-size:16px;">+</button>
+      <button onclick="gZoom(0.8)" style="width:32px;height:32px;border:1px solid #2e312b;background:#191b17;color:#e8e9e6;border-radius:3px;cursor:pointer;font-size:16px;">&minus;</button>
+      <button onclick="gFit()" style="width:32px;height:32px;border:1px solid #2e312b;background:#191b17;color:#e8e9e6;border-radius:3px;cursor:pointer;font-size:14px;">&#8596;</button>
+    </div>
+    <div id="g-legend" style="position:absolute;bottom:8px;left:8px;display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#71766b;font-family:'IBM Plex Mono',monospace;"></div>
+  </div>
+</div>
+
+<!-- ============ TAB 8: ARTEFACTS ============ -->
+<div id="art" class="tp">
+  <h2>Implementation Artefacts</h2>
+  <p style="color: var(--text-muted);">Final phase — deployable Cypher DDL, seed data, validation tests. To be generated from the approved schema.</p>
+</div>
+
+<footer>Kerf Knowledge Graph Ontology — April 2026</footer>
+
+<script>
+function T(id){document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab-btn').forEach(b=>{if(b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('active');})}
+
+// ============================================================
+// GRAPH VISUALISATION
+// ============================================================
+const GD = {
+  categories: {
+    "Work Model": "#D9A200",
+    "Commercial": "#b8860b",
+    "Financial": "#d69e2e",
+    "Organisational": "#2d8a4e",
+    "Workforce": "#38a169",
+    "Safety": "#c53030",
+    "Quality": "#e67e22",
+    "Daily Ops": "#71766b",
+    "Coordination": "#545951",
+    "Conversation": "#6366f1",
+    "Documents": "#8b5cf6",
+    "Regulatory": "#0ea5e9",
+    "Sub Mgmt": "#14b8a6",
+    "Spatial": "#71766b",
+    "Agentic": "#a855f7",
+    "Access": "#f59e0b"
+  },
+  nodes: [
+    // Work Model
+    {id:"Project",label:"Project",category:"Work Model",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true},{name:"pricing_model",type:"String"},{name:"jurisdiction_code",type:"String"},{name:"currency",type:"String"},{name:"contract_value",type:"Integer"},{name:"margin_pct",type:"Float"}]},
+    {id:"WorkItem",label:"WorkItem",category:"Work Model",properties:[{name:"id",type:"String",required:true},{name:"description",type:"String",required:true},{name:"state",type:"String",required:true},{name:"status",type:"String"},{name:"labour_hours",type:"Float"},{name:"labour_rate",type:"Integer"},{name:"materials_allowance",type:"Integer"}]},
+    {id:"WorkPackage",label:"WorkPackage",category:"Work Model",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true},{name:"status",type:"String"}]},
+    {id:"WorkCategory",label:"WorkCategory",category:"Work Model",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true},{name:"level",type:"Integer"}]},
+    {id:"Item",label:"Item",category:"Work Model",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true},{name:"default_unit",type:"String",required:true},{name:"category",type:"String"}]},
+    {id:"Milestone",label:"Milestone",category:"Work Model",properties:[{name:"id",type:"String",required:true},{name:"planned_date",type:"Date",required:true},{name:"status",type:"String"}]},
+    // Commercial
+    {id:"Contract",label:"Contract",category:"Commercial",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true},{name:"value",type:"Integer",required:true},{name:"retention_pct",type:"Float"},{name:"payment_terms",type:"String"}]},
+    // Financial
+    {id:"TimeEntry",label:"TimeEntry",category:"Financial",properties:[{name:"id",type:"String",required:true},{name:"clock_in",type:"DateTime",required:true},{name:"clock_out",type:"DateTime"},{name:"source",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    {id:"Variation",label:"Variation",category:"Financial",properties:[{name:"id",type:"String",required:true},{name:"description",type:"String",required:true},{name:"status",type:"String",required:true},{name:"amount",type:"Integer"}]},
+    {id:"Invoice",label:"Invoice",category:"Financial",properties:[{name:"id",type:"String",required:true},{name:"direction",type:"String",required:true},{name:"status",type:"String",required:true},{name:"amount",type:"Integer",required:true}]},
+    {id:"InvoiceLine",label:"InvoiceLine",category:"Financial",properties:[{name:"id",type:"String",required:true},{name:"amount",type:"Integer",required:true}]},
+    {id:"Payment",label:"Payment",category:"Financial",properties:[{name:"id",type:"String",required:true},{name:"amount",type:"Integer",required:true},{name:"received_date",type:"Date",required:true}]},
+    {id:"PaymentApplication",label:"PayApp",category:"Financial",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    // Organisational
+    {id:"Company",label:"Company",category:"Organisational",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true},{name:"type",type:"String",required:true},{name:"default_currency",type:"String",required:true},{name:"jurisdiction_code",type:"String",required:true}]},
+    {id:"Member",label:"Member",category:"Organisational",properties:[{name:"id",type:"String",required:true},{name:"email",type:"String",required:true},{name:"access_role",type:"String",required:true}]},
+    {id:"Contact",label:"Contact",category:"Organisational",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true}]},
+    // Workforce
+    {id:"Worker",label:"Worker",category:"Workforce",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    {id:"Certification",label:"Certification",category:"Workforce",properties:[{name:"id",type:"String",required:true},{name:"expiry_date",type:"Date",required:true},{name:"status",type:"String",required:true}]},
+    {id:"Crew",label:"Crew",category:"Workforce",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true}]},
+    // Safety
+    {id:"Inspection",label:"Inspection",category:"Safety",properties:[{name:"id",type:"String",required:true},{name:"category",type:"String",required:true},{name:"overall_status",type:"String",required:true}]},
+    {id:"Incident",label:"Incident",category:"Safety",properties:[{name:"id",type:"String",required:true},{name:"severity",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    {id:"HazardReport",label:"HazardReport",category:"Safety",properties:[{name:"id",type:"String",required:true},{name:"severity",type:"String",required:true}]},
+    {id:"CorrectiveAction",label:"CorrectiveAction",category:"Safety",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true},{name:"due_date",type:"Date",required:true}]},
+    {id:"ToolboxTalk",label:"ToolboxTalk",category:"Safety",properties:[{name:"id",type:"String",required:true},{name:"topic",type:"String",required:true}]},
+    {id:"DeficiencyList",label:"DeficiencyList",category:"Quality",properties:[{name:"id",type:"String",required:true}]},
+    {id:"DeficiencyItem",label:"DeficiencyItem",category:"Quality",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    // Daily Ops
+    {id:"DailyLog",label:"DailyLog",category:"Daily Ops",properties:[{name:"id",type:"String",required:true},{name:"log_date",type:"Date",required:true},{name:"status",type:"String",required:true}]},
+    // Coordination
+    {id:"ProjectQuery",label:"ProjectQuery",category:"Coordination",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true},{name:"due_date",type:"Date"}]},
+    {id:"ReviewSubmission",label:"ReviewSubmission",category:"Coordination",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    {id:"Warranty",label:"Warranty",category:"Coordination",properties:[{name:"id",type:"String",required:true},{name:"end_date",type:"Date",required:true}]},
+    // Conversation
+    {id:"Conversation",label:"Conversation",category:"Conversation",properties:[{name:"id",type:"String",required:true},{name:"mode",type:"String",required:true}]},
+    {id:"Message",label:"Message",category:"Conversation",properties:[{name:"id",type:"String",required:true},{name:"role",type:"String",required:true},{name:"content",type:"String",required:true},{name:"embedding",type:"List<Float>"}]},
+    {id:"Decision",label:"Decision",category:"Conversation",properties:[{name:"id",type:"String",required:true},{name:"description",type:"String",required:true}]},
+    {id:"Insight",label:"Insight",category:"Conversation",properties:[{name:"id",type:"String",required:true},{name:"content",type:"String",required:true}]},
+    // Documents
+    {id:"Document",label:"Document",category:"Documents",properties:[{name:"id",type:"String",required:true},{name:"type",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    {id:"DocumentChunk",label:"DocChunk",category:"Documents",properties:[{name:"id",type:"String",required:true},{name:"text",type:"String",required:true},{name:"embedding",type:"List<Float>"}]},
+    // Regulatory
+    {id:"Jurisdiction",label:"Jurisdiction",category:"Regulatory",properties:[{name:"code",type:"String",required:true},{name:"languages",type:"List<String>"},{name:"default_currency",type:"String"}]},
+    {id:"Regulation",label:"Regulation",category:"Regulatory",properties:[{name:"reference",type:"String",required:true},{name:"valid_from",type:"Date"},{name:"valid_until",type:"Date"}]},
+    {id:"CertificationType",label:"CertType",category:"Regulatory",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true}]},
+    {id:"Activity",label:"Activity",category:"Regulatory",properties:[{name:"id",type:"String",required:true},{name:"name",type:"String",required:true}]},
+    {id:"InspectionType",label:"InspType",category:"Regulatory",properties:[{name:"id",type:"String",required:true}]},
+    // Sub Mgmt
+    {id:"GcRelationship",label:"GcRelationship",category:"Sub Mgmt",properties:[{name:"id",type:"String",required:true}]},
+    {id:"InsuranceCert",label:"InsuranceCert",category:"Sub Mgmt",properties:[{name:"id",type:"String",required:true},{name:"expiration_date",type:"Date",required:true}]},
+    {id:"PaymentRelease",label:"PaymentRelease",category:"Sub Mgmt",properties:[{name:"id",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    // Equipment
+    {id:"Equipment",label:"Equipment",category:"Daily Ops",properties:[{name:"id",type:"String",required:true},{name:"type",type:"String",required:true}]},
+    // Access
+    {id:"AccessGrant",label:"AccessGrant",category:"Access",properties:[{name:"id",type:"String",required:true},{name:"scopes",type:"List<String>",required:true},{name:"expires_at",type:"DateTime"}]},
+    // Agentic
+    {id:"AgentIdentity",label:"AgentIdentity",category:"Agentic",properties:[{name:"id",type:"String",required:true},{name:"agent_type",type:"String",required:true},{name:"status",type:"String",required:true}]},
+    {id:"ComplianceAlert",label:"ComplianceAlert",category:"Agentic",properties:[{name:"id",type:"String",required:true},{name:"severity",type:"String",required:true}]},
+  ],
+  edges: [
+    // Work Model core
+    {from:"Company",to:"Project",label:"OWNS_PROJECT"},
+    {from:"Project",to:"WorkItem",label:"HAS_WORK_ITEM"},
+    {from:"Project",to:"WorkPackage",label:"HAS_WORK_PACKAGE"},
+    {from:"WorkPackage",to:"WorkItem",label:"CONTAINS"},
+    {from:"WorkItem",to:"WorkCategory",label:"CLASSIFIED_AS"},
+    {from:"WorkItem",to:"Item",label:"USES_ITEM",properties:[{name:"quantity",type:"Float"},{name:"unit_cost",type:"Integer"},{name:"actual_cost",type:"Integer"}]},
+    {from:"WorkItem",to:"WorkItem",label:"PRECEDED_BY"},
+    {from:"Project",to:"Milestone",label:"HAS_MILESTONE"},
+    {from:"WorkCategory",to:"WorkCategory",label:"PARENT_CATEGORY"},
+    {from:"WorkCategory",to:"Activity",label:"LINKS_TO_ACTIVITY"},
+    // Commercial
+    {from:"Project",to:"Contract",label:"HAS_CONTRACT"},
+    {from:"Project",to:"Contact",label:"CLIENT_IS"},
+    {from:"Project",to:"Company",label:"CLIENT_COMPANY"},
+    // Financial
+    {from:"WorkItem",to:"TimeEntry",label:"HAS_TIME_ENTRY"},
+    {from:"TimeEntry",to:"Worker",label:"LOGGED_BY"},
+    {from:"TimeEntry",to:"Project",label:"FOR_PROJECT"},
+    {from:"TimeEntry",to:"DailyLog",label:"RECORDED_ON"},
+    {from:"Project",to:"Variation",label:"HAS_VARIATION"},
+    {from:"Variation",to:"WorkItem",label:"VARIES"},
+    {from:"Project",to:"Invoice",label:"HAS_INVOICE"},
+    {from:"Invoice",to:"InvoiceLine",label:"HAS_LINE"},
+    {from:"InvoiceLine",to:"WorkItem",label:"COVERS"},
+    {from:"Invoice",to:"Payment",label:"PAID_BY"},
+    {from:"Project",to:"PaymentApplication",label:"HAS_PAYMENT_APP"},
+    {from:"PaymentApplication",to:"PaymentRelease",label:"WAIVED_BY"},
+    // Workforce
+    {from:"Company",to:"Worker",label:"EMPLOYS"},
+    {from:"Worker",to:"Project",label:"ASSIGNED_TO_PROJECT"},
+    {from:"Worker",to:"Certification",label:"HOLDS_CERT"},
+    {from:"Certification",to:"CertificationType",label:"OF_TYPE"},
+    {from:"Worker",to:"Crew",label:"MEMBER_OF"},
+    {from:"WorkItem",to:"Worker",label:"ASSIGNED_TO_WORKER"},
+    {from:"WorkItem",to:"Crew",label:"ASSIGNED_TO_CREW"},
+    {from:"WorkItem",to:"Company",label:"PERFORMED_BY"},
+    {from:"WorkItem",to:"Equipment",label:"USES_EQUIPMENT"},
+    // Safety
+    {from:"Project",to:"Inspection",label:"HAS_INSPECTION"},
+    {from:"Inspection",to:"DailyLog",label:"RECORDED_ON"},
+    {from:"Inspection",to:"Worker",label:"CONDUCTED_BY"},
+    {from:"Project",to:"Incident",label:"HAS_INCIDENT"},
+    {from:"Worker",to:"Incident",label:"INVOLVED_IN",properties:[{name:"role",type:"String"}]},
+    {from:"Incident",to:"DailyLog",label:"RECORDED_ON"},
+    {from:"Project",to:"HazardReport",label:"HAS_HAZARD_REPORT"},
+    {from:"HazardReport",to:"Worker",label:"REPORTED_BY"},
+    {from:"Project",to:"ToolboxTalk",label:"HAS_TOOLBOX_TALK"},
+    {from:"ToolboxTalk",to:"Worker",label:"ATTENDED_BY"},
+    {from:"Project",to:"DeficiencyList",label:"HAS_DEFICIENCY_LIST"},
+    {from:"DeficiencyList",to:"DeficiencyItem",label:"HAS_DEFICIENCY"},
+    {from:"DeficiencyItem",to:"Worker",label:"RESOLVE_BY"},
+    // Corrective Actions
+    {from:"Inspection",to:"CorrectiveAction",label:"HAS_CORRECTIVE_ACTION"},
+    {from:"Incident",to:"CorrectiveAction",label:"HAS_CORRECTIVE_ACTION"},
+    {from:"HazardReport",to:"CorrectiveAction",label:"HAS_CORRECTIVE_ACTION"},
+    {from:"CorrectiveAction",to:"Worker",label:"RESOLVE_BY"},
+    // Daily Ops
+    {from:"Project",to:"DailyLog",label:"HAS_DAILY_LOG"},
+    // Coordination
+    {from:"Project",to:"ProjectQuery",label:"HAS_QUERY"},
+    {from:"Project",to:"ReviewSubmission",label:"HAS_SUBMISSION"},
+    {from:"ReviewSubmission",to:"Contact",label:"ASSIGNED_TO_RESPONDER"},
+    {from:"ProjectQuery",to:"Contact",label:"ASSIGNED_TO_RESPONDER"},
+    {from:"Project",to:"Warranty",label:"HAS_WARRANTY"},
+    // Conversation
+    {from:"Company",to:"Conversation",label:"HAS_CONVERSATION"},
+    {from:"Conversation",to:"Project",label:"ABOUT_PROJECT"},
+    {from:"Message",to:"Conversation",label:"PART_OF"},
+    {from:"Message",to:"Message",label:"FOLLOWS"},
+    {from:"Conversation",to:"Decision",label:"PRODUCED_DECISION"},
+    {from:"Conversation",to:"Insight",label:"EXPRESSED_KNOWLEDGE"},
+    // Documents
+    {from:"Project",to:"Document",label:"HAS_DOCUMENT"},
+    {from:"DocumentChunk",to:"Document",label:"CHUNK_OF"},
+    {from:"DocumentChunk",to:"DocumentChunk",label:"NEXT_CHUNK"},
+    // Regulatory
+    {from:"Company",to:"Jurisdiction",label:"IN_JURISDICTION"},
+    {from:"Activity",to:"Regulation",label:"REGULATED_BY"},
+    {from:"Regulation",to:"CertificationType",label:"REQUIRES_CONTROL",properties:[{name:"when",type:"String"}]},
+    {from:"Regulation",to:"InspectionType",label:"REQUIRES_INSPECTION",properties:[{name:"frequency",type:"String"}]},
+    // Sub Mgmt
+    {from:"Company",to:"InsuranceCert",label:"HAS_INSURANCE"},
+    // Organisational
+    {from:"Company",to:"Member",label:"HAS_MEMBER"},
+    {from:"Company",to:"Contact",label:"HAS_CONTACT"},
+    {from:"Company",to:"Equipment",label:"HAS_EQUIPMENT"},
+    {from:"Member",to:"Project",label:"MANAGES"},
+    // Access
+    {from:"Member",to:"AccessGrant",label:"HAS_ACCESS_GRANT"},
+    {from:"AccessGrant",to:"Project",label:"GRANT_FOR"},
+    // Agentic
+    {from:"AgentIdentity",to:"Company",label:"BELONGS_TO"},
+    {from:"ComplianceAlert",to:"AgentIdentity",label:"GENERATED_BY"},
+    {from:"ComplianceAlert",to:"Project",label:"ABOUT_PROJECT"},
+  ]
+};
+
+// Graph renderer
+(function(){
+  const canvas=document.getElementById('graph-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const wrap=document.getElementById('graph-wrap');
+  const tip=document.getElementById('tooltip');
+  let W,H,dpr,ox=0,oy=0,sc=1;
+  let drag=null,pan=false,panSX,panSY,panOX,panOY;
+  let hovN=null,hovE=null;
+  let gN=[],gE=[];
+  const R=32;
+
+  function resize(){
+    dpr=window.devicePixelRatio||1;
+    W=wrap.clientWidth;H=wrap.clientHeight;
+    canvas.width=W*dpr;canvas.height=H*dpr;
+    canvas.style.width=W+'px';canvas.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+
+  function init(){
+    const nodes=GD.nodes;const cols=Math.ceil(Math.sqrt(nodes.length));
+    const spX=180,spY=160;
+    const stX=W/2-(cols*spX)/2,stY=H/2-(Math.ceil(nodes.length/cols)*spY)/2;
+    gN=nodes.map((n,i)=>({...n,x:stX+(i%cols)*spX+(Math.random()-0.5)*60,y:stY+Math.floor(i/cols)*spY+(Math.random()-0.5)*60,vx:0,vy:0}));
+    gE=GD.edges.map(e=>({...e,source:gN.find(n=>n.id===e.from),target:gN.find(n=>n.id===e.to)})).filter(e=>e.source&&e.target);
+    // Force sim
+    for(let t=0;t<300;t++){
+      for(let i=0;i<gN.length;i++)for(let j=i+1;j<gN.length;j++){
+        const a=gN[i],b=gN[j];let dx=b.x-a.x,dy=b.y-a.y;
+        let d=Math.sqrt(dx*dx+dy*dy)||1;let f=6000/(d*d);
+        let fx=(dx/d)*f,fy=(dy/d)*f;
+        a.vx-=fx;a.vy-=fy;b.vx+=fx;b.vy+=fy;
+      }
+      for(const e of gE){
+        let dx=e.target.x-e.source.x,dy=e.target.y-e.source.y;
+        let d=Math.sqrt(dx*dx+dy*dy)||1;let f=(d-160)*0.04;
+        let fx=(dx/d)*f,fy=(dy/d)*f;
+        e.source.vx+=fx;e.source.vy+=fy;e.target.vx-=fx;e.target.vy-=fy;
+      }
+      for(const n of gN){
+        n.vx+=(W/2-n.x)*0.0008;n.vy+=(H/2-n.y)*0.0008;
+        n.x+=n.vx*0.3;n.y+=n.vy*0.3;n.vx*=0.8;n.vy*=0.8;
+      }
+    }
+    // Legend
+    const leg=document.getElementById('g-legend');
+    leg.innerHTML='';
+    for(const[c,col]of Object.entries(GD.categories)){
+      leg.innerHTML+=`<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;"></span>${c}</span>`;
+    }
+  }
+
+  function w2s(x,y){return{x:(x+ox)*sc+W/2,y:(y+oy)*sc+H/2}}
+  function s2w(sx,sy){return{x:(sx-W/2)/sc-ox,y:(sy-H/2)/sc-oy}}
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // Edges
+    for(const e of gE){
+      const s1=w2s(e.source.x,e.source.y),s2=w2s(e.target.x,e.target.y);
+      const hi=hovE===e;
+      ctx.beginPath();ctx.moveTo(s1.x,s1.y);ctx.lineTo(s2.x,s2.y);
+      ctx.strokeStyle=hi?'#e8e9e6':'#3e423a';ctx.lineWidth=hi?2:1;ctx.stroke();
+      // Arrow
+      const a=Math.atan2(s2.y-s1.y,s2.x-s1.x);
+      const dx=s2.x-s1.x,dy=s2.y-s1.y,dd=Math.sqrt(dx*dx+dy*dy);
+      if(dd<1)continue;
+      const ex=s2.x-(dx/dd)*R*sc,ey=s2.y-(dy/dd)*R*sc;
+      ctx.beginPath();ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-8*Math.cos(a-0.4),ey-8*Math.sin(a-0.4));
+      ctx.lineTo(ex-8*Math.cos(a+0.4),ey-8*Math.sin(a+0.4));
+      ctx.closePath();ctx.fillStyle=hi?'#e8e9e6':'#3e423a';ctx.fill();
+      // Label
+      if(sc>0.4){
+        const mx=(s1.x+s2.x)/2,my=(s1.y+s2.y)/2;
+        ctx.save();ctx.font=`${9*Math.min(sc,1.3)}px 'IBM Plex Mono',monospace`;
+        ctx.fillStyle=hi?'#e8e9e6':'#545951';ctx.textAlign='center';ctx.textBaseline='bottom';
+        const la=Math.atan2(e.target.y-e.source.y,e.target.x-e.source.x);
+        const fl=Math.abs(la)>Math.PI/2;
+        ctx.translate(mx,my-3);if(fl)ctx.rotate(la+Math.PI);else ctx.rotate(la);
+        ctx.fillText(e.label,0,0);ctx.restore();
+      }
+    }
+    // Nodes
+    for(const n of gN){
+      const s=w2s(n.x,n.y),r=R*sc;
+      const col=GD.categories[n.category]||'#71766b';
+      const hi=hovN===n;
+      if(hi){ctx.beginPath();ctx.arc(s.x,s.y,r+3,0,Math.PI*2);ctx.fillStyle=col+'33';ctx.fill();}
+      ctx.beginPath();ctx.arc(s.x,s.y,r,0,Math.PI*2);
+      ctx.fillStyle=hi?col:col+'bb';ctx.fill();
+      ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();
+      ctx.font=`600 ${11*Math.min(sc,1.4)}px 'IBM Plex Sans',sans-serif`;
+      ctx.fillStyle='#f4f5f3';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(n.label||n.id,s.x,s.y);
+    }
+  }
+
+  function findN(sx,sy){const w=s2w(sx,sy);for(const n of gN){const dx=w.x-n.x,dy=w.y-n.y;if(dx*dx+dy*dy<R*R)return n;}return null;}
+  function findE(sx,sy){const w=s2w(sx,sy);for(const e of gE){const dx=e.target.x-e.source.x,dy=e.target.y-e.source.y;const len=Math.sqrt(dx*dx+dy*dy)||1;const nx=-dy/len,ny=dx/len;const px=w.x-e.source.x,py=w.y-e.source.y;const dot=px*(dx/len)+py*(dy/len);if(dot<0||dot>len)continue;if(Math.abs(px*nx+py*ny)<10/sc)return e;}return null;}
+
+  function showTip(x,y,n,e){
+    let h='';
+    if(n){
+      h=`<div style="font-weight:600;color:#D9A200;margin-bottom:2px;">${n.label||n.id}</div>`;
+      h+=`<div style="font-size:10px;color:#71766b;text-transform:uppercase;margin-bottom:6px;">${n.category}</div>`;
+      if(n.properties?.length){h+='<table style="width:100%;border-collapse:collapse;">';for(const p of n.properties){h+=`<tr><td style="color:#71766b;padding:1px 8px 1px 0;font-family:'IBM Plex Mono',monospace;font-size:11px;">${p.name}${p.required?' *':''}</td><td style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${p.type}</td></tr>`;}h+='</table>';}
+    }else if(e){
+      h=`<div style="font-weight:600;color:#D9A200;margin-bottom:2px;">${e.label}</div>`;
+      h+=`<div style="font-size:10px;color:#71766b;margin-bottom:4px;">${e.from} → ${e.to}</div>`;
+      if(e.properties?.length){h+='<table style="width:100%;border-collapse:collapse;">';for(const p of e.properties){h+=`<tr><td style="color:#71766b;padding:1px 8px 1px 0;font-family:'IBM Plex Mono',monospace;font-size:11px;">${p.name}</td><td style="font-family:'IBM Plex Mono',monospace;font-size:11px;">${p.type}</td></tr>`;}h+='</table>';}
+    }
+    tip.innerHTML=h;tip.style.display='block';
+    tip.style.left=Math.min(x+12,W-320)+'px';
+    tip.style.top=Math.min(y+12,H-180)+'px';
+  }
+
+  canvas.addEventListener('mousedown',e=>{const r=canvas.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;const n=findN(sx,sy);if(n){drag=n;}else{pan=true;panSX=e.clientX;panSY=e.clientY;panOX=ox;panOY=oy;}});
+  canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;
+    if(drag){const w=s2w(sx,sy);drag.x=w.x;drag.y=w.y;draw();}
+    else if(pan){ox=panOX+(e.clientX-panSX)/sc;oy=panOY+(e.clientY-panSY)/sc;draw();}
+    else{const n=findN(sx,sy);const ed=n?null:findE(sx,sy);if(n!==hovN||ed!==hovE){hovN=n;hovE=ed;draw();if(n||ed)showTip(sx,sy,n,ed);else tip.style.display='none';}canvas.style.cursor=(n||ed)?'pointer':'grab';}
+  });
+  canvas.addEventListener('mouseup',()=>{drag=null;pan=false;});
+  canvas.addEventListener('mouseleave',()=>{drag=null;pan=false;tip.style.display='none';});
+  canvas.addEventListener('wheel',e=>{e.preventDefault();sc=Math.max(0.1,Math.min(5,sc*(e.deltaY>0?0.9:1.1)));draw();},{passive:false});
+
+  window.gZoom=function(f){sc=Math.max(0.1,Math.min(5,sc*f));draw();};
+  window.gFit=function(){
+    if(!gN.length)return;
+    let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
+    for(const n of gN){mnX=Math.min(mnX,n.x);mxX=Math.max(mxX,n.x);mnY=Math.min(mnY,n.y);mxY=Math.max(mxY,n.y);}
+    ox=-(mnX+mxX)/2;oy=-(mnY+mxY)/2;
+    const gw=mxX-mnX+R*4,gh=mxY-mnY+R*4;
+    sc=Math.min(W/gw,H/gh,2)*0.85;draw();
+  };
+
+  // Init on tab switch
+  const origT=window.T;
+  window.T=function(id){origT(id);if(id==='vis'){setTimeout(()=>{resize();init();gFit();},50);}};
+
+  window.addEventListener('resize',()=>{if(document.getElementById('vis').classList.contains('active')){resize();}});
+})();
+</script>
+</body>
+</html>

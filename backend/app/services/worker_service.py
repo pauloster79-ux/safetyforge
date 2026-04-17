@@ -167,6 +167,14 @@ class WorkerService(BaseService):
         if result is None:
             raise CompanyNotFoundError(company_id)
 
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=worker_id,
+            entity_type="Worker",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created worker: {data.first_name} {data.last_name}",
+        )
         worker_data = self._compute_worker_fields(result["worker"])
         return Worker(**worker_data)
 
@@ -306,6 +314,14 @@ class WorkerService(BaseService):
         if result is None:
             raise WorkerNotFoundError(worker_id)
 
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=worker_id,
+            entity_type="Worker",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated worker {worker_id}",
+        )
         worker_data = self._compute_worker_fields(result["worker"])
         return Worker(**worker_data)
 
@@ -335,6 +351,14 @@ class WorkerService(BaseService):
         )
         if result is None:
             raise WorkerNotFoundError(worker_id)
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=worker_id,
+            entity_type="Worker",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Archived worker {worker_id}",
+        )
 
     def add_certification(
         self, company_id: str, worker_id: str, cert_data: CertificationCreate
@@ -392,6 +416,14 @@ class WorkerService(BaseService):
                 "certs_json": self._serialize_certs(certs),
                 "now": datetime.now(timezone.utc).isoformat(),
             },
+        )
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=worker_id,
+            entity_type="Worker",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Added certification '{cert_data.certification_type.value}' to worker",
         )
         worker_data = self._compute_worker_fields(updated["worker"])
         return Worker(**worker_data)
@@ -460,6 +492,14 @@ class WorkerService(BaseService):
                 "now": datetime.now(timezone.utc).isoformat(),
             },
         )
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=worker_id,
+            entity_type="Worker",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Updated certification {cert_id} on worker",
+        )
         worker_data = self._compute_worker_fields(updated["worker"])
         return Worker(**worker_data)
 
@@ -509,6 +549,14 @@ class WorkerService(BaseService):
                 "certs_json": self._serialize_certs(new_certs),
                 "now": datetime.now(timezone.utc).isoformat(),
             },
+        )
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=worker_id,
+            entity_type="Worker",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Removed certification {cert_id} from worker",
         )
         worker_data = self._compute_worker_fields(updated["worker"])
         return Worker(**worker_data)

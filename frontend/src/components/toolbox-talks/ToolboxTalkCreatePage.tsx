@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +19,10 @@ import { useProject } from '@/hooks/useProjects';
 import { useCreateToolboxTalk } from '@/hooks/useToolboxTalks';
 import { ROUTES } from '@/lib/constants';
 
-export function ToolboxTalkCreatePage() {
-  const navigate = useNavigate();
-  const { projectId } = useParams<{ projectId: string }>();
+export function ToolboxTalkCreatePage({ projectId: propProjectId }: { projectId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string }>();
+  const projectId = propProjectId || params.projectId;
   const { data: project } = useProject(projectId);
   const createTalk = useCreateToolboxTalk(projectId || '');
 

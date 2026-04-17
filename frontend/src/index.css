@@ -300,3 +300,14 @@
     page-break-after: avoid;
   }
 }
+
+/* ── Thinking indicator animations (construction "building blocks") ── */
+@keyframes ti-build {
+  0%, 100% { height: 3px; opacity: 0.5; }
+  50% { height: 12px; opacity: 1; }
+}
+
+@keyframes ti-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}

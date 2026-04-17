@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Loader2,
@@ -36,7 +37,7 @@ function StatusBadge({ status }: { status: Equipment['status'] }) {
     maintenance: { label: 'Maintenance', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
     retired: { label: 'Retired', className: 'bg-muted text-muted-foreground hover:bg-muted' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -54,7 +55,7 @@ interface ChecklistItemState {
 }
 
 export function EquipmentDetailPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { equipmentId } = useParams<{ equipmentId: string }>();
   const { data: equipment, isLoading } = useEquipmentItem(equipmentId);
   const { data: inspections, isLoading: inspLoading } = useEquipmentInspections(equipmentId);
@@ -401,12 +402,12 @@ export function EquipmentDetailPage() {
         )}
 
         {/* Required Certifications */}
-        {equipment.required_certifications.length > 0 && (
+        {(equipment.required_certifications || []).length > 0 && (
           <Card>
             <CardContent className="pt-4">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Required Operator Certifications</h3>
               <div className="space-y-1">
-                {equipment.required_certifications.map(certId => {
+                {(equipment.required_certifications || []).map(certId => {
                   const certDef = CERTIFICATION_TYPES.find(c => c.id === certId);
                   return (
                     <div key={certId} className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
@@ -457,7 +458,7 @@ export function EquipmentDetailPage() {
                     <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                       <span>{log.inspection_date}</span>
                       <span>{log.inspector_name}</span>
-                      <span>{log.items.filter(i => i.status === 'pass').length}/{log.items.length} passed</span>
+                      <span>{(log.items || []).filter(i => i.status === 'pass').length}/{(log.items || []).length} passed</span>
                     </div>
                     {log.deficiencies_found && (
                       <p className="mt-1 text-xs text-[var(--fail)]">{log.deficiencies_found}</p>

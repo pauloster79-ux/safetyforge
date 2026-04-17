@@ -1,0 +1,57 @@
+code: AZ
+name: Arizona
+regulatory_body: Arizona Division of Occupational Safety and Health (ADOSH)
+state_plan: true
+primary_legislation: Arizona Revised Statutes Title 23 Chapter 2
+construction_regulation: Arizona Administrative Code R20-5
+
+requirements:
+  - id: AZ-001
+    state: AZ
+    requirement_name: ADOSH State Plan Coverage
+    description: Arizona operates an OSHA-approved state plan covering both private and public sector employees with enforcement authority.
+    federal_equivalent: "29 CFR 1910 / 1926"
+    state_standard: "ARS 23-401 et seq."
+    additional_details: ADOSH adopts federal OSHA standards by reference and conducts its own inspections, citations, and penalty assessments.
+    applies_to: all
+    severity: mandatory
+
+  - id: AZ-002
+    state: AZ
+    requirement_name: Heat Illness Prevention for Outdoor Workers
+    description: Employers must implement heat illness prevention measures for outdoor workers during high-temperature conditions common in Arizona.
+    federal_equivalent: null
+    state_standard: "ADOSH General Duty Clause ARS 23-403"
+    additional_details: Requires access to potable water, shade, rest breaks, acclimatization procedures for new workers, and emergency response planning during heat advisories.
+    applies_to: construction
+    severity: mandatory
+
+  - id: AZ-003
+    state: AZ
+    requirement_name: Public Employee Safety Coverage
+    description: Arizona's state plan extends full occupational safety protections to state and local government employees.
+    federal_equivalent: null
+    state_standard: "ARS 23-401(4)"
+    additional_details: Municipal, county, and state employees receive the same protections and inspection rights as private sector workers under ADOSH.
+    applies_to: all
+    severity: mandatory
+
+  - id: AZ-004
+    state: AZ
+    requirement_name: Contractor Licensing and Safety Record
+    description: Arizona requires contractor licensing through the Registrar of Contractors, which considers safety violation history in licensing decisions.
+    federal_equivalent: null
+    state_standard: "ARS 32-1101 et seq."
+    additional_details: Contractors must maintain active licenses and repeated safety violations can result in license suspension or revocation.
+    applies_to: construction
+    severity: mandatory
+
+  - id: AZ-005
+    state: AZ
+    requirement_name: Trench and Excavation Safety
+    description: Arizona enforces trench and excavation safety standards aligned with federal requirements, with active enforcement focus on construction sites.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "AAC R20-5-602"
+    additional_details: Excavations deeper than five feet require protective systems. ADOSH prioritizes trench safety inspections due to high fatality rates in the state.
+    applies_to: construction
+    severity: mandatory

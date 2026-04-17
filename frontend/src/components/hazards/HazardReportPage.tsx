@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Camera,
@@ -36,9 +37,11 @@ function SeverityBadge({ severity }: { severity: IdentifiedHazard['severity'] })
   return <Badge className={config.className}>{config.label}</Badge>;
 }
 
-export function HazardReportPage() {
-  const navigate = useNavigate();
-  const { projectId, id } = useParams<{ projectId: string; id?: string }>();
+export function HazardReportPage({ projectId: propProjectId, id: propId }: { projectId?: string; id?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string; id?: string }>();
+  const projectId = propProjectId || params.projectId;
+  const id = propId || params.id;
   const { data: project } = useProject(projectId);
   const { data: existingReport } = useHazardReport(projectId, id);
   const analyzePhoto = useAnalyzePhoto();
@@ -115,7 +118,7 @@ export function HazardReportPage() {
   };
 
   const displayHazards = isViewMode
-    ? existingReport.identified_hazards
+    ? (existingReport.identified_hazards || [])
     : analysisResult?.identified_hazards ?? [];
 
   const displaySummary = isViewMode

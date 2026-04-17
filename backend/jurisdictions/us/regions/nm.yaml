@@ -1,0 +1,47 @@
+code: NM
+name: New Mexico
+regulatory_body: New Mexico Environment Department - Occupational Health and Safety Bureau (OHSB)
+state_plan: true
+primary_legislation: New Mexico Occupational Health and Safety Act (NMSA 50-9)
+construction_regulation: NMAC 11.5.1 (Construction Industry Safety)
+
+requirements:
+  - id: NM-001
+    state: NM
+    requirement_name: OSHA-Approved State Plan Coverage
+    description: New Mexico operates an OSHA-approved state plan covering both private and public sector employees. State standards must be at least as effective as federal OSHA standards.
+    federal_equivalent: "29 CFR 1910/1926 (General Industry/Construction)"
+    state_standard: "NMSA 50-9-1 et seq."
+    additional_details: The OHSB enforces workplace safety standards, conducts inspections, and issues citations. State plan covers all workers including state and local government employees not covered by federal OSHA.
+    applies_to: all
+    severity: mandatory
+
+  - id: NM-002
+    state: NM
+    requirement_name: Public Employee Safety Coverage
+    description: New Mexico's state plan extends occupational safety protections to all state and local government employees, who are not covered by federal OSHA.
+    federal_equivalent: null
+    state_standard: "NMSA 50-9-3"
+    additional_details: Public sector employers must comply with the same safety standards as private sector employers. This includes municipalities, counties, school districts, and state agencies.
+    applies_to: all
+    severity: mandatory
+
+  - id: NM-003
+    state: NM
+    requirement_name: Construction Industry Licensing
+    description: Contractors performing construction work in New Mexico must hold a valid license issued by the Construction Industries Division (CID).
+    federal_equivalent: null
+    state_standard: "NMSA 60-13-1 et seq."
+    additional_details: Licenses are classified by trade and monetary limit. CID enforces building codes, electrical codes, mechanical codes, and plumbing codes. Unlicensed contracting is a criminal offense.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NM-004
+    state: NM
+    requirement_name: Workers' Compensation Coverage
+    description: All New Mexico employers with three or more employees must carry workers' compensation insurance or qualify as self-insured.
+    federal_equivalent: null
+    state_standard: "NMSA 52-1-1 et seq."
+    additional_details: Construction employers must provide coverage regardless of the number of employees. Failure to carry required coverage can result in civil penalties and personal liability for the employer.
+    applies_to: all
+    severity: mandatory

@@ -17,7 +17,7 @@ export function SignUpPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signUpWithEmail, signInWithGoogle, verifyToken } = useAuth();
+  const { signUpWithEmail, signInWithGoogle, signInDemo, clerkConfigured, verifyToken } = useAuth();
   const navigate = useNavigate();
 
   const navigateAfterAuth = async () => {
@@ -85,7 +85,7 @@ export function SignUpPage() {
             <HardHat className="h-7 w-7 text-white" />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-foreground">
-            Safety<span className="text-primary">Forge</span>
+            Kerf
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Create your account to get started
@@ -96,7 +96,7 @@ export function SignUpPage() {
           <CardHeader className="text-center">
             <CardTitle>Create an account</CardTitle>
             <CardDescription>
-              Start generating safety documents in minutes
+              Safety, daily logs, and time tracking for contractors
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -104,6 +104,29 @@ export function SignUpPage() {
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
+            )}
+
+            {!clerkConfigured && (
+              <div className="mb-4">
+                <Button
+                  className="w-full bg-primary hover:bg-[var(--machine-dark)] text-primary-foreground text-base py-5"
+                  onClick={() => {
+                    signInDemo();
+                    navigate(ROUTES.DASHBOARD, { replace: true });
+                  }}
+                >
+                  <HardHat className="mr-2 h-5 w-5" />
+                  Try Demo — No Account Needed
+                </Button>
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  Explore the full app with sample data
+                </p>
+                <div className="my-4 flex items-center gap-3">
+                  <Separator className="flex-1" />
+                  <span className="text-xs text-muted-foreground">OR CREATE ACCOUNT</span>
+                  <Separator className="flex-1" />
+                </div>
+              </div>
             )}
 
             <Button

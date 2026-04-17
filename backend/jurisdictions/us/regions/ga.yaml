@@ -1,0 +1,57 @@
+code: GA
+name: Georgia
+regulatory_body: Georgia Department of Labor - Safety Engineering Division
+state_plan: false
+primary_legislation: Georgia Code Title 34
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: GA-001
+    state: GA
+    requirement_name: Workers' Compensation Insurance
+    description: Employers with three or more employees must carry workers' compensation insurance covering workplace injuries and occupational diseases.
+    federal_equivalent: null
+    state_standard: "OCGA 34-9-1 et seq."
+    additional_details: Includes coverage for medical treatment, income benefits, and rehabilitation. Officers and partners may elect exemption. Failure to provide coverage is a criminal offense.
+    applies_to: all
+    severity: mandatory
+
+  - id: GA-002
+    state: GA
+    requirement_name: Contractor Licensing and Registration
+    description: General contractors and specialty contractors must be licensed by the Georgia State Licensing Board for Residential and General Contractors.
+    federal_equivalent: null
+    state_standard: "OCGA 43-41-1 et seq."
+    additional_details: Licensing requires examination, proof of insurance, and financial statements. Different license classes based on project value thresholds.
+    applies_to: construction
+    severity: mandatory
+
+  - id: GA-003
+    state: GA
+    requirement_name: Utility Facility Protection Act
+    description: Contractors must contact Georgia 811 at least two business days before any excavation to have underground utilities located and marked.
+    federal_equivalent: null
+    state_standard: "OCGA 25-9-1 et seq."
+    additional_details: Failure to call before digging can result in liability for utility damage and penalties. Hand digging required within two feet of marked utilities.
+    applies_to: construction
+    severity: mandatory
+
+  - id: GA-004
+    state: GA
+    requirement_name: Asbestos Safety Requirements
+    description: Georgia requires licensing of asbestos abatement contractors and accredited training for workers performing asbestos removal.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "Georgia Rules 391-3-19"
+    additional_details: Notification to the Georgia Environmental Protection Division is required before abatement projects. Air monitoring and proper disposal procedures must be followed.
+    applies_to: construction
+    severity: mandatory
+
+  - id: GA-005
+    state: GA
+    requirement_name: Boiler and Pressure Vessel Inspection
+    description: All boilers and pressure vessels in Georgia must be inspected and certified by the Office of Insurance and Safety Fire Commissioner.
+    federal_equivalent: null
+    state_standard: "OCGA 25-15-1 et seq."
+    additional_details: Requires annual inspection by a certified inspector. New installations must meet ASME Boiler and Pressure Vessel Code standards.
+    applies_to: all
+    severity: mandatory

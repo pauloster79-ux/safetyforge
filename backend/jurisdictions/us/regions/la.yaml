@@ -1,0 +1,47 @@
+code: LA
+name: Louisiana
+regulatory_body: Federal OSHA (Region VI)
+state_plan: false
+primary_legislation: Louisiana Workers' Compensation Act (La. R.S. 23:1021 et seq.)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: LA-001
+    state: LA
+    requirement_name: Workers' Compensation Insurance
+    description: Louisiana employers with one or more employees must carry workers' compensation insurance. There are very limited exemptions.
+    federal_equivalent: null
+    state_standard: "La. R.S. 23:1168"
+    additional_details: Coverage must be obtained through a licensed insurer, the Louisiana Workers' Compensation Corporation, or approved self-insurance. The Office of Workers' Compensation Administration oversees compliance.
+    applies_to: all
+    severity: mandatory
+
+  - id: LA-002
+    state: LA
+    requirement_name: General Contractor Licensing
+    description: Any contractor performing construction work valued at $50,000 or more must hold a license issued by the Louisiana State Licensing Board for Contractors.
+    federal_equivalent: null
+    state_standard: "La. R.S. 37:2150 through 37:2192"
+    additional_details: Licenses are classified by trade type and project value. Applicants must pass a trade exam and business/law exam, and provide proof of financial responsibility.
+    applies_to: construction
+    severity: mandatory
+
+  - id: LA-003
+    state: LA
+    requirement_name: Asbestos Abatement Licensing and Notification
+    description: Contractors performing asbestos abatement must be licensed by the Louisiana Department of Environmental Quality and provide advance notification before work begins.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "La. R.S. 30:2061 through 30:2066"
+    additional_details: Workers and supervisors must hold valid Louisiana asbestos training certifications. Ten-day notification to LDEQ is required before starting abatement.
+    applies_to: construction
+    severity: mandatory
+
+  - id: LA-004
+    state: LA
+    requirement_name: Underground Utility Damage Prevention
+    description: Excavators must contact Louisiana 811 at least two working days before digging to request utility locates for underground facilities.
+    federal_equivalent: null
+    state_standard: "La. R.S. 40:1749.11 through 40:1749.27"
+    additional_details: Applies to all construction excavation, trenching, and boring activities. Failure to comply may result in liability for damage and civil penalties.
+    applies_to: construction
+    severity: mandatory

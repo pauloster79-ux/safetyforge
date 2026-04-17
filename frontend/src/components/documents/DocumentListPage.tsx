@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   Plus,
   Search,
@@ -30,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 
 export function DocumentListPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [viewMode, setViewModeState] = useState<'grid' | 'table'>(() => {
@@ -46,7 +47,7 @@ export function DocumentListPage() {
   const typeFilter = searchParams.get('type') || '';
   const statusFilter = searchParams.get('status') || '';
   const searchQuery = searchParams.get('q') || '';
-  const sortBy = searchParams.get('sort') || '-updated_at';
+  const sortBy = searchParams.get('sort') || 'updated_at:desc';
 
   const { data: documents, isLoading } = useDocuments({
     type: typeFilter || undefined,
@@ -176,10 +177,10 @@ export function DocumentListPage() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="-updated_at">Last Updated</SelectItem>
-              <SelectItem value="-created_at">Newest First</SelectItem>
-              <SelectItem value="created_at">Oldest First</SelectItem>
-              <SelectItem value="title">Title A-Z</SelectItem>
+              <SelectItem value="updated_at:desc">Last Updated</SelectItem>
+              <SelectItem value="created_at:desc">Newest First</SelectItem>
+              <SelectItem value="created_at:asc">Oldest First</SelectItem>
+              <SelectItem value="title:asc">Title A-Z</SelectItem>
             </SelectContent>
           </Select>
 

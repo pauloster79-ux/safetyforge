@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf Product Strategy — 2026-04-10</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --accent: #e67e22; --accent-light: #fdf2e9;
+    --border: #e5e7eb; --code-bg: #f8f9fa; --section-bg: #f9fafb;
+    --table-header: #1a1a2e; --table-header-fg: #ffffff;
+    --green: #27ae60; --red: #e74c3c; --blue: #3498db;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--fg); background: var(--bg); line-height: 1.7;
+    max-width: 900px; margin: 0 auto; padding: 48px 24px 100px;
+  }
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
+  .date { color: #9ca3af; font-size: 0.9rem; margin-bottom: 40px; }
+  h2 {
+    font-size: 1.3rem; font-weight: 700; margin-top: 52px; margin-bottom: 18px;
+    padding-bottom: 8px; border-bottom: 3px solid var(--accent);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  h3 { font-size: 1.05rem; font-weight: 600; margin-top: 28px; margin-bottom: 10px; color: var(--accent); }
+  p { margin-bottom: 12px; }
+  ul, ol { margin-bottom: 12px; padding-left: 24px; }
+  li { margin-bottom: 5px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 44px 0; }
+  strong { font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--code-bg); padding: 2px 6px; border-radius: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; font-size: 0.88rem; }
+  thead th { background: var(--table-header); color: var(--table-header-fg); font-weight: 600; text-align: left; padding: 9px 12px; }
+  tbody td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: var(--accent-light); }
+  .callout { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 14px 18px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+  .advantage { background: var(--section-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .advantage strong { color: var(--accent); }
+  .new-tag { display: inline-block; background: var(--accent); color: white; padding: 1px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  .moat-layer { background: var(--section-bg); border-left: 4px solid var(--accent); padding: 12px 18px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+  .metric-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .metric-row .target { font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .risk-critical { border-left: 4px solid var(--red); }
+  .risk-high { border-left: 4px solid var(--accent); }
+  .risk-medium { border-left: 4px solid #f39c12; }
+  .risk-row { padding: 10px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; background: var(--section-bg); }
+  .positioning { background: var(--fg); color: white; padding: 20px 24px; border-radius: 10px; margin: 24px 0; }
+  .positioning strong { color: var(--accent); }
+  .toc { background: var(--section-bg); border-radius: 10px; padding: 20px 24px; margin: 24px 0; }
+  .toc h3 { margin-top: 0; color: var(--fg); }
+  .toc ol { padding-left: 20px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media (max-width: 640px) { body { padding: 24px 16px; } h1 { font-size: 1.5rem; } table { font-size: 0.8rem; } }
+</style>
+</head>
+<body>
+
+<h1>Kerf Product Strategy</h1>
+<div class="date">Last updated: 2026-04-10</div>
+
+<div class="toc">
+<h3>Contents</h3>
+<ol>
+<li><a href="#summary">Executive Summary</a></li>
+<li><a href="#market">Market Opportunity</a></li>
+<li><a href="#competitive">Competitive Positioning</a></li>
+<li><a href="#roadmap">Feature Roadmap</a></li>
+<li><a href="#pricing">Pricing Strategy</a></li>
+<li><a href="#gtm">Go-To-Market Priorities</a></li>
+<li><a href="#risks">Key Risks</a></li>
+<li><a href="#metrics">Success Metrics</a></li>
+<li><a href="#moat">The Moat</a></li>
+</ol>
+</div>
+
+<hr>
+
+<h2 id="summary">1. Executive Summary</h2>
+
+<p>Kerf is the <strong>graph-intelligent construction business platform</strong> for contractors who need Procore but cannot afford it. We started with safety compliance and are expanding into daily logs, quality, time tracking, estimating, job costing, sub management, and scheduling. Every expansion is powered by a knowledge graph that connects every worker, certification, project, regulation, cost line, daily log, conversation, and uploaded document into one intelligent system.</p>
+
+<div class="callout">
+<strong>Our wedge is safety. Our moat is the knowledge graph. Our interface is conversational. Our endgame is the operating system for construction.</strong>
+</div>
+
+<p>The construction management software market is $10.6B globally (8.9% CAGR). 750,000+ small contractors in the US alone are massively underserved. Internationally &mdash; UK, Canada, Australia, Europe &mdash; the picture is the same or worse. We replace all of it, globally.</p>
+
+<hr>
+
+<h2 id="market">2. Market Opportunity</h2>
+
+<h3>Expanded TAM</h3>
+<table>
+<thead><tr><th>Market</th><th>Size (2025)</th><th>Growth</th><th>Our Position</th></tr></thead>
+<tbody>
+<tr><td>Construction management software</td><td>$10.6B</td><td>8.9% CAGR &rarr; $17.7B by 2031</td><td>Platform play</td></tr>
+<tr><td>Construction safety technology</td><td>$2.0-2.5B</td><td>10-14% CAGR &rarr; $5B by 2030</td><td>Entry wedge</td></tr>
+<tr><td>Daily reporting / field logs</td><td>$1.5-4B</td><td>Growing with digital adoption</td><td>Phase 1 expansion</td></tr>
+<tr><td>Construction time tracking</td><td>$540M-1.1B</td><td>11.3% CAGR</td><td>Phase 2 expansion</td></tr>
+<tr><td>Quality management software</td><td>$1.2-1.3B</td><td>7-12% CAGR &rarr; $2.5B by 2033</td><td>Phase 1 expansion</td></tr>
+<tr><td>Subcontractor management</td><td>$3.2B</td><td>10.8% CAGR &rarr; $8.1B by 2033</td><td>Phase 3 expansion</td></tr>
+</tbody>
+</table>
+
+<p><strong>SAM:</strong> ~750K contractors (1-200 employees) in the US ($2.7-9.0B). Internationally: UK ~300K, Canada ~100K, Australia ~100K, Europe ~500K+ &mdash; expanding SAM to $8-25B.</p>
+<p><strong>SOM (3-year):</strong> 5,000 paying customers &times; $6,000 avg = <strong>$30M ARR</strong>.</p>
+
+<h3>Customer Profile</h3>
+<p>A GC or specialty contractor with 1-100 employees, 1-8 active projects, doing $150K-50M annually. From the solo electrician to the 75-person GC. What they share: no dedicated safety director, no integrated software, estimating by gut feel, and a growing book of work that demands documentation they cannot currently produce.</p>
+
+<hr>
+
+<h2 id="competitive">3. Competitive Positioning</h2>
+
+<h3>3.1 The Real Competitor: Fragmentation</h3>
+<table>
+<thead><tr><th>Function</th><th>Current Tool</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Safety inspections</td><td>Paper checklists or basic app</td><td>$0-240/mo</td></tr>
+<tr><td>Daily logs</td><td>Paper, Excel, or Raken</td><td>$0-490/mo</td></tr>
+<tr><td>Time tracking</td><td>Paper timesheets or ClockShark</td><td>$0-590/mo</td></tr>
+<tr><td>Quality / punch lists</td><td>Paper, sticky notes, or Fieldwire</td><td>$0-940/mo</td></tr>
+<tr><td>Sub compliance</td><td>Excel spreadsheets, email</td><td>$0 + admin hours</td></tr>
+<tr><td>RFIs</td><td>Email + Excel</td><td>$0 + chaos</td></tr>
+<tr><td>Scheduling</td><td>Excel or MS Project</td><td>$0-300/mo</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+Average total: $500-2,000/month across 6+ products with zero data integration.<br>
+<strong>Kerf replaces all of it at $99-599/month with shared data across every feature.</strong>
+</div>
+
+<h3>3.3 Global Competitive Landscape <span class="new-tag">NEW</span></h3>
+
+<p><strong>US market:</strong></p>
+<ul>
+<li><strong>JobTread</strong> ($199/mo) &mdash; strongest financial management competitor. Excellent estimate-to-budget flow. 11,944% revenue growth. But: no safety, no voice, no AI intelligence, relational database limits agentic capability.</li>
+<li><strong>Procore</strong> ($30K+/yr) &mdash; does everything, prices out small contractors.</li>
+<li><strong>Point solutions</strong> &mdash; Raken, ClockShark, Fieldwire, SafetyCulture, CompanyCam. Each does one thing. None connect.</li>
+</ul>
+
+<p><strong>International:</strong></p>
+<ul>
+<li><strong>UK:</strong> Fieldwire + PlanRadar for PM. HandsHQ + swiftRMS for RAMS. Safety and ops completely separate. No integrated platform.</li>
+<li><strong>Australia/NZ:</strong> SafetyCulture (1.5M users) &mdash; checklist engine, no graph, no financial connection. HammerTech slow and expensive.</li>
+<li><strong>Canada:</strong> SALUS for provincial safety. No JobTread equivalent.</li>
+<li><strong>Europe:</strong> PlanRadar strong on docs, no financial tools, no safety depth.</li>
+<li><strong>All markets:</strong> Nobody connects safety to financial outcomes. Nobody has a knowledge graph. Nobody has conversational estimating.</li>
+</ul>
+
+<h3>3.4 Our Unfair Advantages</h3>
+
+<div class="advantage"><strong>1. Knowledge graph architecture.</strong> Their AI reads tables. Ours traverses a connected graph including regulatory rules, historical performance, conversation context, and uploaded documents. Cannot be replicated without re-architecting from scratch.</div>
+
+<div class="advantage"><strong>2. Conversational-first interface.</strong> Chat or voice to estimate jobs, review logs, check schedules, run the business. No other construction tool does this.</div>
+
+<div class="advantage"><strong>3. Safety-first architecture.</strong> Every expansion enriched by safety data. No competitor built from safety outward.</div>
+
+<div class="advantage"><strong>4. Unified estimate-task-cost model. <span class="new-tag">NEW</span></strong> One data structure through its lifecycle. Financial intelligence derived from field operations data already being captured.</div>
+
+<div class="advantage"><strong>5. Conversation memory. <span class="new-tag">NEW</span></strong> After a year, the agent knows the contractor's rates, crew productivity, GC relationships, supplier preferences, and decision patterns. No competitor captures this.</div>
+
+<div class="advantage"><strong>6. Document intelligence. <span class="new-tag">NEW</span></strong> Uploaded plans, specs, contracts, COIs are read, extracted, and connected to the graph. No competitor does this.</div>
+
+<div class="advantage"><strong>7. Multilingual globally.</strong> EN/ES (US), EN/PL/RO (UK), EN/FR (Canada), EN/ZH/VI (Australia). Knowledge graph is language-agnostic.</div>
+
+<div class="advantage"><strong>8. One-tool consolidation.</strong> The integrated intelligence is the product, not any single feature.</div>
+
+<div class="positioning">
+<strong>Positioning:</strong> Kerf is the graph-intelligent construction business platform. One conversational interface for safety, daily logs, time tracking, quality, estimating, job costing, sub compliance, and scheduling &mdash; built on a knowledge graph that gets smarter with every job, every conversation, and every document. <strong>$99/month.</strong>
+</div>
+
+<hr>
+
+<h2 id="roadmap">4. Feature Roadmap</h2>
+
+<h3>Phase 1: Safety Foundation (Months 1-4) &mdash; Built</h3>
+<table>
+<thead><tr><th>Feature</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>AI Safety Program Generator</td><td>Built</td></tr>
+<tr><td>Toolbox Talk Generator (EN/ES)</td><td>Built</td></tr>
+<tr><td>Digital Inspection Logs (voice + photo)</td><td>Built</td></tr>
+<tr><td>Worker and Certification Management</td><td>Built</td></tr>
+<tr><td>Equipment and Fleet Management</td><td>Built</td></tr>
+<tr><td>OSHA 300 Log Management</td><td>Built</td></tr>
+<tr><td>Morning Safety Brief</td><td>Built</td></tr>
+<tr><td>Photo Hazard Assessment</td><td>Built</td></tr>
+<tr><td>Mock OSHA Inspection</td><td>Built</td></tr>
+<tr><td>Incident Reporting (voice)</td><td>Built</td></tr>
+<tr><td>Environmental Compliance</td><td>Built</td></tr>
+<tr><td>GC/Sub Portal + Prequalification</td><td>Built</td></tr>
+<tr><td>Dashboard and Analytics</td><td>Built</td></tr>
+</tbody>
+</table>
+
+<h3>Phase 2: Construction Operations Platform (Months 5-8)</h3>
+<table>
+<thead><tr><th>Feature</th><th>Effort</th><th>Competitive Advantage</th></tr></thead>
+<tbody>
+<tr><td>Daily Logs</td><td>~68 hrs</td><td>50% auto-populated from safety data</td></tr>
+<tr><td>Quality / Punch Lists</td><td>~74 hrs</td><td>Same engine, one walk two reports</td></tr>
+<tr><td>Time Tracking</td><td>~114 hrs</td><td>Safety+time fatigue analysis</td></tr>
+<tr><td>Sub Management (expanded)</td><td>~72 hrs</td><td>Safety data performance scoring</td></tr>
+</tbody>
+</table>
+
+<h3>Phase 3: Intelligent Construction Business Platform (Months 9-18) <span class="new-tag">NEW</span></h3>
+<table>
+<thead><tr><th>Feature</th><th>Competitive Advantage</th></tr></thead>
+<tbody>
+<tr><td>Conversational Estimating</td><td>Walk a site, talk, produce a structured bid. No desk, no spreadsheet.</td></tr>
+<tr><td>Document Intelligence</td><td>Upload plans, agent cross-references against estimate.</td></tr>
+<tr><td>Auto-Derived Job Costing</td><td>Time entries + daily logs = real-time cost tracking. No manual entry.</td></tr>
+<tr><td>Intelligent Change Order Detection</td><td>Agent monitors daily logs, assembles evidence, drafts CO automatically.</td></tr>
+<tr><td>Natural Language Reporting</td><td>Agent traverses graph, returns narrative answer with reasoning.</td></tr>
+<tr><td>Lightweight Scheduling</td><td>Weekly lookahead connected to certs, equipment, weather, costs.</td></tr>
+<tr><td>RFIs / Submittals</td><td>Structured log &mdash; same workflow as inspections.</td></tr>
+<tr><td>QuickBooks Integration</td><td>We never replace QuickBooks.</td></tr>
+</tbody>
+</table>
+
+<h3>Phase 4: Intelligence Network + Global Expansion (Months 18-36) <span class="new-tag">NEW</span></h3>
+<table>
+<thead><tr><th>Feature</th><th>Why It Matters</th></tr></thead>
+<tbody>
+<tr><td>Cross-Customer Intelligence</td><td>Predictive models combining safety + financial + operational data</td></tr>
+<tr><td>Financial Benchmarking</td><td>"Your electrical labour cost per sq ft is 15% above market average"</td></tr>
+<tr><td>Insurance Carrier Integration</td><td>Real-time data feeds into underwriting</td></tr>
+<tr><td>AI Safety Coach</td><td>Contextual micro-training</td></tr>
+<tr><td>UK Market (CDM, EN/PL/RO)</td><td>First integrated platform for UK contractors</td></tr>
+<tr><td>Canada Market (OHS, EN/FR)</td><td>First safety + financial intelligence platform</td></tr>
+<tr><td>Australia/NZ (SafeWork, EN/ZH/VI)</td><td>Competing where SafetyCulture cannot</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="pricing">5. Pricing Strategy</h2>
+
+<p><strong>Core principle:</strong> Per-project pricing, not per-user. Unlimited users on every tier.</p>
+
+<table>
+<thead><tr><th>Tier</th><th>Price</th><th>Target</th><th>Includes</th></tr></thead>
+<tbody>
+<tr><td><strong>Starter</strong></td><td>$99/mo</td><td>Solo/small, 1-2 projects</td><td>Safety + daily logs + quality inspections</td></tr>
+<tr><td><strong>Professional</strong></td><td>$299/mo</td><td>Growing, 3-8 projects</td><td>+ Mock OSHA, Morning Brief, cert tracking, punch lists, sub compliance</td></tr>
+<tr><td><strong>Business</strong></td><td>$599/mo</td><td>Established, 8-20 projects</td><td>+ Prequalification, EMR modelling, RFIs, scheduling, GC portal</td></tr>
+<tr><td><strong>Enterprise</strong></td><td>Custom</td><td>Large specialty, 20+</td><td>+ State compliance, API access, insurance integrations</td></tr>
+</tbody>
+</table>
+
+<p><strong>Time Tracking add-on:</strong> $4-6/worker/month. <strong>Annual discount:</strong> 20%. <strong>Free trial:</strong> 14 days Professional, no credit card.</p>
+
+<hr>
+
+<h2 id="gtm">6. Go-To-Market Priorities</h2>
+
+<p><strong>Priority 1: Content-Led SEO</strong> &mdash; Free toolbox talk library, OSHA guides, ROI calculators. Free OSHA readiness quiz. YouTube "5-Minute Safety" channel.</p>
+<p><strong>Priority 2: Trade Association Partnerships</strong> &mdash; ABC, AGC, NECA, MCAA chapter meetings. Position as "operations platform."</p>
+<p><strong>Priority 3: Insurance Carrier Channel</strong> &mdash; Carriers recommend Kerf for premium discounts.</p>
+<p><strong>Priority 4: GC-Driven Adoption</strong> &mdash; Each GC brings 20-50 sub relationships. "Subs use it free."</p>
+<p><strong>Priority 5: "Replace your stack" campaign</strong> &mdash; Cancel Raken, ClockShark, Fieldwire, and your safety app. Use Kerf.</p>
+
+<hr>
+
+<h2 id="risks">7. Key Risks and Mitigations</h2>
+
+<div class="risk-row risk-critical"><strong>AI generates incorrect safety content</strong> [Critical] &mdash; Disclaimer + review checkbox. Confidence scoring. Professional liability insurance.</div>
+<div class="risk-row risk-high"><strong>Expanding too fast dilutes safety quality</strong> [High] &mdash; Safety remains foundation. Every expansion reuses existing engines. Quality gates enforced.</div>
+<div class="risk-row risk-high"><strong>Field adoption failure</strong> [High] &mdash; Voice input, one-thumb, 2-minute tasks. Monthly ride-alongs. Kill unused features.</div>
+<div class="risk-row risk-high"><strong>Procore moves downmarket</strong> [High] &mdash; Per-seat enterprise architecture cannot serve 15-person crews at $99/month without cannibalising $30K+ customers.</div>
+<div class="risk-row risk-high"><strong>Auto-derived financials are inaccurate</strong> <span class="new-tag">NEW</span> [High] &mdash; If auto-coded time entries or change order detection are wrong, trust dies. Require confirmation on consequential actions. Build accuracy from contractor's own data.</div>
+<div class="risk-row risk-high"><strong>International regulatory encoding errors</strong> <span class="new-tag">NEW</span> [High] &mdash; Wrong compliance = real-world harm. Risk-stratified human verification (100% for life-safety rules). Start with English-speaking markets.</div>
+<div class="risk-row risk-medium"><strong>Point solutions bundle together</strong> [Medium] &mdash; API integration between independent tools is always worse than one codebase.</div>
+<div class="risk-row risk-medium"><strong>Contractors distrust AI</strong> [Medium] &mdash; "AI-assisted, expert-reviewed." Show citations. Offer consultant review add-on.</div>
+<div class="risk-row risk-medium"><strong>Time tracking perceived as surveillance</strong> [Medium] &mdash; Principle 7: no surveillance. Hours for payroll, not speed.</div>
+<div class="risk-row risk-medium"><strong>JobTread acquires safety company</strong> <span class="new-tag">NEW</span> [Medium] &mdash; Relational architecture limits graph-based intelligence. Bolting on safety is a feature; graph-native intelligence is an architecture.</div>
+
+<hr>
+
+<h2 id="metrics">8. Success Metrics</h2>
+
+<h3>3-Month Targets (Safety foundation)</h3>
+<div class="metric-row"><div><strong>Paid customers</strong></div><div class="target">75</div></div>
+<div class="metric-row"><div><strong>MRR</strong></div><div class="target">$15,000</div></div>
+<div class="metric-row"><div><strong>Field task completion rate</strong></div><div class="target">&gt;60%</div></div>
+
+<h3>6-Month Targets (Operations platform live)</h3>
+<div class="metric-row"><div><strong>Paid customers</strong></div><div class="target">500</div></div>
+<div class="metric-row"><div><strong>MRR</strong></div><div class="target">$120,000</div></div>
+<div class="metric-row"><div><strong>Monthly churn</strong></div><div class="target">&lt;5%</div></div>
+<div class="metric-row"><div><strong>Features per customer</strong></div><div class="target">2.5+ modules</div></div>
+<div class="metric-row"><div><strong>Daily log auto-population rate</strong></div><div class="target">&gt;40%</div></div>
+<div class="metric-row"><div><strong>Apps replaced per customer</strong></div><div class="target">1.5+</div></div>
+
+<h3>12-Month Targets (Full platform)</h3>
+<div class="metric-row"><div><strong>Paid customers</strong></div><div class="target">2,500</div></div>
+<div class="metric-row"><div><strong>ARR</strong></div><div class="target">$2.5M</div></div>
+<div class="metric-row"><div><strong>Monthly churn</strong></div><div class="target">&lt;3%</div></div>
+<div class="metric-row"><div><strong>Net revenue retention</strong></div><div class="target">&gt;115%</div></div>
+<div class="metric-row"><div><strong>Features per customer</strong></div><div class="target">3.5+ modules</div></div>
+<div class="metric-row"><div><strong>GC portal partners</strong></div><div class="target">15</div></div>
+<div class="metric-row"><div><strong>Apps replaced per customer</strong></div><div class="target">3+</div></div>
+
+<h3>North Star Metric</h3>
+<div class="callout">
+<strong>Weekly Active Projects</strong> &mdash; projects with at least one activity (inspection, daily log, time entry, quality check, toolbox talk) in the past 7 days. Target: <strong>8,000 by month 18</strong>.
+</div>
+
+<hr>
+
+<h2 id="moat">9. The Moat</h2>
+
+<div class="moat-layer"><strong>Layer 1: Knowledge graph architecture.</strong> Every entity connected to every related entity. Regulations, certifications, workers, projects, costs, conversations, documents &mdash; all traversable. Competitors on relational databases cannot replicate without re-architecting.</div>
+
+<div class="moat-layer"><strong>Layer 2: Safety-first architecture.</strong> Every expansion enriched by safety data. No competitor built from safety outward. Safety is the regulatory wedge; the graph connects it to everything.</div>
+
+<div class="moat-layer"><strong>Layer 3: Conversation memory. <span class="new-tag">NEW</span></strong> Every chat, every voice interaction, every decision and its reasoning &mdash; accumulated in the graph. After 50 jobs, the agent knows the business better than any spreadsheet. Cannot be exported or replicated.</div>
+
+<div class="moat-layer"><strong>Layer 4: Cross-feature data network.</strong> Daily log &rarr; safety. Time &rarr; job costing. Estimates &rarr; tasks &rarr; cost tracking. Quality uses the same engine. Sub scoring uses safety data. Change orders assemble from daily log evidence. The integrated intelligence IS the product.</div>
+
+<div class="moat-layer"><strong>Layer 5: Multilingual conversational model.</strong> Construction audio in English, Spanish, Polish, French, Mandarin, and more. Compounds with every interaction across every market.</div>
+
+<div class="moat-layer"><strong>Layer 6: Workflow embedding.</strong> When the contractor's entire day runs through one conversational interface, switching costs are enormous. You cannot go back to forms after talking to an agent that knows your business.</div>
+
+<div class="moat-layer"><strong>Layer 7: GC/sub network + insurance ecosystem.</strong> Multi-sided network effects compound. Each participant increases every other's value and switching cost.</div>
+
+<hr>
+
+<p style="color: #6b7280; font-style: italic; text-align: center;">Every product decision should trace back to this strategy. When we debate what to build, we ask: does it make the graph more connected, the intelligence more useful, and the platform stickier? If it creates a new silo, it does not belong.</p>
+
+</body>
+</html>

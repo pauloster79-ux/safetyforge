@@ -160,3 +160,32 @@ class GcInvitation(BaseModel):
     project_name: str = ""
     status: str = "pending"
     created_at: datetime
+
+
+class PaymentRelease(BaseModel):
+    """A payment release record in the new ontology.
+
+    Renamed from LienWaiver to PaymentRelease.
+    """
+
+    id: str
+    gc_company_id: str
+    sub_company_id: str
+    project_id: str | None = None
+    amount: float = Field(default=0.0, description="Payment amount")
+    release_type: str = Field(
+        default="conditional",
+        description="Release type: 'conditional' or 'unconditional'",
+    )
+    status: str = Field(default="pending", description="Status: pending, executed, voided")
+    notes: str = ""
+    created_at: datetime
+    created_by: str = ""
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
+    updated_at: datetime | None = None
+    updated_by: str = ""
+    updated_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
+
+
+# Backward-compat alias
+LienWaiver = PaymentRelease

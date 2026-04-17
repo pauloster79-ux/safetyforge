@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kerf Construction Ontology v2.3</title>
+<title>Kerf Construction Ontology v2.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -228,6 +228,8 @@
       <li><a href="#domain-13"><span class="nav-num">13</span> Financial</a></li>
       <li><a href="#domain-14"><span class="nav-num">14</span> Project Coordination</a></li>
       <li><a href="#domain-15"><span class="nav-num">15</span> Procurement</a></li>
+      <li><a href="#domain-16" class="active"><span class="nav-num">16</span> Work Structure</a></li>
+      <li><a href="#domain-17" class="active"><span class="nav-num">17</span> Quoting</a></li>
     </ul>
     <div class="sidebar-section-label">Intelligence</div>
     <ul class="sidebar-nav">
@@ -338,10 +340,12 @@
                 <tr><td>13</td><td><strong>Financial</strong></td><td>7</td><td>14</td><td>Budgets, commitments, pay apps, EMR, change events, PCOs</td></tr>
                 <tr><td>14</td><td><strong>Project Coordination</strong></td><td>5</td><td>21</td><td>RFIs, submittals, change orders, drawings, specs</td></tr>
                 <tr><td>15</td><td><strong>Procurement</strong></td><td>1</td><td>8</td><td>Purchase orders for materials, equipment rental, and supplies</td></tr>
+                <tr style="background: var(--pass-bg);"><td>16</td><td><strong>Work Structure</strong> <span class="tag tag-pass">NEW</span></td><td>5</td><td>19</td><td>WorkItems, Labour, Items, WorkPackages, WorkCategories &mdash; the atomic units of deliverable work</td></tr>
+                <tr style="background: var(--pass-bg);"><td>17</td><td><strong>Quoting</strong> <span class="tag tag-pass">NEW</span></td><td>4</td><td>14</td><td>Assumptions, Exclusions, ResourceRates, ProductivityRates &mdash; commercial intelligence for quotes</td></tr>
               </tbody>
               <tfoot>
                 <tr style="background: var(--concrete-50); font-weight: 600;">
-                  <td></td><td>Totals</td><td>78 node types</td><td>204 relationships</td><td></td>
+                  <td></td><td>Totals</td><td>87 node types</td><td>237 relationships</td><td></td>
                 </tr>
               </tfoot>
             </table>
@@ -785,7 +789,8 @@
                   <tr><td>address</td><td>string</td><td>No</td><td>No</td><td>Project site address</td></tr>
                   <tr><td>client_name</td><td>string</td><td>No</td><td>No</td><td>Client/owner name</td></tr>
                   <tr><td>project_type</td><td>string</td><td>No</td><td>Filter</td><td>Type of construction project</td></tr>
-                  <tr><td>status</td><td>string</td><td>Yes</td><td>Filter</td><td>Project lifecycle status</td></tr>
+                  <tr style="background: var(--pass-bg);"><td>state</td><td>string</td><td>Yes</td><td>Filter</td><td>Project lifecycle stage <span class="tag tag-warn">CHANGED</span></td></tr>
+                  <tr style="background: var(--pass-bg);"><td>status</td><td>string</td><td>Yes</td><td>Filter</td><td>Operating condition within current state <span class="tag tag-pass">NEW</span></td></tr>
                   <tr><td>start_date</td><td>date</td><td>No</td><td>Sort</td><td>Project start date</td></tr>
                   <tr><td>end_date</td><td>date</td><td>No</td><td>No</td><td>Project end date</td></tr>
                   <tr><td>estimated_workers</td><td>integer</td><td>No</td><td>No</td><td>Estimated peak worker count</td></tr>
@@ -795,11 +800,21 @@
                   <tr><td>emergency_contact_name</td><td>string</td><td>No</td><td>No</td><td>Site emergency contact name</td></tr>
                   <tr><td>emergency_contact_phone</td><td>string</td><td>No</td><td>No</td><td>Site emergency contact phone</td></tr>
                   <tr><td>compliance_score</td><td>integer</td><td>No</td><td>No</td><td>Calculated compliance score (0-100)</td></tr>
+                  <tr style="background: var(--pass-bg);"><td>estimate_confidence</td><td>string</td><td>No</td><td>No</td><td>Class of estimate accuracy <span class="tag tag-pass">NEW</span></td></tr>
+                  <tr style="background: var(--pass-bg);"><td>target_margin_percent</td><td>float</td><td>No</td><td>No</td><td>Contractor's target margin <span class="tag tag-pass">NEW</span></td></tr>
+                  <tr style="background: var(--pass-bg);"><td>contract_type</td><td>string</td><td>No</td><td>Filter</td><td>Type of contract <span class="tag tag-pass">NEW</span></td></tr>
+                  <tr style="background: var(--pass-bg);"><td>quote_valid_until</td><td>date</td><td>No</td><td>No</td><td>Quote expiry date <span class="tag tag-pass">NEW</span></td></tr>
+                  <tr style="background: var(--pass-bg);"><td>quote_submitted_at</td><td>datetime</td><td>No</td><td>No</td><td>When quote was sent to client <span class="tag tag-pass">NEW</span></td></tr>
                   <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of project creation</td></tr>
                   <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
                 </tbody>
               </table>
-              <div class="enums"><strong>Enums:</strong> <code>status</code>: active | completed | on_hold</div>
+              <div class="enums"><strong>Enums:</strong><br>
+                <code>state</code>: lead | quoted | active | completed | closed | lost <span class="tag tag-warn">CHANGED</span><br>
+                <code>status</code>: normal | on_hold | delayed | suspended <span class="tag tag-pass">NEW</span><br>
+                <code>estimate_confidence</code>: concept | budget | definitive <span class="tag tag-pass">NEW</span><br>
+                <code>contract_type</code>: lump_sum | schedule_of_rates | cost_plus | time_and_materials <span class="tag tag-pass">NEW</span>
+              </div>
             </div>
 
             <div class="node-section">
@@ -2916,6 +2931,306 @@
       <hr>
 
       <!-- ================================================================ -->
+      <!-- DOMAIN 16: WORK STRUCTURE (NEW)                                   -->
+      <!-- ================================================================ -->
+      <div class="section" id="domain-16">
+        <div class="section-label">Domain 16 <span class="tag tag-pass">NEW</span></div>
+        <div class="section-title">Work Structure</div>
+        <div class="domain-card card-primary" style="border-left: 3px solid var(--pass);">
+          <div class="domain-card-header" onclick="toggleDomain(this)">
+            <div><span class="domain-num">D16</span> <h3 style="display:inline">Work Structure</h3> <span class="tag tag-pass">NEW DOMAIN</span></div>
+            <span class="expand-toggle">[collapse]</span>
+          </div>
+          <div class="domain-card-body">
+            <p class="domain-desc">The atomic units of deliverable work. WorkItems flow through the full lifecycle: estimated (draft) &rarr; scheduled &rarr; in progress &rarr; complete &rarr; invoiced. They are the "estimate line is the task is the cost line" principle &mdash; one entity, not three. Labour and Item nodes provide the cost breakdown within each WorkItem.</p>
+
+            <div class="node-section">
+              <h4><code>WorkItem</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">A discrete piece of deliverable work with a cost. The atomic unit of the platform &mdash; flows through lifecycle states from quoting through execution to invoicing. Each WorkItem's cost is built up from its Labour and Item children.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>wi_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>description</td><td>string</td><td>Yes</td><td>No</td><td>What the work is</td></tr>
+                  <tr><td>state</td><td>string</td><td>Yes</td><td>Filter</td><td>Lifecycle state</td></tr>
+                  <tr><td>quantity</td><td>float</td><td>No</td><td>No</td><td>Scope quantity (e.g. 2, 15, 100)</td></tr>
+                  <tr><td>unit</td><td>string</td><td>No</td><td>No</td><td>Unit of measurement (EA, LF, SF, CY, LS, etc.)</td></tr>
+                  <tr><td>labour_total_cents</td><td>integer</td><td>No</td><td>No</td><td>Computed sum of Labour children costs in cents</td></tr>
+                  <tr><td>items_total_cents</td><td>integer</td><td>No</td><td>No</td><td>Computed sum of Item children costs in cents</td></tr>
+                  <tr><td>margin_pct</td><td>float</td><td>No</td><td>No</td><td>Markup percentage (0.0&ndash;100.0)</td></tr>
+                  <tr><td>sell_price_cents</td><td>integer</td><td>No</td><td>No</td><td>(labour + items) &times; (1 + margin/100) in cents</td></tr>
+                  <tr><td>is_alternate</td><td>boolean</td><td>No</td><td>No</td><td>Whether this is a VE/alternate version</td></tr>
+                  <tr><td>alternate_label</td><td>string</td><td>No</td><td>No</td><td>Alternate identifier (e.g. "VE-1")</td></tr>
+                  <tr><td>alternate_description</td><td>string</td><td>No</td><td>No</td><td>Why this alternate exists</td></tr>
+                  <tr><td>alternate_price_adjustment_cents</td><td>integer</td><td>No</td><td>No</td><td>Net price difference from base in cents</td></tr>
+                  <tr><td>planned_start</td><td>date</td><td>No</td><td>Sort</td><td>Planned start date</td></tr>
+                  <tr><td>planned_end</td><td>date</td><td>No</td><td>No</td><td>Planned end date</td></tr>
+                  <tr><td>actual_start</td><td>date</td><td>No</td><td>No</td><td>Actual start date</td></tr>
+                  <tr><td>actual_end</td><td>date</td><td>No</td><td>No</td><td>Actual end date</td></tr>
+                  <tr><td>notes</td><td>string</td><td>No</td><td>No</td><td>Additional notes</td></tr>
+                  <tr><td>deleted</td><td>boolean</td><td>Yes</td><td>No</td><td>Soft delete flag</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+              <div class="enums"><strong>Enums:</strong> <code>state</code>: draft | scheduled | in_progress | complete | invoiced | on_hold | cancelled | superseded</div>
+            </div>
+
+            <div class="node-section">
+              <h4><code>Labour</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">A discrete labour task within a WorkItem. Work done by people &mdash; has a rate, hours, and cost. Connects to workers, crews, productivity rates, and accumulates TimeEntries during execution.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>lab_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>task</td><td>string</td><td>Yes</td><td>No</td><td>What the labour task is (e.g. "Core drill slab")</td></tr>
+                  <tr><td>rate_cents</td><td>integer</td><td>Yes</td><td>No</td><td>Hourly rate in cents</td></tr>
+                  <tr><td>hours</td><td>float</td><td>Yes</td><td>No</td><td>Estimated hours</td></tr>
+                  <tr><td>cost_cents</td><td>integer</td><td>Yes</td><td>No</td><td>rate_cents &times; hours, in cents</td></tr>
+                  <tr><td>notes</td><td>string</td><td>No</td><td>No</td><td>Additional notes</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="node-section">
+              <h4><code>Item</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">A discrete item used by a WorkItem &mdash; materials, equipment, fixtures, rentals, or any non-labour cost component. A bath is an item. A floor box is an item. A crane hire is an item.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>item_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>description</td><td>string</td><td>Yes</td><td>No</td><td>What the item is</td></tr>
+                  <tr><td>product</td><td>string</td><td>No</td><td>No</td><td>Specific product name or model number</td></tr>
+                  <tr><td>quantity</td><td>float</td><td>Yes</td><td>No</td><td>Number of units</td></tr>
+                  <tr><td>unit</td><td>string</td><td>No</td><td>No</td><td>Unit of measurement (EA, LF, SF, etc.)</td></tr>
+                  <tr><td>unit_cost_cents</td><td>integer</td><td>Yes</td><td>No</td><td>Cost per unit in cents</td></tr>
+                  <tr><td>total_cents</td><td>integer</td><td>Yes</td><td>No</td><td>quantity &times; unit_cost_cents in cents</td></tr>
+                  <tr><td>notes</td><td>string</td><td>No</td><td>No</td><td>Additional notes</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="node-section">
+              <h4><code>WorkPackage</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">Optional grouping of WorkItems within a project. Organises scope into logical phases, trades, or divisions.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>wp_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>name</td><td>string</td><td>Yes</td><td>No</td><td>Package name</td></tr>
+                  <tr><td>description</td><td>string</td><td>No</td><td>No</td><td>Package description</td></tr>
+                  <tr><td>sort_order</td><td>integer</td><td>No</td><td>No</td><td>Display ordering</td></tr>
+                  <tr><td>deleted</td><td>boolean</td><td>Yes</td><td>No</td><td>Soft delete flag</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="node-section">
+              <h4><code>WorkCategory</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">Hierarchical taxonomy for classifying WorkItems by type of work. Company-specific. Optionally links to regulatory Activity nodes.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>wcat_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>name</td><td>string</td><td>Yes</td><td>No</td><td>Category name</td></tr>
+                  <tr><td>description</td><td>string</td><td>No</td><td>No</td><td>Category description</td></tr>
+                  <tr><td>level</td><td>integer</td><td>No</td><td>No</td><td>Depth in hierarchy (0 = root)</td></tr>
+                  <tr><td>deleted</td><td>boolean</td><td>Yes</td><td>No</td><td>Soft delete flag</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 class="sub">Relationships (19)</h3>
+            <table class="rel-table">
+              <thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>HAS_WORK_ITEM</td><td>Project</td><td>WorkItem</td><td>Project contains this work item</td></tr>
+                <tr><td>HAS_WORK_PACKAGE</td><td>Project</td><td>WorkPackage</td><td>Project has this grouping</td></tr>
+                <tr><td>CONTAINS</td><td>WorkPackage</td><td>WorkItem</td><td>Package groups this work item</td></tr>
+                <tr><td>HAS_LABOUR</td><td>WorkItem</td><td>Labour</td><td>Work item has this labour task</td></tr>
+                <tr><td>HAS_ITEM</td><td>WorkItem</td><td>Item</td><td>Work item uses this item</td></tr>
+                <tr><td>CATEGORISED_AS</td><td>WorkItem</td><td>WorkCategory</td><td>Classified as this type of work</td></tr>
+                <tr><td>HAS_WORK_CATEGORY</td><td>Company</td><td>WorkCategory</td><td>Company owns this category</td></tr>
+                <tr><td>PARENT_CATEGORY</td><td>WorkCategory</td><td>WorkCategory</td><td>Child &rarr; parent hierarchy</td></tr>
+                <tr><td>LINKS_TO_ACTIVITY</td><td>WorkCategory</td><td>Activity</td><td>Maps to regulatory activity</td></tr>
+                <tr><td>ASSIGNED_TO_WORKER</td><td>WorkItem</td><td>Worker</td><td>Worker assigned to this work</td></tr>
+                <tr><td>ASSIGNED_TO_CREW</td><td>WorkItem</td><td>Crew</td><td>Crew assigned to this work</td></tr>
+                <tr><td>LABOUR_BY_WORKER</td><td>Labour</td><td>Worker</td><td>Worker performing this labour</td></tr>
+                <tr><td>WORK_ITEM_TIME</td><td>WorkItem</td><td>TimeEntry</td><td>Time logged against this work item</td></tr>
+                <tr><td>LABOUR_TIME</td><td>Labour</td><td>TimeEntry</td><td>Time charged to this specific labour task</td></tr>
+                <tr><td>ALTERNATE_TO</td><td>WorkItem</td><td>WorkItem</td><td>VE alternate to the target (base) WorkItem</td></tr>
+                <tr><td>ITEM_SUPPLIED_BY</td><td>Item</td><td>Contact</td><td>Supplier for this item</td></tr>
+                <tr><td>ITEM_RATE_FROM</td><td>Item</td><td>ResourceRate</td><td>Rate used to price this item</td></tr>
+                <tr><td>LABOUR_RATE_FROM</td><td>Labour</td><td>ResourceRate</td><td>Rate used to price this labour</td></tr>
+                <tr><td>LABOUR_PRODUCTIVITY_FROM</td><td>Labour</td><td>ProductivityRate</td><td>Productivity rate that determined the hours</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <!-- ================================================================ -->
+      <!-- DOMAIN 17: QUOTING (NEW)                                          -->
+      <!-- ================================================================ -->
+      <div class="section" id="domain-17">
+        <div class="section-label">Domain 17 <span class="tag tag-pass">NEW</span></div>
+        <div class="section-title">Quoting</div>
+        <div class="domain-card card-primary" style="border-left: 3px solid var(--pass);">
+          <div class="domain-card-header" onclick="toggleDomain(this)">
+            <div><span class="domain-num">D17</span> <h3 style="display:inline">Quoting</h3> <span class="tag tag-pass">NEW DOMAIN</span></div>
+            <span class="expand-toggle">[collapse]</span>
+          </div>
+          <div class="domain-card-body">
+            <p class="domain-desc">The commercial intelligence layer for construction quotes. Assumptions and Exclusions are structured graph data &mdash; not prose in a PDF &mdash; making quotes defensible, learnable, and commercially strategic. ResourceRates and ProductivityRates capture company-specific cost knowledge that improves with every completed job.</p>
+
+            <div class="node-section">
+              <h4><code>Assumption</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">A structured qualification attached to a Project during quoting. Establishes the conditions under which the price is valid. When variation_trigger=true, the system monitors for the condition during construction and auto-drafts variation claims when violated.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>asmp_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>category</td><td>string</td><td>Yes</td><td>Filter</td><td>Type of assumption</td></tr>
+                  <tr><td>statement</td><td>string</td><td>Yes</td><td>No</td><td>Human-readable assumption text (appears in quote)</td></tr>
+                  <tr><td>relied_on_value</td><td>string</td><td>No</td><td>No</td><td>The specific value relied upon (e.g. "19", "Rev A")</td></tr>
+                  <tr><td>relied_on_unit</td><td>string</td><td>No</td><td>No</td><td>Unit for the value (e.g. "weeks", "drawing_revision")</td></tr>
+                  <tr><td>source_document</td><td>string</td><td>No</td><td>No</td><td>Document the assumption references</td></tr>
+                  <tr><td>variation_trigger</td><td>boolean</td><td>Yes</td><td>No</td><td>Whether violation triggers a potential variation</td></tr>
+                  <tr><td>trigger_description</td><td>string</td><td>No</td><td>No</td><td>What condition would violate this assumption</td></tr>
+                  <tr><td>is_template</td><td>boolean</td><td>Yes</td><td>Filter</td><td>Company-level reusable template</td></tr>
+                  <tr><td>trade_type</td><td>string</td><td>No</td><td>Filter</td><td>Which trade this applies to</td></tr>
+                  <tr><td>status</td><td>string</td><td>Yes</td><td>Filter</td><td>Assumption lifecycle status</td></tr>
+                  <tr><td>triggered_at</td><td>datetime</td><td>No</td><td>No</td><td>When the trigger was detected</td></tr>
+                  <tr><td>triggered_by_event</td><td>string</td><td>No</td><td>No</td><td>What triggered it</td></tr>
+                  <tr><td>sort_order</td><td>integer</td><td>No</td><td>No</td><td>Display ordering within the quote</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+              <div class="enums"><strong>Enums:</strong><br><code>category</code>: schedule | quantities | access | coordination | site_conditions | design_completeness | pricing | regulatory<br><code>status</code>: active | triggered | void</div>
+            </div>
+
+            <div class="node-section">
+              <h4><code>Exclusion</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">A structured scope boundary that explicitly states what is NOT included in the price. Reusable at company level. When disputes arise, exclusions provide the contractual reference. New exclusions are created from lessons learned.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>excl_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>category</td><td>string</td><td>Yes</td><td>Filter</td><td>Type of exclusion</td></tr>
+                  <tr><td>statement</td><td>string</td><td>Yes</td><td>No</td><td>Human-readable exclusion text (appears in quote)</td></tr>
+                  <tr><td>partial_inclusion</td><td>string</td><td>No</td><td>No</td><td>What IS included (e.g. "raceways and boxes only")</td></tr>
+                  <tr><td>is_template</td><td>boolean</td><td>Yes</td><td>Filter</td><td>Company-level reusable template</td></tr>
+                  <tr><td>trade_type</td><td>string</td><td>No</td><td>Filter</td><td>Which trade this applies to</td></tr>
+                  <tr><td>source</td><td>string</td><td>No</td><td>No</td><td>Why this exclusion exists</td></tr>
+                  <tr><td>sort_order</td><td>integer</td><td>No</td><td>No</td><td>Display ordering within the quote</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+              <div class="enums"><strong>Enums:</strong> <code>category</code>: scope | trade_boundary | conditions | risk | regulatory</div>
+            </div>
+
+            <div class="node-section">
+              <h4><code>ResourceRate</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">A company-level rate for a specific resource &mdash; labour, material, or equipment. Can be entered manually or derived from completed job actuals. The rate library is what things actually cost this contractor.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>rr_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>resource_type</td><td>string</td><td>Yes</td><td>Filter</td><td>Type of resource</td></tr>
+                  <tr><td>description</td><td>string</td><td>Yes</td><td>No</td><td>Human-readable description</td></tr>
+                  <tr><td>rate_cents</td><td>integer</td><td>Yes</td><td>No</td><td>Rate in cents per unit</td></tr>
+                  <tr><td>unit</td><td>string</td><td>Yes</td><td>No</td><td>What the rate is per</td></tr>
+                  <tr><td>source</td><td>string</td><td>Yes</td><td>Filter</td><td>How this rate was established</td></tr>
+                  <tr><td>base_rate_cents</td><td>integer</td><td>No</td><td>No</td><td>Pre-burden rate in cents (for labour)</td></tr>
+                  <tr><td>burden_percent</td><td>float</td><td>No</td><td>No</td><td>On-cost percentage</td></tr>
+                  <tr><td>non_productive_percent</td><td>float</td><td>No</td><td>No</td><td>Non-productive time adjustment</td></tr>
+                  <tr><td>supplier_name</td><td>string</td><td>No</td><td>No</td><td>Supplier (for materials/equipment)</td></tr>
+                  <tr><td>quote_valid_until</td><td>date</td><td>No</td><td>No</td><td>Supplier quote expiry</td></tr>
+                  <tr><td>sample_size</td><td>integer</td><td>No</td><td>No</td><td>Number of jobs this rate was derived from</td></tr>
+                  <tr><td>std_deviation_cents</td><td>integer</td><td>No</td><td>No</td><td>Standard deviation across jobs</td></tr>
+                  <tr><td>last_derived_at</td><td>datetime</td><td>No</td><td>No</td><td>When last recalculated from actuals</td></tr>
+                  <tr><td>active</td><td>boolean</td><td>Yes</td><td>Filter</td><td>Whether this rate is current</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+              <div class="enums"><strong>Enums:</strong><br><code>resource_type</code>: labour | material | equipment<br><code>unit</code>: per_hour | per_day | per_unit | per_lf | per_sf | per_cy | per_ea | per_ton | lump_sum<br><code>source</code>: manual_entry | derived_from_actuals | supplier_quote</div>
+            </div>
+
+            <div class="node-section">
+              <h4><code>ProductivityRate</code> <span class="tag tag-pass">NEW</span></h4>
+              <p class="node-desc">How fast a crew produces output for a specific type of work. Company-specific and condition-specific. Derived from actual TimeEntry data across completed jobs.</p>
+              <table class="prop-table">
+                <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Indexed</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td>string</td><td>Yes</td><td>Unique</td><td>Internal identifier (<code>pr_{token_hex(8)}</code>)</td></tr>
+                  <tr><td>description</td><td>string</td><td>Yes</td><td>No</td><td>Human-readable description</td></tr>
+                  <tr><td>rate</td><td>float</td><td>Yes</td><td>No</td><td>Output per unit of time</td></tr>
+                  <tr><td>rate_unit</td><td>string</td><td>Yes</td><td>No</td><td>Unit of output (LF, SF, CY, EA, etc.)</td></tr>
+                  <tr><td>time_unit</td><td>string</td><td>Yes</td><td>No</td><td>Time period for the rate</td></tr>
+                  <tr><td>crew_composition</td><td>string</td><td>No</td><td>No</td><td>Typical crew</td></tr>
+                  <tr><td>conditions</td><td>string</td><td>No</td><td>No</td><td>When this rate applies</td></tr>
+                  <tr><td>source</td><td>string</td><td>Yes</td><td>Filter</td><td>How this rate was established</td></tr>
+                  <tr><td>sample_size</td><td>integer</td><td>No</td><td>No</td><td>Number of completed jobs</td></tr>
+                  <tr><td>std_deviation</td><td>float</td><td>No</td><td>No</td><td>Variability across jobs</td></tr>
+                  <tr><td>includes_non_productive</td><td>boolean</td><td>Yes</td><td>No</td><td>Whether breaks/setup time is baked in</td></tr>
+                  <tr><td>last_derived_at</td><td>datetime</td><td>No</td><td>No</td><td>When last recalculated</td></tr>
+                  <tr><td>active</td><td>boolean</td><td>Yes</td><td>Filter</td><td>Whether this rate is current</td></tr>
+                  <tr><td>created_at</td><td>datetime</td><td>Yes</td><td>Sort</td><td>Timestamp of creation</td></tr>
+                  <tr><td>updated_at</td><td>datetime</td><td>Yes</td><td>No</td><td>Timestamp of last update</td></tr>
+                  <tr><td colspan="5" style="font-size:11px;color:var(--muted-foreground);">+ Actor Provenance fields</td></tr>
+                </tbody>
+              </table>
+              <div class="enums"><strong>Enums:</strong><br><code>time_unit</code>: per_hour | per_day | per_week<br><code>source</code>: manual_entry | derived_from_actuals</div>
+            </div>
+
+            <h3 class="sub">Relationships (14)</h3>
+            <table class="rel-table">
+              <thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>HAS_ASSUMPTION</td><td>Project</td><td>Assumption</td><td>Project carries this assumption in its quote</td></tr>
+                <tr><td>ASSUMPTION_AFFECTS</td><td>Assumption</td><td>WorkItem</td><td>Violation impacts this work item's cost</td></tr>
+                <tr><td>ASSUMPTION_TEMPLATE_OF</td><td>Company</td><td>Assumption</td><td>Company owns this reusable template</td></tr>
+                <tr><td>ASSUMPTION_FROM_TEMPLATE</td><td>Assumption</td><td>Assumption</td><td>Copied from this template</td></tr>
+                <tr><td>TRIGGERED_VARIATION</td><td>Assumption</td><td>ChangeEvent</td><td>Triggered assumption led to this change event</td></tr>
+                <tr><td>HAS_EXCLUSION</td><td>Project</td><td>Exclusion</td><td>Project carries this exclusion in its quote</td></tr>
+                <tr><td>EXCLUSION_TEMPLATE_OF</td><td>Company</td><td>Exclusion</td><td>Company owns this reusable template</td></tr>
+                <tr><td>EXCLUSION_FROM_TEMPLATE</td><td>Exclusion</td><td>Exclusion</td><td>Copied from this template</td></tr>
+                <tr><td>EXCLUSION_CONTRADICTS</td><td>Exclusion</td><td>Document</td><td>Agent detected spec contradiction</td></tr>
+                <tr><td>HAS_RATE</td><td>Company</td><td>ResourceRate</td><td>Company owns this rate</td></tr>
+                <tr><td>RATE_FOR_CODE</td><td>ResourceRate</td><td>CostCode</td><td>Rate applies to this cost code</td></tr>
+                <tr><td>HAS_PRODUCTIVITY</td><td>Company</td><td>ProductivityRate</td><td>Company owns this productivity rate</td></tr>
+                <tr><td>PRODUCTIVITY_FOR_CODE</td><td>ProductivityRate</td><td>CostCode</td><td>Applies to this cost code</td></tr>
+                <tr><td>PRODUCTIVITY_FOR_CATEGORY</td><td>ProductivityRate</td><td>WorkCategory</td><td>Applies to this work category</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <!-- ================================================================ -->
       <!-- CROSS-DOMAIN EDGE CATALOGUE                                      -->
       <!-- ================================================================ -->
       <div class="section" id="cross-domain">
@@ -3000,6 +3315,35 @@
 <span class="comment"># "What's the procurement status for this submittal?"</span>
 <span class="node">(Submittal)</span><span class="edge">-[:SUBMITTAL_SATISFIES_SPEC]-&gt;</span><span class="node">(SpecSection)</span>
 <span class="node">(PurchaseOrder)</span><span class="edge">-[:PO_FROM_SUBMITTAL]-&gt;</span><span class="node">(Submittal)</span></div>
+        </div>
+
+        <div class="edge-group" style="border-left: 3px solid var(--pass); padding-left: 12px;">
+          <div class="edge-group-header">Work Structure &harr; Time <span class="edge-question">"How is this work item tracking against estimate?"</span> <span class="tag tag-pass">NEW</span></div>
+          <div class="rel-block"><span class="comment"># "Estimated vs actual labour hours"</span>
+<span class="node">(WorkItem)</span><span class="edge">-[:HAS_LABOUR]-&gt;</span><span class="node">(Labour {hours: estimated})</span><span class="edge">&lt;-[:LABOUR_TIME]-</span><span class="node">(TimeEntry {hours_total: actual})</span>
+
+<span class="comment"># "What did we actually spend on items?"</span>
+<span class="node">(WorkItem)</span><span class="edge">-[:HAS_ITEM]-&gt;</span><span class="node">(Item {total_cents: estimated})</span><span class="edge">&lt;-[:ITEM_FULFILLED_BY]-</span><span class="node">(PurchaseOrder {total_amount: actual})</span></div>
+        </div>
+
+        <div class="edge-group" style="border-left: 3px solid var(--pass); padding-left: 12px;">
+          <div class="edge-group-header">Quoting &harr; Financial <span class="edge-question">"What assumptions protect this project's margin?"</span> <span class="tag tag-pass">NEW</span></div>
+          <div class="rel-block"><span class="comment"># "Assumptions → WorkItems → variation chain"</span>
+<span class="node">(Company)</span><span class="edge">-[:OWNS_PROJECT]-&gt;</span><span class="node">(Project)</span><span class="edge">-[:HAS_ASSUMPTION]-&gt;</span><span class="node">(Assumption)</span><span class="edge">-[:ASSUMPTION_AFFECTS]-&gt;</span><span class="node">(WorkItem)</span>
+
+<span class="comment"># "Has this assumption been violated?"</span>
+<span class="node">(Assumption {variation_trigger: true, status: 'triggered'})</span><span class="edge">-[:TRIGGERED_VARIATION]-&gt;</span><span class="node">(ChangeEvent)</span><span class="edge">-[:EVENT_BECAME_PCO]-&gt;</span><span class="node">(PCO)</span>
+
+<span class="comment"># "What are our actual rates vs quoted rates?"</span>
+<span class="node">(Company)</span><span class="edge">-[:HAS_RATE]-&gt;</span><span class="node">(ResourceRate)</span><span class="edge">-[:RATE_FOR_CODE]-&gt;</span><span class="node">(CostCode)</span><span class="edge">&lt;-[:CHARGED_TO]-</span><span class="node">(TimeEntry)</span></div>
+        </div>
+
+        <div class="edge-group" style="border-left: 3px solid var(--pass); padding-left: 12px;">
+          <div class="edge-group-header">Quoting &harr; Daily Log <span class="edge-question">"Did today's log trigger any assumptions?"</span> <span class="tag tag-pass">NEW</span></div>
+          <div class="rel-block"><span class="comment"># "Delay recorded → assumption trigger check"</span>
+<span class="node">(DailyLog)</span><span class="edge">-[:HAD_DELAY]-&gt;</span><span class="node">(DelayRecord)</span>
+<span class="node">(Project)</span><span class="edge">-[:HAS_ASSUMPTION]-&gt;</span><span class="node">(Assumption {variation_trigger: true, category: 'schedule'})</span>
+<span class="comment">// Agent compares delay duration against assumption relied_on_value</span></div>
         </div>
       </div>
 
@@ -3114,10 +3458,19 @@
                 <tr><td>Daily Logs</td><td>600</td></tr>
                 <tr><td>Locations</td><td>50</td></tr>
                 <tr><td>PurchaseOrders</td><td>100</td></tr>
+                <tr style="background: var(--pass-bg);"><td>WorkItems</td><td>500 (avg 25 per project &times; 20 projects)</td></tr>
+                <tr style="background: var(--pass-bg);"><td>Labour (per WorkItem)</td><td>1,000 (avg 2 per WorkItem)</td></tr>
+                <tr style="background: var(--pass-bg);"><td>Items (per WorkItem)</td><td>2,000 (avg 4 per WorkItem)</td></tr>
+                <tr style="background: var(--pass-bg);"><td>WorkPackages</td><td>100 (avg 5 per project)</td></tr>
+                <tr style="background: var(--pass-bg);"><td>WorkCategories</td><td>30</td></tr>
+                <tr style="background: var(--pass-bg);"><td>Assumptions</td><td>200 (avg 5 per quote + 20 templates)</td></tr>
+                <tr style="background: var(--pass-bg);"><td>Exclusions</td><td>250 (avg 8 per quote + 30 templates)</td></tr>
+                <tr style="background: var(--pass-bg);"><td>ResourceRates</td><td>50</td></tr>
+                <tr style="background: var(--pass-bg);"><td>ProductivityRates</td><td>40</td></tr>
               </tbody>
               <tfoot>
                 <tr style="background:var(--concrete-50); font-weight:600;">
-                  <td>Subtotal per company</td><td>~1,800 nodes, ~8,000 edges</td>
+                  <td>Subtotal per company</td><td>~6,490 nodes, ~24,000 edges</td>
                 </tr>
               </tfoot>
             </table>
@@ -3167,7 +3520,7 @@
     </div><!-- /content-area -->
 
     <div class="page-footer">
-      Kerf Construction Ontology v2.3 &bull; This ontology is a living document. As new domains are implemented, their definitions move from schema to active.
+      Kerf Construction Ontology v2.4 &bull; This ontology is a living document. As new domains are implemented, their definitions move from schema to active.
     </div>
   </div><!-- /main-content -->
 </div><!-- /page-wrapper -->

@@ -1,0 +1,47 @@
+code: IA
+name: Iowa
+regulatory_body: Iowa Occupational Safety and Health Administration (Iowa OSHA)
+state_plan: true
+primary_legislation: Iowa Code Chapter 88 (Occupational Safety and Health)
+construction_regulation: Iowa Administrative Code 875, Chapter 26
+
+requirements:
+  - id: IA-001
+    state: IA
+    requirement_name: Iowa OSHA Compliance
+    description: All employers in Iowa must comply with Iowa OSHA standards, which adopt federal OSHA standards and cover both private and public sector workplaces.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "Iowa Code 88.4"
+    additional_details: Iowa operates a state plan approved by federal OSHA. Iowa OSHA has jurisdiction over private employers and state and local government employers.
+    applies_to: all
+    severity: mandatory
+
+  - id: IA-002
+    state: IA
+    requirement_name: Workers' Compensation Insurance
+    description: Iowa employers must provide workers' compensation insurance for all employees. There is no minimum employee threshold for coverage requirements.
+    federal_equivalent: null
+    state_standard: "Iowa Code Chapter 85"
+    additional_details: Coverage can be obtained through private carriers, the assigned risk pool, or self-insurance approved by the Iowa Insurance Division.
+    applies_to: all
+    severity: mandatory
+
+  - id: IA-003
+    state: IA
+    requirement_name: Asbestos Removal and Notification
+    description: Employers performing asbestos removal must notify Iowa OSHA at least ten days before starting abatement work and comply with state licensing requirements.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "IAC 875-155"
+    additional_details: Iowa requires separate state licensing for asbestos abatement contractors and workers. Annual medical surveillance and fit testing are required.
+    applies_to: construction
+    severity: mandatory
+
+  - id: IA-004
+    state: IA
+    requirement_name: Public Sector Workplace Coverage
+    description: State and local government employers must comply with the same occupational safety and health standards as private sector employers.
+    federal_equivalent: null
+    state_standard: "Iowa Code 88.2"
+    additional_details: Iowa OSHA conducts inspections of public sector workplaces and can issue citations. This includes schools, municipalities, and state agencies.
+    applies_to: all
+    severity: mandatory

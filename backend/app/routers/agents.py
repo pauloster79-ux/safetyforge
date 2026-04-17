@@ -6,12 +6,15 @@ and monitoring AI agents within a company.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from neo4j import Driver
 
 from app.dependencies import (
     get_agent_identity_service,
+    get_agent_orchestrator,
     get_company_service,
     get_current_user,
+    get_neo4j_driver,
 )
 from app.exceptions import AgentNotFoundError, CompanyNotFoundError
 from app.models.agent_identity import (
@@ -21,6 +24,7 @@ from app.models.agent_identity import (
     AgentSpendReport,
 )
 from app.services.agent_identity_service import AgentIdentityService
+from app.services.agent_orchestrator import AgentOrchestrator
 from app.services.company_service import CompanyService
 
 router = APIRouter(tags=["agents"])
@@ -183,3 +187,114 @@ async def reset_daily_spend(
     company_id = _resolve_company_id(user, company_service)
     count = agent_service.reset_daily_spend(company_id)
     return {"reset_count": count, "company_id": company_id}
+
+
+# ---------------------------------------------------------------------------
+# Agent on-demand endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/me/agents/compliance/check")
+async def run_compliance_check(
+    project_id: str = Query(..., description="Project to check"),
+    user: Annotated[dict, Depends(get_current_user)] = None,
+    company_service: Annotated[CompanyService, Depends(get_company_service)] = None,
+    orchestrator: Annotated[AgentOrchestrator, Depends(get_agent_orchestrator)] = None,
+) -> dict:
+    """Run an on-demand compliance check for a project.
+
+    Args:
+        project_id: The project ID to check compliance for.
+        user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        orchestrator: AgentOrchestrator dependency.
+
+    Returns:
+        A dict with alerts list and count.
+    """
+    company_id = _resolve_company_id(user, company_service)
+    alerts = orchestrator.run_compliance_check(company_id, project_id)
+    return {"alerts": alerts, "count": len(alerts)}
+
+
+@router.get("/me/agents/compliance/alerts")
+async def list_compliance_alerts(
+    user: Annotated[dict, Depends(get_current_user)] = None,
+    company_service: Annotated[CompanyService, Depends(get_company_service)] = None,
+    driver: Annotated[Driver, Depends(get_neo4j_driver)] = None,
+) -> dict:
+    """List compliance alerts for the current user's company.
+
+    Args:
+        user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        driver: Neo4j driver dependency.
+
+    Returns:
+        A dict with alerts list and count.
+    """
+    company_id = _resolve_company_id(user, company_service)
+    with driver.session() as session:
+        result = session.run(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_COMPLIANCE_ALERT]->(a:ComplianceAlert)
+            RETURN a ORDER BY a.created_at DESC LIMIT 50
+            """,
+            company_id=company_id,
+        )
+        alerts = [dict(record["a"]) for record in result]
+    return {"alerts": alerts, "count": len(alerts)}
+
+
+@router.post("/me/agents/briefing/generate")
+async def generate_briefing(
+    project_id: str = Query(..., description="Project to brief"),
+    user: Annotated[dict, Depends(get_current_user)] = None,
+    company_service: Annotated[CompanyService, Depends(get_company_service)] = None,
+    orchestrator: Annotated[AgentOrchestrator, Depends(get_agent_orchestrator)] = None,
+) -> dict:
+    """Generate an on-demand morning briefing for a project.
+
+    Args:
+        project_id: The project ID to generate a briefing for.
+        user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        orchestrator: AgentOrchestrator dependency.
+
+    Returns:
+        A dict with the briefing data or a message if unavailable.
+    """
+    company_id = _resolve_company_id(user, company_service)
+    briefing = orchestrator.run_briefing(company_id, project_id)
+    if briefing is None:
+        return {"briefing": None, "message": "No briefing agent registered or error occurred"}
+    return {"briefing": briefing}
+
+
+@router.get("/me/agents/briefings")
+async def list_briefings(
+    user: Annotated[dict, Depends(get_current_user)] = None,
+    company_service: Annotated[CompanyService, Depends(get_company_service)] = None,
+    driver: Annotated[Driver, Depends(get_neo4j_driver)] = None,
+) -> dict:
+    """List briefing summaries for the current user's company.
+
+    Args:
+        user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        driver: Neo4j driver dependency.
+
+    Returns:
+        A dict with briefings list and count.
+    """
+    company_id = _resolve_company_id(user, company_service)
+    with driver.session() as session:
+        result = session.run(
+            """
+            MATCH (c:Company {id: $company_id})-[:HAS_BRIEFING]->(b:BriefingSummary)
+            RETURN b ORDER BY b.created_at DESC LIMIT 20
+            """,
+            company_id=company_id,
+        )
+        briefings = [dict(record["b"]) for record in result]
+    return {"briefings": briefings, "count": len(briefings)}

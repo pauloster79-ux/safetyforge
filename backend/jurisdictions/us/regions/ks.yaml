@@ -1,0 +1,47 @@
+code: KS
+name: Kansas
+regulatory_body: Federal OSHA (Region VII)
+state_plan: false
+primary_legislation: Kansas Workers' Compensation Act (K.S.A. 44-501 et seq.)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: KS-001
+    state: KS
+    requirement_name: Workers' Compensation Insurance
+    description: Kansas employers must provide workers' compensation insurance for employees. Nearly all employers are covered, with limited agricultural and certain domestic service exemptions.
+    federal_equivalent: null
+    state_standard: "K.S.A. 44-505"
+    additional_details: Coverage can be obtained through private carriers, the Kansas Workers' Compensation Fund, or approved self-insurance. The Kansas Division of Workers' Compensation oversees compliance.
+    applies_to: all
+    severity: mandatory
+
+  - id: KS-002
+    state: KS
+    requirement_name: Roofing Contractor Registration
+    description: Roofing contractors in Kansas must register with the Kansas Attorney General's office before performing roofing work.
+    federal_equivalent: null
+    state_standard: "K.S.A. 50-6,121 through 50-6,128"
+    additional_details: Registration requires disclosure of business information, proof of liability insurance, and workers' compensation coverage. Violation is a deceptive trade practice.
+    applies_to: construction
+    severity: mandatory
+
+  - id: KS-003
+    state: KS
+    requirement_name: Underground Utility Damage Prevention
+    description: Excavators must notify Kansas 811 at least two working days before digging to have underground utilities located and marked.
+    federal_equivalent: null
+    state_standard: "K.S.A. 66-1802 through 66-1811"
+    additional_details: Failure to notify or damaging unmarked utilities creates liability. Applies to all excavation including construction, trenching, and grading.
+    applies_to: construction
+    severity: mandatory
+
+  - id: KS-004
+    state: KS
+    requirement_name: Electrical Contractor Licensing
+    description: Electrical contractors performing work in Kansas municipalities that require licensing must hold appropriate local or state electrical licenses.
+    federal_equivalent: null
+    state_standard: "K.S.A. 12-1526 through 12-1527"
+    additional_details: Kansas does not have statewide electrical licensing, but municipalities may require it. Contractors must comply with the applicable local jurisdiction requirements.
+    applies_to: construction
+    severity: mandatory

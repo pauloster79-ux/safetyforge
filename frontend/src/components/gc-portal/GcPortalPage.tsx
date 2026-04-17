@@ -31,7 +31,7 @@ function OverallStatusBadge({ status }: { status: SubComplianceSummary['overall_
     at_risk: { label: 'At Risk', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
     non_compliant: { label: 'Non-Compliant', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -202,7 +202,7 @@ function AsGcView() {
     );
   }
 
-  const { relationships, compliance } = dashboard;
+  const { relationships = [], compliance = [] } = dashboard;
 
   return (
     <div className="space-y-4">

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf Product Vision</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --accent: #e67e22; --accent-light: #fdf2e9;
+    --border: #e5e7eb; --code-bg: #f8f9fa; --section-bg: #f9fafb;
+    --table-header: #1a1a2e; --table-header-fg: #ffffff;
+    --blue: #3498db; --green: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--fg); background: var(--bg); line-height: 1.7; max-width: 860px; margin: 0 auto; padding: 48px 24px 100px; }
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 4px; }
+  .tagline { font-size: 1.1rem; color: var(--accent); font-style: italic; margin-bottom: 4px; }
+  .date { color: #9ca3af; font-size: 0.9rem; margin-bottom: 40px; }
+  h2 { font-size: 1.35rem; font-weight: 700; margin-top: 56px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 3px solid var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin-top: 32px; margin-bottom: 12px; color: var(--accent); }
+  p { margin-bottom: 14px; }
+  ul, ol { margin-bottom: 14px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  strong { font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--code-bg); padding: 2px 6px; border-radius: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 0.9rem; }
+  thead th { background: var(--table-header); color: var(--table-header-fg); font-weight: 600; text-align: left; padding: 10px 12px; }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: var(--accent-light); }
+  .belief { margin-bottom: 20px; padding-left: 16px; border-left: 3px solid var(--border); }
+  .belief.new { border-left-color: var(--accent); }
+  .belief strong { display: block; margin-bottom: 4px; }
+  .principle { background: var(--section-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .principle strong { color: var(--accent); }
+  .callout { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 16px 20px; margin: 24px 0; border-radius: 0 6px 6px 0; }
+  .persona { background: var(--section-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .persona h3 { margin-top: 0; }
+  .persona .meta { color: #6b7280; font-size: 0.9rem; margin-bottom: 12px; }
+  .scenario { background: #f0f4f8; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .scenario .time { font-weight: 700; color: var(--fg); margin-top: 16px; margin-bottom: 8px; }
+  .scenario .chat { margin: 12px 0; padding: 12px 16px; border-radius: 8px; }
+  .scenario .chat.user { background: var(--accent-light); border-left: 3px solid var(--accent); }
+  .scenario .chat.kerf { background: white; border-left: 3px solid var(--blue); }
+  .scenario .chat .speaker { font-weight: 600; font-size: 0.85rem; color: #6b7280; margin-bottom: 4px; }
+  .metric { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .metric .target { font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .layer { background: var(--section-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 16px 0; }
+  .layer h3 { margin-top: 0; }
+  .layer .label { font-weight: 700; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+  .new-tag { display: inline-block; background: var(--accent); color: white; padding: 1px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  .toc { background: var(--section-bg); border-radius: 10px; padding: 20px 24px; margin: 24px 0; }
+  .toc h3 { margin-top: 0; color: var(--fg); }
+  .toc ol { padding-left: 20px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .process-card { background: var(--section-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .process-card h3 { margin-top: 0; font-size: 1.15rem; }
+  .process-card .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .process-card .action-col { padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; }
+  .process-card .contractor-does { background: var(--accent-light); border-left: 3px solid var(--accent); }
+  .process-card .agent-does { background: #eef6ff; border-left: 3px solid var(--blue); }
+  .process-card .action-col .col-label { font-weight: 600; font-size: 0.8rem; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cross-cutting { background: var(--fg); color: white; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .cross-cutting h3 { color: var(--accent); margin-top: 0; }
+  .moat-layer { background: var(--section-bg); border-left: 4px solid var(--accent); padding: 12px 18px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+  @media (max-width: 700px) { body { padding: 24px 16px; } h1 { font-size: 1.6rem; } .process-card .actions { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>Kerf Product Vision</h1>
+<div class="tagline">Precision for Your Jobsite</div>
+<div class="date">Last updated: 2026-04-11</div>
+
+<div class="toc">
+<h3>Contents</h3>
+<ol>
+<li><a href="#world">The World We're Building Toward</a></li>
+<li><a href="#beliefs">Our Beliefs</a></li>
+<li><a href="#whatkerfdoes">What Kerf Does</a></li>
+<li><a href="#architecture">The Intelligence Architecture</a></li>
+<li><a href="#personas">User Personas</a></li>
+<li><a href="#principles">Product Principles</a></li>
+<li><a href="#experience">The Experience Vision</a></li>
+<li><a href="#metrics">The Metrics That Matter</a></li>
+<li><a href="#wontbuild">What We Won't Build</a></li>
+<li><a href="#moat">The Competitive Moat Over Time</a></li>
+<li><a href="#global">Global Market Opportunity</a></li>
+<li><a href="#endgame">The Endgame</a></li>
+</ol>
+</div>
+
+<hr>
+
+<h2 id="world">1. The World We're Building Toward</h2>
+
+<p>It is 2029. The construction industry has changed &mdash; not in the way the trade magazines predicted, with drones and robots and 3D-printed houses, but in the way that actually matters: the contractor who used to juggle six apps, three binders, and a filing cabinet now runs everything through one tool. Safety, daily logs, time tracking, quality inspections, estimating, job costing, sub compliance, scheduling &mdash; all of it, through a single conversational interface that speaks the language of the jobsite.</p>
+
+<p>The change came from a platform that started with safety compliance and expanded outward, using a knowledge graph that connects every worker, every certification, every project, every regulation, every cost line, and every daily log entry into one intelligent system. The contractor talks to Kerf &mdash; by chat or by voice &mdash; and Kerf understands, acts, and remembers.</p>
+
+<p><strong>Marco Gutierrez</strong> runs a concrete crew of 22 in Phoenix. Today, Marco opens Kerf at 5:30 AM. The morning brief is waiting. He walks the site with his phone recording. One site walk, three reports, no forms. His EMR is 0.78. He captured $34,000 in variations last year that he would have previously eaten.</p>
+
+<p><strong>Sarah Chen</strong> owns a 45-person electrical firm in Atlanta. She estimates a job by walking the site and talking to Kerf &mdash; 20 minutes during the walkthrough. Job costing happens automatically. Variations are flagged before she knows about them.</p>
+
+<p><strong>Jake Torres</strong>, a solo electrician, talks to Kerf while standing in the client's kitchen &mdash; "200-amp panel upgrade, 12 new circuits, 6 receptacles in the island" &mdash; and has a structured estimate in 30 seconds. After 20 jobs, Kerf knows what his panel upgrades actually cost.</p>
+
+<div class="callout">
+<strong>This is the world Kerf exists to build.</strong> Not a world where construction paperwork is easier to fill out, but a world where documentation is a natural byproduct of doing the work.
+</div>
+
+<p>Eleven hundred people died on construction sites in the United States last year. Most worked for companies with fewer than 50 employees. We are building the thing that changes that.</p>
+
+<hr>
+
+<h2 id="beliefs">2. Our Beliefs</h2>
+
+<div class="belief"><strong>We believe safety is the foundation, not a silo.</strong> Safety touches everything &mdash; scheduling, workforce, equipment, quality, compliance, costs. A platform that starts with safety and expands outward has a natural architecture.</div>
+
+<div class="belief"><strong>We believe documentation should be a byproduct of doing the work, not a separate activity.</strong> If a contractor has to stop building to start documenting, we have failed.</div>
+
+<div class="belief"><strong>We believe every worker deserves information in their language, regardless of their employer's budget or their country.</strong> Multilingual support is not a premium feature &mdash; it is a fundamental obligation that scales with every market we enter.</div>
+
+<div class="belief"><strong>We believe the person running the work is the most important user in construction technology, and the most ignored.</strong> Whether a solo electrician or a 100-person superintendent &mdash; we build for them first.</div>
+
+<div class="belief"><strong>We believe small contractors are not less safe because they care less &mdash; they are less safe because they have less help.</strong></div>
+
+<div class="belief"><strong>We believe AI in construction must be auditable, cited, and humble.</strong> Every recommendation traces back to a specific standard or data point.</div>
+
+<div class="belief"><strong>We believe compliance should be a competitive advantage, not just a cost of doing business.</strong></div>
+
+<div class="belief"><strong>We believe the phone in the contractor's pocket is the most powerful tool on the jobsite.</strong></div>
+
+<div class="belief"><strong>We believe one tool is better than six.</strong> Consolidation is not a feature &mdash; it is the product.</div>
+
+<div class="belief new"><strong>We believe the estimate, the task list, and the cost report are the same data.</strong> One data structure flows through its lifecycle: estimated, then scheduled, then tracked, then analysed. No re-entry. No reconciliation.</div>
+
+<div class="belief new"><strong>We believe financial intelligence should be derived, not entered.</strong> Kerf derives financial insight from data the contractor already captures in daily operations.</div>
+
+<div class="belief new"><strong>We believe the knowledge graph is the moat, not the AI.</strong> Without the graph, AI is guessing. With it, AI is traversing. That structural difference is the defensible advantage.</div>
+
+<div class="belief new"><strong>We believe every conversation is data.</strong> Every interaction is recorded, linked to the entities it touches, and available for the agent to draw on. The contractor's knowledge stops walking out the door.</div>
+
+<div class="belief new"><strong>We believe every document the contractor uploads makes the system smarter.</strong> Documents are not attachments &mdash; they are intelligence.</div>
+
+<hr>
+
+<h2 id="whatkerfdoes">3. What Kerf Does</h2>
+
+<p>Kerf supports every process a contractor runs, from finding work through getting paid. The data structures are scale-invariant &mdash; a solo electrician and a 100-person sub run the same processes; only the complexity and concurrency scale up. Every process is accessed conversationally (chat or voice), every interaction is recorded in the knowledge graph, and the agent acts within boundaries the contractor controls.</p>
+
+<!-- 3.1 -->
+<div class="process-card">
+<h3>3.1 Find and Qualify Work</h3>
+<p>A lead arrives. The contractor tells Kerf about it. The system creates a Project in "lead" status, linked to the client Contact and any documents received. The agent assesses: is this the right kind of work? Do we have the right certifications? What is our capacity? How has this GC paid us before?</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>"Peterson GC wants us to bid the electrical on a medical office on 4th Street."</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Creates the project. Links the GC contact. Checks crew availability. Surfaces past job history. Flags certification gaps for the work type.</div>
+</div>
+</div>
+
+<!-- 3.2 -->
+<div class="process-card">
+<h3>3.2 Estimate and Price</h3>
+<p>The contractor walks the site or reviews plans and talks through what they see. The agent captures <strong>WorkItems</strong> &mdash; discrete pieces of deliverable work, each with labour and material requirements. WorkItems can be grouped into <strong>WorkPackages</strong> for larger projects, or listed flat for simple jobs.</p>
+<p>Each WorkItem carries its own cost estimate: labour hours &times; rate, materials &times; unit cost, plus equipment. Costs are bottom-up &mdash; the project total is the sum of its work items plus margin.</p>
+<p>When the contractor uploads plans, specs, or other project documents, the system reads them &mdash; extracting fixture counts, dimensions, material requirements, and specification clauses. The agent cross-references plan quantities against the estimate and flags requirements not yet covered.</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>Walks the site, talks through what they see. Uploads the plans. Reviews and adjusts.</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Captures structured WorkItems from conversation. Extracts quantities from uploaded plans. Applies historical labour rates and current supplier pricing. Flags regulatory requirements. Calculates margin and total.</div>
+</div>
+</div>
+
+<!-- 3.3 -->
+<div class="process-card">
+<h3>3.3 Propose and Win</h3>
+<p>The contractor sends a proposal referencing a versioned <strong>Estimate</strong> &mdash; a snapshot of WorkItems at agreed prices. When accepted, it becomes the basis for a <strong>Contract</strong>.</p>
+<p>The project status moves from "lead" through "estimating" to "proposed" to "awarded." A lead IS a Project &mdash; no separate entity, no data re-entry. The estimate IS the scope.</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>"Send the proposal to Peterson GC." Reviews contract terms.</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Generates the proposal document. Tracks status. Parses the signed contract for key terms (retention, payment schedule, milestones). Links everything to the project graph.</div>
+</div>
+</div>
+
+<!-- 3.4 -->
+<div class="process-card">
+<h3>3.4 Plan and Mobilise</h3>
+<p>WorkItems from the estimate become the schedule &mdash; they already have labour, materials, and assignments. The contractor adds dates, assigns workers or crews, and sets dependencies.</p>
+<p>Scheduling is a <strong>weekly lookahead</strong> &mdash; a rolling 2-4 week view. Connected to: worker certifications, equipment availability, weather, trade sequencing, and cost impact.</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>Assigns crews and dates. Adjusts the lookahead as conditions change.</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Generates the initial schedule from WorkItems. Detects conflicts with certifications, equipment, weather, and dependencies. Orders materials. Sends notifications.</div>
+</div>
+</div>
+
+<!-- 3.5 -->
+<div class="process-card">
+<h3>3.5 Execute and Document</h3>
+<p>This is where the contractor spends 90% of their time. Every day on every active project:</p>
+<p><strong>Daily operations.</strong> Workers clock in (one tap, GPS-verified). Toolbox talk in the workforce's languages. Site walk &mdash; narrating and photographing. Daily log 80% pre-filled. One site walk, three reports, no forms.</p>
+<p><strong>Safety.</strong> Inspections, hazard observations, incident reporting &mdash; all voice-first. The agent classifies hazards, generates reports, assigns corrective actions, tracks to closure.</p>
+<p><strong>Quality.</strong> Same inspection engine, different templates. Deficiency items tracked through identification, assignment, correction, and verification.</p>
+<p><strong>Time tracking.</strong> GPS-verified, linked to the specific WorkItem being performed. Time entries automatically become cost data.</p>
+<p><strong>Progress tracking.</strong> As WorkItems are completed, the project's progress updates automatically. What work remains? What percentage is complete? On track against the estimate?</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>The work. Talks to Kerf during their normal routine.</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Captures structured data from every conversation, photo, and time entry. Auto-populates the daily log. Runs safety checks. Tracks quality deficiencies. Monitors progress against estimate and schedule. Flags issues proactively.</div>
+</div>
+</div>
+
+<!-- 3.6 -->
+<div class="process-card">
+<h3>3.6 Manage Money</h3>
+<p>Job costing is auto-derived &mdash; never entered manually. Time entries flow to labour cost. Material deliveries flow to material cost.</p>
+<p><strong>Variations</strong> (scope changes &mdash; known as change orders in the US) are detected automatically. When the daily log mentions work outside the original scope, the agent assembles the evidence chain and drafts a variation. Contractors capture revenue they currently miss.</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>Asks "how are we doing on this job?"</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Traverses the graph: time entries vs estimated hours, material deliveries vs estimated materials, approved variations, delays documented in daily logs. Returns a narrative answer with reasoning. Proactively flags cost overruns and recommends actions.</div>
+</div>
+</div>
+
+<!-- 3.7 -->
+<div class="process-card">
+<h3>3.7 Close Out</h3>
+<p>Deficiency list generated from quality inspections. Each item tracked to verified closure. As-built documentation assembled from daily logs, photos, and inspection records. Warranty obligations recorded.</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>Final walkthrough. Reviews deficiency list. Confirms completion.</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Generates deficiency list. Tracks each item. Assembles closeout documentation. Records warranty terms.</div>
+</div>
+</div>
+
+<!-- 3.8 -->
+<div class="process-card">
+<h3>3.8 Get Paid</h3>
+<p>Invoice lines reference specific WorkItems and their completion percentage. Approved variations included. Kerf never replaces the accounting system &mdash; QuickBooks (or Xero, or Sage) handles general ledger, tax, and payroll. Kerf handles the intelligence.</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>"Bill Peterson GC for this month's progress."</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Calculates percent complete from WorkItem progress. Includes approved variations not yet billed. Generates the invoice. Syncs to accounting system. Monitors payment. Alerts if late.</div>
+</div>
+</div>
+
+<!-- 3.9 -->
+<div class="process-card">
+<h3>3.9 Learn</h3>
+<p>Did we make money, and why? The agent traverses the full graph &mdash; estimated vs actual by WorkItem, crew productivity, delays, variations captured vs missed, material waste, schedule adherence &mdash; and produces a narrative post-mortem.</p>
+<p>This intelligence feeds forward. The next estimate draws on real historical data from the contractor's own completed projects.</p>
+<p>Every question is a graph traversal, not a pre-built report. "Which jobs made the most money this year, and why?" "Should I bid this hospital job?" "What is my risk exposure this week?"</p>
+<div class="actions">
+<div class="action-col contractor-does"><div class="col-label">Contractor does</div>Asks questions.</div>
+<div class="action-col agent-does"><div class="col-label">Agent does</div>Traverses the connected graph across every dimension. Answers in plain language with reasoning. Carries the learning forward into future estimates and decisions.</div>
+</div>
+</div>
+
+<!-- Cross-cutting -->
+<div class="cross-cutting">
+<h3>3.10 Cross-Cutting: Safety and Compliance</h3>
+<p>Safety runs through every stage. The knowledge graph encodes regulatory requirements as traversable structure. The agent checks compliance continuously &mdash; not as a separate audit, but as a natural consequence of everything being connected.</p>
+<p>Safety data enriches everything else. Time tracking connects to fatigue analysis. Daily logs surface incident patterns. Quality deficiencies correlate with schedule pressure. The morning brief assembles risk scores, weather hazards, expiring certifications, and schedule conflicts automatically.</p>
+</div>
+
+<div class="cross-cutting">
+<h3>3.11 Cross-Cutting: Subcontractor Management</h3>
+<p>When working as a sub: compliance documentation, insurance certificates, prequalification submissions. When managing subs as a GC: real-time visibility into compliance, training currency, insurance validity, and performance metrics.</p>
+<p>Insurance certificates AI-parsed. Renewal reminders automatic. Performance scoring from safety data, inspection results, and corrective action closure times.</p>
+</div>
+
+<div class="cross-cutting">
+<h3>3.12 Cross-Cutting: The Agent</h3>
+<p>The agent acts within boundaries the contractor controls:</p>
+<ul>
+<li><strong>Autonomous:</strong> Send cert reminders, check sub insurance, generate reports, flag compliance issues, prepare morning briefs, detect potential variations, monitor payments, track weather against schedule</li>
+<li><strong>Propose and confirm:</strong> Draft variations with evidence, suggest estimate adjustments, recommend schedule changes, identify cost overruns, generate invoices</li>
+<li><strong>Contractor approves:</strong> Place material orders, submit proposals, send invoices, accept contract terms, modify schedules affecting other parties</li>
+</ul>
+<p>The agent's memory accumulates. After a year, it knows the contractor's labour rates, crew productivity, GC relationships, supplier preferences, and decision-making patterns. The system that has seen 50 of your jobs knows your business better than any spreadsheet ever could.</p>
+</div>
+
+<hr>
+
+<h2 id="architecture">4. The Intelligence Architecture</h2>
+
+<div class="layer">
+<div class="label">Layer 1 &mdash; System of Truth</div>
+<h3>The Knowledge Graph (Neo4j)</h3>
+<p>All structured entities and their relationships. Decisions and insights from conversations. Regulatory rules as traversable structure. Requirements from uploaded documents. Cypher traversal. Deterministic, auditable, citable.</p>
+</div>
+
+<div class="layer">
+<div class="label">Layer 2 &mdash; System of Context</div>
+<h3>The Semantic Layer (Vector Index within Neo4j)</h3>
+<p>Embeddings of everything unstructured &mdash; stored as native properties on graph nodes. Neo4j 5.11+ supports HNSW vector indexes. <strong>Not a separate database.</strong> Hybrid queries combine semantic similarity with graph traversal in a single Cypher query.</p>
+</div>
+
+<div class="layer">
+<div class="label">Layer 3 &mdash; System of Record</div>
+<h3>The Document Store (Object Storage)</h3>
+<p>Raw files at full fidelity &mdash; PDFs, photos, voice recordings, plan sheets, contracts. Original format, permanently retained.</p>
+</div>
+
+<h3>Conversation Memory</h3>
+<p>Every conversation produces a Conversation node linked to: projects discussed, entities referenced, decisions made (with reasoning), institutional knowledge expressed, and actions triggered. Full transcripts retained 90 days. Summaries, decisions, insights, and embeddings retained indefinitely.</p>
+
+<hr>
+
+<h2 id="personas">5. User Personas</h2>
+
+<div class="persona">
+<h3>Marco Gutierrez &mdash; The Crew Lead</h3>
+<div class="meta">Age 38 &bull; Concrete crew of 14-18 &bull; Phoenix, AZ &bull; Fully bilingual</div>
+<p><strong>Pain:</strong> 2-3 minutes of discretionary time per hour. Three apps and paper. "Document everything" with zero additional time.</p>
+<p><strong>Value:</strong> "I did one site walk and the safety report, daily log, and quality check all wrote themselves."</p>
+</div>
+
+<div class="persona">
+<h3>Sarah Chen &mdash; The Contractor Owner</h3>
+<div class="meta">Age 44 &bull; 45-person electrical firm &bull; Atlanta, GA &bull; Owner/estimator/PM/safety officer</div>
+<p><strong>Pain:</strong> EMR 1.12. Estimates 3-4 jobs/week at the kitchen table, 3-5 hours each. Wins 1 in 4. Doesn't know if jobs make money until they're over.</p>
+<p><strong>Value:</strong> "I bid the 4th Street job during the site walk and had the proposal to the GC by lunch." "The system caught $8,400 in variations my crew lead would have eaten."</p>
+</div>
+
+<div class="persona">
+<h3>Jake Torres &mdash; The Solo Contractor <span class="new-tag">NEW</span></h3>
+<div class="meta">Age 31 &bull; Solo electrician &bull; Revenue ~$180K/year &bull; 2 years on his own</div>
+<p><strong>Pain:</strong> Estimates in his head. Tracks hours on paper &mdash; sometimes. Never written a safety program. Lost a commercial job because the GC required one.</p>
+<p><strong>Value:</strong> "I used to guess on bids. Now I know what my last 10 panel upgrades actually cost me." "I caught every extra the homeowner asked for."</p>
+</div>
+
+<div class="persona">
+<h3>Dave Morrison &mdash; The Superintendent</h3>
+<div class="meta">Age 57 &bull; Mid-size mechanical contractor &bull; 3-4 projects &bull; Skeptical of technology</div>
+<p><strong>Value:</strong> "The GC stopped bugging me about documentation." "It caught a cert expiry that would have shut down the crane."</p>
+</div>
+
+<div class="persona">
+<h3>Ana Reeves &mdash; The GC Safety Director</h3>
+<div class="meta">Age 36 &bull; $120M GC &bull; 8-12 active projects &bull; 5-15 subs per project</div>
+<p><strong>Need:</strong> Real-time visibility into every sub's compliance. Automated alerts. Require Kerf as a condition of subcontract.</p>
+</div>
+
+<div class="persona">
+<h3>Carlos Mendoza &mdash; The Laborer</h3>
+<div class="meta">Age 27 &bull; From Honduras &bull; Limited English &bull; Smartphone primary device</div>
+<p><strong>Value:</strong> "I understood what the crew lead said about safety today." "I told them about the broken guardrail and they fixed it." "Nobody got hurt."</p>
+</div>
+
+<hr>
+
+<h2 id="principles">6. Product Principles</h2>
+
+<div class="principle"><strong>1. Three taps or less for any field task.</strong></div>
+<div class="principle"><strong>2. If a contractor cannot finish it in two minutes, it does not ship.</strong></div>
+<div class="principle"><strong>3. Every language is a first-class language.</strong> EN+ES (US), EN+PL+RO (UK), EN+FR (Canada), EN+ZH+VI (Australia).</div>
+<div class="principle"><strong>4. Every AI output must cite the specific standard.</strong></div>
+<div class="principle"><strong>5. We never require forms when conversation will do.</strong></div>
+<div class="principle"><strong>6. The system gets smarter every day, but the user never gets dumber.</strong></div>
+<div class="principle"><strong>7. No surveillance, ever.</strong></div>
+<div class="principle"><strong>8. Offline-first for every field function.</strong></div>
+<div class="principle"><strong>9. We show the ROI in dollars, not dashboards.</strong></div>
+<div class="principle"><strong>10. The best documentation is the documentation that writes itself.</strong></div>
+<div class="principle"><strong>11. One tool, not six.</strong></div>
+<div class="principle"><strong>12. The estimate is the task list is the cost report.</strong> <span class="new-tag">NEW</span></div>
+<div class="principle"><strong>13. Conversational first. Chat always. Voice everywhere.</strong> <span class="new-tag">NEW</span></div>
+<div class="principle"><strong>14. Every interaction makes the system smarter.</strong> <span class="new-tag">NEW</span></div>
+
+<hr>
+
+<h2 id="experience">7. The Experience Vision</h2>
+
+<h3>A Full Day with Kerf</h3>
+
+<div class="scenario">
+<div class="time">5:30 AM &mdash; Marco's Kitchen</div>
+<p>Morning Brief waiting. Risk score 8.4/10. Temperature will hit 109. Javier's cert expired. Toolbox talk ready in EN/ES. Four minutes, everything covered.</p>
+
+<div class="time">6:15 AM &mdash; The Morning Walk</div>
+<p>Eight minutes narrating. Safety inspection (14 items, 2 deficiencies), quality observations, daily log (80% pre-filled). Two taps to confirm. <strong>One site walk. Three reports. No forms.</strong></p>
+
+<div class="time">9:45 AM &mdash; Hazard Observation</div>
+<p>Carlos takes a photo, speaks in Spanish. Forty-five seconds. A worker who might never have said anything just prevented a fall.</p>
+
+<div class="time">6:30 PM &mdash; Sarah's Home Office</div>
+<p>Six projects visible. Safety plan drafted. Sub compliance monitored. EMR projected to drop to 0.89 &mdash; saving $44,000/year. Sunday: Sarah is at the park with her kids.</p>
+</div>
+
+<h3>A Bid with Kerf <span class="new-tag">NEW</span></h3>
+
+<div class="scenario">
+<div class="time">10:15 AM &mdash; Site Walk, 4th Street Medical Office</div>
+
+<div class="chat user"><div class="speaker">Sarah</div>"Starting estimate for 4th Street medical office, Peterson GC. Reception area &mdash; 6 standard receptacles, 2 dedicated, 1 floor box. 8 LED troffers. One switch, one dimmer."</div>
+
+<div class="chat user"><div class="speaker">Sarah</div>"Exam room 1 &mdash; typical, 10 of them. Each needs 4 receptacles, 1 GFI, 1 dedicated, 2 troffers, occupancy sensor."</div>
+
+<div class="chat kerf"><div class="speaker">Kerf</div>"10 identical exam rooms: 40 receptacles, 10 GFI, 10 dedicated, 20 troffers, 10 sensors. Fulton County &mdash; arc-fault breakers required per NEC 2023. Your last 3 medical office jobs averaged 12% over standard labour rates. Want me to factor that in?"</div>
+
+<div class="chat kerf"><div class="speaker">Kerf</div>"Total: $148,200. Margin: 14.2% based on your actual crew performance. Want me to generate the proposal?"</div>
+
+<p style="margin-top: 16px;"><strong>20 minutes during the site walk. Not an evening at the kitchen table.</strong> Every line item is already a task, ready to assign the moment she wins the bid.</p>
+</div>
+
+<h3>A Question to Kerf <span class="new-tag">NEW</span></h3>
+
+<div class="scenario">
+<div class="time">Thursday evening &mdash; Sarah's kitchen</div>
+
+<div class="chat user"><div class="speaker">Sarah</div>"How did we do on the Peachtree job?"</div>
+
+<div class="chat kerf"><div class="speaker">Kerf</div>"Bid $142,000. Final value $156,800 after 3 variations. Actual costs $131,400. Net margin: 16.2% &mdash; above your 12-month average of 13.8%. Labour overrun was conduit runs &mdash; consistent with what you told me about low-ceiling renovation work in October. You captured all 3 variations. On your last 8 jobs you've averaged 1.4. Want me to show which ones you missed?"</div>
+
+<div class="chat user"><div class="speaker">Sarah</div>"Yes. And flag every potential variation as soon as you see it in the daily log."</div>
+
+<div class="chat kerf"><div class="speaker">Kerf</div>"Done."</div>
+</div>
+
+<hr>
+
+<h2 id="metrics">8. The Metrics That Matter</h2>
+
+<div class="metric"><div><strong>1. Weekly Active Projects</strong></div><div class="target">8,000 by month 18</div></div>
+<div class="metric"><div><strong>2. Field Completion Rate</strong></div><div class="target">&gt;85%</div></div>
+<div class="metric"><div><strong>3. Customer EMR Delta</strong></div><div class="target">&ge;0.08 reduction</div></div>
+<div class="metric"><div><strong>4. Features Per Customer</strong></div><div class="target">4.5+ by month 24</div></div>
+<div class="metric"><div><strong>5. Time to First Value</strong></div><div class="target">&lt;15 minutes</div></div>
+<div class="metric"><div><strong>6. Hazard Reports per 100 Workers/Month</strong></div><div class="target">15+ in year 1</div></div>
+<div class="metric"><div><strong>7. App Consolidation Rate</strong></div><div class="target">3+ replaced</div></div>
+<div class="metric"><div><strong>8. Daily Log Auto-Population Rate</strong></div><div class="target">&gt;50%</div></div>
+<div class="metric"><div><strong>9. Variation Capture Rate</strong> <span class="new-tag">NEW</span></div><div class="target">80%+ flagged first</div></div>
+<div class="metric"><div><strong>10. Estimate Accuracy Improvement</strong> <span class="new-tag">NEW</span></div><div class="target">15%+ improvement</div></div>
+<div class="metric"><div><strong>11. Conversational Engagement</strong> <span class="new-tag">NEW</span></div><div class="target">60%+ conversational</div></div>
+
+<hr>
+
+<h2 id="wontbuild">9. What We Won't Build</h2>
+
+<p><strong>Template library.</strong> The AI IS the template.</p>
+<p><strong>General-purpose inspection platform.</strong> Construction only.</p>
+<p><strong>Safety training LMS.</strong> Micro-training, not courses.</p>
+<p><strong>Enterprise accounts.</strong> We serve the 750,000 who have nothing.</p>
+<p><strong>Worker performance tracking.</strong> Trust is non-negotiable.</p>
+<p><strong>Hardware or wearables.</strong> The phone is sufficient.</p>
+<p><strong>Full CPM scheduling.</strong> Weekly lookahead, not Primavera.</p>
+<p><strong>Trade-specific estimating databases.</strong> The contractor's own historical data is more accurate.</p>
+<p><strong>Replace the accounting system.</strong> Kerf handles intelligence. QuickBooks handles accounting.</p>
+
+<hr>
+
+<h2 id="moat">10. The Competitive Moat Over Time</h2>
+
+<div class="moat-layer"><strong>Year 1:</strong> First product combining AI safety, daily reporting, time tracking, quality, estimating, job costing, and sub compliance at $99-599/month. Defines a new category.</div>
+<div class="moat-layer"><strong>Year 1.5:</strong> Graph intelligence advantage. Competitors' AI reads tables. Kerf's AI traverses a connected graph including decisions, documents, and conversation context. After 50 jobs, the agent knows the business better than the contractor does.</div>
+<div class="moat-layer"><strong>Year 2:</strong> Cross-customer predictive models. Safety-time correlation. Estimate-accuracy correlation. Morning brief powered by millions of real data points.</div>
+<div class="moat-layer"><strong>Year 3:</strong> GC/sub network + insurance integrations create multi-sided switching costs.</div>
+<div class="moat-layer"><strong>Year 5:</strong> Global industry infrastructure. Knowledge graph encodes regulations across jurisdictions. Conversational interface in a dozen languages.</div>
+
+<hr>
+
+<h2 id="global">11. Global Market Opportunity</h2>
+
+<p>$10.6B market, growing to $17.7B by 2031. No competitor globally is building a knowledge-graph-based, agentic-first, conversational construction platform.</p>
+
+<table>
+<thead><tr><th>Market</th><th>Current State</th><th>Kerf Opportunity</th></tr></thead>
+<tbody>
+<tr><td><strong>UK</strong></td><td>Safety and ops completely separate. AI RAMS generators produce documents but no deterministic compliance.</td><td>CDM knowledge graph. First unified platform. EN+PL+RO.</td></tr>
+<tr><td><strong>Australia/NZ</strong></td><td>SafetyCulture (1.5M users) &mdash; checklist engine, no graph. HammerTech slow and expensive.</td><td>Multi-jurisdiction compliance. EN+ZH+VI.</td></tr>
+<tr><td><strong>Canada</strong></td><td>SALUS for provincial safety. No financial intelligence platform.</td><td>Provincial OHS knowledge graph. EN+FR.</td></tr>
+<tr><td><strong>Europe</strong></td><td>PlanRadar strong on docs, no financial tools, no safety depth.</td><td>Multi-country regulatory encoding. GDPR compliant.</td></tr>
+<tr><td><strong>Middle East</strong></td><td>Dominated by enterprise tools. 83% of projects over schedule.</td><td>No incumbent at small contractor level. EN+AR+HI.</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="endgame">12. The Endgame</h2>
+
+<p>The fatality rate for small contractors drops below the large-contractor rate for the first time. The paper timesheet is dead. The kitchen-table estimating session is dead. The contractor talks to Kerf, and Kerf handles the rest.</p>
+
+<p>The contractor who used to guess on bids now knows what their jobs actually cost. The variations that used to get eaten are captured automatically. The job that used to lose money without anyone noticing is flagged in week two.</p>
+
+<p>Construction workers around the world receive safety information in their language, every day. Thousands of workers who would have been injured go home safe.</p>
+
+<div class="callout" style="margin-top: 40px;">
+<strong>That is the endgame. Not a software company. A safer, better-run industry.</strong>
+</div>
+
+<hr>
+
+<p style="color: #6b7280; font-style: italic; text-align: center;">This document is the north star for Kerf. When we wonder whether the work matters, we remember: eleven hundred people a year, and we are building the thing that changes that.</p>
+
+</body>
+</html>

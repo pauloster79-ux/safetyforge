@@ -1,5 +1,7 @@
 """Voice input models for speech-to-structured-data processing."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -57,3 +59,30 @@ class ParseIncidentResponse(BaseModel):
     persons_involved: str = Field(default="", description="Persons involved")
     witnesses: str = Field(default="", description="Witnesses")
     immediate_actions_taken: str = Field(default="", description="Actions taken")
+
+
+class Conversation(BaseModel):
+    """A conversation session in the new ontology.
+
+    Replaces VoiceSession — absorbed into Conversation with a 'mode' field.
+    Use mode='voice' for voice sessions.
+    """
+
+    id: str
+    company_id: str
+    mode: str = Field(
+        default="voice",
+        description="Conversation mode: 'voice', 'text', or 'agent'",
+    )
+    transcript: str = Field(default="", description="Full conversation transcript")
+    structured_data: dict = Field(
+        default_factory=dict,
+        description="Structured data extracted from the conversation",
+    )
+    created_at: datetime
+    created_by: str
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
+
+
+# Backward-compat alias
+VoiceSession = Conversation

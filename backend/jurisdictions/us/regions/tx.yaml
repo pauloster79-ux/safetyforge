@@ -1,0 +1,57 @@
+code: TX
+name: Texas
+regulatory_body: Texas Department of Insurance - Division of Workers' Compensation (TDI-DWC)
+state_plan: false
+primary_legislation: Texas Health and Safety Code / Texas Labor Code
+construction_regulation: Federal OSHA 29 CFR 1926 (no state construction standards)
+
+requirements:
+  - id: TX-001
+    state: TX
+    requirement_name: Hazard Communication Act
+    description: Texas has its own Hazard Communication Act requiring employers to provide chemical hazard information to employees.
+    federal_equivalent: "29 CFR 1910.1200"
+    state_standard: "Texas Health and Safety Code Chapter 502"
+    additional_details: Employers must maintain Safety Data Sheets, label containers, and provide employee training on chemical hazards. Applies to all employers who use or store hazardous chemicals.
+    applies_to: all
+    severity: mandatory
+
+  - id: TX-002
+    state: TX
+    requirement_name: Workers Compensation Elective System
+    description: Texas is the only state where workers compensation insurance is voluntary for private employers. Non-subscribers lose certain legal protections.
+    federal_equivalent: null
+    state_standard: "Texas Labor Code Title 5 Subtitle A"
+    additional_details: Non-subscribing employers cannot use contributory negligence, assumed risk, or fellow-employee defenses. Must report non-subscriber status to TDI and notify employees.
+    applies_to: all
+    severity: mandatory
+
+  - id: TX-003
+    state: TX
+    requirement_name: Public Employer Workplace Chemical List
+    description: Public employers must compile and maintain a workplace chemical list and file it with the Texas Department of State Health Services.
+    federal_equivalent: null
+    state_standard: "Texas Health and Safety Code Chapter 506"
+    additional_details: Applies to state agencies, counties, and municipalities. Must be updated annually and made available to employees and emergency responders.
+    applies_to: all
+    severity: mandatory
+
+  - id: TX-004
+    state: TX
+    requirement_name: Right to Know Act
+    description: Employees have the right to information about hazardous chemicals in the workplace including access to Safety Data Sheets.
+    federal_equivalent: "29 CFR 1910.1200"
+    state_standard: "Texas Health and Safety Code Chapter 502.009"
+    additional_details: Employers may not discharge or discriminate against employees who exercise their right to request chemical information.
+    applies_to: all
+    severity: mandatory
+
+  - id: TX-005
+    state: TX
+    requirement_name: Construction Crane Licensing
+    description: Crane operators in Texas must hold valid certification from an accredited certifying entity.
+    federal_equivalent: "29 CFR 1926.1427"
+    state_standard: "Texas Government Code Chapter 2052"
+    additional_details: Applies to cranes with a rated capacity exceeding one ton used in construction. Operators must be certified by an entity accredited by a nationally recognized accrediting agency.
+    applies_to: construction
+    severity: mandatory

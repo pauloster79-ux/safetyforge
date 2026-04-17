@@ -1,0 +1,37 @@
+code: MS
+name: Mississippi
+regulatory_body: Federal OSHA (no state plan)
+state_plan: false
+primary_legislation: Mississippi Workers' Compensation Law (Miss. Code Ann. 71-3)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: MS-001
+    state: MS
+    requirement_name: Workers' Compensation Coverage
+    description: Employers with five or more employees must carry workers' compensation insurance or qualify as self-insured.
+    federal_equivalent: null
+    state_standard: "Miss. Code Ann. 71-3-5"
+    additional_details: Administered by the Mississippi Workers' Compensation Commission. Agricultural and domestic workers may be exempt.
+    applies_to: all
+    severity: mandatory
+
+  - id: MS-002
+    state: MS
+    requirement_name: Employment Protection for Safety Complaints
+    description: Mississippi law prohibits retaliation against employees who file safety complaints or workers' compensation claims.
+    federal_equivalent: "29 CFR 1977 (Section 11(c) of OSH Act)"
+    state_standard: "Miss. Code Ann. 71-3-85"
+    additional_details: Employees may bring civil action if discharged or discriminated against for exercising workers' compensation rights.
+    applies_to: all
+    severity: mandatory
+
+  - id: MS-003
+    state: MS
+    requirement_name: Construction Contractor Licensing
+    description: General contractors and subcontractors performing work over $50,000 must hold a valid license from the Mississippi State Board of Contractors.
+    federal_equivalent: null
+    state_standard: "Miss. Code Ann. 31-3-1 et seq."
+    additional_details: Licensing includes demonstration of financial responsibility and compliance with state construction standards. Residential builders have separate licensing requirements.
+    applies_to: construction
+    severity: mandatory

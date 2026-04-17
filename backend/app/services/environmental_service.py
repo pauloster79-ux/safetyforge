@@ -1,4 +1,10 @@
-"""Environmental compliance service against Neo4j."""
+"""Environmental compliance service against Neo4j.
+
+EnvironmentalProgram entities are now stored as Document nodes with
+type: "environmental_compliance" per the new ontology. The relationship
+from Company changes from HAS_ENV_PROGRAM to HAS_DOCUMENT, but the
+HAS_ENV_PROGRAM alias is preserved via MERGE on type for backward reads.
+"""
 
 import json
 from datetime import date, datetime, timezone
@@ -46,14 +52,21 @@ OSHA_EXPOSURE_LIMITS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Canonical document type used in the new ontology
+_ENV_DOCUMENT_TYPE = "environmental_compliance"
+
 
 class EnvironmentalService(BaseService):
     """Manages environmental compliance programs, exposure records, and SWPPP inspections.
 
-    Graph model:
-        (Company)-[:HAS_ENV_PROGRAM]->(EnvironmentalProgram)
+    Graph model (new ontology):
+        (Company)-[:HAS_DOCUMENT]->(Document {type: "environmental_compliance"})
         (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_EXPOSURE_RECORD]->(ExposureRecord)
         (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_SWPPP_INSPECTION]->(SwpppInspection)
+
+    Environmental programs were previously EnvironmentalProgram nodes
+    connected via HAS_ENV_PROGRAM. They are now Document nodes with
+    type="environmental_compliance" connected via HAS_DOCUMENT.
     """
 
     def _verify_company_exists(self, company_id: str) -> None:
@@ -93,11 +106,11 @@ class EnvironmentalService(BaseService):
         if result is None:
             raise ProjectNotFoundError(project_id)
 
-    # -- Environmental Programs --------------------------------------------------------
+    # -- Environmental Programs (stored as Document nodes) ----------------------------
 
     @staticmethod
     def _program_to_model(record: dict[str, Any]) -> EnvironmentalProgram:
-        """Convert a Neo4j record to an EnvironmentalProgram model.
+        """Convert a Neo4j Document node record to an EnvironmentalProgram model.
 
         Args:
             record: Dict with 'prog' and 'company_id' keys.
@@ -110,6 +123,9 @@ class EnvironmentalService(BaseService):
         data["content"] = json.loads(content_json) if content_json else {}
         applicable_json = data.pop("_applicable_projects_json", "[]")
         data["applicable_projects"] = json.loads(applicable_json) if applicable_json else []
+        # Map the canonical type field back to program_type if stored separately
+        if "program_type" not in data and "document_subtype" in data:
+            data["program_type"] = data.pop("document_subtype")
         data["company_id"] = record["company_id"]
         return EnvironmentalProgram(**data)
 
@@ -119,7 +135,7 @@ class EnvironmentalService(BaseService):
         data: EnvironmentalProgramCreate,
         user_id: str,
     ) -> EnvironmentalProgram:
-        """Create a new environmental compliance program.
+        """Create a new environmental compliance program as a Document node.
 
         Args:
             company_id: The owning company ID.
@@ -139,6 +155,9 @@ class EnvironmentalService(BaseService):
 
         props: dict[str, Any] = {
             "id": program_id,
+            # New ontology fields
+            "type": _ENV_DOCUMENT_TYPE,
+            # Retained fields for EnvironmentalProgram compatibility
             "program_type": data.program_type.value,
             "title": data.title,
             "_content_json": json.dumps(data.content),
@@ -155,18 +174,26 @@ class EnvironmentalService(BaseService):
         result = self._write_tx_single(
             """
             MATCH (c:Company {id: $company_id})
-            CREATE (p:EnvironmentalProgram $props)
-            CREATE (c)-[:HAS_ENV_PROGRAM]->(p)
+            CREATE (p:Document $props)
+            CREATE (c)-[:HAS_DOCUMENT]->(p)
             RETURN p {.*} AS prog, c.id AS company_id
             """,
             {"company_id": company_id, "props": props},
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=program_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created environmental program '{data.title}'",
+        )
         return self._program_to_model(result)
 
     def get_program(self, company_id: str, program_id: str) -> EnvironmentalProgram:
-        """Fetch a single environmental program.
+        """Fetch a single environmental program Document node.
 
         Args:
             company_id: The owning company ID.
@@ -180,11 +207,15 @@ class EnvironmentalService(BaseService):
         """
         result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram {id: $program_id})
-            WHERE p.deleted = false
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(p:Document {id: $program_id})
+            WHERE p.type = $doc_type AND p.deleted = false
             RETURN p {.*} AS prog, c.id AS company_id
             """,
-            {"company_id": company_id, "program_id": program_id},
+            {
+                "company_id": company_id,
+                "program_id": program_id,
+                "doc_type": _ENV_DOCUMENT_TYPE,
+            },
         )
         if result is None:
             raise EnvironmentalProgramNotFoundError(program_id)
@@ -197,7 +228,7 @@ class EnvironmentalService(BaseService):
         limit: int = 20,
         offset: int = 0,
     ) -> dict:
-        """List environmental programs for a company with optional filters.
+        """List environmental compliance Document nodes for a company.
 
         Args:
             company_id: The owning company ID.
@@ -208,9 +239,10 @@ class EnvironmentalService(BaseService):
         Returns:
             A dict with 'programs' list and 'total' count.
         """
-        where_clauses = ["p.deleted = false"]
+        where_clauses = ["p.deleted = false", "p.type = $doc_type"]
         params: dict[str, Any] = {
             "company_id": company_id,
+            "doc_type": _ENV_DOCUMENT_TYPE,
             "limit": limit,
             "offset": offset,
         }
@@ -223,7 +255,7 @@ class EnvironmentalService(BaseService):
 
         count_result = self._read_tx_single(
             f"""
-            MATCH (c:Company {{id: $company_id}})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram)
+            MATCH (c:Company {{id: $company_id}})-[:HAS_DOCUMENT]->(p:Document)
             WHERE {where_str}
             RETURN count(p) AS total
             """,
@@ -233,7 +265,7 @@ class EnvironmentalService(BaseService):
 
         results = self._read_tx(
             f"""
-            MATCH (c:Company {{id: $company_id}})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram)
+            MATCH (c:Company {{id: $company_id}})-[:HAS_DOCUMENT]->(p:Document)
             WHERE {where_str}
             RETURN p {{.*}} AS prog, c.id AS company_id
             ORDER BY p.created_at DESC
@@ -252,7 +284,7 @@ class EnvironmentalService(BaseService):
         data: EnvironmentalProgramUpdate,
         user_id: str,
     ) -> EnvironmentalProgram:
-        """Update an existing environmental program.
+        """Update an existing environmental compliance Document node.
 
         Args:
             company_id: The owning company ID.
@@ -287,19 +319,32 @@ class EnvironmentalService(BaseService):
 
         result = self._write_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram {id: $program_id})
-            WHERE p.deleted = false
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(p:Document {id: $program_id})
+            WHERE p.type = $doc_type AND p.deleted = false
             SET p += $props
             RETURN p {.*} AS prog, c.id AS company_id
             """,
-            {"company_id": company_id, "program_id": program_id, "props": update_data},
+            {
+                "company_id": company_id,
+                "program_id": program_id,
+                "doc_type": _ENV_DOCUMENT_TYPE,
+                "props": update_data,
+            },
         )
         if result is None:
             raise EnvironmentalProgramNotFoundError(program_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=program_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated environmental program {program_id}",
+        )
         return self._program_to_model(result)
 
     def delete_program(self, company_id: str, program_id: str) -> None:
-        """Soft-delete an environmental program.
+        """Soft-delete an environmental compliance Document node.
 
         Args:
             company_id: The owning company ID.
@@ -310,19 +355,28 @@ class EnvironmentalService(BaseService):
         """
         result = self._write_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram {id: $program_id})
-            WHERE p.deleted = false
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(p:Document {id: $program_id})
+            WHERE p.type = $doc_type AND p.deleted = false
             SET p.deleted = true, p.updated_at = $now
             RETURN p.id AS id
             """,
             {
                 "company_id": company_id,
                 "program_id": program_id,
+                "doc_type": _ENV_DOCUMENT_TYPE,
                 "now": datetime.now(timezone.utc).isoformat(),
             },
         )
         if result is None:
             raise EnvironmentalProgramNotFoundError(program_id)
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=program_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Archived environmental program {program_id}",
+        )
 
     # -- Exposure Monitoring Records ---------------------------------------------------
 
@@ -372,8 +426,7 @@ class EnvironmentalService(BaseService):
             "exceeds_pel": exceeds_pel,
             "controls_in_place": data.controls_in_place,
             "notes": data.notes,
-            "created_by": actor.id,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            **self._provenance_create(actor),
         }
 
         result = self._write_tx_single(
@@ -388,6 +441,15 @@ class EnvironmentalService(BaseService):
         data_dict = dict(result["rec"])
         data_dict["company_id"] = result["company_id"]
         data_dict["project_id"] = result["project_id"]
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=record_id,
+            entity_type="ExposureRecord",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created exposure record for {data.monitoring_type}",
+            related_entity_ids=[project_id],
+        )
         return ExposureMonitoringRecord(**data_dict)
 
     def list_exposure_records(
@@ -561,8 +623,7 @@ class EnvironmentalService(BaseService):
             "corrective_actions": data.corrective_actions,
             "overall_status": data.overall_status,
             "_photo_urls_json": json.dumps(data.photo_urls),
-            "created_by": actor.id,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            **self._provenance_create(actor),
         }
 
         result = self._write_tx_single(
@@ -573,6 +634,15 @@ class EnvironmentalService(BaseService):
             RETURN s {.*} AS insp, c.id AS company_id, p.id AS project_id
             """,
             {"company_id": company_id, "project_id": project_id, "props": props},
+        )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=insp_id,
+            entity_type="SwpppInspection",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created SWPPP inspection for project {project_id}",
+            related_entity_ids=[project_id],
         )
         return self._swppp_to_model(result)
 
@@ -651,15 +721,15 @@ class EnvironmentalService(BaseService):
         Returns:
             A dict with overall_status, areas, and summary counts.
         """
-        # Get all programs
+        # Get all environmental compliance Document nodes
         prog_results = self._read_tx(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_ENV_PROGRAM]->(p:EnvironmentalProgram)
-            WHERE p.deleted = false
+            MATCH (c:Company {id: $company_id})-[:HAS_DOCUMENT]->(p:Document)
+            WHERE p.type = $doc_type AND p.deleted = false
             RETURN p.program_type AS program_type, p.status AS status,
                    p.next_review_due AS next_review_due
             """,
-            {"company_id": company_id},
+            {"company_id": company_id, "doc_type": _ENV_DOCUMENT_TYPE},
         )
 
         total_programs = len(prog_results)

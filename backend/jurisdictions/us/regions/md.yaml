@@ -1,0 +1,57 @@
+code: MD
+name: Maryland
+regulatory_body: Maryland Occupational Safety and Health (MOSH)
+state_plan: true
+primary_legislation: Maryland Labor and Employment Code Title 5 (Safety and Health)
+construction_regulation: COMAR 09.12.32 (Construction Standards)
+
+requirements:
+  - id: MD-001
+    state: MD
+    requirement_name: Maryland OSHA Compliance
+    description: All employers in Maryland must comply with MOSH standards, which adopt and enforce federal OSHA standards for both private and public sector workplaces.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "Md. Labor & Employment Code 5-104"
+    additional_details: MOSH operates an OSHA-approved state plan. MOSH has jurisdiction over private sector employers and covers state and local government employees.
+    applies_to: all
+    severity: mandatory
+
+  - id: MD-002
+    state: MD
+    requirement_name: Workers' Compensation Insurance
+    description: Maryland employers must carry workers' compensation insurance for all employees. Coverage is mandatory with limited exemptions for certain agricultural workers.
+    federal_equivalent: null
+    state_standard: "Md. Labor & Employment Code 9-402"
+    additional_details: Coverage is obtained through the Chesapeake Employers Insurance Company, private carriers, or self-insurance approved by the Maryland Workers' Compensation Commission.
+    applies_to: all
+    severity: mandatory
+
+  - id: MD-003
+    state: MD
+    requirement_name: Construction Fall Protection
+    description: Fall protection is required for construction work at heights of six feet or more, enforced by MOSH state inspectors.
+    federal_equivalent: "29 CFR 1926.501"
+    state_standard: "COMAR 09.12.32"
+    additional_details: MOSH conducts construction site inspections and issues state citations. Employers must provide guardrails, safety nets, or personal fall arrest systems.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MD-004
+    state: MD
+    requirement_name: Lead Paint Abatement Licensing
+    description: Contractors performing lead paint abatement must be accredited by the Maryland Department of the Environment and workers must hold valid certifications.
+    federal_equivalent: "40 CFR 745 (EPA RRP Rule)"
+    state_standard: "Md. Environment Code 6-801 through 6-852"
+    additional_details: Maryland is an EPA-authorized state for lead programs. Lead paint inspection, risk assessment, and abatement require state accreditation and certified personnel.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MD-005
+    state: MD
+    requirement_name: Public Sector Workplace Safety
+    description: State and local government employers must comply with the same occupational safety and health standards as private sector employers under MOSH.
+    federal_equivalent: null
+    state_standard: "Md. Labor & Employment Code 5-102(b)"
+    additional_details: MOSH conducts inspections and can issue citations to government employers including schools, municipalities, and state agencies.
+    applies_to: all
+    severity: mandatory

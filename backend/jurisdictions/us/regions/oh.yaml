@@ -1,0 +1,57 @@
+code: OH
+name: Ohio
+regulatory_body: Federal OSHA (no state plan) / Ohio Bureau of Workers' Compensation (BWC)
+state_plan: false
+primary_legislation: Federal Occupational Safety and Health Act (29 USC 651)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: OH-001
+    state: OH
+    requirement_name: Ohio Bureau of Workers' Compensation Coverage
+    description: Ohio operates a monopolistic state-fund workers' compensation system. All employers with one or more employees must participate in the state fund administered by the BWC.
+    federal_equivalent: null
+    state_standard: "ORC 4123.01 et seq."
+    additional_details: Ohio is one of four states with a monopolistic state fund. Private workers' compensation insurance is not available. The BWC is the largest state-fund system in the United States.
+    applies_to: all
+    severity: mandatory
+
+  - id: OH-002
+    state: OH
+    requirement_name: Public Employment Risk Reduction Program (PERRP)
+    description: Ohio's PERRP provides OSHA-equivalent safety protections for public sector employees (state and local government workers) who are not covered by federal OSHA.
+    federal_equivalent: "29 CFR 1910/1926 (General Industry/Construction)"
+    state_standard: "ORC 4167.01 et seq."
+    additional_details: PERRP conducts inspections of public sector workplaces, investigates complaints, and enforces safety standards equivalent to federal OSHA. Public employers must maintain safety programs and report injuries.
+    applies_to: all
+    severity: mandatory
+
+  - id: OH-003
+    state: OH
+    requirement_name: Construction Industry Licensing
+    description: Ohio requires various construction trade licenses including electrical, plumbing, HVAC, and fire protection. The Ohio Construction Industry Licensing Board (OCILB) administers trade-specific licensing.
+    federal_equivalent: null
+    state_standard: "ORC 4740.01 et seq."
+    additional_details: Specific trades requiring state licensure include electrical, plumbing, HVAC, hydronics, and refrigeration. Local jurisdictions may impose additional licensing requirements beyond state mandates.
+    applies_to: construction
+    severity: mandatory
+
+  - id: OH-004
+    state: OH
+    requirement_name: BWC Safety Program Requirements
+    description: Ohio employers must implement safety programs to meet BWC requirements. Employers with higher-than-average claim rates may be required to participate in intensive safety intervention programs.
+    federal_equivalent: null
+    state_standard: "OAC 4123-17-01 et seq."
+    additional_details: BWC offers safety consultation services and premium discount programs for employers maintaining qualifying safety programs. The Industry-Specific Safety Program provides targeted interventions for high-hazard industries.
+    applies_to: all
+    severity: mandatory
+
+  - id: OH-005
+    state: OH
+    requirement_name: Asbestos Hazard Abatement Requirements
+    description: Ohio requires licensing of asbestos abatement contractors, project designers, and workers. All asbestos abatement projects must be notified to the Ohio Department of Health.
+    federal_equivalent: "29 CFR 1926.1101 (Asbestos in Construction)"
+    state_standard: "ORC 3710.01 et seq.; OAC 3701-34"
+    additional_details: Ohio's asbestos requirements exceed federal standards in certain areas, including additional training requirements, project notification, and contractor licensing. Air monitoring is required during all abatement activities.
+    applies_to: construction
+    severity: mandatory

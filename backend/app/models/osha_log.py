@@ -27,7 +27,11 @@ class CaseClassification(str, Enum):
 
 
 class OshaLogEntry(BaseModel):
-    """A single OSHA 300 Log entry (one recordable case)."""
+    """A single OSHA 300 Log entry (one recordable case).
+
+    Renamed from OshaLogEntry to IncidentLogEntry in new ontology,
+    but kept as OshaLogEntry here for backward compatibility with router imports.
+    """
 
     id: str
     case_number: int = Field(description="Sequential within the year")
@@ -49,8 +53,14 @@ class OshaLogEntry(BaseModel):
     company_id: str
     created_at: datetime
     created_by: str
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
     updated_at: datetime
     updated_by: str
+    updated_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
+
+
+# Alias for new ontology name
+IncidentLogEntry = OshaLogEntry
 
 
 class OshaLogEntryCreate(BaseModel):
@@ -90,6 +100,10 @@ class OshaLogEntryListResponse(BaseModel):
 
     entries: list[OshaLogEntry]
     total: int
+
+
+# Alias for new ontology name
+IncidentLogEntryListResponse = OshaLogEntryListResponse
 
 
 class Osha300Summary(BaseModel):

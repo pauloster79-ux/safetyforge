@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf Estimating Experience</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --accent: #e67e22; --accent-light: #fdf2e9;
+    --border: #e5e7eb; --code-bg: #f8f9fa; --section-bg: #f9fafb;
+    --table-header: #1a1a2e; --table-header-fg: #ffffff;
+    --blue: #3498db; --green: #27ae60; --red: #e74c3c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--fg); background: var(--bg); line-height: 1.7; max-width: 900px; margin: 0 auto; padding: 48px 24px 100px; }
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 4px; }
+  .tagline { font-size: 1.1rem; color: var(--accent); font-style: italic; margin-bottom: 4px; }
+  .subtitle { color: #6b7280; font-size: 0.95rem; margin-bottom: 40px; }
+  h2 { font-size: 1.35rem; font-weight: 700; margin-top: 56px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 3px solid var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin-top: 32px; margin-bottom: 12px; color: var(--accent); }
+  h4 { font-size: 0.95rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 14px; }
+  ul, ol { margin-bottom: 14px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  strong { font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--code-bg); padding: 2px 6px; border-radius: 3px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 0.88rem; }
+  thead th { background: var(--table-header); color: var(--table-header-fg); font-weight: 600; text-align: left; padding: 10px 12px; }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: var(--accent-light); }
+  td.amount { text-align: right; font-weight: 600; white-space: nowrap; }
+  td.division { font-weight: 700; background: var(--section-bg); }
+  .subtotal td { font-weight: 600; font-style: italic; border-top: 1px solid var(--border); }
+  .grand-total td { font-weight: 700; font-size: 1rem; border-top: 3px solid var(--accent); background: var(--accent-light); }
+
+  .callout { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 16px 20px; margin: 24px 0; border-radius: 0 6px 6px 0; }
+  .callout-blue { background: #eef6ff; border-left: 4px solid var(--blue); padding: 16px 20px; margin: 24px 0; border-radius: 0 6px 6px 0; }
+  .callout-green { background: #eef9f0; border-left: 4px solid var(--green); padding: 16px 20px; margin: 24px 0; border-radius: 0 6px 6px 0; }
+
+  .persona { background: var(--section-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .persona h3 { margin-top: 0; }
+  .persona .meta { color: #6b7280; font-size: 0.9rem; margin-bottom: 12px; }
+
+  /* Chat bubbles */
+  .chat-container { margin: 24px 0; }
+  .chat { margin: 12px 0; padding: 14px 18px; border-radius: 12px; font-size: 0.92rem; line-height: 1.6; }
+  .chat.user { background: var(--accent-light); border-left: 3px solid var(--accent); margin-right: 40px; }
+  .chat.kerf { background: #eef6ff; border-left: 3px solid var(--blue); margin-left: 0px; }
+  .chat .speaker { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .chat.user .speaker { color: var(--accent); }
+  .chat.kerf .speaker { color: var(--blue); }
+  .chat .stage-direction { font-style: italic; color: #6b7280; font-size: 0.85rem; }
+  .chat ol, .chat ul { margin-top: 8px; margin-bottom: 4px; }
+
+  /* Proposal / Letter of Offer styling */
+  .proposal { background: #fff; border: 2px solid var(--border); border-radius: 12px; padding: 36px 32px; margin: 32px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .proposal-header { text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--fg); }
+  .proposal-header .company-name { font-size: 1.3rem; font-weight: 700; letter-spacing: 1px; }
+  .proposal-header .company-details { font-size: 0.82rem; color: #6b7280; margin-top: 4px; }
+  .proposal h3 { color: var(--fg); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 28px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .proposal h4 { color: var(--fg); margin-top: 18px; }
+  .proposal .field { margin-bottom: 4px; }
+  .proposal .field-label { font-weight: 600; display: inline; }
+  .proposal table { font-size: 0.82rem; }
+  .proposal .signature-line { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .proposal .sig { display: inline-block; width: 280px; border-bottom: 1px solid var(--fg); margin-right: 24px; padding-bottom: 4px; margin-top: 8px; color: #9ca3af; font-size: 0.85rem; }
+
+  /* Insight cards */
+  .insight { background: var(--section-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin: 10px 0; display: flex; gap: 12px; align-items: flex-start; }
+  .insight .number { background: var(--accent); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; margin-top: 2px; }
+  .insight .text { flex: 1; font-size: 0.9rem; }
+
+  /* Comparison table */
+  .comparison { margin: 24px 0; }
+  .comparison table td:first-child { font-weight: 600; width: 180px; }
+
+  /* TOC */
+  .toc { background: var(--section-bg); border-radius: 10px; padding: 20px 24px; margin: 24px 0; }
+  .toc h3 { margin-top: 0; color: var(--fg); }
+  .toc ol { padding-left: 20px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Graph diagram */
+  .graph-flow { background: var(--fg); color: #e5e7eb; border-radius: 10px; padding: 24px 28px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.8; white-space: pre-wrap; }
+  .graph-flow .node { color: var(--accent); font-weight: 700; }
+  .graph-flow .arrow { color: #6b7280; }
+  .graph-flow .comment { color: #9ca3af; font-style: italic; }
+
+  @media (max-width: 700px) { body { padding: 24px 16px; } h1 { font-size: 1.6rem; } .proposal { padding: 20px 16px; } .chat { margin-right: 0 !important; } }
+</style>
+</head>
+<body>
+
+<h1>Kerf Estimating Experience</h1>
+<div class="tagline">Conversational Flow &amp; Output Examples</div>
+<div class="subtitle">How the agent adapts guidance depth to contractor scale, and the full client-facing outputs produced. Two complete scenarios &mdash; solo trade and commercial sub.</div>
+
+<div class="toc">
+<h3>Contents</h3>
+<ol>
+<li><a href="#jake">Scenario 1: Jake Torres &mdash; Solo Electrician</a></li>
+<li><a href="#jake-convo">Jake's Conversation with Kerf</a></li>
+<li><a href="#jake-proposal">Jake's Proposal Output</a></li>
+<li><a href="#jake-insights">What the Agent Did That Jake Wouldn't Have</a></li>
+<li><a href="#sarah">Scenario 2: Sarah Chen &mdash; 45-Person Electrical Contractor</a></li>
+<li><a href="#sarah-convo">Sarah's Conversation with Kerf</a></li>
+<li><a href="#sarah-offer">Sarah's Letter of Offer Output</a></li>
+<li><a href="#sarah-insights">What the Agent Did That Protects Sarah's Margin</a></li>
+<li><a href="#comparison">How the Agent Adapts Between Scales</a></li>
+<li><a href="#learning">The Learning Loop</a></li>
+<li><a href="#datamodel">What This Means for the Data Model</a></li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ============================================ -->
+<!-- SCENARIO 1: JAKE                             -->
+<!-- ============================================ -->
+
+<h2 id="jake">Scenario 1: Jake Torres &mdash; Solo Electrician</h2>
+
+<div class="persona">
+<h3>Jake Torres</h3>
+<div class="meta">Solo electrician &bull; Phoenix, AZ &bull; Revenue ~$180K/year &bull; Residential and light commercial</div>
+<p>Licensed electrician, works alone or with one helper. Panel upgrades, kitchen remodels, small tenant fit-outs. Estimates in his head. No written proposals. Tracks nothing.</p>
+<p><strong>Job:</strong> Panel upgrade and circuit additions for a homeowner renovation.</p>
+</div>
+
+<h3>What Kerf Knows About Jake <span style="font-weight:400; color:#6b7280;">(after 15 completed jobs)</span></h3>
+
+<ul>
+<li>His actual panel upgrade labour averages <strong>6.2 hours</strong> (he used to guess 4&ndash;5)</li>
+<li>His receptacle install rate is <strong>0.38 hours/outlet</strong> in renovations (0.28 in new construction)</li>
+<li>He marks up materials 15% and targets 20% margin on labour</li>
+<li>He <strong>always forgets to include permit fees</strong></li>
+<li>He undercharges for attic work (his actual rate is 40% slower than standard ceiling work)</li>
+<li>His helper costs him $28/hour loaded</li>
+<li>He <strong>lost $1,400 on the Greenfield job</strong> because the homeowner added 4 circuits mid-job and he didn't document it as extra work</li>
+<li>City Electric Supply is his regular supplier; he has current pricing from his last PO</li>
+</ul>
+
+<hr>
+
+<h3 id="jake-convo">The Conversation</h3>
+
+<div class="chat-container">
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+<span class="stage-direction">(standing in the client's kitchen)</span><br>
+Starting an estimate. Maria Gonzalez, 1847 East Meadow Drive. She wants a 200-amp panel upgrade &mdash; existing panel is a Federal Pacific, needs to come out. Then she's adding circuits for a kitchen remodel. Let me walk through it.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Got it. New project created &mdash; Maria Gonzalez, 1847 E Meadow Drive, Phoenix. Panel replacement plus kitchen circuits. I'll capture items as you go. Is this a homeowner direct, or are you subbing to a GC?
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+Direct to homeowner.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+OK. Walk me through what you're seeing.
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+Main panel is in the garage, 150-amp Federal Pacific Stab-Lok. Replacing with 200-amp, 40-space. Service entrance cable from the meter is maybe 15 feet, it's on the other side of the wall. I'll need to coordinate the utility disconnect with APS.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Noted. On your last three panel swaps, APS coordination averaged a <strong>2-hour wait</strong> on disconnect day. Want me to include that wait time?
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+Yeah, good call.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Got it. What about the Federal Pacific &mdash; is the homeowner aware there may be asbestos in the panel backing? Your <strong>Verde Valley job</strong> had that issue and added $800 for abatement.
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+Good point. I'll check. For now, note it as a potential extra and I'll look when I open it up.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Flagged as exclusion with note. Keep going &mdash; what's happening in the kitchen?
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+OK so she's doing a full kitchen remodel. I need: 2 dedicated 20-amp circuits for countertop receptacles &mdash; GFCI. 1 dedicated circuit for the dishwasher. 1 dedicated circuit for the disposal. She's adding a gas range so I just need the igniter outlet behind it. Microwave circuit above. 6 receptacles along the countertop, plus 2 on the island &mdash; those'll need a floor box. And she wants under-cabinet LED lighting on a dimmer.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+That's 6 new dedicated circuits plus the general receptacle and lighting work. A couple of things based on your past jobs:
+<ol>
+<li>The island floor box &mdash; your last two floor box installs in slab-on-grade averaged <strong>1.8 hours</strong>, not the 1 hour you usually estimate. This house is slab-on-grade from the listing data. Want to use 1.8?</li>
+<li>Under-cabinet LEDs &mdash; are you supplying the fixtures, or is the homeowner buying them and you're just doing the wiring?</li>
+<li>2021 NEC requires <strong>AFCI protection</strong> on all kitchen circuits in Arizona. That adds ~$45 per breaker over standard. Are you pricing AFCI breakers?</li>
+</ol>
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+Good catches. Yeah use the 1.8 for the floor box. She's buying the LED fixtures, I'm just running the low-voltage wire and the transformer. And yes on the AFCI breakers.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Got it. Anything else in the kitchen or other rooms?
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+That's it. Just the panel and the kitchen.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+OK, pulling this together. One more thing &mdash; your last 4 residential jobs, you didn't include the permit fee in your price and then ate it. Phoenix residential electrical permit for this scope is <strong>$134</strong>. Want to include it as a line item or exclude it in the terms?
+</div>
+
+<div class="chat user">
+<div class="speaker">Jake</div>
+Include it. You're right, I keep eating that.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Here's your estimate. I've used your actual labour rates from your last 15 jobs, current City Electric Supply pricing from your March PO, and the AFCI requirement. Take a look.
+</div>
+
+</div><!-- /chat-container -->
+
+<hr>
+
+<h3 id="jake-proposal">The Output: Proposal to Homeowner</h3>
+<p style="color:#6b7280; font-size:0.9rem; margin-bottom:24px;">What Kerf generates as a PDF for Jake to send to Maria Gonzalez.</p>
+
+<div class="proposal">
+
+<div class="proposal-header">
+<div class="company-name">JAKE TORRES ELECTRICAL LLC</div>
+<div class="company-details">ROC #298451 &nbsp;|&nbsp; Licensed, Bonded, Insured<br>Phoenix, AZ &nbsp;|&nbsp; (602) 555-0147 &nbsp;|&nbsp; jake@jtelectrical.com</div>
+</div>
+
+<div style="text-align:center; font-size:1.1rem; font-weight:700; margin-bottom:20px;">PROPOSAL</div>
+
+<div class="field"><span class="field-label">Prepared for:</span> Maria Gonzalez</div>
+<div class="field"><span class="field-label">Property:</span> 1847 East Meadow Drive, Phoenix, AZ 85016</div>
+<div class="field"><span class="field-label">Date:</span> April 14, 2026</div>
+<div class="field" style="margin-bottom:20px;"><span class="field-label">Valid for:</span> 30 days</div>
+
+<h4>Project Description</h4>
+<p>Electrical panel upgrade and kitchen remodel circuit installation at the above property.</p>
+
+<h3>Pricing</h3>
+
+<table>
+<thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th style="text-align:right">Amount</th></tr></thead>
+<tbody>
+<tr><td colspan="5" class="division">Panel Upgrade</td></tr>
+<tr><td>1</td><td>Remove existing 150A Federal Pacific panel and all breakers</td><td>1</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>2</td><td>Supply and install 200A 40-space main breaker panel (Square D Homeline)</td><td>1</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>3</td><td>Replace service entrance cable, meter to panel (~15 LF)</td><td>15</td><td>LF</td><td class="amount">&mdash;</td></tr>
+<tr><td>4</td><td>Transfer all existing circuits to new panel, label, and test</td><td>1</td><td>LS</td><td class="amount">&mdash;</td></tr>
+<tr><td>5</td><td>Coordinate utility disconnect/reconnect with APS (includes wait time)</td><td>1</td><td>LS</td><td class="amount">&mdash;</td></tr>
+<tr><td>6</td><td>Ground rod and bonding to current code</td><td>1</td><td>LS</td><td class="amount">&mdash;</td></tr>
+<tr class="subtotal"><td></td><td>Panel Upgrade Subtotal</td><td></td><td></td><td class="amount">$3,280</td></tr>
+
+<tr><td colspan="5" class="division">Kitchen Circuits</td></tr>
+<tr><td>7</td><td>Dedicated 20A GFCI circuit &mdash; countertop receptacles (&times;2 circuits)</td><td>2</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>8</td><td>Dedicated 20A circuit &mdash; dishwasher</td><td>1</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>9</td><td>Dedicated 20A circuit &mdash; garbage disposal</td><td>1</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>10</td><td>Dedicated 120V outlet &mdash; gas range igniter</td><td>1</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>11</td><td>Dedicated 20A circuit &mdash; microwave (above range)</td><td>1</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>12</td><td>Countertop GFCI receptacles (installed in new backsplash location)</td><td>6</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>13</td><td>Island floor box with duplex receptacle (slab-on-grade core drill)</td><td>2</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr><td>14</td><td>Under-cabinet LED lighting circuit with dimmer switch &mdash; wiring and transformer only</td><td>1</td><td>LS</td><td class="amount">&mdash;</td></tr>
+<tr><td>15</td><td>AFCI breakers for all new kitchen circuits (required per 2021 NEC)</td><td>6</td><td>EA</td><td class="amount">&mdash;</td></tr>
+<tr class="subtotal"><td></td><td>Kitchen Subtotal</td><td></td><td></td><td class="amount">$4,840</td></tr>
+
+<tr><td colspan="5" class="division">Other</td></tr>
+<tr><td>16</td><td>City of Phoenix electrical permit</td><td>1</td><td>EA</td><td class="amount">$134</td></tr>
+<tr><td>17</td><td>Final inspection coordination</td><td>1</td><td>LS</td><td class="amount">&mdash;</td></tr>
+
+<tr class="grand-total"><td></td><td>PROJECT TOTAL</td><td></td><td></td><td class="amount">$8,254</td></tr>
+</tbody>
+</table>
+
+<h3>What's Included</h3>
+<ul>
+<li>All labour and materials to complete the scope described above</li>
+<li>All wire, conduit, boxes, connectors, breakers, receptacles, cover plates, and hardware</li>
+<li>AFCI-rated breakers on all new kitchen circuits per current Arizona electrical code (2021 NEC)</li>
+<li>GFCI protection on all countertop and island receptacles</li>
+<li>APS utility disconnect/reconnect coordination</li>
+<li>Permit and final inspection</li>
+<li>Cleanup and removal of old panel and debris</li>
+<li>1-year workmanship warranty on all labour</li>
+</ul>
+
+<h3>What's Not Included</h3>
+<ul>
+<li>Under-cabinet LED fixtures (owner-supplied; contractor installs wiring and transformer only)</li>
+<li>Drywall patching, painting, or finish work at any penetration or chase location</li>
+<li>Any work behind the meter or on the utility side of the service</li>
+<li><strong>Asbestos abatement</strong> &mdash; if asbestos-containing materials are found in the existing panel backing or surrounding area, abatement by a licensed contractor will be required before electrical work can proceed. This will be priced as additional work if encountered.</li>
+<li><strong>Structural modifications</strong> &mdash; if the existing panel location cannot accommodate the new 200A panel without framing modifications, this will be priced as additional work</li>
+<li>Any circuits, outlets, or fixtures not listed above</li>
+<li>Work in attic spaces, crawl spaces, or areas requiring special access beyond the garage and kitchen</li>
+</ul>
+
+<h3>Assumptions</h3>
+<ul>
+<li>Existing service entrance conduit and meter base are in serviceable condition and do not require replacement</li>
+<li>The existing wiring from the panel to all current circuits is in acceptable condition (no aluminium branch wiring requiring remediation)</li>
+<li>The homeowner's kitchen contractor will have backsplash and cabinet locations marked before receptacle rough-in</li>
+<li>Access to all work areas will be clear and available during normal working hours (7:00 AM &ndash; 4:00 PM, Monday &ndash; Friday)</li>
+<li>Work will be completed in approximately 2&ndash;3 working days, subject to APS scheduling for the disconnect</li>
+</ul>
+
+<h3>Additional Work</h3>
+<p>Any work requested beyond the scope described above will be performed on a time-and-materials basis at <strong>$95/hour</strong> plus materials at cost + 15%, with your approval before work begins. Additional work will be documented and invoiced separately.</p>
+
+<h3>Payment Terms</h3>
+<ul>
+<li>50% deposit upon acceptance of this proposal</li>
+<li>50% balance due upon completion and final inspection approval</li>
+<li>Accepted payment methods: check, Zelle, or credit card (3% processing fee applies to credit card)</li>
+</ul>
+
+<div class="signature-line">
+<p><strong>Acceptance</strong></p>
+<p style="font-size:0.88rem; color:#6b7280;">To accept this proposal, sign below and return with the deposit. This proposal is valid for 30 days from the date above. Pricing is subject to change after the expiration date due to material cost fluctuations.</p>
+<div class="sig">Homeowner Signature &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div><br>
+<div class="sig">Contractor Signature &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+</div>
+
+</div><!-- /proposal -->
+
+<hr>
+
+<h3 id="jake-insights">What the Agent Did That Jake Wouldn't Have Done Alone</h3>
+
+<div class="insight"><div class="number">1</div><div class="text"><strong>Included APS wait time</strong> &mdash; 2 hours of dead time Jake always eats</div></div>
+<div class="insight"><div class="number">2</div><div class="text"><strong>Flagged asbestos risk</strong> &mdash; excluded it properly instead of discovering it mid-job</div></div>
+<div class="insight"><div class="number">3</div><div class="text"><strong>Corrected floor box labour</strong> &mdash; used Jake's actual 1.8 hours, not his habitual underestimate of 1 hour</div></div>
+<div class="insight"><div class="number">4</div><div class="text"><strong>Added AFCI breakers</strong> &mdash; code requirement Jake sometimes forgets to price</div></div>
+<div class="insight"><div class="number">5</div><div class="text"><strong>Included the permit fee</strong> &mdash; $134 Jake has eaten on 4 consecutive jobs</div></div>
+<div class="insight"><div class="number">6</div><div class="text"><strong>Structured the "additional work" clause</strong> &mdash; so when Maria asks for "just one more outlet" during the job, Jake has a documented mechanism to charge for it. This is the clause that would have saved him $1,400 on the Greenfield job.</div></div>
+<div class="insight"><div class="number">7</div><div class="text"><strong>Separated owner-supplied fixtures</strong> &mdash; clear responsibility boundary for the LEDs</div></div>
+<div class="insight"><div class="number">8</div><div class="text"><strong>Documented assumptions about existing conditions</strong> &mdash; if the service entrance conduit is rotted, or there's aluminium wiring, Jake has a basis to price additional work</div></div>
+
+<div class="callout">
+<strong>Time to produce:</strong> ~8 minutes of conversation while walking the property, versus 0 minutes (Jake's previous method was a verbal quote from memory, no documentation, no terms).
+</div>
+
+<hr>
+
+<!-- ============================================ -->
+<!-- SCENARIO 2: SARAH                            -->
+<!-- ============================================ -->
+
+<h2 id="sarah">Scenario 2: Sarah Chen &mdash; 45-Person Electrical Contractor</h2>
+
+<div class="persona">
+<h3>Sarah Chen</h3>
+<div class="meta">Chen Electrical Services &bull; Atlanta, GA &bull; 45 employees, 3 crews &bull; Revenue ~$8M/year</div>
+<p>Commercial and light industrial electrical contractor. Sarah is owner, lead estimator, and PM on major jobs. Subs to GCs on most work. Has a part-time office admin.</p>
+<p><strong>Job:</strong> Electrical fit-out of a 2-storey medical office building, 8,400 SF. General contractor is Peterson GC. Competitive bid &mdash; Peterson is getting 3&ndash;4 electrical quotes.</p>
+</div>
+
+<h3>What Kerf Knows About Sarah <span style="font-weight:400; color:#6b7280;">(after 38 completed jobs)</span></h3>
+
+<ul>
+<li>Her crew's actual productivity on commercial receptacle install is <strong>0.35 man-hours/device</strong> (industry book rate is 0.25, but her crews work in renovation conditions 60% of the time)</li>
+<li>Her loaded labour rate (journeyman) is <strong>$68.40/hour</strong> including burden (base $44, 36% on-cost, 15% non-productive time)</li>
+<li>Her apprentice loaded rate is <strong>$38.20/hour</strong></li>
+<li>She typically runs a 2-person crew (1 journeyman + 1 apprentice) on medical office work</li>
+<li>Her actual conduit productivity is <strong>32 LF/hour</strong> for EMT in commercial drop ceilings (book rate is 40)</li>
+<li>She targets <strong>18&ndash;22% margin</strong> on GC work, higher on direct-to-owner</li>
+<li><strong>Peterson GC has delayed site access on 3 of the last 5 jobs</strong>, averaging 11 days late</li>
+<li>Peterson's standard subcontract has a 10% retention clause and 45-day payment terms</li>
+<li>Her material markup is 10% on GC jobs</li>
+<li>She has current pricing from City Electric Supply (primary) and Graybar (secondary)</li>
+<li>She <strong>lost $12K on the Buckhead Dental job</strong> because she priced prelims as a lump sum and Peterson delayed her 6 weeks &mdash; she couldn't substantiate a delay claim because her overhead wasn't broken out by duration</li>
+<li>Medical office work requires dedicated circuits for every exam room &mdash; she's done 4 medical offices and knows the typical scope</li>
+</ul>
+
+<hr>
+
+<h3 id="sarah-convo">The Conversation</h3>
+
+<div class="chat-container">
+
+<div class="chat user">
+<div class="speaker">Sarah</div>
+<span class="stage-direction">(at her desk after the site walk, reviewing the plans Peterson sent)</span><br>
+Starting an estimate. Peterson GC, 4th Street medical office. They sent the bid package yesterday. I walked it this morning and took photos. Let me upload the plans and specs.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Project created &mdash; Peterson GC, 4th Street Medical Office. I see you've uploaded 14 files. Let me process those. While I'm reading, what are the key bid conditions?
+</div>
+
+<div class="chat user">
+<div class="speaker">Sarah</div>
+Lump sum subcontract. They want our price by Friday the 18th. Their schedule shows electrical rough-in starting June 2nd, substantial completion October 15th &mdash; about 19 weeks. They're getting three other electrical quotes.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Got it. A few things before we start on the scope:
+<ol>
+<li><strong>Peterson GC access history.</strong> On your last 5 Peterson jobs, they've been late on site access 3 times, averaging 11 days. Your Buckhead Dental loss was partly because your prelims weren't duration-based and you couldn't claim the delay. Do you want to structure your prelims by duration this time so we have a variation basis if they're late again?</li>
+<li><strong>Peterson's subcontract terms.</strong> Their standard form has 10% retention and net-45 payment. On your last job, they held retention for 97 days past substantial completion. Do you want to flag retention release timing in your offer?</li>
+<li><strong>Medical office scope.</strong> Based on your last 4 medical offices, there are typically dedicated circuit requirements for each exam room that aren't always shown on the electrical drawings &mdash; imaging equipment, autoclaves, suction units. The mechanical drawings usually show the equipment but the electrical drawings sometimes miss the dedicated circuits. Want me to cross-reference when I finish reading the plans?</li>
+</ol>
+</div>
+
+<div class="chat user">
+<div class="speaker">Sarah</div>
+Yes to all three. Good catch on the cross-reference &mdash; that's exactly what happened on Peachtree Medical.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+I've finished reading the plans and specifications. Here's my initial scope summary:
+<br><br>
+<strong>Building:</strong> 2-storey medical office, 8,400 SF (4,200 per floor). Steel frame, drop ceiling, concrete slab on grade.
+<br><br>
+<strong>Electrical scope from drawings:</strong>
+<ul>
+<li>200A 3-phase service, 2 distribution panels (one per floor)</li>
+<li>84 standard receptacles</li>
+<li>22 dedicated receptacles (exam rooms, lab, imaging, break room appliances)</li>
+<li>16 data/low-voltage locations (cabling by others, we provide conduit and boxes)</li>
+<li>143 light fixtures (mix of 2&times;4 troffers, exam lights, can lights in corridors)</li>
+<li>12 switches and 6 dimmers</li>
+<li>8 emergency/exit lights with battery backup</li>
+<li>Fire alarm conduit and boxes (FA system by fire alarm contractor, we provide raceways)</li>
+<li>Mechanical equipment connections: 2 RTUs, 1 split system, 1 exhaust fan</li>
+</ul>
+<strong>Spec requirements noted:</strong>
+<ul>
+<li>All wiring in EMT conduit (no MC cable)</li>
+<li>Arc-fault protection on all 15A and 20A circuits per 2020 NEC</li>
+<li>Generator transfer switch and connection (generator by owner, we install ATS and connection)</li>
+<li>Metering for each tenant space (3 meters)</li>
+</ul>
+<strong>Cross-reference flag:</strong> The mechanical drawings show an autoclave in the sterilisation room and a panoramic X-ray unit in imaging. Neither has a corresponding dedicated circuit on the electrical drawings. Based on your Peachtree Medical job, the autoclave needed a 30A 208V circuit and the X-ray unit needed a 20A dedicated with isolated ground. Want me to include these and note them as plan discrepancies in your offer?
+</div>
+
+<div class="chat user">
+<div class="speaker">Sarah</div>
+Yes. Include them in our price but call them out as items we added based on the mechanical drawings. If they're in, we've covered them. If they strip them, we can reduce. Either way, we look thorough and it protects us from a variation dispute later.
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Smart. I also notice the spec calls for EMT throughout &mdash; no MC cable. Your MC cable productivity is about 20% faster than EMT in drop ceilings. Going to EMT adds roughly <strong>180 labour hours</strong> to this job compared to MC. Do you want to note in your offer that a value engineering option exists to switch to MC cable for corridors and non-patient areas, with a potential saving? It might differentiate your bid.
+</div>
+
+<div class="chat user">
+<div class="speaker">Sarah</div>
+Yes. Show the base price with EMT as specified, and a VE option for MC in non-clinical areas. What's the saving look like?
+</div>
+
+<div class="chat kerf">
+<div class="speaker">Kerf</div>
+Based on your crew rates and the conduit quantities, switching corridors and admin areas to MC cable would save approximately <strong>$8,200 in labour</strong> and add approximately <strong>$2,100 in material cost</strong> (MC cable costs more per foot than EMT). Net saving to Peterson: roughly <strong>$6,100</strong>. I'll include it as an alternate.
+</div>
+
+<div class="chat user">
+<div class="speaker">Sarah</div>
+Perfect. Let's build this out. Give me the full estimate.
+</div>
+
+</div><!-- /chat-container -->
+
+<p style="color:#6b7280; font-style:italic; margin-top:16px;">The agent builds the complete estimate from the plan takeoff, Sarah's historical productivity rates, current supplier pricing, and the scope decisions made in conversation. Sarah reviews the detailed worksheets, adjusts a few items based on site conditions she noted during the walk, and approves the final numbers. That review process takes about 20 minutes.</p>
+
+<hr>
+
+<h3 id="sarah-offer">The Output: Letter of Offer to Peterson GC</h3>
+<p style="color:#6b7280; font-size:0.9rem; margin-bottom:24px;">What Kerf generates as the formal bid submission. 6+ pages, suitable for commercial subcontract negotiation.</p>
+
+<div class="proposal">
+
+<div class="proposal-header">
+<div class="company-name">CHEN ELECTRICAL SERVICES, INC.</div>
+<div class="company-details">Georgia Contractor License #EN-214538<br>1240 Chattahoochee Avenue NW, Suite 200, Atlanta, GA 30318<br>(404) 555-0283 &nbsp;|&nbsp; estimating@chenelectrical.com</div>
+</div>
+
+<div style="text-align:center; font-size:1.05rem; font-weight:700; margin-bottom:16px; text-transform:uppercase; letter-spacing:1px;">Letter of Offer &mdash; Electrical Subcontract</div>
+
+<div class="field"><span class="field-label">Date:</span> April 14, 2026</div>
+<div class="field"><span class="field-label">Reference:</span> Peterson GC Tender &mdash; 4th Street Medical Office Building</div>
+<div class="field" style="margin-bottom:16px;"><span class="field-label">Attention:</span> Mark Peterson, Peterson General Contractors</div>
+
+<p>Dear Mr. Peterson,</p>
+<p>Chen Electrical Services is pleased to submit the following lump sum offer for the electrical installation at the above-referenced project. This offer is based on the documents listed in Section 4.1 and the terms set out below.</p>
+
+<h3>1. Contract Price</h3>
+
+<table>
+<thead><tr><th>Div</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+<tbody>
+<tr><td colspan="3" class="division">1.0 &mdash; Electrical Distribution</td></tr>
+<tr><td>1.1</td><td>200A 3-phase main switchboard and service entrance</td><td class="amount">$18,400</td></tr>
+<tr><td>1.2</td><td>Distribution panel &mdash; Level 1 (42-circuit)</td><td class="amount">$4,200</td></tr>
+<tr><td>1.3</td><td>Distribution panel &mdash; Level 2 (42-circuit)</td><td class="amount">$4,200</td></tr>
+<tr><td>1.4</td><td>Automatic transfer switch &mdash; 200A (generator connection; generator by owner)</td><td class="amount">$6,800</td></tr>
+<tr><td>1.5</td><td>Tenant metering &mdash; 3 CT meter sockets</td><td class="amount">$3,600</td></tr>
+<tr class="subtotal"><td></td><td>Distribution subtotal</td><td class="amount">$37,200</td></tr>
+
+<tr><td colspan="3" class="division">2.0 &mdash; Branch Circuit Wiring</td></tr>
+<tr><td>2.1</td><td>EMT conduit, wire, and fittings &mdash; lighting circuits (est. 2,800 LF)</td><td class="amount">$28,700</td></tr>
+<tr><td>2.2</td><td>EMT conduit, wire, and fittings &mdash; receptacle circuits (est. 3,400 LF)</td><td class="amount">$33,200</td></tr>
+<tr><td>2.3</td><td>EMT conduit, wire, and fittings &mdash; dedicated equipment circuits (est. 1,100 LF)</td><td class="amount">$14,800</td></tr>
+<tr><td>2.4</td><td>EMT conduit, wire, and fittings &mdash; mechanical equipment connections (est. 600 LF)</td><td class="amount">$7,400</td></tr>
+<tr><td>2.5</td><td>AFCI breakers &mdash; all 15A and 20A branch circuits (per NEC 210.12)</td><td class="amount">$4,500</td></tr>
+<tr class="subtotal"><td></td><td>Branch circuit subtotal</td><td class="amount">$88,600</td></tr>
+
+<tr><td colspan="3" class="division">3.0 &mdash; Devices and Terminations</td></tr>
+<tr><td>3.1</td><td>Standard duplex receptacles &mdash; supply and install (84 locations)</td><td class="amount">$6,400</td></tr>
+<tr><td>3.2</td><td>Dedicated receptacles &mdash; supply and install (22 locations, various configs)</td><td class="amount">$3,800</td></tr>
+<tr><td>3.3</td><td>Data/low-voltage conduit and boxes &mdash; pathway only, cabling by others (16 locations)</td><td class="amount">$2,900</td></tr>
+<tr><td>3.4</td><td>Switches (12) and dimmers (6) &mdash; supply and install</td><td class="amount">$1,600</td></tr>
+<tr class="subtotal"><td></td><td>Devices subtotal</td><td class="amount">$14,700</td></tr>
+
+<tr><td colspan="3" class="division">4.0 &mdash; Lighting</td></tr>
+<tr><td>4.1</td><td>2&times;4 LED troffer &mdash; supply and install (86 fixtures)</td><td class="amount">$18,200</td></tr>
+<tr><td>4.2</td><td>Exam room light fixtures &mdash; supply and install (24 fixtures)</td><td class="amount">$7,800</td></tr>
+<tr><td>4.3</td><td>Recessed can lights, corridors &mdash; supply and install (21 fixtures)</td><td class="amount">$3,400</td></tr>
+<tr><td>4.4</td><td>Decorative fixtures, reception and waiting &mdash; supply and install (12 fixtures)</td><td class="amount">$4,200</td></tr>
+<tr><td>4.5</td><td>Emergency/exit lights with battery backup &mdash; supply and install (8 units)</td><td class="amount">$2,400</td></tr>
+<tr><td>4.6</td><td>Lighting controls &mdash; switches, dimmers, and occupancy sensors per spec</td><td class="amount">$3,200</td></tr>
+<tr class="subtotal"><td></td><td>Lighting subtotal</td><td class="amount">$39,200</td></tr>
+
+<tr><td colspan="3" class="division">5.0 &mdash; Mechanical Equipment Connections</td></tr>
+<tr><td>5.1</td><td>RTU #1 &mdash; disconnect, whip, and final connection</td><td class="amount">$1,800</td></tr>
+<tr><td>5.2</td><td>RTU #2 &mdash; disconnect, whip, and final connection</td><td class="amount">$1,800</td></tr>
+<tr><td>5.3</td><td>Split system &mdash; disconnect, whip, and final connection</td><td class="amount">$1,200</td></tr>
+<tr><td>5.4</td><td>Exhaust fan &mdash; disconnect, whip, and final connection</td><td class="amount">$800</td></tr>
+<tr class="subtotal"><td></td><td>Mechanical connections subtotal</td><td class="amount">$5,600</td></tr>
+
+<tr><td colspan="3" class="division">6.0 &mdash; Fire Alarm Raceways</td></tr>
+<tr><td>6.1</td><td>Fire alarm conduit, boxes, and device rings &mdash; raceways only, FA system by others</td><td class="amount">$4,800</td></tr>
+
+<tr><td colspan="3" class="division" style="background: var(--accent-light);">7.0 &mdash; Items Added from Mechanical Drawing Review</td></tr>
+<tr><td>7.1</td><td>Autoclave &mdash; 30A/208V dedicated circuit with disconnect (Sterilisation Rm 204) &mdash; <em>not shown on electrical drawings, identified from mechanical dwg M-3</em></td><td class="amount">$1,400</td></tr>
+<tr><td>7.2</td><td>Panoramic X-ray unit &mdash; 20A dedicated circuit with isolated ground (Imaging Rm 108) &mdash; <em>not shown on electrical drawings, identified from mechanical dwg M-2</em></td><td class="amount">$1,100</td></tr>
+<tr class="subtotal"><td></td><td>Added items subtotal</td><td class="amount">$2,500</td></tr>
+
+<tr><td colspan="3" class="division">8.0 &mdash; Project Management and Supervision</td></tr>
+<tr><td>8.1</td><td>Foreman &mdash; 19 weeks &times; 40 hours (on-site supervision, full duration)</td><td class="amount">$12,800</td></tr>
+<tr><td>8.2</td><td>Project management &mdash; 19 weeks &times; 8 hours/week (coordination, submittals, scheduling)</td><td class="amount">$10,400</td></tr>
+<tr><td>8.3</td><td>Submittals, shop drawings, and O&amp;M manuals</td><td class="amount">$2,200</td></tr>
+<tr><td>8.4</td><td>As-built drawings</td><td class="amount">$1,800</td></tr>
+<tr class="subtotal"><td></td><td>PM and supervision subtotal</td><td class="amount">$27,200</td></tr>
+
+<tr><td colspan="3" class="division">9.0 &mdash; Mobilisation and General Requirements</td></tr>
+<tr><td>9.1</td><td>Mobilisation and site setup (1 occurrence)</td><td class="amount">$2,400</td></tr>
+<tr><td>9.2</td><td>Demobilisation and final cleanup</td><td class="amount">$1,600</td></tr>
+<tr><td>9.3</td><td>Temporary power and lighting during construction (if not provided by GC)</td><td class="amount">$3,200</td></tr>
+<tr><td>9.4</td><td>Testing, energisation, and commissioning</td><td class="amount">$4,800</td></tr>
+<tr><td>9.5</td><td>Permit fees &mdash; City of Atlanta electrical permit</td><td class="amount">$1,460</td></tr>
+<tr class="subtotal"><td></td><td>Mobilisation subtotal</td><td class="amount">$13,460</td></tr>
+
+<tr class="grand-total"><td></td><td>TOTAL LUMP SUM PRICE</td><td class="amount">$233,260</td></tr>
+</tbody>
+</table>
+
+<h3>Value Engineering Option</h3>
+<table>
+<thead><tr><th>Option</th><th>Description</th><th style="text-align:right">Adjustment</th></tr></thead>
+<tbody>
+<tr><td>VE-1</td><td>Substitute MC cable for EMT conduit in non-clinical areas (corridors, admin offices, break room, storage) &mdash; approximately 1,800 LF. Clinical/exam areas remain EMT per specification.</td><td class="amount" style="color: var(--green);">Deduct $6,100</td></tr>
+<tr class="grand-total"><td></td><td>Revised total with VE-1</td><td class="amount">$227,160</td></tr>
+</tbody>
+</table>
+<p style="font-size:0.85rem; color:#6b7280;"><em>MC cable is permitted under NEC and Georgia amendments for the areas identified. Clinical areas remain in EMT per specification. This substitution reduces installation time by approximately 180 labour hours with no change to system performance.</em></p>
+
+<h3>2. Scope of Work &mdash; Inclusions</h3>
+<ul>
+<li>All electrical labour, materials, equipment, and supervision to complete the scope described in Section 1</li>
+<li>All wire, conduit (EMT), fittings, boxes, connectors, breakers, devices, and cover plates</li>
+<li>All light fixtures as scheduled on drawings E-4 through E-7</li>
+<li>AFCI breakers on all 15A and 20A branch circuits per NEC 210.12</li>
+<li>Fire alarm raceways, boxes, and device rings (fire alarm system and devices by FA contractor)</li>
+<li>Data/low-voltage conduit and boxes as pathway (structured cabling by data contractor)</li>
+<li>Mechanical equipment final connections per specifications and mechanical drawings</li>
+<li>Automatic transfer switch supply and installation (generator and fuel system by owner)</li>
+<li>All required permits and inspections</li>
+<li>Submittal packages, shop drawings, as-built drawings, and O&amp;M documentation</li>
+<li>Testing, energisation, and commissioning of all electrical systems</li>
+<li>Project management and coordination for 19 weeks per your issued schedule</li>
+<li>One (1) mobilisation and one (1) demobilisation</li>
+<li>Cleanup of our work areas throughout and at project completion</li>
+</ul>
+
+<h3>3. Scope of Work &mdash; Exclusions</h3>
+<ul>
+<li><strong>Fire alarm system</strong> &mdash; devices, panels, programming, monitoring, and commissioning (raceways and boxes only by us)</li>
+<li><strong>Structured data cabling</strong> &mdash; all cabling, patch panels, racks, and terminations (conduit and boxes only by us)</li>
+<li><strong>Security and access control systems</strong> &mdash; all devices, wiring, and programming</li>
+<li><strong>Audio/visual systems</strong> &mdash; speakers, displays, wiring, and programming</li>
+<li><strong>Generator and fuel system</strong> &mdash; supply, installation, fuel piping, pad, and enclosure (ATS and connection only by us)</li>
+<li><strong>Telephone/nurse call system</strong> &mdash; devices and cabling (we provide conduit if shown on drawings)</li>
+<li><strong>Medical gas alarm panels</strong> &mdash; wiring by medical gas contractor</li>
+<li><strong>Furniture connections</strong> &mdash; any modular furniture whips or connections not shown on electrical drawings</li>
+<li><strong>Excavation, trenching, or underground work</strong> &mdash; if required for site electrical beyond the building service entrance</li>
+<li><strong>Temporary power and lighting</strong> if provided by GC under a separate arrangement</li>
+<li><strong>Drywall, ceiling, or finish repair</strong> at our penetration locations &mdash; GC/drywall contractor to patch</li>
+<li><strong>Painting or touch-up</strong> at any electrical device or equipment location</li>
+<li><strong>Asbestos, lead, or hazardous material abatement</strong></li>
+<li><strong>Premium time, overtime, shift work, or acceleration</strong> unless separately agreed and priced</li>
+<li><strong>Material price escalation beyond 90 days</strong> from this offer date (see Section 6)</li>
+</ul>
+
+<h3>4. Qualifications and Assumptions</h3>
+
+<h4>4.1 Documents Relied Upon</h4>
+<p>Our price is based exclusively on the following documents provided by Peterson GC on April 10, 2026:</p>
+<table>
+<thead><tr><th>Document</th><th>Revision</th><th>Date</th></tr></thead>
+<tbody>
+<tr><td>Architectural drawings A-1 through A-12</td><td>Rev B</td><td>2026-03-28</td></tr>
+<tr><td>Electrical drawings E-1 through E-8</td><td>Rev A</td><td>2026-03-15</td></tr>
+<tr><td>Mechanical drawings M-1 through M-6</td><td>Rev A</td><td>2026-03-15</td></tr>
+<tr><td>Plumbing drawings P-1 through P-4</td><td>Rev A</td><td>2026-03-15</td></tr>
+<tr><td>Specification Division 26 &mdash; Electrical</td><td>Rev A</td><td>2026-03-15</td></tr>
+<tr><td>Peterson GC Project Schedule (preliminary)</td><td>Rev 0</td><td>2026-04-08</td></tr>
+</tbody>
+</table>
+<p>Any subsequent revisions, addenda, or RFI responses issued after our submission may result in a price adjustment.</p>
+
+<h4>4.2 Schedule</h4>
+<ul>
+<li>Our price is based on the project schedule issued April 8, 2026, showing electrical rough-in commencing June 2, 2026 and substantial completion October 15, 2026 &mdash; a duration of <strong>19 weeks</strong>.</li>
+<li><strong>Our project management and supervision costs (Section 1, Item 8.0) are calculated on a 19-week duration.</strong> If the project duration extends beyond 19 weeks for reasons not caused by Chen Electrical, we will submit a variation for the additional overhead at the weekly rates set out below:
+  <ul>
+    <li>Foreman: <strong>$672/week</strong></li>
+    <li>Project management: <strong>$547/week</strong></li>
+  </ul>
+</li>
+<li>We have allowed for <strong>one (1) mobilisation and one (1) demobilisation.</strong> If site access is interrupted and remobilisation is required, each additional mobilisation will be charged at <strong>$2,400</strong>.</li>
+<li>We require continuous and unimpeded access to our work areas in the sequence shown on the construction schedule. If access is delayed or work areas are not available as scheduled, resulting in crew standby or return visits, this will be priced as additional work.</li>
+</ul>
+
+<h4>4.3 Quantities</h4>
+<ul>
+<li>All quantities in this offer have been measured by Chen Electrical from the documents listed in Section 4.1.</li>
+<li>Conduit quantities are estimated from drawing review and include an allowance for routing, drops, and fittings. Our price is a lump sum based on the scope shown on the drawings &mdash; not a measurement of conduit footage.</li>
+</ul>
+
+<h4>4.4 Coordination</h4>
+<ul>
+<li>We have assumed reasonable trade coordination and stacking will be managed by Peterson GC per normal commercial construction practice.</li>
+<li>If excessive trade stacking, out-of-sequence work, or work area congestion results in productivity loss to our crews, we reserve the right to submit a claim for the impact.</li>
+</ul>
+
+<h4>4.5 Design Completeness</h4>
+<ul>
+<li>Items 7.1 and 7.2 (autoclave circuit and X-ray circuit) are not shown on the electrical drawings but are identified on the mechanical drawings. We have included them in our price. If these items are confirmed as not required by the design team, we will issue a <strong>credit of $2,500</strong>.</li>
+<li>If additional dedicated circuits are identified during construction for medical equipment not shown on either the electrical or mechanical drawings, these will be priced as variations.</li>
+</ul>
+
+<h4>4.6 Site Conditions</h4>
+<ul>
+<li>We have assumed normal commercial construction site conditions.</li>
+<li>We have assumed the building structure, ceilings, and walls will be installed by others in advance of our work, providing clear access for conduit and device installation.</li>
+<li>We have assumed adequate power, water, toilet facilities, and secure storage will be provided by Peterson GC at no cost to our trade.</li>
+</ul>
+
+<h3>5. Variations and Additional Work</h3>
+<p>Any work requested beyond the scope described in this offer will be priced as a variation. Variations will be calculated using the following rates unless otherwise agreed:</p>
+<table>
+<thead><tr><th>Resource</th><th style="text-align:right">Rate</th></tr></thead>
+<tbody>
+<tr><td>Journeyman Electrician</td><td class="amount">$95.00/hour</td></tr>
+<tr><td>Apprentice Electrician</td><td class="amount">$58.00/hour</td></tr>
+<tr><td>Project Manager</td><td class="amount">$115.00/hour</td></tr>
+<tr><td>Materials</td><td class="amount">Cost + 15%</td></tr>
+<tr><td>Subcontracted work</td><td class="amount">Cost + 10%</td></tr>
+</tbody>
+</table>
+<p style="font-size:0.88rem; color:#6b7280;">These rates include all labour burden, insurance, overheads, and profit. Variation pricing will be submitted for approval before work commences unless directed otherwise by Peterson GC in writing.</p>
+
+<h3>6. Commercial Terms</h3>
+<p><strong>Offer validity:</strong> This offer is valid for 60 days from April 14, 2026. Material pricing is firm for 90 days. If the subcontract is not executed within 90 days of this offer, we reserve the right to adjust material pricing to reflect current supplier costs.</p>
+<p><strong>Payment terms:</strong> We request progress payment monthly based on percentage of work completed, net-30 days from invoice. Retention, if applicable, should not exceed 5% and should be released within 30 days of substantial completion of our scope &mdash; not the overall project.</p>
+<p><strong>Insurance:</strong> Chen Electrical maintains the following coverage and can provide certificates upon request:</p>
+<ul>
+<li>General liability: $2,000,000 per occurrence / $4,000,000 aggregate</li>
+<li>Workers' compensation: Statutory limits, Georgia</li>
+<li>Automobile liability: $1,000,000 combined single limit</li>
+<li>Umbrella/excess: $5,000,000</li>
+</ul>
+<p><strong>Warranty:</strong> 1-year warranty on workmanship from the date of substantial completion. Manufacturer warranties on all fixtures and equipment are passed through to the owner.</p>
+
+<hr style="margin: 32px 0;">
+
+<p>We appreciate the opportunity to quote this project and look forward to working with Peterson GC again.</p>
+<p>Respectfully submitted,</p>
+<p style="margin-top:20px;"><strong>CHEN ELECTRICAL SERVICES, INC.</strong><br>Sarah Chen<br>President</p>
+
+</div><!-- /proposal -->
+
+<hr>
+
+<h3 id="sarah-insights">What the Agent Did That Protects Sarah's Margin</h3>
+
+<div class="insight"><div class="number">1</div><div class="text"><strong>Duration-based prelims (the Buckhead Dental fix).</strong> Section 8.0 breaks supervision and PM into weekly rates &times; 19 weeks. Section 4.2 explicitly states that if the project extends beyond 19 weeks, the weekly overhead rates apply. If Peterson delays site access by 3 weeks (which they've done on 3 of the last 5 jobs), Sarah's variation claim is arithmetic: 3 weeks &times; ($672 + $547) = <strong>$3,657</strong>. No argument. The rates are in the offer.</div></div>
+
+<div class="insight"><div class="number">2</div><div class="text"><strong>Mobilisation count qualification.</strong> Section 4.2 explicitly states one mob/demob is included, with additional mobs at $2,400 each. If Peterson's schedule changes force Sarah to demobilise and return, she has a contractual basis to charge.</div></div>
+
+<div class="insight"><div class="number">3</div><div class="text"><strong>The autoclave/X-ray cross-reference.</strong> Items 7.1 and 7.2 demonstrate that Sarah read the full drawing set, not just the electrical pages. This protects her from missing scope <em>and</em> makes her bid look more thorough than competitors who only read the E-sheets. If Peterson strips them, she offers a credit &mdash; she looks collaborative.</div></div>
+
+<div class="insight"><div class="number">4</div><div class="text"><strong>The VE option.</strong> The MC cable alternate saves Peterson $6,100 and differentiates Sarah's bid. If Peterson is comparing 4 bids and Sarah's is $3K higher than the lowest, but she's offering a $6,100 VE option, she may win on net price while having a more comprehensive base scope.</div></div>
+
+<div class="insight"><div class="number">5</div><div class="text"><strong>Variation rates in the offer.</strong> Section 5 establishes the rates for additional work <em>before</em> the contract is signed. Note the rates include margin &mdash; journeyman at $95/hr vs. loaded cost of $68.40/hr = <strong>39% markup</strong> covering overhead and profit on variations.</div></div>
+
+<div class="insight"><div class="number">6</div><div class="text"><strong>Material escalation protection.</strong> Section 6 locks material pricing for 90 days, not indefinitely. If Peterson takes 4 months to execute the subcontract, Sarah isn't locked into April pricing on copper she buys in August.</div></div>
+
+<div class="insight"><div class="number">7</div><div class="text"><strong>Retention and payment terms.</strong> Section 6 requests 5% retention (not Peterson's standard 10%) and release at completion of <em>her scope</em>, not the overall project. Peterson held retention for 97 days past substantial completion on the last job.</div></div>
+
+<div class="insight"><div class="number">8</div><div class="text"><strong>Access and stacking clauses.</strong> Section 4.4 qualifies that productivity loss from excessive trade stacking or out-of-sequence work is claimable. This is the structural protection for things outside Sarah's control.</div></div>
+
+<hr>
+
+<!-- ============================================ -->
+<!-- COMPARISON                                   -->
+<!-- ============================================ -->
+
+<h2 id="comparison">How the Agent Adapts Between Scales</h2>
+
+<table>
+<thead><tr><th>Dimension</th><th>Jake (Solo Residential)</th><th>Sarah (45-Person Commercial)</th></tr></thead>
+<tbody>
+<tr><td><strong>Estimate structure</strong></td><td>Flat list, ~15 line items, single page</td><td>Hierarchical WBS, 9 divisions, multi-page</td></tr>
+<tr><td><strong>Pricing method</strong></td><td>Bottom-up from labour hours + material cost</td><td>Bottom-up from productivity rates &times; quantities + sub quotes + overhead</td></tr>
+<tr><td><strong>Terms complexity</strong></td><td>Simple exclusions, change order clause, payment terms</td><td>Full letter of offer with qualifications, schedule reliance, variation rates, insurance, VE options</td></tr>
+<tr><td><strong>What the agent checks</strong></td><td>Did Jake forget the permit? Is he underestimating again?</td><td>Cross-reference between drawing sets. Peterson's access history. Duration-based overhead. Material escalation.</td></tr>
+<tr><td><strong>Historical data used</strong></td><td>Jake's actual hours per task type</td><td>Crew productivity by work type, loaded labour rates, supplier pricing, GC payment behaviour</td></tr>
+<tr><td><strong>Proactive guidance</strong></td><td>5&ndash;6 simple reminders based on past mistakes</td><td>Strategic advice: VE options, cross-referencing, prelim structure for variation protection</td></tr>
+<tr><td><strong>Output format</strong></td><td>Residential proposal (2 pages)</td><td>Formal letter of offer (6+ pages) suitable for commercial subcontract negotiation</td></tr>
+<tr><td><strong>Time to produce</strong></td><td>~8 minutes (during site walk)</td><td>~45 minutes (plan review + conversation + worksheet review)</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="learning">The Learning Loop</h2>
+
+<p>Both proposals get better with every job. The graph captures:</p>
+
+<div class="callout">
+<strong>From Jake's jobs:</strong>
+<ul style="margin-top:8px;">
+<li>Actual hours vs. estimated hours per task type (panel swap, receptacle install, floor box, etc.)</li>
+<li>Which exclusions he ended up needing (the asbestos on the Verde Valley job becomes a permanent checklist item)</li>
+<li>Change orders captured vs. missed (after Greenfield, the agent always includes an additional work clause)</li>
+<li>Material cost trends from his POs</li>
+</ul>
+</div>
+
+<div class="callout-blue">
+<strong>From Sarah's jobs:</strong>
+<ul style="margin-top:8px;">
+<li>Crew productivity by work type, building type, and GC (Peterson jobs run 8% slower due to coordination issues)</li>
+<li>Variation success rate by qualification type (duration-based prelim claims have 90% approval; productivity impact claims have 40%)</li>
+<li>Which GCs pay on time and which don't (affects cash flow assumptions and the retention negotiation)</li>
+<li>Which scope items are consistently missed on medical office drawings</li>
+<li>VE option acceptance rate (Peterson has accepted 3 of 5 VE proposals)</li>
+</ul>
+</div>
+
+<div class="callout-green">
+<strong>The compound effect:</strong> After 50 jobs, the agent doesn't just calculate faster &mdash; it knows Sarah's business better than she does. It knows which qualifications actually protect her, which GCs are worth the risk, and where her crews consistently over- or under-perform against her estimates. That institutional knowledge currently lives in Sarah's head and disappears if she gets sick, retires, or loses the spreadsheet.
+</div>
+
+<hr>
+
+<h2 id="datamodel">What This Means for Kerf's Data Model</h2>
+
+<p>The estimating experience requires entities and relationships that flow through the full lifecycle:</p>
+
+<div class="graph-flow"><span class="node">Conversation</span> <span class="arrow">(voice/chat)</span>
+  <span class="arrow">&rarr;</span> extracts <span class="node">WorkItems</span> with labour, material, equipment quantities
+  <span class="arrow">&rarr;</span> grouped into <span class="node">WorkPackages</span> (divisions)
+  <span class="arrow">&rarr;</span> with <span class="node">Assumptions</span> (structured, referenceable)
+  <span class="arrow">&rarr;</span> with <span class="node">Exclusions</span> (structured, referenceable)
+  <span class="arrow">&rarr;</span> with <span class="node">AlternateOptions</span> (VE proposals, linked to affected WorkItems)
+  <span class="arrow">&rarr;</span> snapshot as <span class="node">Estimate</span> (versioned, dated)
+  <span class="arrow">&rarr;</span> generates <span class="node">Proposal</span> document (PDF)
+  <span class="arrow">&rarr;</span> on award: WorkItems become <span class="node">ScheduleTasks</span>
+  <span class="arrow">&rarr;</span> on execution: <span class="node">TimeEntries</span> charged to WorkItems
+  <span class="arrow">&rarr;</span> on completion: <span class="node">Actual vs. Estimated</span> feeds back to productivity rates
+
+<span class="comment">The terms and conditions are not free text bolted onto a spreadsheet.
+They are structured data in the graph &mdash; queryable, learnable, referenceable
+in future estimates and in variation claims during construction.</span></div>
+
+</body>
+</html>

@@ -1,9 +1,9 @@
 import { toast } from 'sonner';
-import { DEMO_DOCUMENTS, DEMO_COMPANY, DEMO_STATS, DEMO_PROJECTS, DEMO_INSPECTIONS, DEMO_TOOLBOX_TALKS, DEMO_WORKERS, DEMO_OSHA_ENTRIES, DEMO_OSHA_SUMMARY, DEMO_MOCK_INSPECTION, DEMO_MOCK_INSPECTION_RESULTS, DEMO_HAZARD_REPORTS, DEMO_MORNING_BRIEF, DEMO_MORNING_BRIEF_HISTORY, DEMO_INCIDENTS, DEMO_ANALYTICS, DEMO_PREQUAL_PACKAGES, DEMO_PREQUAL_REQUIREMENTS, DEMO_GC_RELATIONSHIPS, DEMO_SUB_COMPLIANCE, DEMO_STATE_REQUIREMENTS, DEMO_STATE_COMPLIANCE_RESULTS, DEMO_ENVIRONMENTAL_PROGRAMS, DEMO_EXPOSURE_RECORDS, DEMO_SWPPP_INSPECTIONS, DEMO_EQUIPMENT, DEMO_EQUIPMENT_INSPECTIONS, DEMO_PROJECT_ASSIGNMENTS } from './demo-data';
+import { DEMO_DOCUMENTS, DEMO_COMPANY, DEMO_STATS, DEMO_PROJECTS, DEMO_INSPECTIONS, DEMO_TOOLBOX_TALKS, DEMO_WORKERS, DEMO_OSHA_ENTRIES, DEMO_OSHA_SUMMARY, DEMO_MOCK_INSPECTION, DEMO_MOCK_INSPECTION_RESULTS, DEMO_HAZARD_REPORTS, DEMO_MORNING_BRIEF, DEMO_MORNING_BRIEF_HISTORY, DEMO_INCIDENTS, DEMO_ANALYTICS, DEMO_PREQUAL_PACKAGES, DEMO_PREQUAL_REQUIREMENTS, DEMO_GC_RELATIONSHIPS, DEMO_SUB_COMPLIANCE, DEMO_AVAILABLE_STATES, DEMO_STATE_REQUIREMENTS, DEMO_STATE_COMPLIANCE_RESULTS, DEMO_ENVIRONMENTAL_PROGRAMS, DEMO_EXPOSURE_RECORDS, DEMO_SWPPP_INSPECTIONS, DEMO_EQUIPMENT, DEMO_EQUIPMENT_INSPECTIONS, DEMO_PROJECT_ASSIGNMENTS, DEMO_DAILY_LOGS } from './demo-data';
 import { DAILY_SITE_INSPECTION_TEMPLATE, CERTIFICATION_TYPES } from './constants';
 import type { Certification } from './constants';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 interface ApiOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
@@ -21,12 +21,112 @@ class ApiError extends Error {
   }
 }
 
-function isDemoMode(): boolean {
+export function isDemoMode(): boolean {
   return sessionStorage.getItem('kerf_demo') === 'true';
 }
 
-// Demo mode API responses — returns fake data for all endpoints
-function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown): T {
+// Demo mode API responses — kept for offline fallback.
+// Exported so it remains available if the backend is unreachable.
+export function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown): T {
+  // ---- Daily Log Routes ----
+
+  // Submit daily log
+  const dailyLogSubmitMatch = endpoint.match(/\/me\/projects\/[^/]+\/daily-logs\/([^/]+)\/submit$/);
+  if (dailyLogSubmitMatch && method === 'POST') {
+    const idx = DEMO_DAILY_LOGS.findIndex(d => d.id === dailyLogSubmitMatch[1]);
+    if (idx !== -1) {
+      DEMO_DAILY_LOGS[idx].status = 'submitted';
+      DEMO_DAILY_LOGS[idx].submitted_at = new Date().toISOString();
+      DEMO_DAILY_LOGS[idx].submitted_by = 'demo_user_001';
+      DEMO_DAILY_LOGS[idx].updated_at = new Date().toISOString();
+      return DEMO_DAILY_LOGS[idx] as T;
+    }
+    return {} as T;
+  }
+
+  // Approve daily log
+  const dailyLogApproveMatch = endpoint.match(/\/me\/projects\/[^/]+\/daily-logs\/([^/]+)\/approve$/);
+  if (dailyLogApproveMatch && method === 'POST') {
+    const idx = DEMO_DAILY_LOGS.findIndex(d => d.id === dailyLogApproveMatch[1]);
+    if (idx !== -1) {
+      DEMO_DAILY_LOGS[idx].status = 'approved';
+      DEMO_DAILY_LOGS[idx].approved_at = new Date().toISOString();
+      DEMO_DAILY_LOGS[idx].approved_by = 'demo_user_001';
+      DEMO_DAILY_LOGS[idx].updated_at = new Date().toISOString();
+      return DEMO_DAILY_LOGS[idx] as T;
+    }
+    return {} as T;
+  }
+
+  // Single daily log — GET, PATCH, DELETE
+  const dailyLogMatch = endpoint.match(/\/me\/projects\/[^/]+\/daily-logs\/([^/?]+)$/);
+  if (dailyLogMatch && (method === 'GET' || method === 'PATCH' || method === 'DELETE')) {
+    if (method === 'DELETE') {
+      const idx = DEMO_DAILY_LOGS.findIndex(d => d.id === dailyLogMatch[1]);
+      if (idx !== -1) DEMO_DAILY_LOGS.splice(idx, 1);
+      return undefined as T;
+    }
+    if (method === 'PATCH') {
+      const idx = DEMO_DAILY_LOGS.findIndex(d => d.id === dailyLogMatch[1]);
+      if (idx !== -1) {
+        const payload = body as Record<string, unknown>;
+        DEMO_DAILY_LOGS[idx] = { ...DEMO_DAILY_LOGS[idx], ...payload, updated_at: new Date().toISOString() } as typeof DEMO_DAILY_LOGS[0];
+        return DEMO_DAILY_LOGS[idx] as T;
+      }
+    }
+    const log = DEMO_DAILY_LOGS.find(d => d.id === dailyLogMatch[1]);
+    if (log) return log as T;
+    return DEMO_DAILY_LOGS[0] as T;
+  }
+
+  // Daily log list
+  const dailyLogListMatch = endpoint.match(/\/me\/projects\/([^/]+)\/daily-logs(?:\?|$)/);
+  if (dailyLogListMatch && method === 'GET') {
+    const projectId = dailyLogListMatch[1];
+    const url = new URL(endpoint, 'http://localhost');
+    const statusFilter = url.searchParams.get('status');
+    let items = DEMO_DAILY_LOGS.filter(d => d.project_id === projectId && !d.deleted);
+    if (statusFilter) items = items.filter(d => d.status === statusFilter);
+    return { daily_logs: items, total: items.length } as T;
+  }
+
+  // Create daily log
+  const dailyLogCreateMatch = endpoint.match(/\/me\/projects\/([^/]+)\/daily-logs/);
+  if (dailyLogCreateMatch && method === 'POST') {
+    const payload = body as Record<string, unknown>;
+    const newLog = {
+      id: 'dlog_' + Date.now(),
+      project_id: dailyLogCreateMatch[1],
+      company_id: 'demo_company_001',
+      log_date: (payload.log_date as string) || new Date().toISOString().split('T')[0],
+      superintendent_name: (payload.superintendent_name as string) || '',
+      status: 'draft' as const,
+      weather: (payload.weather as typeof DEMO_DAILY_LOGS[0]['weather']) || { conditions: '', temperature_high: '', temperature_low: '', wind: '', precipitation: '' },
+      workers_on_site: (payload.workers_on_site as number) || 0,
+      work_performed: (payload.work_performed as string) || '',
+      materials_delivered: (payload.materials_delivered as typeof DEMO_DAILY_LOGS[0]['materials_delivered']) || [],
+      delays: (payload.delays as typeof DEMO_DAILY_LOGS[0]['delays']) || [],
+      visitors: (payload.visitors as typeof DEMO_DAILY_LOGS[0]['visitors']) || [],
+      safety_incidents: (payload.safety_incidents as string) || '',
+      equipment_used: (payload.equipment_used as string) || '',
+      notes: (payload.notes as string) || '',
+      inspections_summary: [],
+      toolbox_talks_summary: [],
+      incidents_summary: [],
+      created_at: new Date().toISOString(),
+      created_by: 'demo_user_001',
+      updated_at: new Date().toISOString(),
+      updated_by: 'demo_user_001',
+      submitted_at: null,
+      submitted_by: null,
+      approved_at: null,
+      approved_by: null,
+      deleted: false,
+    };
+    DEMO_DAILY_LOGS.unshift(newLog as typeof DEMO_DAILY_LOGS[0]);
+    return newLog as T;
+  }
+
   // ---- Voice Routes ----
 
   // Transcribe audio
@@ -491,18 +591,23 @@ function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown):
 
   // ---- State Compliance Routes ----
 
-  // Get requirements for a state
-  const stateReqMatch = endpoint.match(/\/me\/state-compliance\/requirements\?state=([^&]+)/);
-  if (stateReqMatch || (endpoint.match(/\/me\/state-compliance\/requirements/) && method === 'GET')) {
-    const state = stateReqMatch?.[1] ? decodeURIComponent(stateReqMatch[1]) : 'California';
-    return (DEMO_STATE_REQUIREMENTS[state] || []) as T;
+  // List available states
+  if (endpoint === '/me/state-compliance/states' && method === 'GET') {
+    return { states: DEMO_AVAILABLE_STATES, total: DEMO_AVAILABLE_STATES.length } as T;
   }
 
-  // Check compliance for a state
-  const stateCheckMatch = endpoint.match(/\/me\/state-compliance\/check\?state=([^&]+)/);
-  if (stateCheckMatch || (endpoint.match(/\/me\/state-compliance\/check/) && method === 'GET')) {
-    const state = stateCheckMatch?.[1] ? decodeURIComponent(stateCheckMatch[1]) : 'California';
-    return (DEMO_STATE_COMPLIANCE_RESULTS[state] || { state, total_requirements: 0, met_requirements: 0, compliance_percentage: 0, gaps: [] }) as T;
+  // Get requirements for a state (path param: /requirements/{stateCode})
+  const stateReqMatch = endpoint.match(/\/me\/state-compliance\/requirements\/([^/?]+)/);
+  if (stateReqMatch && method === 'GET') {
+    const stateCode = decodeURIComponent(stateReqMatch[1]).toUpperCase();
+    return (DEMO_STATE_REQUIREMENTS[stateCode] || []) as T;
+  }
+
+  // Check compliance for a state (path param: /check/{stateCode})
+  const stateCheckMatch = endpoint.match(/\/me\/state-compliance\/check\/([^/?]+)/);
+  if (stateCheckMatch && method === 'GET') {
+    const stateCode = decodeURIComponent(stateCheckMatch[1]).toUpperCase();
+    return (DEMO_STATE_COMPLIANCE_RESULTS[stateCode] || { state: stateCode, total_requirements: 0, met_requirements: 0, compliance_percentage: 0, gaps: [] }) as T;
   }
 
   // ---- Incident Routes ----
@@ -1082,9 +1187,9 @@ function handleDemoRequest<T>(endpoint: string, method: string, body?: unknown):
     return newTalk as T;
   }
 
-  // Inspection templates
+  // Inspection templates — return items array (matching real API response shape)
   if (endpoint.match(/\/me\/inspection-templates\//) && method === 'GET') {
-    return DAILY_SITE_INSPECTION_TEMPLATE as T;
+    return DAILY_SITE_INSPECTION_TEMPLATE.items as T;
   }
 
   // Single inspection — GET, PATCH, DELETE
@@ -1354,20 +1459,20 @@ export function setTokenGetter(getter: () => Promise<string | null>): void {
   _tokenGetter = getter;
 }
 
-async function getAuthToken(): Promise<string | null> {
-  if (isDemoMode()) return 'demo-token';
+export async function getAuthToken(): Promise<string | null> {
+  // Always defer to the registered token getter when present. The auth
+  // providers register an alias-aware getter (demo-token-<alias>) for demo
+  // mode AND a Clerk JWT getter for real auth, so this single path covers
+  // both. Falling back to a hardcoded "demo-token" here would silently
+  // ignore the active demo-user alias and break tenant isolation.
   if (_tokenGetter) return _tokenGetter();
+  if (isDemoMode()) return `demo-token-${sessionStorage.getItem('kerf_demo_user') || 'gp04'}`;
   return null;
 }
 
 async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-  // Intercept in demo mode — no real API calls
-  if (isDemoMode()) {
-    // Simulate network delay for realism
-    await new Promise((r) => setTimeout(r, 300));
-    return handleDemoRequest<T>(endpoint, options.method || 'GET', options.body);
-  }
-
+  // All requests (including demo mode) hit the real backend.
+  // The demo-token is accepted by the backend in development mode.
   const { body, headers: customHeaders, ...rest } = options;
   const token = await getAuthToken();
 

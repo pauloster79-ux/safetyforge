@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
+import { useShell } from '@/hooks/useShell';
 import {
   Plus,
   Wrench,
@@ -35,7 +37,7 @@ function EquipmentStatusBadge({ status }: { status: Equipment['status'] }) {
     maintenance: { label: 'Maintenance', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
     retired: { label: 'Retired', className: 'bg-muted text-muted-foreground hover:bg-muted' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -72,7 +74,16 @@ function InspectionIndicator({ equipment }: { equipment: Equipment }) {
 }
 
 export function EquipmentPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
+  const shell = useShell();
+  const openNewEquipment = () =>
+    shell.openCanvas({ component: 'EquipmentCreatePage', props: {}, label: 'New Equipment' });
+  const openEquipmentDetail = (id: string) =>
+    shell.openCanvas({
+      component: 'EquipmentDetailPage',
+      props: { equipmentId: id },
+      label: 'Equipment',
+    });
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,7 +119,7 @@ export function EquipmentPage() {
         </div>
         <Button
           className="bg-primary hover:bg-[var(--machine-dark)]"
-          onClick={() => navigate(ROUTES.EQUIPMENT_NEW)}
+          onClick={openNewEquipment}
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Equipment
@@ -144,7 +155,7 @@ export function EquipmentPage() {
                       <button
                         key={e.id}
                         className="flex w-full items-center gap-2 rounded p-1.5 text-left text-sm text-[var(--fail)] hover:bg-[var(--fail-bg)]"
-                        onClick={() => navigate(ROUTES.EQUIPMENT_DETAIL(e.id))}
+                        onClick={() => openEquipmentDetail(e.id)}
                       >
                         <span className="font-medium">{e.name}</span>
                         <span className="text-[var(--fail)]">-</span>
@@ -217,7 +228,7 @@ export function EquipmentPage() {
               <Card
                 key={equip.id}
                 className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => navigate(ROUTES.EQUIPMENT_DETAIL(equip.id))}
+                onClick={() => openEquipmentDetail(equip.id)}
               >
                 <CardContent className="flex items-center gap-4 py-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
@@ -238,10 +249,10 @@ export function EquipmentPage() {
                       {equip.serial_number && <span>S/N: {equip.serial_number}</span>}
                       {equip.license_plate && <span>{equip.license_plate}</span>}
                     </div>
-                    {equip.required_certifications.length > 0 && (
+                    {(equip.required_certifications || []).length > 0 && (
                       <div className="mt-1 flex items-center gap-1">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Certs:</span>
-                        {equip.required_certifications.map(cert => (
+                        {(equip.required_certifications || []).map(cert => (
                           <Badge key={cert} variant="outline" className="text-[10px] py-0">{cert.replace(/_/g, ' ')}</Badge>
                         ))}
                       </div>
@@ -274,7 +285,7 @@ export function EquipmentPage() {
           </p>
           <Button
             className="mt-4 bg-primary hover:bg-[var(--machine-dark)]"
-            onClick={() => navigate(ROUTES.EQUIPMENT_NEW)}
+            onClick={openNewEquipment}
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Equipment

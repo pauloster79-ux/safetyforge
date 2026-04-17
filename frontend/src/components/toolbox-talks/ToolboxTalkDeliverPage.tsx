@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   ArrowRight,
@@ -45,9 +46,11 @@ const SECTIONS: { id: Section; labelEn: string; labelEs: string }[] = [
   { id: 'reminders', labelEn: 'Safety Reminders', labelEs: 'Recordatorios de Seguridad' },
 ];
 
-export function ToolboxTalkDeliverPage() {
-  const navigate = useNavigate();
-  const { projectId, talkId } = useParams<{ projectId: string; talkId: string }>();
+export function ToolboxTalkDeliverPage({ projectId: propProjectId, talkId: propTalkId }: { projectId?: string; talkId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string; talkId: string }>();
+  const projectId = propProjectId || params.projectId;
+  const talkId = propTalkId || params.talkId;
   const { data: project } = useProject(projectId);
   const { data: talk, isLoading } = useToolboxTalk(projectId, talkId);
   const addAttendee = useAddAttendee(projectId || '');
@@ -142,7 +145,7 @@ export function ToolboxTalkDeliverPage() {
       case 'points':
         return (
           <div className="space-y-6">
-            {content.key_points.map((point, idx) => (
+            {(content.key_points || []).map((point, idx) => (
               <div key={idx} className="space-y-3">
                 <div className="flex items-start gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground">
@@ -172,7 +175,7 @@ export function ToolboxTalkDeliverPage() {
                     )}
                   </div>
                 </div>
-                {idx < content.key_points.length - 1 && <Separator />}
+                {idx < (content.key_points || []).length - 1 && <Separator />}
               </div>
             ))}
           </div>
@@ -181,7 +184,7 @@ export function ToolboxTalkDeliverPage() {
       case 'questions':
         return (
           <div className="space-y-4">
-            {content.discussion_questions.map((question, idx) => (
+            {(content.discussion_questions || []).map((question, idx) => (
               <div
                 key={idx}
                 className="flex items-start gap-3 rounded-lg border border-border bg-white p-4"
@@ -200,7 +203,7 @@ export function ToolboxTalkDeliverPage() {
       case 'reminders':
         return (
           <div className="space-y-3">
-            {content.safety_reminders.map((reminder, idx) => (
+            {(content.safety_reminders || []).map((reminder, idx) => (
               <div
                 key={idx}
                 className="flex items-start gap-3 rounded-lg bg-[var(--pass-bg)] p-4"
@@ -211,13 +214,13 @@ export function ToolboxTalkDeliverPage() {
                 </p>
               </div>
             ))}
-            {content.osha_references.length > 0 && (
+            {(content.osha_references || []).length > 0 && (
               <div className="mt-6 space-y-2">
                 <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   {lang === 'en' ? 'OSHA References' : 'Referencias OSHA'}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {content.osha_references.map((ref, idx) => (
+                  {(content.osha_references || []).map((ref, idx) => (
                     <Badge
                       key={idx}
                       className="bg-[var(--machine-wash)] text-primary hover:bg-[var(--machine-wash)]"
@@ -234,7 +237,7 @@ export function ToolboxTalkDeliverPage() {
   };
 
   const currentSectionData = SECTIONS[sectionIndex];
-  const attendeeCount = talk.attendees.length;
+  const attendeeCount = (talk.attendees || []).length;
 
   return (
     <div className="mx-auto max-w-5xl pb-28">
@@ -449,7 +452,7 @@ export function ToolboxTalkDeliverPage() {
                   <p className="text-sm text-muted-foreground">
                     {attendeeCount} worker{attendeeCount !== 1 ? 's' : ''} signed
                   </p>
-                  {talk.attendees.map((attendee, idx) => (
+                  {(talk.attendees || []).map((attendee, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between rounded-lg bg-muted px-3 py-2"

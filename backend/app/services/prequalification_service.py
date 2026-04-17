@@ -297,7 +297,8 @@ class PrequalificationService(BaseService):
         # Get mock inspection data from Neo4j
         mock_result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:Inspection)
+            WHERE r.category = 'simulated'
             RETURN r.overall_score AS score
             ORDER BY r.created_at DESC
             LIMIT 1

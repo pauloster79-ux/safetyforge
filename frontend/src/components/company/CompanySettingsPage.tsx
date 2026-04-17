@@ -224,11 +224,11 @@ export function CompanySettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Name</Label>
-              <Input value={user?.displayName || ''} disabled className="bg-muted" />
+              <Input value={user?.fullName || ''} disabled className="bg-muted" />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input value={user?.email || ''} disabled className="bg-muted" />
+              <Input value={user?.primaryEmailAddress?.emailAddress || ''} disabled className="bg-muted" />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">

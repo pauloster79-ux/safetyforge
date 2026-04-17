@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   AlertTriangle,
@@ -153,9 +154,10 @@ function VoiceIncidentReporter({
   );
 }
 
-export function IncidentCreatePage() {
-  const navigate = useNavigate();
-  const { projectId } = useParams<{ projectId: string }>();
+export function IncidentCreatePage({ projectId: propProjectId }: { projectId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string }>();
+  const projectId = propProjectId || params.projectId;
   const { data: project } = useProject(projectId);
   const createIncident = useCreateIncident(projectId || '');
 

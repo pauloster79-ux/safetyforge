@@ -6,8 +6,18 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
+class InspectionCategory(str, Enum):
+    """High-level inspection category used in the new ontology."""
+
+    SAFETY = "safety"
+    QUALITY = "quality"
+    ENVIRONMENTAL = "environmental"
+    EQUIPMENT = "equipment"
+    SIMULATED = "simulated"
+
+
 class InspectionType(str, Enum):
-    """Available inspection types."""
+    """Available inspection types (legacy — kept for backward compatibility)."""
 
     DAILY_SITE = "daily_site"
     SCAFFOLD = "scaffold"
@@ -42,6 +52,10 @@ class InspectionCreate(BaseModel):
     """Input model for creating a new inspection."""
 
     inspection_type: InspectionType = Field(..., description="Type of inspection")
+    category: InspectionCategory = Field(
+        default=InspectionCategory.SAFETY,
+        description="High-level category: safety, quality, environmental, equipment, simulated",
+    )
     inspection_date: date = Field(..., description="Date of inspection")
     inspector_name: str = Field(
         ..., min_length=2, max_length=128, description="Name of the inspector"
@@ -76,6 +90,7 @@ class InspectionUpdate(BaseModel):
     """Input model for updating an inspection. All fields optional."""
 
     inspection_type: InspectionType | None = None
+    category: InspectionCategory | None = None
     inspection_date: date | None = None
     inspector_name: str | None = Field(None, min_length=2, max_length=128)
     inspector_id: str | None = None
@@ -101,8 +116,10 @@ class Inspection(InspectionCreate):
     )
     created_at: datetime
     created_by: str
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
     updated_at: datetime
     updated_by: str
+    updated_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
     deleted: bool = False
 
 

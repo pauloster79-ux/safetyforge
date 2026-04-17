@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ import { useCreateProject } from '@/hooks/useProjects';
 import { ROUTES, PROJECT_TYPES, TRADE_TYPES } from '@/lib/constants';
 
 export function ProjectCreatePage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const createProject = useCreateProject();
 
   const [form, setForm] = useState({

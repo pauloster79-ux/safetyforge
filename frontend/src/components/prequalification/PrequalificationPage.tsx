@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   FileCheck,
   Loader2,
@@ -18,6 +20,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useGeneratePackage, usePrequalPackages } from '@/hooks/usePrequalification';
+import { useCreateDocument, useGenerateDocument } from '@/hooks/useDocuments';
+import { ROUTES } from '@/lib/constants';
 import type { PrequalPackage, PrequalDocument } from '@/lib/constants';
 import { ComplianceRing } from '@/components/projects/ComplianceRing';
 
@@ -48,28 +52,48 @@ function StatusBadge({ status }: { status: PrequalDocument['status'] }) {
     missing: { label: 'Missing', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' },
     na: { label: 'N/A', className: 'bg-muted text-muted-foreground hover:bg-muted' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
-function ActionButton({ status }: { status: PrequalDocument['status'] }) {
-  switch (status) {
+function ActionButton({
+  doc,
+  onView,
+  onUpdate,
+  onGenerate,
+}: {
+  doc: PrequalDocument;
+  onView: (doc: PrequalDocument) => void;
+  onUpdate: (doc: PrequalDocument) => void;
+  onGenerate: (doc: PrequalDocument) => void;
+}) {
+  switch (doc.status) {
     case 'ready':
       return (
-        <Button variant="outline" size="sm" className="text-xs">
+        <Button variant="outline" size="sm" className="text-xs" onClick={() => onView(doc)}>
           <ExternalLink className="mr-1 h-3 w-3" />
           View
         </Button>
       );
     case 'outdated':
       return (
-        <Button variant="outline" size="sm" className="border-[var(--warn)] text-[var(--warn)] text-xs hover:bg-[var(--warn-bg)]">
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-[var(--warn)] text-[var(--warn)] text-xs hover:bg-[var(--warn-bg)]"
+          onClick={() => onUpdate(doc)}
+        >
           Update
         </Button>
       );
     case 'missing':
       return (
-        <Button variant="outline" size="sm" className="border-[var(--fail)] text-[var(--fail)] text-xs hover:bg-[var(--fail-bg)]">
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-[var(--fail)] text-[var(--fail)] text-xs hover:bg-[var(--fail-bg)]"
+          onClick={() => onGenerate(doc)}
+        >
           Generate
         </Button>
       );
@@ -78,7 +102,19 @@ function ActionButton({ status }: { status: PrequalDocument['status'] }) {
   }
 }
 
-function DocumentCategory({ category, documents }: { category: string; documents: PrequalDocument[] }) {
+function DocumentCategory({
+  category,
+  documents,
+  onView,
+  onUpdate,
+  onGenerate,
+}: {
+  category: string;
+  documents: PrequalDocument[];
+  onView: (doc: PrequalDocument) => void;
+  onUpdate: (doc: PrequalDocument) => void;
+  onGenerate: (doc: PrequalDocument) => void;
+}) {
   const [expanded, setExpanded] = useState(true);
 
   return (
@@ -108,7 +144,7 @@ function DocumentCategory({ category, documents }: { category: string; documents
                 {doc.notes && <p className="text-xs text-muted-foreground">{doc.notes}</p>}
               </div>
               <StatusBadge status={doc.status} />
-              <ActionButton status={doc.status} />
+              <ActionButton doc={doc} onView={onView} onUpdate={onUpdate} onGenerate={onGenerate} />
             </div>
           ))}
         </div>
@@ -205,12 +241,41 @@ function QuestionnaireSection({ questionnaire }: { questionnaire: Record<string,
 }
 
 export function PrequalificationPage() {
+  const navigate = useCanvasNavigate();
   const [platform, setPlatform] = useState<string>('isnetworld');
   const [clientName, setClientName] = useState('');
   const [activePackage, setActivePackage] = useState<PrequalPackage | null>(null);
 
   const generatePackage = useGeneratePackage();
   const { data: existingPackages } = usePrequalPackages();
+  const createDocument = useCreateDocument();
+  const generateDocument = useGenerateDocument();
+
+  const handleDocView = (doc: PrequalDocument) => {
+    if (doc.source === 'documents' && doc.source_id) {
+      navigate(ROUTES.DOCUMENT_EDIT(doc.source_id));
+    }
+  };
+
+  const handleDocUpdate = (doc: PrequalDocument) => {
+    if (doc.source === 'documents' && doc.source_id) {
+      navigate(ROUTES.DOCUMENT_EDIT(doc.source_id));
+    }
+  };
+
+  const handleDocGenerate = async (doc: PrequalDocument) => {
+    try {
+      const newDoc = await createDocument.mutateAsync({
+        title: doc.document_name,
+        document_type: doc.category.toLowerCase().replace(/\s+/g, '_'),
+        project_info: {},
+      });
+      await generateDocument.mutateAsync({ document_id: newDoc.id });
+      navigate(ROUTES.DOCUMENT_EDIT(newDoc.id));
+    } catch {
+      // Error handled by mutation onError
+    }
+  };
 
   const handleGenerate = async () => {
     const result = await generatePackage.mutateAsync({
@@ -225,7 +290,7 @@ export function PrequalificationPage() {
   // Group documents by category
   const docsByCategory: Record<string, PrequalDocument[]> = {};
   if (pkg) {
-    for (const doc of pkg.documents) {
+    for (const doc of (pkg.documents || [])) {
       if (!docsByCategory[doc.category]) {
         docsByCategory[doc.category] = [];
       }
@@ -365,7 +430,14 @@ export function PrequalificationPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {Object.entries(docsByCategory).map(([category, docs]) => (
-                <DocumentCategory key={category} category={category} documents={docs} />
+                <DocumentCategory
+                  key={category}
+                  category={category}
+                  documents={docs}
+                  onView={handleDocView}
+                  onUpdate={handleDocUpdate}
+                  onGenerate={handleDocGenerate}
+                />
               ))}
             </CardContent>
           </Card>

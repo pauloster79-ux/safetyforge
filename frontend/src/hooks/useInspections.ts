@@ -99,7 +99,16 @@ export function useDeleteInspection(projectId: string) {
 export function useInspectionTemplate(type: string) {
   return useQuery<InspectionTemplate>({
     queryKey: ['inspection-templates', type],
-    queryFn: () => api.get<InspectionTemplate>(`/me/inspection-templates/${type}`),
+    queryFn: async () => {
+      const data = await api.get<
+        InspectionTemplate | { item_id: string; category: string; description: string }[]
+      >(`/me/inspection-templates/${type}`);
+      // Backend returns a raw array; wrap it into the InspectionTemplate shape
+      if (Array.isArray(data)) {
+        return { type, items: data };
+      }
+      return data;
+    },
     enabled: !!type,
   });
 }

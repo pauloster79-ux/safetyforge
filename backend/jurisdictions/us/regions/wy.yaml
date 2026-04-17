@@ -1,0 +1,47 @@
+code: WY
+name: Wyoming
+regulatory_body: Wyoming OSHA (Department of Workforce Services)
+state_plan: true
+primary_legislation: Wyoming Occupational Health and Safety Act (WS 27-11)
+construction_regulation: Wyoming OSHA adopts federal 29 CFR 1926 with state enforcement
+
+requirements:
+  - id: WY-001
+    state: WY
+    requirement_name: Wyoming OSHA State Plan Enforcement
+    description: Wyoming operates its own OSHA-approved state plan covering both private and public sector employers.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "WS 27-11-101 et seq."
+    additional_details: Wyoming OSHA adopts federal standards by reference and enforces them through state inspectors. Public sector employees including state and municipal workers are fully covered.
+    applies_to: all
+    severity: mandatory
+
+  - id: WY-002
+    state: WY
+    requirement_name: Oil and Gas Industry Safety
+    description: Wyoming OSHA places special enforcement emphasis on oil and gas extraction operations due to the high hazard nature of the industry in the state.
+    federal_equivalent: "29 CFR 1910.119 (PSM)"
+    state_standard: "Wyoming OSHA Rules Chapter 6"
+    additional_details: Includes targeted inspection programs for drilling rigs, well servicing operations, and production facilities. Emphasis on hydrogen sulfide exposure, fall protection, and struck-by hazards.
+    applies_to: all
+    severity: mandatory
+
+  - id: WY-003
+    state: WY
+    requirement_name: Workers Compensation Insurance
+    description: Wyoming operates an exclusive state workers compensation fund. All employers must obtain coverage through the Wyoming Department of Workforce Services.
+    federal_equivalent: null
+    state_standard: "WS 27-14-101 et seq."
+    additional_details: Wyoming is one of four states with an exclusive state fund. Private insurance is not permitted for workers compensation. Employers pay premiums based on industry classification and experience rating.
+    applies_to: all
+    severity: mandatory
+
+  - id: WY-004
+    state: WY
+    requirement_name: Mine Safety and Inspection
+    description: Wyoming enforces mine safety standards for surface and underground mining operations beyond federal MSHA requirements.
+    federal_equivalent: "30 CFR (MSHA)"
+    state_standard: "WS 30-2-101 et seq."
+    additional_details: The Wyoming Department of Environmental Quality Mine Division conducts independent inspections. Includes requirements for miner training, ground control, and emergency response plans.
+    applies_to: all
+    severity: mandatory

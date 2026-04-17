@@ -4,9 +4,11 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { JurisdictionProvider } from '@/contexts/JurisdictionContext';
+import ChatPanel, { ChatToggleButton } from '@/components/chat/ChatPanel';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <JurisdictionProvider>
@@ -27,6 +29,10 @@ export function AppLayout() {
             <span>{new Date().getFullYear()}</span>
           </footer>
         </div>
+
+        {/* Chat panel + toggle button */}
+        <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+        <ChatToggleButton onClick={() => setChatOpen(true)} isOpen={chatOpen} />
       </div>
     </JurisdictionProvider>
   );

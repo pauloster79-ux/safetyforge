@@ -176,7 +176,8 @@ class AnalyticsService(BaseService):
 
         mock_result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:Inspection)
+            WHERE r.category = 'simulated'
             RETURN r.overall_score AS score, r.grade AS grade, r.created_at AS created_at
             ORDER BY r.created_at DESC
             LIMIT 1

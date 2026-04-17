@@ -1,0 +1,57 @@
+code: FL
+name: Florida
+regulatory_body: Florida Department of Commerce - Division of Workers' Compensation
+state_plan: false
+primary_legislation: Florida Statutes Title XXXI (Labor) Chapter 440
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: FL-001
+    state: FL
+    requirement_name: Workers' Compensation Insurance
+    description: Construction employers with one or more employees must carry workers' compensation insurance. Non-construction employers require coverage at four or more employees.
+    federal_equivalent: null
+    state_standard: "FS 440.02 et seq."
+    additional_details: Construction industry has the strictest threshold in Florida. Corporate officers can exempt themselves but must file for exemption. Penalties for non-compliance include stop-work orders.
+    applies_to: all
+    severity: mandatory
+
+  - id: FL-002
+    state: FL
+    requirement_name: Contractor Licensing
+    description: General, building, and residential contractors must be licensed by the Florida Construction Industry Licensing Board.
+    federal_equivalent: null
+    state_standard: "FS 489.105 et seq."
+    additional_details: Requires passing trade and business exams, proof of financial responsibility, and workers' compensation coverage. Local jurisdictions may have additional requirements.
+    applies_to: construction
+    severity: mandatory
+
+  - id: FL-003
+    state: FL
+    requirement_name: Trench Safety Act
+    description: Florida requires specific trench safety measures on all public works construction projects involving trench excavation.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "FS 553.63"
+    additional_details: Contractors must include trench safety costs as a separate line item in bids for public projects. Compliance with federal excavation standards is required.
+    applies_to: construction
+    severity: mandatory
+
+  - id: FL-004
+    state: FL
+    requirement_name: Hurricane and High Wind Construction Standards
+    description: Construction in Florida must comply with the Florida Building Code high-velocity hurricane zone requirements for structural safety.
+    federal_equivalent: null
+    state_standard: "FS 553.73 (Florida Building Code)"
+    additional_details: Applies to all construction in hurricane-prone regions. Requires impact-resistant openings, enhanced roof-to-wall connections, and wind-borne debris protection.
+    applies_to: construction
+    severity: mandatory
+
+  - id: FL-005
+    state: FL
+    requirement_name: Heat Illness Prevention in Outdoor Work
+    description: Florida requires employers to protect outdoor workers from heat-related illness under the general duty clause, with particular focus on agriculture and construction.
+    federal_equivalent: null
+    state_standard: "FS 448.110 (General Duty)"
+    additional_details: Employers must provide potable water, shade, rest breaks, and acclimatization procedures. Florida's climate makes this a primary enforcement focus for construction sites.
+    applies_to: construction
+    severity: mandatory

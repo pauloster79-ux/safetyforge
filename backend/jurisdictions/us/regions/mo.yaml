@@ -1,0 +1,47 @@
+code: MO
+name: Missouri
+regulatory_body: Federal OSHA (no state plan)
+state_plan: false
+primary_legislation: Missouri Workers' Compensation Law (RSMo Chapter 287)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: MO-001
+    state: MO
+    requirement_name: Workers' Compensation Coverage
+    description: Employers with five or more employees (or any employer in the construction industry) must carry workers' compensation insurance.
+    federal_equivalent: null
+    state_standard: "RSMo 287.030"
+    additional_details: Construction employers are covered regardless of employee count. Administered by the Missouri Division of Workers' Compensation.
+    applies_to: all
+    severity: mandatory
+
+  - id: MO-002
+    state: MO
+    requirement_name: Construction Site Drug-Free Workplace
+    description: Construction employers performing public works projects must maintain a drug-free workplace program including written policy, employee education, and testing procedures.
+    federal_equivalent: null
+    state_standard: "RSMo 290.527"
+    additional_details: Applies to contractors and subcontractors on state-funded construction projects. Must include procedures for testing, employee assistance, and disciplinary action.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MO-003
+    state: MO
+    requirement_name: Scaffolding and Fall Protection on Public Works
+    description: Scaffolding used on public buildings and construction must meet specific safety requirements including guardrails, toeboards, and proper anchoring.
+    federal_equivalent: "29 CFR 1926 Subpart L"
+    state_standard: "RSMo 292.010-292.120"
+    additional_details: Missouri scaffolding law predates OSHA and applies specifically to public works. Violations carry state-level penalties in addition to federal OSHA citations.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MO-004
+    state: MO
+    requirement_name: Employer Injury Reporting
+    description: Employers must report workplace injuries and fatalities to the Missouri Division of Workers' Compensation within specified timeframes.
+    federal_equivalent: "29 CFR 1904 (OSHA Recordkeeping)"
+    state_standard: "RSMo 287.380"
+    additional_details: First report of injury must be filed within 30 days. Fatalities and serious injuries require immediate notification to federal OSHA under separate federal requirements.
+    applies_to: all
+    severity: mandatory

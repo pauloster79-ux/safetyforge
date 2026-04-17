@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import type { Project } from '@/lib/constants';
 
 interface ProjectListParams {
+  state?: string;
   status?: string;
 }
 
@@ -42,6 +43,7 @@ interface UpdateProjectPayload {
 
 export function useProjects(params?: ProjectListParams) {
   const searchParams = new URLSearchParams();
+  if (params?.state) searchParams.set('state', params.state);
   if (params?.status) searchParams.set('status', params.status);
   const queryString = searchParams.toString();
   const endpoint = queryString ? `/me/projects?${queryString}` : '/me/projects';

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { X, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
 const DISMISS_KEY = 'kerf_email_banner_dismissed';

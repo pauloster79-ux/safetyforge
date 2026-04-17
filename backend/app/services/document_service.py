@@ -101,6 +101,14 @@ class DocumentService(BaseService):
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=doc_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created document '{data.title}'",
+        )
         return self._to_model(result)
 
     def get(self, company_id: str, document_id: str) -> Document:
@@ -169,6 +177,9 @@ class DocumentService(BaseService):
 
         where_str = " AND ".join(where_clauses)
         order_dir = "DESC" if sort_direction == "desc" else "ASC"
+        allowed_sort_fields = {"created_at", "updated_at", "title", "document_type", "status"}
+        if sort_field not in allowed_sort_fields:
+            sort_field = "created_at"
 
         count_result = self._read_tx_single(
             f"""
@@ -237,6 +248,14 @@ class DocumentService(BaseService):
         )
         if result is None:
             raise DocumentNotFoundError(document_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=document_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated document {document_id}",
+        )
         return self._to_model(result)
 
     def set_generated_content(
@@ -285,6 +304,14 @@ class DocumentService(BaseService):
         )
         if result is None:
             raise DocumentNotFoundError(document_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=document_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Generated content for document {document_id}",
+        )
         return self._to_model(result)
 
     def delete(self, company_id: str, document_id: str) -> None:
@@ -312,6 +339,14 @@ class DocumentService(BaseService):
         )
         if result is None:
             raise DocumentNotFoundError(document_id)
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=document_id,
+            entity_type="Document",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Archived document {document_id}",
+        )
 
     def get_stats(self, company_id: str) -> dict:
         """Get document statistics for a company.

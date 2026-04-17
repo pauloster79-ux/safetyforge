@@ -17,27 +17,38 @@ import { api } from '@/lib/api';
 import { ComplianceRing } from '@/components/projects/ComplianceRing';
 import type { StateRequirement, StateComplianceResult } from '@/lib/constants';
 
-const AVAILABLE_STATES = [
-  'California',
-  'New York',
-  'Washington',
-  'Oregon',
-  'Michigan',
-] as const;
+interface AvailableState {
+  code: string;
+  name: string;
+}
 
-function useStateRequirements(state: string) {
-  return useQuery<StateRequirement[]>({
-    queryKey: ['state-compliance', 'requirements', state],
-    queryFn: () => api.get<StateRequirement[]>(`/me/state-compliance/requirements?state=${encodeURIComponent(state)}`),
-    enabled: !!state,
+function useAvailableStates() {
+  return useQuery<AvailableState[]>({
+    queryKey: ['state-compliance', 'states'],
+    queryFn: async () => {
+      const data = await api.get<{ states: AvailableState[]; total: number }>('/me/state-compliance/states');
+      return data.states;
+    },
   });
 }
 
-function useStateComplianceCheck(state: string) {
+function useStateRequirements(stateCode: string) {
+  return useQuery<StateRequirement[]>({
+    queryKey: ['state-compliance', 'requirements', stateCode],
+    queryFn: () => api.get<StateRequirement[]>(
+      `/me/state-compliance/requirements/${encodeURIComponent(stateCode)}`
+    ),
+    enabled: !!stateCode,
+  });
+}
+
+function useStateComplianceCheck(stateCode: string) {
   return useQuery<StateComplianceResult>({
-    queryKey: ['state-compliance', 'check', state],
-    queryFn: () => api.get<StateComplianceResult>(`/me/state-compliance/check?state=${encodeURIComponent(state)}`),
-    enabled: !!state,
+    queryKey: ['state-compliance', 'check', stateCode],
+    queryFn: () => api.get<StateComplianceResult>(
+      `/me/state-compliance/check/${encodeURIComponent(stateCode)}`
+    ),
+    enabled: !!stateCode,
   });
 }
 
@@ -82,15 +93,19 @@ function GapDetail({ gap }: { gap: { requirement: string; status: string; action
 }
 
 export function StateCompliancePage() {
-  const [selectedState, setSelectedState] = useState<string>('');
+  const [selectedStateCode, setSelectedStateCode] = useState<string>('');
 
-  const { data: requirements, isLoading: reqLoading } = useStateRequirements(selectedState);
-  const { data: compliance, isLoading: compLoading } = useStateComplianceCheck(selectedState);
+  const { data: availableStates } = useAvailableStates();
+  const { data: requirements, isLoading: reqLoading } = useStateRequirements(selectedStateCode);
+  const { data: compliance, isLoading: compLoading } = useStateComplianceCheck(selectedStateCode);
 
   const isLoading = reqLoading || compLoading;
 
+  // Resolve display name from available states
+  const selectedStateName = availableStates?.find(s => s.code === selectedStateCode)?.name ?? selectedStateCode;
+
   // Determine which requirements are gaps
-  const gapNames = new Set(compliance?.gaps.map(g => g.requirement) ?? []);
+  const gapNames = new Set((compliance?.gaps || []).map(g => g.requirement));
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -107,27 +122,27 @@ export function StateCompliancePage() {
           <div className="flex items-end gap-4">
             <div className="flex-1 space-y-2">
               <label className="text-sm font-medium text-[var(--concrete-600)]">Select State</label>
-              <Select value={selectedState} onValueChange={(v) => { if (v) setSelectedState(v); }}>
+              <Select value={selectedStateCode} onValueChange={(v) => { if (v) setSelectedStateCode(v); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a state to check compliance" />
                 </SelectTrigger>
                 <SelectContent>
-                  {AVAILABLE_STATES.map(state => (
-                    <SelectItem key={state} value={state}>
+                  {(availableStates ?? []).map(state => (
+                    <SelectItem key={state.code} value={state.code}>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                        {state}
+                        {state.name}
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {selectedState && (
+            {selectedStateCode && (
               <Button
                 variant="outline"
                 className="border-primary text-[var(--machine-dark)] hover:bg-[var(--machine-wash)]"
-                onClick={() => setSelectedState(selectedState)}
+                onClick={() => setSelectedStateCode(selectedStateCode)}
               >
                 <Search className="mr-2 h-4 w-4" />
                 Re-check
@@ -138,21 +153,21 @@ export function StateCompliancePage() {
       </Card>
 
       {/* Loading state */}
-      {isLoading && selectedState && (
+      {isLoading && selectedStateCode && (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       )}
 
       {/* Results */}
-      {!isLoading && selectedState && compliance && requirements && (
+      {!isLoading && selectedStateCode && compliance && requirements && (
         <>
           {/* State header + score */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="flex flex-col items-center pt-6">
                 <ComplianceRing score={compliance.compliance_percentage} size="lg" />
-                <p className="mt-2 text-sm font-semibold text-[var(--concrete-600)]">{selectedState}</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--concrete-600)]">{selectedStateName}</p>
                 <p className="text-xs text-muted-foreground">
                   {compliance.met_requirements} of {compliance.total_requirements} requirements met
                 </p>
@@ -166,14 +181,14 @@ export function StateCompliancePage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      {selectedState} requires {compliance.total_requirements} standard{compliance.total_requirements !== 1 ? 's' : ''} beyond federal OSHA
+                      {selectedStateName} requires {compliance.total_requirements} standard{compliance.total_requirements !== 1 ? 's' : ''} beyond federal OSHA
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {compliance.gaps.length > 0
-                        ? `You have ${compliance.gaps.length} gap${compliance.gaps.length !== 1 ? 's' : ''} to address before working in ${selectedState}.`
-                        : `You are fully compliant with ${selectedState} state-specific requirements.`}
+                      {(compliance.gaps || []).length > 0
+                        ? `You have ${(compliance.gaps || []).length} gap${(compliance.gaps || []).length !== 1 ? 's' : ''} to address before working in ${selectedStateName}.`
+                        : `You are fully compliant with ${selectedStateName} state-specific requirements.`}
                     </p>
-                    {compliance.gaps.length > 0 && (
+                    {(compliance.gaps || []).length > 0 && (
                       <div className="mt-3 flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <CheckCircle2 className="h-4 w-4 text-[var(--pass)]" />
@@ -181,7 +196,7 @@ export function StateCompliancePage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <XCircle className="h-4 w-4 text-[var(--fail)]" />
-                          <span className="text-xs text-muted-foreground">{compliance.gaps.length} gaps</span>
+                          <span className="text-xs text-muted-foreground">{(compliance.gaps || []).length} gaps</span>
                         </div>
                       </div>
                     )}
@@ -192,19 +207,19 @@ export function StateCompliancePage() {
           </div>
 
           {/* Gaps section */}
-          {compliance.gaps.length > 0 && (
+          {(compliance.gaps || []).length > 0 && (
             <Card className="border-[var(--fail)]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg text-[var(--fail)]">
                   <AlertTriangle className="h-5 w-5 text-[var(--fail)]" />
-                  Compliance Gaps ({compliance.gaps.length})
+                  Compliance Gaps ({(compliance.gaps || []).length})
                 </CardTitle>
                 <CardDescription>
-                  Actions needed to meet {selectedState} state requirements
+                  Actions needed to meet {selectedStateName} state requirements
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {compliance.gaps.map((gap, i) => (
+                {(compliance.gaps || []).map((gap, i) => (
                   <GapDetail key={i} gap={gap} />
                 ))}
               </CardContent>
@@ -214,7 +229,7 @@ export function StateCompliancePage() {
           {/* Full requirements list */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">All {selectedState} Requirements</CardTitle>
+              <CardTitle className="text-lg">All {selectedStateName} Requirements</CardTitle>
               <CardDescription>
                 State-specific safety requirements beyond federal OSHA standards
               </CardDescription>
@@ -233,7 +248,7 @@ export function StateCompliancePage() {
       )}
 
       {/* No state selected */}
-      {!selectedState && (
+      {!selectedStateCode && (
         <Card>
           <CardContent className="flex flex-col items-center py-12 text-center">
             <MapPin className="h-12 w-12 text-muted-foreground" />

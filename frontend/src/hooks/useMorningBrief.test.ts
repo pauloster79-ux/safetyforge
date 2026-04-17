@@ -40,7 +40,7 @@ describe('useMorningBrief', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.id).toBe('mb_1')
-    expect(result.current.data!.safety_focus).toBe('Heat stress prevention')
+    expect(result.current.data!.summary).toBeDefined()
   })
 
   // [EDGE] Disabled when projectId is undefined

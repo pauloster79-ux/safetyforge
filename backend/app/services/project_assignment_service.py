@@ -63,12 +63,31 @@ class ProjectAssignmentService(BaseService):
             MATCH (c:Company {id: $company_id})
             CREATE (a:ProjectAssignment $props)
             CREATE (c)-[:HAS_ASSIGNMENT]->(a)
+            WITH c, a
+            // Also create the direct ASSIGNED_TO_PROJECT relationship for workers
+            OPTIONAL MATCH (w:Worker {id: a.resource_id})
+                    WHERE a.resource_type = 'worker'
+            OPTIONAL MATCH (p:Project {id: a.project_id})
+            FOREACH (_ IN CASE WHEN w IS NOT NULL AND p IS NOT NULL THEN [1] ELSE [] END |
+                MERGE (w)-[rel:ASSIGNED_TO_PROJECT {project_id: p.id}]->(p)
+                SET rel.role = a.role,
+                    rel.start_date = a.start_date
+            )
             RETURN a {.*, company_id: c.id} AS assignment
             """,
             {"company_id": company_id, "props": props},
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=assignment_id,
+            entity_type="ProjectAssignment",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created {data.resource_type.value} assignment to project {data.project_id}",
+            related_entity_ids=[data.project_id, data.resource_id],
+        )
         return ProjectAssignment(**result["assignment"])
 
     def get(self, company_id: str, assignment_id: str) -> ProjectAssignment:
@@ -140,6 +159,14 @@ class ProjectAssignmentService(BaseService):
         )
         if result is None:
             raise AssignmentNotFoundError(assignment_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=assignment_id,
+            entity_type="ProjectAssignment",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated assignment {assignment_id}",
+        )
         return ProjectAssignment(**result["assignment"])
 
     def delete(self, company_id: str, assignment_id: str) -> None:
@@ -167,6 +194,14 @@ class ProjectAssignmentService(BaseService):
         )
         if result is None:
             raise AssignmentNotFoundError(assignment_id)
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=assignment_id,
+            entity_type="ProjectAssignment",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Archived assignment {assignment_id}",
+        )
 
     def list_assignments(
         self,

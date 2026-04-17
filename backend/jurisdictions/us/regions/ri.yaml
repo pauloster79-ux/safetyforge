@@ -1,0 +1,47 @@
+code: RI
+name: Rhode Island
+regulatory_body: Federal OSHA (no state plan) / Rhode Island Department of Labor and Training (DLT)
+state_plan: false
+primary_legislation: Federal Occupational Safety and Health Act (29 USC 651)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: RI-001
+    state: RI
+    requirement_name: Workers' Compensation Coverage
+    description: All Rhode Island employers with one or more employees must carry workers' compensation insurance. There is no small employer exemption.
+    federal_equivalent: null
+    state_standard: "RIGL 28-29-1 et seq."
+    additional_details: Employers may obtain coverage through private carriers, the State Insurance Fund, or self-insurance. Corporate officers may elect to be excluded from coverage. Failure to maintain coverage is a criminal misdemeanor.
+    applies_to: all
+    severity: mandatory
+
+  - id: RI-002
+    state: RI
+    requirement_name: Contractor Registration Act
+    description: All contractors performing residential construction or home improvement work in Rhode Island must register with the Contractors' Registration Board.
+    federal_equivalent: null
+    state_standard: "RIGL 5-65-1 et seq."
+    additional_details: Registration requires proof of workers' compensation and liability insurance. The Board can revoke registration for violations including unsafe work practices, code violations, or consumer complaints.
+    applies_to: construction
+    severity: mandatory
+
+  - id: RI-003
+    state: RI
+    requirement_name: Lead Hazard Mitigation
+    description: Rhode Island requires licensing for all lead abatement and renovation activities in pre-1978 buildings. Contractors must be licensed by the Rhode Island Department of Health.
+    federal_equivalent: "40 CFR 745 (EPA RRP Rule)"
+    state_standard: "RIGL 23-24.6-1 et seq."
+    additional_details: Rhode Island's lead requirements are more stringent than federal EPA requirements. The state mandates lead inspections for childcare facilities and rental properties, and requires certified lead-safe renovation practices for all work disturbing painted surfaces in pre-1978 housing.
+    applies_to: construction
+    severity: mandatory
+
+  - id: RI-004
+    state: RI
+    requirement_name: Workplace Safety Whistleblower Protection
+    description: Rhode Island prohibits retaliation against employees who report workplace safety violations or refuse to work in conditions that pose an imminent danger to health or safety.
+    federal_equivalent: "29 CFR 1977 (Section 11(c) Whistleblower)"
+    state_standard: "RIGL 28-20-21"
+    additional_details: Employees who are discharged or discriminated against for reporting safety violations may file a complaint with the DLT. Remedies include reinstatement, back pay, and attorney's fees.
+    applies_to: all
+    severity: mandatory

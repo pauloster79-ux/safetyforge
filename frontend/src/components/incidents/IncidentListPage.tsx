@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { Search, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,7 +56,7 @@ function ProjectIncidents({
   statusFilter: string;
 }) {
   const { data: incidents, isLoading } = useIncidents(projectId);
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
 
   const filtered = useMemo(() => {
     if (!incidents) return [];
@@ -124,7 +125,7 @@ function ProjectIncidents({
 }
 
 export function IncidentListPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { data: projects, isLoading: projectsLoading } = useProjects();
 
   const [search, setSearch] = useState('');
@@ -132,11 +133,13 @@ export function IncidentListPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
 
-  const handleSeverityFilter = (value: string) => {
+  const handleSeverityFilter = (value: string | null) => {
+    if (value === null) return;
     setSeverityFilter(value.startsWith('All') ? '' : value);
   };
 
-  const handleStatusFilter = (value: string) => {
+  const handleStatusFilter = (value: string | null) => {
+    if (value === null) return;
     setStatusFilter(value.startsWith('All') ? '' : value);
   };
 

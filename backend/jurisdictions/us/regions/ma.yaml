@@ -1,0 +1,57 @@
+code: MA
+name: Massachusetts
+regulatory_body: Federal OSHA (Region I)
+state_plan: false
+primary_legislation: Massachusetts General Laws Chapter 149 (Labor and Industries)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: MA-001
+    state: MA
+    requirement_name: Workers' Compensation Insurance
+    description: All Massachusetts employers must provide workers' compensation insurance for their employees. There are no exemptions based on the number of employees.
+    federal_equivalent: null
+    state_standard: "M.G.L. c. 152 s. 25A"
+    additional_details: Coverage must be obtained through a licensed insurer or approved self-insurance. The Department of Industrial Accidents oversees compliance and adjudicates claims.
+    applies_to: all
+    severity: mandatory
+
+  - id: MA-002
+    state: MA
+    requirement_name: Construction Supervisor Licensing
+    description: All construction work in Massachusetts must be supervised by a person holding a valid Construction Supervisor License issued by the Board of Building Regulations and Standards.
+    federal_equivalent: null
+    state_standard: "M.G.L. c. 142A s. 2; 780 CMR 105.5"
+    additional_details: Licenses are available in Unrestricted, Restricted, and Specialty categories. Applicants must pass an examination and demonstrate experience. Continuing education is required for renewal.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MA-003
+    state: MA
+    requirement_name: Lead-Safe Renovation Practices
+    description: All renovation, repair, and painting work in pre-1978 residential buildings must comply with Massachusetts lead-safe work practices, which are stricter than federal EPA requirements.
+    federal_equivalent: "40 CFR 745 (EPA RRP Rule)"
+    state_standard: "M.G.L. c. 111 s. 190-199; 454 CMR 22.00"
+    additional_details: Massachusetts requires de-leading of residential properties where children under six reside. Property owners and contractors face strict liability for lead paint hazards.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MA-004
+    state: MA
+    requirement_name: Trench Safety and Permitting
+    description: All trench excavation work requires a permit from the local municipality. Trenches five feet or deeper must have approved protective systems.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "M.G.L. c. 82A; 520 CMR 14.00"
+    additional_details: Massachusetts trench safety law requires municipal permits and a competent person on-site. The law was strengthened after construction trench fatalities and carries criminal penalties for violations.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MA-005
+    state: MA
+    requirement_name: Asbestos Abatement Licensing
+    description: Asbestos removal contractors and workers must be licensed by the Massachusetts Division of Occupational Safety. Advance notification is required for abatement projects.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "M.G.L. c. 149 s. 6A through 6G; 453 CMR 6.00"
+    additional_details: Contractors must hold a valid asbestos abatement license. Workers must complete approved training programs and maintain current medical surveillance certifications.
+    applies_to: construction
+    severity: mandatory

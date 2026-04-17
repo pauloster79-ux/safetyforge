@@ -1,0 +1,47 @@
+code: VT
+name: Vermont
+regulatory_body: VOSHA (Vermont Occupational Safety and Health Administration)
+state_plan: true
+primary_legislation: Vermont Occupational Safety and Health Act (21 VSA Chapter 3 Subchapter 5)
+construction_regulation: VOSHA adopts federal 29 CFR 1926 with state enforcement
+
+requirements:
+  - id: VT-001
+    state: VT
+    requirement_name: VOSHA State Plan Enforcement
+    description: Vermont operates its own OSHA-approved state plan through VOSHA, covering both private and public sector employers.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "21 VSA 201-232"
+    additional_details: VOSHA adopts federal standards by reference and enforces with state inspectors. Public sector employees including state and municipal workers are covered.
+    applies_to: all
+    severity: mandatory
+
+  - id: VT-002
+    state: VT
+    requirement_name: Public Sector Employee Coverage
+    description: Vermont state plan extends full OSHA protections to state, county, and municipal employees who are not covered under federal OSHA.
+    federal_equivalent: null
+    state_standard: "21 VSA 201(3)"
+    additional_details: Includes firefighters, police, public works, and school employees. Employers must comply with the same standards as private sector employers.
+    applies_to: all
+    severity: mandatory
+
+  - id: VT-003
+    state: VT
+    requirement_name: Employer Right-to-Know Law
+    description: Vermont requires employers to provide comprehensive chemical hazard information and training beyond federal HazCom requirements.
+    federal_equivalent: "29 CFR 1910.1200"
+    state_standard: "21 VSA 231"
+    additional_details: Employers must label all containers of toxic substances, maintain SDS files accessible to employees, and provide annual training on chemical hazards.
+    applies_to: all
+    severity: mandatory
+
+  - id: VT-004
+    state: VT
+    requirement_name: Workers Compensation Insurance
+    description: All Vermont employers must provide workers compensation insurance for their employees with no minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "21 VSA Chapter 9"
+    additional_details: Covers all employees from the first day of employment. Employers may obtain insurance through private carriers or qualify as self-insured through the Department of Labor.
+    applies_to: all
+    severity: mandatory

@@ -1,9 +1,11 @@
 """Convenience /me router that resolves the current user's company automatically."""
 
+import logging
+import os
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -16,9 +18,11 @@ from app.dependencies import (
     get_billing_service,
     get_company_service,
     get_current_user,
+    get_document_ingestion_service,
     get_document_service,
     get_environmental_service,
     get_equipment_service,
+    get_event_bus,
     get_generation_service,
     get_hazard_analysis_service,
     get_hazard_report_service,
@@ -35,6 +39,9 @@ from app.dependencies import (
     get_toolbox_talk_service,
     get_worker_service,
 )
+from app.models.actor import Actor
+from app.models.events import EventType
+from app.services.event_bus import EventBus
 from app.exceptions import (
     AssignmentNotFoundError,
     CompanyNotFoundError,
@@ -50,6 +57,7 @@ from app.exceptions import (
     MorningBriefNotFoundError,
     OshaLogEntryNotFoundError,
     PrequalPackageNotFoundError,
+    ProjectActivationError,
     ProjectNotFoundError,
     ToolboxTalkNotFoundError,
     WorkerNotFoundError,
@@ -58,12 +66,17 @@ from app.models.billing import SubscriptionInfo
 from app.models.company import Company, CompanyUpdate
 from app.models.document import (
     Document,
+    DocumentChunk,
     DocumentCreate,
     DocumentGenerateRequest,
     DocumentListResponse,
+    DocumentSearchRequest,
+    DocumentSearchResponse,
     DocumentStatus,
     DocumentType,
     DocumentUpdate,
+    DocumentUploadResponse,
+    IngestionStatus,
 )
 from app.models.inspection import (
     Inspection,
@@ -77,6 +90,7 @@ from app.models.project import (
     Project,
     ProjectCreate,
     ProjectListResponse,
+    ProjectState,
     ProjectStatus,
     ProjectUpdate,
 )
@@ -93,6 +107,7 @@ from app.models.worker import (
 )
 from app.services.billing_service import BillingService
 from app.services.company_service import CompanyService
+from app.services.document_ingestion_service import DocumentIngestionService
 from app.services.document_service import DocumentService
 from app.services.generation_service import GenerationService
 from app.services.inspection_service import InspectionService
@@ -196,6 +211,8 @@ from app.models.project_assignment import (
     ResourceType,
 )
 from app.services.project_assignment_service import ProjectAssignmentService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/me", tags=["me"])
 
@@ -662,6 +679,228 @@ async def export_my_document_pdf(
     )
 
 
+# -- Document Upload & Ingestion --------------------------------------------------
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+
+ALLOWED_EXTENSIONS: dict[str, str] = {
+    "application/pdf": ".pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "text/plain": ".txt",
+}
+
+
+@router.post(
+    "/projects/{project_id}/documents/upload",
+    response_model=DocumentUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_document(
+    project_id: str,
+    file: UploadFile,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    doc_service: Annotated[DocumentService, Depends(get_document_service)],
+    ingestion_service: Annotated[
+        DocumentIngestionService, Depends(get_document_ingestion_service)
+    ],
+    title: str | None = Query(None, description="Document title (defaults to filename)"),
+    document_type: DocumentType = Query(
+        DocumentType.REPORT, description="Document type classification"
+    ),
+) -> DocumentUploadResponse:
+    """Upload a file and start document ingestion.
+
+    Accepts PDF, DOCX, or TXT files. Creates a Document node, stores the
+    file locally, and runs the ingestion pipeline (text extraction, chunking,
+    embedding generation) synchronously.
+
+    Args:
+        project_id: The project to attach the document to.
+        file: The uploaded file.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        doc_service: DocumentService dependency.
+        ingestion_service: DocumentIngestionService dependency.
+        title: Optional document title.
+        document_type: Document type classification.
+
+    Returns:
+        DocumentUploadResponse with document ID and ingestion status.
+    """
+    company = await _resolve_company(current_user, company_service)
+
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED_EXTENSIONS:
+        filename_lower = (file.filename or "").lower()
+        if filename_lower.endswith(".pdf"):
+            content_type = "application/pdf"
+        elif filename_lower.endswith(".docx"):
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif filename_lower.endswith(".txt"):
+            content_type = "text/plain"
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file type: {content_type or file.filename}. "
+                       "Accepted: PDF, DOCX, TXT.",
+            )
+
+    ext = ALLOWED_EXTENSIONS[content_type]
+    doc_title = title or (file.filename or "Untitled").rsplit(".", 1)[0]
+
+    doc_create = DocumentCreate(
+        title=doc_title,
+        document_type=document_type,
+        project_info={"project_id": project_id},
+    )
+    document = await run_sync(doc_service.create, company.id, doc_create, current_user["uid"])
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    file_path = os.path.join(UPLOAD_DIR, f"{document.id}{ext}")
+
+    file_content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    await run_sync(
+        doc_service.update,
+        company.id,
+        document.id,
+        DocumentUpdate(),
+        current_user["uid"],
+    )
+
+    _set_file_props = lambda: _update_document_file_props(
+        doc_service, document.id, file_path, ext.lstrip("."), company.id
+    )
+    await run_sync(_set_file_props)
+
+    try:
+        chunk_count = await run_sync(
+            ingestion_service.ingest_document, document.id, file_path, ext.lstrip(".")
+        )
+        return DocumentUploadResponse(
+            document_id=document.id,
+            title=doc_title,
+            file_type=ext.lstrip("."),
+            ingestion_status=IngestionStatus.COMPLETE,
+            message=f"Document uploaded and processed: {chunk_count} chunks created.",
+        )
+    except Exception as exc:
+        logger.warning("Ingestion failed for %s: %s", document.id, exc)
+        return DocumentUploadResponse(
+            document_id=document.id,
+            title=doc_title,
+            file_type=ext.lstrip("."),
+            ingestion_status=IngestionStatus.FAILED,
+            message=f"Document uploaded but ingestion failed: {exc}",
+        )
+
+
+def _update_document_file_props(
+    doc_service: DocumentService,
+    document_id: str,
+    file_path: str,
+    file_type: str,
+    company_id: str,
+) -> None:
+    """Set file_url, file_type, and ingestion_status on the Document node.
+
+    Args:
+        doc_service: DocumentService instance.
+        document_id: Document ID.
+        file_path: Local file path.
+        file_type: File extension without dot.
+        company_id: Company ID.
+    """
+    with doc_service.driver.session() as session:
+        session.run(
+            """
+            MATCH (d:Document {id: $document_id})
+            SET d.file_url = $file_url,
+                d.file_type = $file_type,
+                d.ingestion_status = $ingestion_status
+            """,
+            document_id=document_id,
+            file_url=file_path,
+            file_type=file_type,
+            ingestion_status=IngestionStatus.PENDING.value,
+        )
+
+
+@router.get("/documents/{document_id}/chunks", response_model=list[DocumentChunk])
+async def get_document_chunks(
+    document_id: str,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    doc_service: Annotated[DocumentService, Depends(get_document_service)],
+    ingestion_service: Annotated[
+        DocumentIngestionService, Depends(get_document_ingestion_service)
+    ],
+) -> list[DocumentChunk]:
+    """Get all chunks for a document in reading order.
+
+    Args:
+        document_id: The document ID.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        doc_service: DocumentService dependency.
+        ingestion_service: DocumentIngestionService dependency.
+
+    Returns:
+        List of DocumentChunk models.
+    """
+    company = await _resolve_company(current_user, company_service)
+
+    try:
+        doc_service.get(company.id, document_id)
+    except DocumentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document not found: {document_id}",
+        )
+
+    return await run_sync(ingestion_service.get_document_chunks, document_id)
+
+
+@router.post("/documents/search", response_model=DocumentSearchResponse)
+async def search_documents(
+    body: DocumentSearchRequest,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    company_service: Annotated[CompanyService, Depends(get_company_service)],
+    ingestion_service: Annotated[
+        DocumentIngestionService, Depends(get_document_ingestion_service)
+    ],
+) -> DocumentSearchResponse:
+    """Hybrid semantic + text search over document chunks.
+
+    Uses vector similarity search when embeddings are available, falling
+    back to text CONTAINS search otherwise.
+
+    Args:
+        body: Search request with query and optional filters.
+        current_user: Authenticated user claims.
+        company_service: CompanyService dependency.
+        ingestion_service: DocumentIngestionService dependency.
+
+    Returns:
+        DocumentSearchResponse with ranked results.
+    """
+    company = await _resolve_company(current_user, company_service)
+
+    results = await run_sync(
+        ingestion_service.search_chunks,
+        company.id,
+        body.query,
+        body.project_id,
+        body.document_type.value if body.document_type else None,
+        body.top_k,
+    )
+
+    return DocumentSearchResponse(results=results, total=len(results))
+
+
 # -- Subscription --------------------------------------------------------------------
 
 
@@ -772,8 +1011,11 @@ async def list_my_projects(
     project_service: Annotated[ProjectService, Depends(get_project_service)],
     limit: int = Query(20, ge=1, le=100, description="Max projects to return"),
     offset: int = Query(0, ge=0, description="Number of projects to skip"),
+    project_state: ProjectState | None = Query(
+        None, alias="state", description="Filter by lifecycle state"
+    ),
     project_status: ProjectStatus | None = Query(
-        None, alias="status", description="Filter by status"
+        None, alias="status", description="Filter by operating condition"
     ),
 ) -> ProjectListResponse:
     """List projects for the current user's company with pagination.
@@ -784,7 +1026,8 @@ async def list_my_projects(
         project_service: ProjectService dependency.
         limit: Page size.
         offset: Skip count.
-        project_status: Optional status filter.
+        project_state: Optional lifecycle state filter.
+        project_status: Optional operating condition filter.
 
     Returns:
         A ProjectListResponse with paginated results.
@@ -792,6 +1035,7 @@ async def list_my_projects(
     company = await _resolve_company(current_user, company_service)
     result = project_service.list_projects(
         company_id=company.id,
+        state=project_state,
         status=project_status,
         limit=limit,
         offset=offset,
@@ -892,6 +1136,11 @@ async def update_my_project(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project not found: {project_id}",
+        )
+    except ProjectActivationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc.reason),
         )
 
 
@@ -1068,6 +1317,7 @@ async def create_my_inspection(
     current_user: Annotated[dict, Depends(get_current_user)],
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     inspection_service: Annotated[InspectionService, Depends(get_inspection_service)],
+    event_bus: Annotated[EventBus, Depends(get_event_bus)],
 ) -> Inspection:
     """Create a new inspection for a project.
 
@@ -1077,15 +1327,27 @@ async def create_my_inspection(
         current_user: Authenticated user claims.
         company_service: CompanyService dependency.
         inspection_service: InspectionService dependency.
+        event_bus: EventBus dependency for event emission.
 
     Returns:
         The created Inspection.
     """
     company = await _resolve_company(current_user, company_service)
     try:
-        return inspection_service.create(
+        result = inspection_service.create(
             company.id, project_id, data, current_user["uid"]
         )
+        event = event_bus.create_event(
+            event_type=EventType.INSPECTION_COMPLETED,
+            entity_id=result.id,
+            entity_type="Inspection",
+            company_id=company.id,
+            actor=Actor.human(current_user["uid"]),
+            project_id=project_id,
+            summary={"inspection_type": data.inspection_type, "overall_status": result.overall_status},
+        )
+        event_bus.emit(event)
+        return result
     except ProjectNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -2269,6 +2531,7 @@ async def create_hazard_report(
     hazard_report_service: Annotated[
         HazardReportService, Depends(get_hazard_report_service)
     ],
+    event_bus: Annotated[EventBus, Depends(get_event_bus)],
 ) -> HazardReport:
     """Create a hazard report by analyzing a photo with AI.
 
@@ -2281,15 +2544,27 @@ async def create_hazard_report(
         current_user: Authenticated user claims.
         company_service: CompanyService dependency.
         hazard_report_service: HazardReportService dependency.
+        event_bus: EventBus dependency for event emission.
 
     Returns:
         The created HazardReport with AI analysis results.
     """
     company = await _resolve_company(current_user, company_service)
     try:
-        return hazard_report_service.create_from_photo(
+        result = hazard_report_service.create_from_photo(
             company.id, project_id, data, current_user["uid"]
         )
+        event = event_bus.create_event(
+            event_type=EventType.HAZARD_REPORTED,
+            entity_id=result.id,
+            entity_type="HazardReport",
+            company_id=company.id,
+            actor=Actor.human(current_user["uid"]),
+            project_id=project_id,
+            summary={"hazard_count": len(result.identified_hazards)},
+        )
+        event_bus.emit(event)
+        return result
     except ProjectNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -2632,6 +2907,7 @@ async def create_my_incident(
     current_user: Annotated[dict, Depends(get_current_user)],
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     incident_service: Annotated[IncidentService, Depends(get_incident_service)],
+    event_bus: Annotated[EventBus, Depends(get_event_bus)],
 ) -> Incident:
     """Create a new incident report.
 
@@ -2641,15 +2917,27 @@ async def create_my_incident(
         current_user: Authenticated user claims.
         company_service: CompanyService dependency.
         incident_service: IncidentService dependency.
+        event_bus: EventBus dependency for event emission.
 
     Returns:
         The created Incident.
     """
     company = await _resolve_company(current_user, company_service)
     try:
-        return incident_service.create(
+        result = incident_service.create(
             company.id, project_id, data, current_user["uid"]
         )
+        event = event_bus.create_event(
+            event_type=EventType.INCIDENT_REPORTED,
+            entity_id=result.id,
+            entity_type="Incident",
+            company_id=company.id,
+            actor=Actor.human(current_user["uid"]),
+            project_id=project_id,
+            summary={"severity": data.severity},
+        )
+        event_bus.emit(event)
+        return result
     except ProjectNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -3876,6 +4164,7 @@ async def create_my_assignment(
     assignment_service: Annotated[
         ProjectAssignmentService, Depends(get_project_assignment_service)
     ],
+    event_bus: Annotated[EventBus, Depends(get_event_bus)],
 ) -> ProjectAssignment:
     """Create a project assignment (assign worker or equipment to a project).
 
@@ -3884,13 +4173,25 @@ async def create_my_assignment(
         current_user: Authenticated user claims.
         company_service: CompanyService dependency.
         assignment_service: ProjectAssignmentService dependency.
+        event_bus: EventBus dependency for event emission.
 
     Returns:
         The created ProjectAssignment.
     """
     company = await _resolve_company(current_user, company_service)
     try:
-        return assignment_service.create(company.id, data, current_user["uid"])
+        result = assignment_service.create(company.id, data, current_user["uid"])
+        event = event_bus.create_event(
+            event_type=EventType.WORKER_ASSIGNED,
+            entity_id=result.id,
+            entity_type="ProjectAssignment",
+            company_id=company.id,
+            actor=Actor.human(current_user["uid"]),
+            project_id=data.project_id,
+            summary={"resource_type": data.resource_type, "resource_id": data.resource_id},
+        )
+        event_bus.emit(event)
+        return result
     except CompanyNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -7,16 +7,19 @@ from typing import Any
 from app.exceptions import HazardReportNotFoundError, ProjectNotFoundError
 from app.models.actor import Actor
 from app.models.hazard_report import (
+    HazardObservation,
     HazardReport,
     HazardReportCreate,
     HazardReportStatusUpdate,
     HazardSeverity,
     HazardStatus,
-    IdentifiedHazard,
     SEVERITY_RANK,
 )
 from app.services.base_service import BaseService
 from app.services.hazard_analysis_service import HazardAnalysisService
+
+# Backward-compat import alias used by older call sites
+IdentifiedHazard = HazardObservation
 
 
 class HazardReportService(BaseService):
@@ -24,7 +27,8 @@ class HazardReportService(BaseService):
 
     Graph model:
         (Company)-[:OWNS_PROJECT]->(Project)-[:HAS_HAZARD_REPORT]->(HazardReport)
-        AI analysis and identified hazards stored as JSON strings.
+        (HazardReport)-[:HAS_OBSERVATION]->(HazardObservation)
+        AI analysis stored as _ai_analysis_json on the HazardReport node.
 
     Args:
         driver: Neo4j driver instance.
@@ -72,17 +76,17 @@ class HazardReportService(BaseService):
         return photo_base64
 
     @staticmethod
-    def _parse_hazards(ai_analysis: dict) -> list[IdentifiedHazard]:
-        """Parse identified hazards from AI analysis result.
+    def _parse_hazard_observations(ai_analysis: dict) -> list[HazardObservation]:
+        """Parse HazardObservation objects from AI analysis result.
 
         Args:
             ai_analysis: The raw AI analysis dict.
 
         Returns:
-            List of validated IdentifiedHazard models.
+            List of validated HazardObservation models.
         """
         raw_hazards = ai_analysis.get("identified_hazards", [])
-        hazards: list[IdentifiedHazard] = []
+        observations: list[HazardObservation] = []
 
         for i, raw in enumerate(raw_hazards):
             severity_str = raw.get("severity", "low").lower().replace(" ", "_")
@@ -91,8 +95,8 @@ class HazardReportService(BaseService):
             except ValueError:
                 severity = HazardSeverity.LOW
 
-            hazards.append(
-                IdentifiedHazard(
+            observations.append(
+                HazardObservation(
                     hazard_id=raw.get("hazard_id", f"h_{i + 1}"),
                     description=raw.get("description", ""),
                     severity=severity,
@@ -103,39 +107,44 @@ class HazardReportService(BaseService):
                 )
             )
 
-        return hazards
+        return observations
 
     @staticmethod
     def _highest_severity(
-        hazards: list[IdentifiedHazard],
+        observations: list[HazardObservation],
     ) -> HazardSeverity | None:
-        """Determine the highest severity among identified hazards.
+        """Determine the highest severity among hazard observations.
 
         Args:
-            hazards: List of identified hazards.
+            observations: List of hazard observations.
 
         Returns:
-            The highest severity value, or None if no hazards.
+            The highest severity value, or None if no observations.
         """
-        if not hazards:
+        if not observations:
             return None
-        return max(hazards, key=lambda h: SEVERITY_RANK.get(h.severity, 0)).severity
+        return max(observations, key=lambda h: SEVERITY_RANK.get(h.severity, 0)).severity
 
     @staticmethod
     def _to_model(record: dict[str, Any]) -> HazardReport:
         """Convert a Neo4j record dict to a HazardReport model.
 
         Args:
-            record: Dict with 'report', 'company_id', 'project_id' keys.
+            record: Dict with 'report', 'observations', 'company_id', 'project_id' keys.
 
         Returns:
             A HazardReport model instance.
         """
-        data = record["report"]
+        data = dict(record["report"])
         ai_json = data.pop("_ai_analysis_json", "{}")
         data["ai_analysis"] = json.loads(ai_json) if ai_json else {}
-        hazards_json = data.pop("_identified_hazards_json", "[]")
-        data["identified_hazards"] = json.loads(hazards_json) if hazards_json else []
+        # Observations are returned as collected list from HAS_OBSERVATION nodes
+        raw_observations = record.get("observations", [])
+        if isinstance(raw_observations, str):
+            # Legacy fallback
+            data["identified_hazards"] = json.loads(raw_observations) if raw_observations else []
+        else:
+            data["identified_hazards"] = list(raw_observations) if raw_observations else []
         data["company_id"] = record["company_id"]
         data["project_id"] = record["project_id"]
         return HazardReport(**data)
@@ -148,6 +157,8 @@ class HazardReportService(BaseService):
         user_id: str,
     ) -> HazardReport:
         """Create a hazard report by analyzing a photo with AI.
+
+        Creates separate HazardObservation nodes connected via HAS_OBSERVATION.
 
         Args:
             company_id: The owning company ID.
@@ -176,14 +187,14 @@ class HazardReportService(BaseService):
             context=context,
         )
 
-        hazards = self._parse_hazards(ai_analysis)
-        highest = self._highest_severity(hazards)
+        observations = self._parse_hazard_observations(ai_analysis)
+        highest = self._highest_severity(observations)
 
         actor = Actor.human(user_id)
         report_id = self._generate_id("hzrd")
         photo_url = f"data:{data.media_type};base64,{clean_base64[:50]}..."
 
-        props: dict[str, Any] = {
+        report_props: dict[str, Any] = {
             "id": report_id,
             "photo_url": photo_url,
             "description": data.description,
@@ -191,8 +202,7 @@ class HazardReportService(BaseService):
             "gps_latitude": data.gps_latitude,
             "gps_longitude": data.gps_longitude,
             "_ai_analysis_json": json.dumps(ai_analysis),
-            "_identified_hazards_json": json.dumps([h.model_dump() for h in hazards]),
-            "hazard_count": len(hazards),
+            "hazard_count": len(observations),
             "highest_severity": highest.value if highest else None,
             "status": HazardStatus.OPEN.value,
             "corrective_action_taken": "",
@@ -201,21 +211,56 @@ class HazardReportService(BaseService):
             **self._provenance_create(actor),
         }
 
+        # Build observation props list for UNWIND
+        obs_props_list = [
+            {
+                "id": self._generate_id("hobs"),
+                "hazard_id": obs.hazard_id,
+                "description": obs.description,
+                "severity": obs.severity.value,
+                "osha_standard": obs.osha_standard,
+                "category": obs.category,
+                "recommended_action": obs.recommended_action,
+                "location_in_image": obs.location_in_image,
+                **self._provenance_create(actor),
+            }
+            for obs in observations
+        ]
+
         result = self._write_tx_single(
             """
             MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
-            CREATE (r:HazardReport $props)
+            CREATE (r:HazardReport $report_props)
             CREATE (p)-[:HAS_HAZARD_REPORT]->(r)
-            RETURN r {.*} AS report, c.id AS company_id, p.id AS project_id
+            WITH c, p, r
+            UNWIND $obs_props_list AS obs_data
+            CREATE (obs:HazardObservation $obs_data)
+            CREATE (r)-[:HAS_OBSERVATION]->(obs)
+            WITH c, p, r, collect(obs {.*}) AS observations
+            RETURN r {.*} AS report, observations, c.id AS company_id, p.id AS project_id
             """,
-            {"company_id": company_id, "project_id": project_id, "props": props},
+            {
+                "company_id": company_id,
+                "project_id": project_id,
+                "report_props": report_props,
+                "obs_props_list": obs_props_list,
+            },
+        )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=report_id,
+            entity_type="HazardReport",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created hazard report with {len(observations)} observation(s)",
+            related_entity_ids=[project_id],
         )
         return self._to_model(result)
 
     def get(
         self, company_id: str, project_id: str, report_id: str
     ) -> HazardReport:
-        """Fetch a single hazard report.
+        """Fetch a single hazard report with its HazardObservation nodes.
 
         Args:
             company_id: The owning company ID.
@@ -232,7 +277,9 @@ class HazardReportService(BaseService):
             """
             MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
                   -[:HAS_HAZARD_REPORT]->(r:HazardReport {id: $report_id})
-            RETURN r {.*} AS report, c.id AS company_id, p.id AS project_id
+            OPTIONAL MATCH (r)-[:HAS_OBSERVATION]->(obs:HazardObservation)
+            RETURN r {.*} AS report, collect(obs {.*}) AS observations,
+                   c.id AS company_id, p.id AS project_id
             """,
             {
                 "company_id": company_id,
@@ -300,9 +347,11 @@ class HazardReportService(BaseService):
             MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
                   -[:HAS_HAZARD_REPORT]->(r:HazardReport)
             {("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""}
-            RETURN r {{.*}} AS report, c.id AS company_id, p.id AS project_id
+            OPTIONAL MATCH (r)-[:HAS_OBSERVATION]->(obs:HazardObservation)
+            WITH r, collect(obs {{.*}}) AS observations, c.id AS company_id, p.id AS project_id
             ORDER BY r.created_at DESC
             SKIP $offset LIMIT $limit
+            RETURN r {{.*}} AS report, observations, company_id, project_id
             """,
             params,
         )
@@ -351,7 +400,10 @@ class HazardReportService(BaseService):
             MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
                   -[:HAS_HAZARD_REPORT]->(r:HazardReport {id: $report_id})
             SET r += $props
-            RETURN r {.*} AS report, c.id AS company_id, p.id AS project_id
+            WITH c, p, r
+            OPTIONAL MATCH (r)-[:HAS_OBSERVATION]->(obs:HazardObservation)
+            RETURN r {.*} AS report, collect(obs {.*}) AS observations,
+                   c.id AS company_id, p.id AS project_id
             """,
             {
                 "company_id": company_id,
@@ -362,12 +414,22 @@ class HazardReportService(BaseService):
         )
         if result is None:
             raise HazardReportNotFoundError(report_id)
+        self._emit_audit(
+            event_type="state.transitioned",
+            entity_id=report_id,
+            entity_type="HazardReport",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Hazard report status changed to {data.status.value}",
+            prev_state=None,
+            new_state=data.status.value,
+        )
         return self._to_model(result)
 
     def delete(
         self, company_id: str, project_id: str, report_id: str
     ) -> None:
-        """Delete a hazard report (DETACH DELETE).
+        """Delete a hazard report and all its HazardObservation nodes (DETACH DELETE).
 
         Args:
             company_id: The owning company ID.
@@ -381,7 +443,9 @@ class HazardReportService(BaseService):
             """
             MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
                   -[:HAS_HAZARD_REPORT]->(r:HazardReport {id: $report_id})
-            WITH r, r.id AS deleted_id
+            OPTIONAL MATCH (r)-[:HAS_OBSERVATION]->(obs:HazardObservation)
+            WITH r, r.id AS deleted_id, collect(obs) AS obs_list
+            FOREACH (o IN obs_list | DETACH DELETE o)
             DETACH DELETE r
             RETURN deleted_id AS id
             """,

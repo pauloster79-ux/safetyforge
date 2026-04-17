@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Model mapping — model tier to Anthropic model ID
 MODEL_MAP: dict[str, str] = {
-    ModelTier.FAST.value: "claude-3-5-haiku-20241022",
+    ModelTier.FAST.value: "claude-haiku-4-5-20251001",
     ModelTier.STANDARD.value: "claude-sonnet-4-20250514",
     ModelTier.ADVANCED.value: "claude-opus-4-20250514",
 }

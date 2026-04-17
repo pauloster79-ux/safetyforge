@@ -33,8 +33,11 @@ SEVERITY_RANK: dict[HazardSeverity, int] = {
 }
 
 
-class IdentifiedHazard(BaseModel):
-    """A single hazard identified in a photo analysis."""
+class HazardObservation(BaseModel):
+    """A single hazard identified in a photo analysis.
+
+    Renamed from IdentifiedHazard to HazardObservation in new ontology.
+    """
 
     hazard_id: str = Field(..., description="Unique hazard identifier within the report")
     description: str = Field(..., description="Clear description of the hazard")
@@ -111,7 +114,7 @@ class HazardReport(BaseModel):
     gps_latitude: float | None = None
     gps_longitude: float | None = None
     ai_analysis: dict = Field(default_factory=dict, description="Full AI analysis result")
-    identified_hazards: list[IdentifiedHazard] = Field(default_factory=list)
+    identified_hazards: list[HazardObservation] = Field(default_factory=list)
     hazard_count: int = 0
     highest_severity: HazardSeverity | None = None
     status: HazardStatus = HazardStatus.OPEN
@@ -120,8 +123,14 @@ class HazardReport(BaseModel):
     corrected_by: str = ""
     created_at: datetime
     created_by: str
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
     updated_at: datetime
     updated_by: str
+    updated_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
+
+
+# Backward-compat alias
+IdentifiedHazard = HazardObservation
 
 
 class HazardReportListResponse(BaseModel):

@@ -45,6 +45,10 @@ export const ROUTES = {
   INCIDENTS_LIST: '/incidents',
   TOOLBOX_TALKS_LIST: '/toolbox-talks',
   TEAM: '/team',
+  DAILY_LOGS: (projectId: string) => `/projects/${projectId}/daily-logs`,
+  DAILY_LOG_NEW: (projectId: string) => `/projects/${projectId}/daily-logs/new`,
+  DAILY_LOG_DETAIL: (projectId: string, id: string) => `/projects/${projectId}/daily-logs/${id}`,
+  DAILY_LOG_EDIT: (projectId: string, id: string) => `/projects/${projectId}/daily-logs/${id}/edit`,
 } as const;
 
 export interface DocumentTypeConfig {
@@ -318,7 +322,8 @@ export interface Project {
   nearest_hospital: string;
   emergency_contact_name: string;
   emergency_contact_phone: string;
-  status: 'active' | 'completed' | 'on_hold';
+  state: 'lead' | 'quoted' | 'active' | 'completed' | 'closed' | 'lost';
+  status: 'normal' | 'on_hold' | 'delayed' | 'suspended';
   compliance_score: number;
   created_at: string;
   created_by: string;
@@ -801,6 +806,75 @@ export const SWPPP_BMP_ITEMS = [
   { id: 'vegetation', name: 'Temporary / Permanent Vegetation' },
 ] as const;
 
+// ---- Daily Log Types ----
+
+export interface DailyLogWeather {
+  conditions: string;
+  temperature_high: string;
+  temperature_low: string;
+  wind: string;
+  precipitation: string;
+}
+
+export interface DailyLogMaterial {
+  material: string;
+  quantity: string;
+  supplier: string;
+  received_by: string;
+  notes: string;
+}
+
+export interface DailyLogDelay {
+  delay_type: string;
+  duration_hours: number;
+  description: string;
+  impact: string;
+}
+
+export interface DailyLogVisitor {
+  name: string;
+  company: string;
+  purpose: string;
+  time_in: string;
+  time_out: string;
+}
+
+export interface DailyLog {
+  id: string;
+  project_id: string;
+  company_id: string;
+  log_date: string;
+  superintendent_name: string;
+  status: 'draft' | 'submitted' | 'approved';
+  weather: DailyLogWeather;
+  workers_on_site: number;
+  work_performed: string;
+  materials_delivered: DailyLogMaterial[];
+  delays: DailyLogDelay[];
+  visitors: DailyLogVisitor[];
+  safety_incidents: string;
+  equipment_used: string;
+  notes: string;
+  inspections_summary: Array<{ id: string; type: string; status: string }>;
+  toolbox_talks_summary: Array<{ id: string; topic: string; attendees: number }>;
+  incidents_summary: Array<{ id: string; severity: string; description: string }>;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  submitted_at: string | null;
+  submitted_by: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  deleted: boolean;
+}
+
+export const DAILY_LOG_STATUSES = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'approved', label: 'Approved' },
+] as const;
+
 // ---- Equipment & Fleet Management Types ----
 
 export interface Equipment {
@@ -841,6 +915,93 @@ export interface EquipmentInspectionLog {
   deficiencies_found: string;
   out_of_service: boolean;
   created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Work Structure & Quoting (Domain 16 & 17)
+// ---------------------------------------------------------------------------
+
+export interface WorkItem {
+  id: string;
+  project_id: string;
+  company_id: string;
+  description: string;
+  state: 'draft' | 'scheduled' | 'in_progress' | 'complete' | 'invoiced' | 'on_hold' | 'cancelled' | 'superseded';
+  quantity: number;
+  unit: string;
+  labour_total_cents: number;
+  items_total_cents: number;
+  margin_pct: number;
+  sell_price_cents: number;
+  is_alternate: boolean;
+  alternate_label?: string;
+  planned_start?: string;
+  planned_end?: string;
+  actual_start?: string;
+  actual_end?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Labour {
+  id: string;
+  work_item_id: string;
+  task: string;
+  rate_cents: number;
+  hours: number;
+  cost_cents: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Item {
+  id: string;
+  work_item_id: string;
+  description: string;
+  product?: string;
+  quantity: number;
+  unit?: string;
+  unit_cost_cents: number;
+  total_cents: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Assumption {
+  id: string;
+  project_id?: string;
+  company_id: string;
+  category: 'schedule' | 'quantities' | 'access' | 'coordination' | 'site_conditions' | 'design_completeness' | 'pricing' | 'regulatory';
+  statement: string;
+  relied_on_value?: string;
+  relied_on_unit?: string;
+  source_document?: string;
+  variation_trigger: boolean;
+  trigger_description?: string;
+  is_template: boolean;
+  trade_type?: string;
+  status: 'active' | 'triggered' | 'void';
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Exclusion {
+  id: string;
+  project_id?: string;
+  company_id: string;
+  category: 'scope' | 'trade_boundary' | 'conditions' | 'risk' | 'regulatory';
+  statement: string;
+  partial_inclusion?: string;
+  is_template: boolean;
+  trade_type?: string;
+  source?: string;
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export const EQUIPMENT_TYPES = [

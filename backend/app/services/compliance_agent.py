@@ -45,6 +45,8 @@ class ComplianceAgent(BaseService):
         "read:inspections",
     )
 
+    AGENT_VERSION = "1.0.0"
+
     def __init__(
         self,
         driver: Driver,
@@ -68,6 +70,9 @@ class ComplianceAgent(BaseService):
     def _actor(self) -> Actor:
         """Build the Actor for this agent.
 
+        This agent uses graph traversal only (no LLM calls), so model_id
+        and cost_cents are not populated.
+
         Returns:
             An Actor instance representing this agent.
         """
@@ -75,6 +80,7 @@ class ComplianceAgent(BaseService):
             agent_id=self.agent_id,
             company_id=self.company_id,
             scopes=self.AGENT_SCOPES,
+            agent_version=self.AGENT_VERSION,
         )
 
     # ------------------------------------------------------------------
@@ -368,6 +374,7 @@ class ComplianceAgent(BaseService):
         now = datetime.now(timezone.utc).isoformat()
 
         alert = ComplianceAlert(
+            id=alert_id,
             alert_id=alert_id,
             alert_type=alert_type,
             severity=severity,
@@ -387,7 +394,7 @@ class ComplianceAgent(BaseService):
         return alert
 
     def _persist_alert(self, alert: ComplianceAlert) -> None:
-        """Store a ComplianceAlert node in Neo4j.
+        """Store a ComplianceAlert node in Neo4j with agent provenance.
 
         Args:
             alert: The alert to persist.
@@ -396,7 +403,7 @@ class ComplianceAgent(BaseService):
             """
             MATCH (c:Company {id: $company_id})
             CREATE (a:ComplianceAlert {
-                alert_id: $alert_id,
+                id: $alert_id,
                 alert_type: $alert_type,
                 severity: $severity,
                 entity_id: $entity_id,
@@ -408,10 +415,12 @@ class ComplianceAgent(BaseService):
                 graph_evidence_json: $graph_evidence_json,
                 event_id: $event_id,
                 agent_id: $agent_id,
+                agent_version: $agent_version,
+                actor_type: $actor_type,
                 created_at: $created_at
             })
             CREATE (c)-[:HAS_COMPLIANCE_ALERT]->(a)
-            RETURN a.alert_id AS alert_id
+            RETURN a.id AS alert_id
             """,
             {
                 "company_id": alert.company_id,
@@ -428,6 +437,8 @@ class ComplianceAgent(BaseService):
                 ),
                 "event_id": alert.event_id,
                 "agent_id": alert.agent_id,
+                "agent_version": self.AGENT_VERSION,
+                "actor_type": "agent",
                 "created_at": alert.created_at,
             },
         )

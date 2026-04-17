@@ -69,11 +69,18 @@ class MockInspectionResult(BaseModel):
 
     Contains the overall score, grade, all findings, and metadata
     about what was reviewed during the inspection.
+
+    In the new ontology this is absorbed into Inspection with
+    category='simulated'. The standalone model is kept for backward compat.
     """
 
     id: str
     company_id: str
     project_id: str | None = None
+    category: str = Field(
+        default="simulated",
+        description="Inspection category in new ontology — always 'simulated' for mock inspections",
+    )
     inspection_date: datetime
     overall_score: int = Field(..., ge=0, le=100)
     grade: str = Field(..., pattern=r"^[ABCDF]$")
@@ -92,6 +99,7 @@ class MockInspectionResult(BaseModel):
     deep_audit: bool = False
     created_at: datetime
     created_by: str
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
 
 
 class MockInspectionResultSummary(BaseModel):

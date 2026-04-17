@@ -1,0 +1,57 @@
+code: CT
+name: Connecticut
+regulatory_body: Connecticut Department of Labor - CONN-OSHA
+state_plan: true
+primary_legislation: Connecticut General Statutes Title 31
+construction_regulation: Federal OSHA 29 CFR 1926 (private sector)
+
+requirements:
+  - id: CT-001
+    state: CT
+    requirement_name: CONN-OSHA State and Local Government Coverage
+    description: Connecticut operates an OSHA-approved state plan that covers state and local government employees only. Private sector employers are covered by federal OSHA.
+    federal_equivalent: null
+    state_standard: "CGS 31-367 et seq."
+    additional_details: CONN-OSHA enforces standards at least as effective as federal OSHA for public sector workers, including municipal construction and maintenance crews.
+    applies_to: all
+    severity: mandatory
+
+  - id: CT-002
+    state: CT
+    requirement_name: Workers' Compensation Insurance
+    description: All employers in Connecticut must carry workers' compensation insurance with no minimum employee count requirement.
+    federal_equivalent: null
+    state_standard: "CGS 31-275 et seq."
+    additional_details: Covers medical expenses, wage replacement, and rehabilitation. Connecticut has one of the broadest coverage requirements in the country.
+    applies_to: all
+    severity: mandatory
+
+  - id: CT-003
+    state: CT
+    requirement_name: Lead Abatement Licensing
+    description: Contractors performing lead paint abatement must be licensed by the Connecticut Department of Public Health and employ certified workers.
+    federal_equivalent: "40 CFR 745 (EPA RRP Rule)"
+    state_standard: "CGS 20-474 et seq."
+    additional_details: Requires accredited training, work practice standards, clearance testing, and proper waste disposal. Applies to residential and child-occupied facilities.
+    applies_to: construction
+    severity: mandatory
+
+  - id: CT-004
+    state: CT
+    requirement_name: Prevailing Wage for Public Works
+    description: Contractors on public works projects must pay prevailing wages as established by the Connecticut Department of Labor.
+    federal_equivalent: "40 USC 3141 (Davis-Bacon Act)"
+    state_standard: "CGS 31-53"
+    additional_details: Applies to new construction projects over $400,000 and renovation projects over $100,000 funded by the state or municipalities.
+    applies_to: construction
+    severity: mandatory
+
+  - id: CT-005
+    state: CT
+    requirement_name: Workplace Violence Prevention
+    description: Connecticut requires certain employers to adopt workplace violence prevention programs, including those in high-risk industries.
+    federal_equivalent: null
+    state_standard: "CGS 31-40v"
+    additional_details: Employers must conduct risk assessments, develop prevention plans, and provide employee training on recognizing and responding to workplace violence.
+    applies_to: all
+    severity: mandatory

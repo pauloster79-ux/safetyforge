@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -30,7 +31,7 @@ const COLOR_MAP: Record<string, { bg: string; icon: string; badge: string }> = {
 };
 
 export function TemplatePickerPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

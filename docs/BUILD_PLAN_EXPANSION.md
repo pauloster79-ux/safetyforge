@@ -1,20 +1,25 @@
 # Kerf Build Plan — Platform Expansion
 
-*Version 1.0 — 2026-04-07*
+*Version 2.0 — 2026-04-10*
 
 ---
 
 ## OVERVIEW
 
-This document is the execution plan for expanding Kerf from a safety compliance platform into a full construction operations platform. It assumes the Phase 1 safety foundation (Sprints 0-10 in `BUILD_PLAN.md`) is complete or near-complete, and builds on the existing data model, inspection engine, worker/equipment/project entities, and voice-first architecture.
+This document is the execution plan for expanding Kerf from a safety compliance platform into a graph-intelligent construction business platform. It assumes the Phase 1 safety foundation (Sprints 0-10 in `BUILD_PLAN.md`) is complete or near-complete, and builds on the existing knowledge graph, inspection engine, worker/equipment/project entities, conversational interface, and voice architecture.
+
+**Conversational-first:** Every feature in this expansion is accessed primarily through Kerf's conversational interface (chat and voice). Forms and dashboards exist for review and bulk operations, but the contractor's primary interaction with every feature is conversational. Voice is not "where applicable" — it is the interaction model for every feature.
 
 The expansion follows the priority order determined by market research:
-1. **Daily Logs** — highest data overlap with safety, makes the app the superintendent's daily driver
+1. **Daily Logs** — highest data overlap with safety, makes the app the contractor's daily driver
 2. **Quality Inspections / Punch Lists** — reuses the existing inspection engine with different templates
-3. **Time Tracking** — extends existing worker/project assignment data
+3. **Time Tracking** — extends existing worker/project assignment data, foundation for job costing
 4. **Expanded Sub Management** — extends existing GC portal
 5. **RFIs / Submittals** — new coordination workflows
 6. **Basic Scheduling** — weekly lookahead connected to safety data
+7. **Conversational Estimating + Job Costing** — unified estimate/task/cost model (new, see Horizon 3 in PRODUCT_VISION.md)
+8. **Document Intelligence** — AI extraction from uploaded plans, specs, contracts (new)
+9. **Intelligent Change Orders** — auto-detection from daily logs (new)
 
 ---
 
@@ -22,7 +27,7 @@ The expansion follows the priority order determined by market research:
 
 ### Why this order
 
-**Daily Logs are the Trojan horse.** The superintendent is already in the app for safety; daily logs make it the first thing they open every morning. 40-50% of daily log fields are already captured by safety workflows. This is the lowest-effort, highest-stickiness expansion.
+**Daily Logs are the Trojan horse.** The contractor is already in the app for safety; daily logs make it the first thing they open every morning. 40-50% of daily log fields are already captured by safety workflows. This is the lowest-effort, highest-stickiness expansion.
 
 **Quality Inspections reuse the same engine.** The inspection workflow (observe → photograph → assign corrective action → track → close) is technically identical for safety and quality. Procore already bundles them into one module, validating the approach. This is a template expansion, not a new product.
 
@@ -47,7 +52,7 @@ The expansion follows the priority order determined by market research:
 
 ## PHASE 1: DAILY LOGS (Weeks 13-15)
 
-**Goal:** The superintendent's morning safety walk produces a complete daily log with 50% of fields auto-populated from existing data. Replaces the most legally important document a contractor produces.
+**Goal:** The contractor's morning safety walk produces a complete daily log with 50% of fields auto-populated from existing data. Replaces the most legally important document a contractor produces.
 
 ### Dependencies
 - Project entity (Sprint 2 ✅)
@@ -59,7 +64,7 @@ The expansion follows the priority order determined by market research:
 ### Data Model
 
 ```
-companies/{company_id}/projects/{project_id}/daily_logs/{log_id}
+(:Company)-[:OWNS_PROJECT]->(:Project)-[:HAS_DAILY_LOG]->(:DailyLog {id: log_id})
 ```
 
 #### DailyLog entity
@@ -82,7 +87,7 @@ class DailyLog(BaseModel):
     incidents: list[str]  # incident IDs from today
     hazard_reports: list[str]  # hazard report IDs from today
 
-    # Manual entry by superintendent
+    # Manual entry by contractor
     work_performed: str  # narrative of tasks completed
     materials_received: list[MaterialDelivery]
     delays: list[DelayRecord]
@@ -100,7 +105,7 @@ class DailyLog(BaseModel):
 ### Tasks
 
 #### P1-T1: DailyLog backend model and service
-- **What:** Create DailyLog Pydantic model, Firestore service with CRUD operations, and auto-population logic that pulls from today's inspections, toolbox talks, incidents, hazard reports, equipment assignments, and worker assignments.
+- **What:** Create DailyLog Pydantic model, Neo4j-backed service with CRUD operations, and auto-population logic that pulls from today's inspections, toolbox talks, incidents, hazard reports, equipment assignments, and worker assignments.
 - **Files to create:**
   - `backend/app/models/daily_log.py`
   - `backend/app/services/daily_log_service.py`
@@ -122,7 +127,7 @@ class DailyLog(BaseModel):
 - **Effort:** 10 hours
 
 #### P1-T3: DailyLog voice input integration
-- **What:** Extend the voice parsing service to extract daily log data from superintendent's narration. After the safety inspection is parsed from voice, remaining content (work performed, materials, delays) is extracted as daily log fields.
+- **What:** Extend the voice parsing service to extract daily log data from the contractor's narration. After the safety inspection is parsed from voice, remaining content (work performed, materials, delays) is extracted as daily log fields.
 - **Files to modify:**
   - `backend/app/services/voice_service.py` — add `parse_daily_log()` prompt
 - **Effort:** 8 hours
@@ -418,7 +423,7 @@ class DailyLog(BaseModel):
 
 ## PHASE 6: BASIC SCHEDULING (Weeks 30-32)
 
-**Goal:** A weekly lookahead — a 2-4 week rolling task board that superintendents manage from their phone. Connected to safety data: cert expiries block scheduling, equipment maintenance blocks usage, incidents trigger delay documentation.
+**Goal:** A weekly lookahead — a 2-4 week rolling task board that contractors manage from their phone. Connected to safety data: cert expiries block scheduling, equipment maintenance blocks usage, incidents trigger delay documentation.
 
 ### Tasks
 
@@ -477,6 +482,8 @@ class DailyLog(BaseModel):
 
 ## SUMMARY TIMELINE
 
+### Operations Platform (Phases 1-6)
+
 | Phase | Feature | Weeks | Effort | Cumulative |
 |-------|---------|-------|--------|------------|
 | Phase 1 | Daily Logs | Weeks 13-15 | ~68 hrs | 68 hrs |
@@ -486,9 +493,19 @@ class DailyLog(BaseModel):
 | Phase 5 | RFIs / Submittals | Weeks 26-29 | ~84 hrs | 412 hrs |
 | Phase 6 | Basic Scheduling | Weeks 30-32 | ~70 hrs | 482 hrs |
 
-**Total expansion effort: ~482 hours over 20 weeks (Weeks 13-32)**
+### Intelligent Business Platform (Phases 7-9 — To Be Specified)
 
-This extends the original 12-week Phase 1 build plan by 20 weeks, for a total of 32 weeks from project start to full construction operations platform. At the end of Week 32, Kerf will handle:
+| Phase | Feature | Estimated Effort | Dependencies |
+|-------|---------|-----------------|--------------|
+| Phase 7 | Conversational Estimating + Job Costing | TBD | Phases 1-3 (daily logs, quality, time tracking provide the historical data) |
+| Phase 8 | Document Intelligence | TBD | Phase 7 (estimates to cross-reference against) |
+| Phase 9 | Intelligent Change Orders + QuickBooks Integration | TBD | Phases 1, 3, 7 (daily logs, time entries, estimates for scope comparison) |
+
+Phases 7-9 will be fully specified in a separate build plan document once Phases 1-6 are substantially complete and the conversational interface architecture is validated. The unified estimate/task/cost data model, document processing pipeline, and conversation memory architecture require detailed design specs informed by what is learned during Phases 1-6.
+
+**Total Phase 1-6 effort: ~482 hours over 20 weeks (Weeks 13-32)**
+
+At the end of Week 32, Kerf will handle:
 
 - ✅ Safety compliance (inspections, incidents, toolbox talks, hazard reports, OSHA logs, mock inspections, environmental, prequalification, state compliance)
 - ✅ Daily logs (auto-populated from safety data)
@@ -497,6 +514,8 @@ This extends the original 12-week Phase 1 build plan by 20 weeks, for a total of
 - ✅ Expanded sub management (COI tracking, performance scoring, lien waivers)
 - ✅ RFIs, submittals, and change orders
 - ✅ Basic scheduling (weekly lookahead with safety-schedule conflict detection)
+- ✅ Conversational interface for all features (chat + voice)
+- ✅ Conversation memory (all interactions recorded and linked in the graph)
 
 ---
 
@@ -512,22 +531,43 @@ The current per-project pricing ($99/$299/$599) may need revision as the platfor
 - Bundle pricing for "full platform" at a premium tier
 
 ### Mobile-first design
-Every expansion feature must work on mobile first. The superintendent is on a jobsite, not at a desk. Time tracking clock-in, daily log review, punch list walkthrough, schedule lookahead — all must be designed for a phone in direct sunlight with dirty gloves.
+Every expansion feature must work on mobile first. The contractor is on a jobsite, not at a desk. Time tracking clock-in, daily log review, punch list walkthrough, schedule lookahead — all must be designed for a phone in direct sunlight with dirty gloves.
 
-### Voice-first where applicable
-Daily logs, quality observations, and incident reports should all support voice input. RFIs and scheduling are primarily typed/tapped workflows and do not need voice support initially.
+### Conversational-first, voice everywhere
+Every feature is accessed through the conversational interface (chat and voice). The contractor creates daily logs, reviews quality observations, checks schedules, creates estimates, asks questions about job costs, and manages their projects by talking to Kerf. Voice is not limited to field documentation — it is the interaction model for every feature. Dashboard and form views exist for review and bulk operations, but conversation is always the primary path.
 
 ### Data integration points
-Each new feature must connect to existing data — this is the "one tool" promise:
+Each new feature must connect to existing data in the knowledge graph — this is the "one tool" promise:
 - Daily logs auto-populate from safety + time + equipment data
 - Quality inspections use the same engine as safety inspections
 - Time tracking connects to worker records and project assignments
 - Schedule connects to certifications, equipment, and incidents
 - Sub management uses safety data for performance scoring
 - Morning brief incorporates schedule, time, quality, and sub data
+- Estimates become tasks become cost tracking lines (unified lifecycle)
+- Job costing derives from time entries + daily logs (no manual data entry)
+- Change orders assemble evidence from daily logs + photos + time entries
+- All features accessible via conversational interface (chat + voice)
+
+### Conversation recording
+Every interaction with Kerf — chat or voice — must be recorded and linked in the knowledge graph:
+- Full transcript stored in object storage (90-day retention)
+- Vector embedding stored as a property on the Conversation node in Neo4j
+- Extracted decisions stored as Decision nodes with description, reasoning, and links to affected entities
+- Extracted insights stored as Insight nodes with content, confidence, and applicability tags
+- All entities referenced during the conversation linked via graph relationships
+- This is a cross-cutting requirement for every phase — the conversation recording pipeline must be built alongside Phase 1 (Daily Logs) or earlier
+
+### Document upload pipeline
+Uploaded documents (plans, specs, contracts, COIs, permits) must be processed and connected to the graph:
+- Raw files stored in object storage (permanent retention)
+- AI extraction produces structured data as graph entities (fixture counts from plans, policy details from COIs, scope from contracts)
+- Text content chunked and embedded as DocumentChunk nodes with vector properties for semantic search
+- All extracted data linked to the project and related entities via graph relationships
+- This pipeline is a prerequisite for Phase 7 (Conversational Estimating) but document upload capability should be available from Phase 1
 
 ### Testing strategy
-- Backend: pytest with Firestore emulator, same pattern as Phase 1
+- Backend: pytest with Neo4j test instance, same pattern as Phase 1
 - Frontend: Vitest + Testing Library, same pattern as Phase 1
 - E2E: Playwright journeys for each new workflow
 - Integration: IS-X scenarios for cross-feature data flow (daily log auto-population, safety-schedule conflicts, fatigue analysis)

@@ -1,0 +1,47 @@
+code: WV
+name: West Virginia
+regulatory_body: West Virginia Division of Labor / Federal OSHA
+state_plan: false
+primary_legislation: West Virginia Code Chapter 21 (Labor)
+construction_regulation: Federal OSHA 29 CFR 1926 (no state construction standards)
+
+requirements:
+  - id: WV-001
+    state: WV
+    requirement_name: Workers Compensation Insurance
+    description: All West Virginia employers must provide workers compensation insurance through an authorized carrier or self-insurance.
+    federal_equivalent: null
+    state_standard: "WV Code 23-2-1"
+    additional_details: West Virginia transitioned from an exclusive state fund to an open market system in 2006. Employers may choose private insurance carriers or apply for self-insurance.
+    applies_to: all
+    severity: mandatory
+
+  - id: WV-002
+    state: WV
+    requirement_name: Underground Mine Safety
+    description: West Virginia enforces stringent mine safety regulations for underground coal mining operations beyond federal MSHA requirements.
+    federal_equivalent: "30 CFR Parts 46-90 (MSHA)"
+    state_standard: "WV Code 22A-2"
+    additional_details: Includes requirements for mine ventilation, roof control, emergency evacuation, and miner certifications. The Office of Miners Health Safety and Training conducts independent inspections.
+    applies_to: all
+    severity: mandatory
+
+  - id: WV-003
+    state: WV
+    requirement_name: Contractor Licensing for Construction
+    description: Contractors performing construction work in West Virginia must hold a valid state license.
+    federal_equivalent: null
+    state_standard: "WV Code 21-11-1 et seq."
+    additional_details: Licensing is required for contractors on projects valued at $2,500 or more. Applicants must demonstrate financial responsibility, experience, and knowledge of building codes and safety.
+    applies_to: construction
+    severity: mandatory
+
+  - id: WV-004
+    state: WV
+    requirement_name: Hazardous Waste Worker Training
+    description: Workers handling hazardous waste or responding to hazardous substance releases must receive specialized training.
+    federal_equivalent: "29 CFR 1910.120"
+    state_standard: "WV Code 22-18 / WV Legislative Rule 33-1"
+    additional_details: Training requirements align with federal HAZWOPER standards. West Virginia Division of Labor oversees compliance for state and local government workers not covered by federal OSHA.
+    applies_to: all
+    severity: mandatory

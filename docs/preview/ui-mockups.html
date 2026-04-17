@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf UI Mockups — Conversational-First</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Machine Yellow */
+    --machine: #F5B800;
+    --machine-dark: #D9A200;
+    --machine-bright: #FFCA18;
+    --machine-wash: rgba(245,184,0,0.1);
+    /* Concrete (neutrals) */
+    --concrete-50: #f4f5f3;
+    --concrete-100: #e6e8e3;
+    --concrete-200: #d4d7d0;
+    --concrete-300: #b8bcb3;
+    --concrete-400: #71766b;
+    --concrete-500: #545951;
+    --concrete-600: #3e423a;
+    --concrete-700: #2e312b;
+    --concrete-800: #191b17;
+    --concrete-900: #0d0e0c;
+    /* Status */
+    --pass: #2d8a4e;
+    --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030;
+    --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b;
+    --warn-bg: rgba(184,134,11,0.08);
+    /* Functional */
+    --bg: var(--concrete-50);
+    --fg: var(--concrete-900);
+    --card: #ffffff;
+    --border: var(--concrete-100);
+    --muted: var(--concrete-400);
+    --radius: 3px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    color: var(--fg);
+    background: var(--concrete-900);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tab navigation */
+  .tab-nav { display: flex; gap: 0; background: var(--concrete-900); padding: 16px 16px 0; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 16px; background: var(--concrete-800); color: var(--concrete-400);
+    border: none; cursor: pointer; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .tab-btn.active { background: var(--bg); color: var(--fg); }
+  .tab-btn:hover:not(.active) { background: var(--concrete-700); }
+  .tab-content { display: none; background: var(--bg); min-height: 100vh; padding: 24px; }
+  .tab-content.active { display: block; }
+
+  /* Typography */
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; color: var(--fg); }
+  h2 { font-size: 1.1rem; font-weight: 700; margin-top: 32px; margin-bottom: 12px; color: var(--fg); }
+  h3 { font-size: 0.95rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px; color: var(--fg); }
+  p { margin-bottom: 10px; max-width: 700px; font-size: 0.875rem; color: var(--concrete-600); }
+  .subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 24px; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+
+  /* Phone mockup */
+  .phone-frame {
+    width: 375px; height: 750px; border: 2px solid var(--concrete-200);
+    border-radius: 32px; overflow: hidden; background: var(--card);
+    margin: 20px auto; box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  }
+  .phone-notch { width: 120px; height: 24px; background: var(--concrete-900); border-radius: 0 0 12px 12px; margin: 0 auto; }
+  .phone-screen { height: calc(100% - 24px); overflow-y: auto; display: flex; flex-direction: column; }
+
+  /* Desktop mockup */
+  .desktop-frame {
+    width: 100%; max-width: 1100px; height: 650px; border: 2px solid var(--concrete-200);
+    border-radius: 8px; overflow: hidden; background: var(--card);
+    margin: 20px auto; box-shadow: 0 8px 32px rgba(0,0,0,0.08); display: flex;
+  }
+  .desktop-sidebar { width: 380px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--card); }
+  .desktop-canvas { flex: 1; display: flex; flex-direction: column; background: var(--bg); overflow-y: auto; }
+
+  /* App header — Kerf style */
+  .app-header {
+    display: flex; align-items: center; padding: 0 16px; height: 48px;
+    background: var(--card); border-bottom: 1px solid var(--border); gap: 12px;
+  }
+  .app-header .hamburger { font-size: 1rem; cursor: pointer; color: var(--concrete-600); }
+  .app-header .title { flex: 1; font-weight: 700; font-size: 0.875rem; color: var(--fg); }
+  .app-header .kerf-logo { width: 20px; height: 20px; background: var(--machine); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; color: var(--concrete-900); }
+  .app-header .avatar { width: 28px; height: 28px; border-radius: 2px; background: var(--concrete-100); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--concrete-600); }
+
+  /* Chat area */
+  .chat-area { flex: 1; padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+  .msg { max-width: 85%; padding: 8px 12px; border-radius: var(--radius); font-size: 0.82rem; line-height: 1.5; }
+  .msg.user { background: var(--machine); color: var(--concrete-900); align-self: flex-end; font-weight: 500; }
+  .msg.agent { background: var(--card); color: var(--fg); align-self: flex-start; border: 1px solid var(--border); }
+  .msg .msg-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 3px; }
+
+  /* Chat input */
+  .chat-input {
+    display: flex; align-items: center; padding: 8px 12px;
+    border-top: 1px solid var(--border); gap: 6px; background: var(--card);
+  }
+  .chat-input input {
+    flex: 1; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 7px 12px; font-size: 0.82rem; outline: none; font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+  }
+  .chat-input input:focus { border-color: var(--machine); box-shadow: 0 0 0 2px var(--machine-wash); }
+  .chat-input .mic-btn {
+    width: 32px; height: 32px; border-radius: var(--radius); background: var(--machine);
+    color: var(--concrete-900); border: none; cursor: pointer; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-input .mic-btn:hover { background: var(--machine-dark); }
+  .chat-input .send-btn {
+    width: 32px; height: 32px; border-radius: var(--radius); background: var(--concrete-800);
+    color: var(--concrete-50); border: none; cursor: pointer; font-size: 0.85rem;
+  }
+
+  /* Cards inline in chat — Kerf style */
+  .chat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; margin: 4px 0; align-self: flex-start; max-width: 95%;
+  }
+  .chat-card .card-title {
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; color: var(--fg);
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  .chat-card .card-row {
+    display: flex; justify-content: space-between; font-size: 0.78rem; padding: 3px 0;
+    border-bottom: 1px solid var(--concrete-50);
+  }
+  .chat-card .card-row:last-of-type { border-bottom: none; }
+  .chat-card .card-row .val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; }
+  .chat-card .card-row .val.pass { color: var(--pass); }
+  .chat-card .card-row .val.warn { color: var(--warn); }
+  .chat-card .card-row .val.fail { color: var(--fail); }
+  .chat-card .card-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .kerf-btn {
+    padding: 5px 12px; border-radius: var(--radius); font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer;
+  }
+  .kerf-btn.primary { background: var(--machine); color: var(--concrete-900); }
+  .kerf-btn.primary:hover { background: var(--machine-dark); }
+  .kerf-btn.secondary { background: var(--concrete-50); color: var(--fg); border: 1px solid var(--border); }
+
+  /* Status badges — Kerf style */
+  .status-badge {
+    display: inline-block; padding: 1px 6px; border-radius: var(--radius);
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase;
+  }
+  .status-badge.pass { background: var(--pass-bg); color: var(--pass); }
+  .status-badge.warn { background: var(--warn-bg); color: var(--warn); }
+  .status-badge.fail { background: var(--fail-bg); color: var(--fail); }
+  .status-badge.info { background: var(--machine-wash); color: var(--machine-dark); }
+
+  /* Quick action buttons */
+  .quick-actions { display: flex; gap: 6px; padding: 6px 12px; overflow-x: auto; background: var(--card); border-bottom: 1px solid var(--border); }
+  .quick-action {
+    padding: 5px 10px; border-radius: var(--radius); font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500; border: 1px solid var(--border);
+    background: var(--card); color: var(--fg); white-space: nowrap; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .quick-action:hover { background: var(--machine-wash); border-color: var(--machine); }
+
+  /* Sidebar nav — Kerf style */
+  .side-nav a {
+    display: block; padding: 8px 20px; color: var(--concrete-500); text-decoration: none;
+    font-size: 0.82rem; border-left: 2px solid transparent;
+  }
+  .side-nav a:hover { background: var(--machine-wash); color: var(--fg); border-left-color: var(--machine); }
+  .side-nav a.active { background: var(--machine-wash); color: var(--fg); border-left-color: var(--machine); font-weight: 600; }
+  .side-nav .nav-section {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+    padding: 16px 20px 4px;
+  }
+
+  /* Estimate table — Kerf style */
+  .estimate-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .estimate-table th {
+    background: var(--concrete-900); color: var(--concrete-50); padding: 6px 10px;
+    text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    font-weight: 500; text-transform: uppercase; letter-spacing: 1px; position: sticky; top: 0;
+  }
+  .estimate-table td { padding: 5px 10px; border-bottom: 1px solid var(--concrete-50); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .estimate-table tr:hover { background: var(--machine-wash); }
+  .estimate-table .group-row { background: var(--concrete-50); font-weight: 600; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.78rem; }
+  .estimate-table .total-row { background: var(--concrete-900); color: var(--concrete-50); font-weight: 700; }
+  .estimate-table .subtotal-row { background: var(--concrete-100); font-weight: 600; }
+
+  /* Canvas header */
+  .canvas-header {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; background: var(--card);
+  }
+  .canvas-header h3 { margin: 0; font-size: 0.85rem; }
+
+  /* Work item tracking */
+  .work-item-row {
+    display: grid; grid-template-columns: 1fr 70px 70px 70px; gap: 8px;
+    padding: 7px 12px; border-bottom: 1px solid var(--concrete-50); align-items: center; font-size: 0.78rem;
+  }
+  .work-item-row.header {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--muted); background: var(--concrete-50);
+  }
+  .work-item-row:hover:not(.header) { background: var(--machine-wash); }
+  .work-item-detail { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+  .progress-bar { height: 4px; background: var(--concrete-100); border-radius: 1px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; border-radius: 1px; }
+  .progress-bar .fill.pass { background: var(--pass); }
+  .progress-bar .fill.warn { background: var(--warn); }
+  .progress-bar .fill.fail { background: var(--fail); }
+
+  /* Design note callout */
+  .design-note {
+    background: var(--machine-wash); border-left: 2px solid var(--machine);
+    padding: 12px 16px; margin: 16px 0; border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 0.82rem; max-width: 700px;
+  }
+  .design-note strong { color: var(--fg); }
+
+  /* Mockup pair */
+  .mockup-pair { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; justify-content: center; margin: 24px 0; }
+
+  /* WhatsApp */
+  .wa-frame { border: 2px solid var(--concrete-200); border-radius: 8px; overflow: hidden; width: 340px; }
+  .wa-header { background: #075e54; color: white; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .wa-header .wa-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--machine); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 11px; color: var(--concrete-900); }
+  .wa-body { background: #ece5dd; padding: 12px; }
+  .wa-msg { background: white; padding: 8px 10px; border-radius: 6px; margin: 6px 0; max-width: 85%; font-size: 0.82rem; }
+  .wa-msg.outgoing { background: #dcf8c6; margin-left: auto; }
+  .wa-msg .wa-time { font-size: 0.6rem; color: #999; text-align: right; margin-top: 2px; }
+  .wa-msg .wa-sender { font-size: 0.68rem; font-weight: 600; color: #075e54; margin-bottom: 2px; }
+
+  /* Responsive table */
+  .info-table { max-width: 700px; border-collapse: collapse; font-size: 0.82rem; margin: 12px 0; }
+  .info-table th { background: var(--concrete-900); color: var(--concrete-50); padding: 6px 10px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .info-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .info-table tr:hover { background: var(--machine-wash); }
+
+  @media (max-width: 640px) { body { font-size: 14px; } .tab-btn { font-size: 9px; padding: 6px 10px; } }
+</style>
+</head>
+<body>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+  <button class="tab-btn" onclick="showTab('mobile-chat')">Mobile: Chat</button>
+  <button class="tab-btn" onclick="showTab('mobile-estimate')">Mobile: Estimate</button>
+  <button class="tab-btn" onclick="showTab('mobile-nav')">Mobile: Nav</button>
+  <button class="tab-btn" onclick="showTab('desktop')">Desktop: Work</button>
+  <button class="tab-btn" onclick="showTab('desktop-estimate')">Desktop: Estimate</button>
+  <button class="tab-btn" onclick="showTab('whatsapp')">WhatsApp</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="overview" class="tab-content active">
+  <h1>Kerf UI Architecture</h1>
+  <div class="subtitle">Conversational-first &middot; Phone &middot; Tablet &middot; Desktop</div>
+
+  <h2>Interaction Model</h2>
+  <div class="design-note">
+    <strong>Chat is the home screen.</strong> Everything else is a view the chat produces. The user doesn't navigate to "Estimates" — they say "show me the estimate for 4th Street" and it appears as an interactive card. Hamburger menu provides traditional navigation as a secondary path.
+  </div>
+
+  <h3>Three Ways to Do Anything</h3>
+  <table class="info-table">
+    <thead><tr><th>Method</th><th>How</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Chat</strong></td><td>Type a message</td><td>Everywhere — phone, tablet, desktop</td></tr>
+      <tr><td><strong>Voice</strong></td><td>Tap mic (STT) or real-time conversation (LiveKit)</td><td>On site, driving, hands busy</td></tr>
+      <tr><td><strong>Navigate</strong></td><td>Hamburger menu → traditional screens</td><td>Admin, review, preference</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What Renders Where</h3>
+  <table class="info-table">
+    <thead><tr><th>Content</th><th>Mobile</th><th>Desktop</th></tr></thead>
+    <tbody>
+      <tr><td>Simple answer</td><td>Inline in chat</td><td>Inline in chat panel</td></tr>
+      <tr><td>Project summary</td><td>Card in chat</td><td>Card in canvas</td></tr>
+      <tr><td>Estimate for review</td><td>Card → tap to expand</td><td>Full table in canvas</td></tr>
+      <tr><td>Schedule / lookahead</td><td>Card → expand to timeline</td><td>Board in canvas</td></tr>
+      <tr><td>Cost report</td><td>Narrative in chat + card</td><td>Charts + narrative in canvas</td></tr>
+      <tr><td>Variation for approval</td><td>Card with approve/reject</td><td>Full detail in canvas</td></tr>
+      <tr><td>Morning brief</td><td>Auto-loads in chat</td><td>Opens in canvas</td></tr>
+      <tr><td>Clock in</td><td>Quick action button</td><td>Quick action in chat panel</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Fixed vs Generated Views</h3>
+  <div class="design-note">
+    <strong>Pre-built (fast, always available):</strong> Morning brief, project list, clock-in, daily log review, active inspections<br><br>
+    <strong>Agent-generated (from conversation):</strong> Estimates, cost reports, schedule views, compliance checks, worker profiles, equipment status, ad-hoc queries
+  </div>
+
+  <h3>Device Flow Through The Day</h3>
+  <table class="info-table">
+    <thead><tr><th>Time</th><th>Context</th><th>Device</th><th>Interaction</th></tr></thead>
+    <tbody>
+      <tr><td style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">05:30</td><td>Kitchen, coffee</td><td>Phone</td><td>Chat — read morning brief</td></tr>
+      <tr><td style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">06:00</td><td>Toolbox talk</td><td>Phone</td><td>Chat + voice</td></tr>
+      <tr><td style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">06:30</td><td>Working</td><td>Phone in pocket</td><td>Voice only (push-to-talk)</td></tr>
+      <tr><td style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">—</td><td>Driving between sites</td><td>Phone</td><td>Real-time voice conversation</td></tr>
+      <tr><td style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">15:30</td><td>Trailer / truck</td><td>Phone or tablet</td><td>Chat — review daily log, estimates</td></tr>
+      <tr><td style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">19:00</td><td>Home</td><td>Tablet or laptop</td><td>Chat + canvas — reports, estimating</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- MOBILE CHAT -->
+<div id="mobile-chat" class="tab-content">
+  <h1>Mobile: Chat Home</h1>
+  <div class="subtitle">Morning brief &middot; Project status &middot; Variation detection</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Kerf</span>
+        <div class="avatar">SC</div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="quick-action">⏱ Clock In</button>
+        <button class="quick-action">📋 Inspect</button>
+        <button class="quick-action">⚠ Hazard</button>
+        <button class="quick-action">📸 Photo</button>
+      </div>
+
+      <div class="chat-area">
+        <div class="msg agent">
+          <div class="msg-label">Kerf · 05:31</div>
+          Good morning Sarah. Here's your brief for today.
+        </div>
+
+        <div class="chat-card">
+          <div class="card-title">Morning Brief — Fri 11 Apr</div>
+          <div class="card-row"><span>Active projects</span><span class="val" style="font-size: 12px;">3</span></div>
+          <div class="card-row"><span>4th Street Medical</span><span class="val pass">On track</span></div>
+          <div class="card-row"><span>Hospital Phase 2</span><span class="val warn">Labour +12%</span></div>
+          <div class="card-row"><span>King Street Reno</span><span class="val pass">On track</span></div>
+          <div class="card-row"><span>Marco — fall protection cert</span><span class="val fail">Expires Mon</span></div>
+          <div class="card-row"><span>Temperature forecast</span><span class="val warn">38°C / 100°F</span></div>
+          <div class="card-actions">
+            <button class="kerf-btn primary">View Details</button>
+            <button class="kerf-btn secondary">Schedule</button>
+          </div>
+        </div>
+
+        <div class="msg user">How are we doing on the hospital job?</div>
+
+        <div class="msg agent">
+          Hospital Phase 2 is 6 weeks in. Labour tracking 12% over, mainly conduit runs — crew averaged 32 LF/day vs 40 estimated. Restricted access hours are the main factor.
+          <br><br>
+          I flagged a potential variation on Wednesday — the daily log mentions relocating 8 receptacles per the architect's revised layout.
+        </div>
+
+        <div class="chat-card">
+          <div class="card-title">Draft Variation — Hospital Ph.2</div>
+          <div class="card-row"><span>Scope</span><span class="val">Relocate 8 receptacles per Rev B</span></div>
+          <div class="card-row"><span>Labour</span><span class="val">12.4 hrs ($806)</span></div>
+          <div class="card-row"><span>Materials</span><span class="val">$234</span></div>
+          <div class="card-row"><span>Total</span><span class="val" style="font-size: 13px; color: var(--fg);">$1,040</span></div>
+          <div class="card-row"><span>Evidence</span><span class="val" style="color: var(--machine-dark);">3 photos · daily log · time</span></div>
+          <div class="card-actions">
+            <button class="kerf-btn primary">Review & Send</button>
+            <button class="kerf-btn secondary">Edit</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" placeholder="Message Kerf...">
+        <button class="mic-btn">🎤</button>
+        <button class="send-btn">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE ESTIMATE -->
+<div id="mobile-estimate" class="tab-content">
+  <h1>Mobile: Estimating</h1>
+  <div class="subtitle">Conversational &middot; WorkItems build as cards &middot; Voice or chat</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Estimate · 4th Street</span>
+        <div class="avatar">SC</div>
+      </div>
+
+      <div class="chat-area">
+        <div class="msg user">Reception area. 6 standard receptacles, 2 dedicated for computers, 1 floor box. 8 LED troffers. Switch and dimmer.</div>
+
+        <div class="chat-card">
+          <div class="card-title">Reception — 18 items</div>
+          <div class="card-row"><span>6× Standard receptacle</span><span class="val">$396</span></div>
+          <div class="card-row"><span>2× Dedicated circuit</span><span class="val">$284</span></div>
+          <div class="card-row"><span>1× Floor box</span><span class="val">$185</span></div>
+          <div class="card-row"><span>8× LED troffer 2×4</span><span class="val">$1,840</span></div>
+          <div class="card-row"><span>1× Switch + 1× Dimmer</span><span class="val">$142</span></div>
+          <div class="card-row"><span>Conduit + wire (est.)</span><span class="val">$1,620</span></div>
+          <div class="card-row" style="border-top: 1px solid var(--border); font-weight: 600;"><span>Subtotal</span><span class="val">$4,467</span></div>
+          <div class="card-actions"><button class="kerf-btn secondary">Edit Items</button></div>
+        </div>
+
+        <div class="msg user">10 exam rooms, each 4 receptacles, 1 GFI, 1 dedicated, 2 troffers, occ sensor.</div>
+
+        <div class="msg agent">
+          <div class="msg-label">Kerf</div>
+          10 rooms: 40 receptacles, 10 GFI, 10 dedicated, 20 troffers, 10 sensors. Fulton County requires arc-fault breakers per NEC 2023 — added $2,400. Your medical office labour adjustment (+12%) applied.
+        </div>
+
+        <div class="chat-card">
+          <div class="card-title">Exam Rooms (×10) — 90 items</div>
+          <div class="card-row"><span>40× Standard receptacle</span><span class="val">$2,640</span></div>
+          <div class="card-row"><span>10× GFI + 10× Dedicated</span><span class="val">$2,280</span></div>
+          <div class="card-row"><span>20× LED troffer</span><span class="val">$4,600</span></div>
+          <div class="card-row"><span>10× Occupancy sensor</span><span class="val">$820</span></div>
+          <div class="card-row"><span>Arc-fault breakers (NEC)</span><span class="val">$2,400</span></div>
+          <div class="card-row"><span>Conduit + wire</span><span class="val">$18,240</span></div>
+          <div class="card-row" style="border-top: 1px solid var(--border); font-weight: 600;"><span>Subtotal</span><span class="val">$30,980</span></div>
+        </div>
+
+        <div class="msg user">What's the total?</div>
+
+        <div class="chat-card" style="border-color: var(--machine); border-width: 2px;">
+          <div class="card-title" style="color: var(--machine-dark);">Estimate Summary</div>
+          <div class="card-row"><span>Reception</span><span class="val">$4,467</span></div>
+          <div class="card-row"><span>Exam Rooms (×10)</span><span class="val">$30,980</span></div>
+          <div class="card-row"><span>Hallways & Common</span><span class="val">$12,340</span></div>
+          <div class="card-row"><span>Panels & Feeders</span><span class="val">$18,600</span></div>
+          <div class="card-row"><span>Fire Alarm</span><span class="val">$8,420</span></div>
+          <div class="card-row" style="border-top: 2px solid var(--border);"><span><strong>Direct Cost</strong></span><span class="val"><strong>$74,807</strong></span></div>
+          <div class="card-row"><span>Labour adj. + OH + Profit</span><span class="val">$73,393</span></div>
+          <div class="card-row" style="border-top: 2px solid var(--machine); font-size: 0.9rem;">
+            <span><strong>Total Bid</strong></span>
+            <span class="val" style="color: var(--machine-dark); font-size: 14px;"><strong>$148,200</strong></span>
+          </div>
+          <div class="card-row"><span>Effective margin</span><span class="val pass">14.2%</span></div>
+          <div class="card-actions">
+            <button class="kerf-btn primary">Generate Proposal</button>
+            <button class="kerf-btn secondary">All Items</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" placeholder="Message Kerf...">
+        <button class="mic-btn">🎤</button>
+        <button class="send-btn">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE NAV -->
+<div id="mobile-nav" class="tab-content">
+  <h1>Mobile: Navigation</h1>
+  <div class="subtitle">Hamburger menu &middot; Secondary path &middot; Chat always available</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">✕</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Kerf</span>
+        <div class="avatar">SC</div>
+      </div>
+
+      <div style="flex: 1; background: var(--card); overflow-y: auto;">
+        <div class="side-nav" style="display: block; position: relative; width: 100%; padding-top: 8px;">
+          <a href="#" class="active" style="font-weight: 700; border-left-color: var(--machine); color: var(--fg);">💬 Back to Chat</a>
+
+          <div class="nav-section">Work</div>
+          <a href="#">📁 Projects</a>
+          <a href="#">📝 Estimates</a>
+          <a href="#">📅 Schedule</a>
+          <a href="#">💰 Job Costing</a>
+          <a href="#">📨 Invoices</a>
+
+          <div class="nav-section">Field</div>
+          <a href="#">📋 Inspections</a>
+          <a href="#">📄 Daily Logs</a>
+          <a href="#">⏱ Time Tracking</a>
+          <a href="#">⚠ Hazards & Incidents</a>
+
+          <div class="nav-section">People & Equipment</div>
+          <a href="#">👷 Workers</a>
+          <a href="#">🔧 Equipment</a>
+          <a href="#">🏗 Subcontractors</a>
+
+          <div class="nav-section">Documents</div>
+          <a href="#">📎 Files & Plans</a>
+          <a href="#">📊 Reports</a>
+
+          <div class="nav-section">System</div>
+          <a href="#">⚙ Settings</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-note" style="max-width: 375px; margin: 16px auto;">
+    Every screen in the menu is also reachable via chat. "Show me my projects" produces the same view as tapping Projects. The menu is for preference — chat is for speed.
+  </div>
+</div>
+
+<!-- DESKTOP SPLIT VIEW -->
+<div id="desktop" class="tab-content">
+  <h1>Desktop: Work Item Tracking</h1>
+  <div class="subtitle">Chat + Canvas &middot; Split view &middot; Real-time updates</div>
+
+  <div class="desktop-frame">
+    <div class="desktop-sidebar">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Kerf</span>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-action">⏱ Clock In</button>
+        <button class="quick-action">📋 Inspect</button>
+        <button class="quick-action">⚠ Hazard</button>
+      </div>
+      <div class="chat-area" style="flex: 1;">
+        <div class="msg agent" style="font-size: 0.78rem;">Good morning Sarah. 3 active projects. Hospital job tracking 12% over on labour.</div>
+        <div class="msg user" style="font-size: 0.78rem;">Show me hospital work items</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Hospital Phase 2 work breakdown with progress tracking. Items over estimate are highlighted. →</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" placeholder="Message Kerf..." style="font-size: 0.78rem;">
+        <button class="mic-btn" style="width: 28px; height: 28px; font-size: 0.8rem;">🎤</button>
+        <button class="send-btn" style="width: 28px; height: 28px; font-size: 0.8rem;">↑</button>
+      </div>
+    </div>
+
+    <div class="desktop-canvas">
+      <div class="canvas-header">
+        <div>
+          <h3 style="font-size: 0.85rem;">Hospital Phase 2</h3>
+          <span class="label">Work Items · Progress Tracking</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="kerf-btn secondary">Export</button>
+          <button class="kerf-btn secondary">Filter</button>
+          <button class="kerf-btn primary">+ Add Item</button>
+        </div>
+      </div>
+      <div style="overflow-y: auto; flex: 1; padding: 0;">
+        <div class="work-item-row header">
+          <span>Work Item</span><span>Est.</span><span>Actual</span><span>Status</span>
+        </div>
+        <div style="padding: 8px 12px 2px;"><span class="label" style="color: var(--machine-dark);">Electrical Rough-In</span></div>
+        <div class="work-item-row">
+          <div>Branch circuit conduit<br><span class="work-item-detail">Crew A · Floors 1-2</span></div>
+          <div class="mono" style="font-size: 11px;">160 hrs</div>
+          <div class="mono" style="font-size: 11px; color: var(--fail); font-weight: 600;">184 hrs</div>
+          <div><div class="progress-bar"><div class="fill fail" style="width:75%"></div></div><span class="work-item-detail">75%</span></div>
+        </div>
+        <div class="work-item-row">
+          <div>Receptacle installation<br><span class="work-item-detail">Crew A · All floors</span></div>
+          <div class="mono" style="font-size: 11px;">29.4 hrs</div>
+          <div class="mono" style="font-size: 11px; color: var(--warn); font-weight: 600;">32.1 hrs</div>
+          <div><div class="progress-bar"><div class="fill warn" style="width:90%"></div></div><span class="work-item-detail">90%</span></div>
+        </div>
+        <div class="work-item-row">
+          <div>GFI receptacles<br><span class="work-item-detail">Crew A · Wet locations</span></div>
+          <div class="mono" style="font-size: 11px;">8.2 hrs</div>
+          <div class="mono" style="font-size: 11px; color: var(--pass);">7.8 hrs</div>
+          <div><span class="status-badge pass">Complete</span></div>
+        </div>
+        <div class="work-item-row">
+          <div>Light fixture installation<br><span class="work-item-detail">Crew B · All floors</span></div>
+          <div class="mono" style="font-size: 11px;">24 hrs</div>
+          <div class="mono" style="font-size: 11px;">16.2 hrs</div>
+          <div><div class="progress-bar"><div class="fill pass" style="width:60%"></div></div><span class="work-item-detail">60%</span></div>
+        </div>
+        <div class="work-item-row">
+          <div>Panel set + termination<br><span class="work-item-detail">Crew A · Mech room</span></div>
+          <div class="mono" style="font-size: 11px;">32 hrs</div>
+          <div class="mono" style="font-size: 11px; color: var(--muted);">—</div>
+          <div><span class="status-badge info">Scheduled</span></div>
+        </div>
+        <div style="padding: 8px 12px 2px; margin-top: 4px;"><span class="label" style="color: var(--machine-dark);">Fire Alarm</span></div>
+        <div class="work-item-row">
+          <div>Device installation<br><span class="work-item-detail">Specialist sub</span></div>
+          <div class="mono" style="font-size: 11px;">18 hrs</div>
+          <div class="mono" style="font-size: 11px; color: var(--muted);">—</div>
+          <div><span class="status-badge info">Scheduled</span></div>
+        </div>
+        <div class="work-item-row">
+          <div>Wiring + conduit<br><span class="work-item-detail">Specialist sub</span></div>
+          <div class="mono" style="font-size: 11px;">24 hrs</div>
+          <div class="mono" style="font-size: 11px; color: var(--muted);">—</div>
+          <div><span class="status-badge info">Scheduled</span></div>
+        </div>
+        <div style="border-top: 2px solid var(--border); margin-top: 8px;">
+          <div class="work-item-row" style="font-weight: 700; border: none; background: var(--concrete-50);">
+            <span>Total</span>
+            <span class="mono" style="font-size: 11px;">295.6 hrs</span>
+            <span class="mono" style="font-size: 11px; color: var(--warn);">240.1 hrs</span>
+            <span class="work-item-detail" style="font-size: 10px;">81% used at 65% done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DESKTOP ESTIMATE -->
+<div id="desktop-estimate" class="tab-content">
+  <h1>Desktop: Estimate Builder</h1>
+  <div class="subtitle">Chat builds the estimate &middot; Canvas shows the table &middot; Real-time</div>
+
+  <div class="desktop-frame">
+    <div class="desktop-sidebar">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Estimate · 4th St</span>
+      </div>
+      <div class="chat-area" style="flex: 1;">
+        <div class="msg user" style="font-size: 0.78rem;">Start estimate for 4th Street</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Created. I'll build in the workspace as you describe the scope. →</div>
+        <div class="msg user" style="font-size: 0.78rem;">Reception: 6 receptacles, 2 dedicated, 1 floor box, 8 troffers, switch and dimmer</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Added. Using your City Electric rates (March PO). →</div>
+        <div class="msg user" style="font-size: 0.78rem;">10 exam rooms, each 4 receptacles, 1 GFI, 1 dedicated, 2 troffers, occ sensor</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Added. Arc-fault breakers included per NEC 2023 ($2,400). Medical office labour adj. (+12%) applied. →</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" placeholder="Message Kerf..." style="font-size: 0.78rem;">
+        <button class="mic-btn" style="width: 28px; height: 28px; font-size: 0.8rem;">🎤</button>
+        <button class="send-btn" style="width: 28px; height: 28px; font-size: 0.8rem;">↑</button>
+      </div>
+    </div>
+
+    <div class="desktop-canvas">
+      <div class="canvas-header">
+        <div>
+          <h3 style="font-size: 0.85rem;">4th Street Medical Office</h3>
+          <span class="label">Estimate · Peterson GC · 4,000 sq ft</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="kerf-btn secondary">Export PDF</button>
+          <button class="kerf-btn primary">Generate Proposal</button>
+        </div>
+      </div>
+      <div style="overflow-y: auto; flex: 1;">
+        <table class="estimate-table">
+          <thead>
+            <tr><th>Item</th><th>Qty</th><th>Unit</th><th>Mat $/ea</th><th>Lab hrs</th><th>$/hr</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            <tr class="group-row"><td colspan="7">Reception</td></tr>
+            <tr><td>Standard receptacle</td><td>6</td><td>ea</td><td>$3.40</td><td>2.28</td><td>$65</td><td>$169</td></tr>
+            <tr><td>Dedicated circuit</td><td>2</td><td>ea</td><td>$12.00</td><td>1.60</td><td>$65</td><td>$128</td></tr>
+            <tr><td>Floor box assembly</td><td>1</td><td>ea</td><td>$85.00</td><td>1.50</td><td>$65</td><td>$183</td></tr>
+            <tr><td>LED troffer 2×4</td><td>8</td><td>ea</td><td>$142.00</td><td>4.00</td><td>$65</td><td>$1,396</td></tr>
+            <tr><td>Switch (single-pole)</td><td>1</td><td>ea</td><td>$4.20</td><td>0.25</td><td>$65</td><td>$20</td></tr>
+            <tr><td>Dimmer</td><td>1</td><td>ea</td><td>$28.00</td><td>0.35</td><td>$65</td><td>$51</td></tr>
+            <tr><td>Branch conduit + wire</td><td>240</td><td>LF</td><td>$1.85</td><td>12.00</td><td>$65</td><td>$1,224</td></tr>
+            <tr class="subtotal-row"><td colspan="6" style="text-align: right;">Reception Subtotal</td><td>$3,171</td></tr>
+
+            <tr class="group-row"><td colspan="7">Exam Rooms (×10)</td></tr>
+            <tr><td>Standard receptacle</td><td>40</td><td>ea</td><td>$3.40</td><td>15.20</td><td>$65</td><td>$1,124</td></tr>
+            <tr><td>GFI receptacle</td><td>10</td><td>ea</td><td>$18.50</td><td>4.50</td><td>$65</td><td>$478</td></tr>
+            <tr><td>Dedicated circuit</td><td>10</td><td>ea</td><td>$12.00</td><td>8.00</td><td>$65</td><td>$640</td></tr>
+            <tr><td>LED troffer 2×4</td><td>20</td><td>ea</td><td>$142.00</td><td>10.00</td><td>$65</td><td>$3,490</td></tr>
+            <tr><td>Occupancy sensor</td><td>10</td><td>ea</td><td>$32.00</td><td>4.00</td><td>$65</td><td>$580</td></tr>
+            <tr><td>Arc-fault breakers</td><td>10</td><td>ea</td><td>$48.00</td><td>2.50</td><td>$65</td><td>$643</td></tr>
+            <tr><td>Branch conduit + wire</td><td>1,800</td><td>LF</td><td>$1.85</td><td>90.00</td><td>$65</td><td>$9,180</td></tr>
+            <tr class="subtotal-row"><td colspan="6" style="text-align: right;">Exam Rooms Subtotal</td><td>$16,135</td></tr>
+
+            <tr class="total-row"><td colspan="6" style="text-align: right; padding-right: 12px;">Direct Cost</td><td>$74,807</td></tr>
+            <tr class="total-row" style="background: var(--concrete-800);"><td colspan="6" style="text-align: right; padding-right: 12px;">Labour Adj + OH + Profit</td><td>$73,393</td></tr>
+            <tr class="total-row" style="background: var(--machine); color: var(--concrete-900);"><td colspan="6" style="text-align: right; padding-right: 12px; font-size: 0.9rem;">BID TOTAL</td><td style="font-size: 0.9rem;">$148,200</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div id="whatsapp" class="tab-content">
+  <h1>WhatsApp: Worker Comms</h1>
+  <div class="subtitle">Kerf messages workers via WhatsApp &middot; No app install required</div>
+
+  <div class="design-note">
+    The contractor tells Kerf to message a worker, or Kerf detects it automatically (cert expiring, schedule change). The message goes via WhatsApp Business API. Responses are captured in the knowledge graph. Cost: ~$0.004-0.02 per message.
+  </div>
+
+  <div class="mockup-pair">
+    <div>
+      <h3 style="text-align: center; margin-bottom: 10px; font-size: 0.85rem;">Contractor sees in Kerf</h3>
+      <div style="width: 340px; border: 2px solid var(--concrete-200); border-radius: 4px; overflow: hidden; background: var(--card);">
+        <div class="app-header" style="height: 40px;">
+          <div class="kerf-logo" style="width: 18px; height: 18px; font-size: 9px;">K</div>
+          <span class="title" style="font-size: 0.8rem;">Kerf</span>
+        </div>
+        <div style="padding: 10px; background: var(--bg);">
+          <div class="msg agent" style="font-size: 0.78rem; max-width: 100%;">
+            Marco's fall protection cert expires Monday. He's scheduled for Hospital next week. I've sent him a WhatsApp reminder in Spanish with a renewal link.
+          </div>
+          <div class="chat-card" style="max-width: 100%; font-size: 0.75rem;">
+            <div class="card-title">WhatsApp → Marco Gutierrez</div>
+            <div class="card-row"><span>Message</span><span class="val">Cert renewal reminder</span></div>
+            <div class="card-row"><span>Language</span><span class="val">Spanish</span></div>
+            <div class="card-row"><span>Status</span><span class="val pass">Delivered ✓✓</span></div>
+            <div class="card-row"><span>Response</span><span class="val pass">Booked Saturday ✓</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="text-align: center; margin-bottom: 10px; font-size: 0.85rem;">Marco sees in WhatsApp</h3>
+      <div class="wa-frame">
+        <div class="wa-header">
+          <div class="wa-avatar">K</div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.85rem;">Kerf · Chen Electric</div>
+            <div style="font-size: 0.68rem; opacity: 0.8;">Mensaje de empresa</div>
+          </div>
+        </div>
+        <div class="wa-body">
+          <div class="wa-msg">
+            <div class="wa-sender">Kerf · Chen Electric</div>
+            Hola Marco 👋<br><br>
+            Tu certificación de protección contra caídas vence el lunes 14 de abril. Estás programado para el Hospital la próxima semana — necesitas renovar antes de comenzar.<br><br>
+            📅 Curso disponible este sábado:<br>
+            <a href="#" style="color: #1a73e8;">Reservar renovación →</a>
+            <div class="wa-time">9:15 ✓✓</div>
+          </div>
+          <div class="wa-msg outgoing">
+            OK ya lo reservé para el sábado 👍
+            <div class="wa-time">9:22 ✓✓</div>
+          </div>
+          <div class="wa-msg">
+            <div class="wa-sender">Kerf · Chen Electric</div>
+            Perfecto Marco. He registrado tu reserva. Te recordaré el viernes. 🏗️
+            <div class="wa-time">9:22 ✓✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-note" style="max-width: 720px; margin: 20px auto;">
+    <strong>Key insight:</strong> Workers don't need Kerf installed. They respond on WhatsApp — the app already on every construction worker's phone globally. Responses are captured in the knowledge graph and linked to the worker, project, and certification. The contractor never typed a message — the agent detected the expiring cert and acted.
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

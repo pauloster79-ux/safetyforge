@@ -610,8 +610,8 @@ function SwpppTab() {
       {inspections && inspections.length > 0 ? (
         <div className="space-y-3">
           {inspections.map((insp) => {
-            const passCount = insp.bmp_items.filter(i => i.status === 'pass').length;
-            const failCount = insp.bmp_items.filter(i => i.status === 'fail').length;
+            const passCount = (insp.bmp_items || []).filter(i => i.status === 'pass').length;
+            const failCount = (insp.bmp_items || []).filter(i => i.status === 'fail').length;
             return (
               <Card key={insp.id}>
                 <CardContent className="flex items-center gap-4 py-4">

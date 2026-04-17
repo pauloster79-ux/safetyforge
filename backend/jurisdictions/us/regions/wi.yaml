@@ -1,0 +1,57 @@
+code: WI
+name: Wisconsin
+regulatory_body: Wisconsin Department of Safety and Professional Services (DSPS)
+state_plan: false
+primary_legislation: Wisconsin Statutes Chapter 101 (Department of Safety and Professional Services)
+construction_regulation: Wisconsin Administrative Code SPS 332 (Construction)
+
+requirements:
+  - id: WI-001
+    state: WI
+    requirement_name: Safe Place Statute
+    description: Wisconsin Safe Place Statute requires employers to provide a safe workplace, going beyond federal OSHA by creating a private right of action for injured workers.
+    federal_equivalent: "29 CFR 1910 (General Duty)"
+    state_standard: "Wisconsin Statutes 101.11"
+    additional_details: Employers, building owners, and contractors must maintain safe premises. Employees can bring civil lawsuits for injuries caused by violations. Higher standard of care than federal OSHA.
+    applies_to: all
+    severity: mandatory
+
+  - id: WI-002
+    state: WI
+    requirement_name: Public Employee Safety and Health
+    description: Wisconsin enforces workplace safety standards for state and local government employees through its own public employee program.
+    federal_equivalent: null
+    state_standard: "Wisconsin Statutes 101.055"
+    additional_details: Since federal OSHA does not cover public employees, Wisconsin DSPS conducts inspections and enforces safety standards for all state, county, and municipal workers.
+    applies_to: all
+    severity: mandatory
+
+  - id: WI-003
+    state: WI
+    requirement_name: Construction Dwelling Code Safety Standards
+    description: Wisconsin enforces its own construction safety standards through the dwelling code and commercial building code administered by DSPS.
+    federal_equivalent: "29 CFR 1926"
+    state_standard: "Wisconsin Admin Code SPS 320-325"
+    additional_details: Includes specific requirements for fall protection systems, scaffolding, and structural integrity during construction. DSPS inspectors enforce both state building codes and safety standards.
+    applies_to: construction
+    severity: mandatory
+
+  - id: WI-004
+    state: WI
+    requirement_name: Workers Compensation Insurance
+    description: All Wisconsin employers with one or more employees must provide workers compensation insurance.
+    federal_equivalent: null
+    state_standard: "Wisconsin Statutes Chapter 102"
+    additional_details: No minimum employee threshold. Employers may obtain insurance through private carriers, the State Fund, or qualify for self-insurance. Non-compliance carries criminal penalties.
+    applies_to: all
+    severity: mandatory
+
+  - id: WI-005
+    state: WI
+    requirement_name: Asbestos Management and Abatement
+    description: Wisconsin requires specific licensing and safety procedures for asbestos identification, management, and abatement in construction and renovation.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "Wisconsin Admin Code DHS 159"
+    additional_details: Asbestos abatement contractors and workers must be certified by the Department of Health Services. Projects must follow strict containment, removal, and disposal procedures.
+    applies_to: construction
+    severity: mandatory

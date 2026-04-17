@@ -132,12 +132,22 @@ class OshaLogEntryNotFoundError(Exception):
         super().__init__(f"OSHA log entry not found: {entry_id}")
 
 
+# Alias for new ontology name
+IncidentLogEntryNotFoundError = OshaLogEntryNotFoundError
+
+
 class MockInspectionNotFoundError(Exception):
     """Raised when a mock inspection result cannot be found in the database."""
 
     def __init__(self, inspection_id: str) -> None:
         self.inspection_id = inspection_id
         super().__init__(f"Mock inspection not found: {inspection_id}")
+
+
+class SimulatedInspectionNotFoundError(MockInspectionNotFoundError):
+    """Alias for MockInspectionNotFoundError using new ontology naming."""
+
+    pass
 
 
 class EquipmentNotFoundError(Exception):
@@ -149,7 +159,8 @@ class EquipmentNotFoundError(Exception):
 
 
 class EnvironmentalProgramNotFoundError(Exception):
-    """Raised when an environmental program cannot be found in the database."""
+    """Raised when an environmental program (Document with type=environmental_compliance)
+    cannot be found in the database."""
 
     def __init__(self, program_id: str) -> None:
         self.program_id = program_id
@@ -235,6 +246,95 @@ class AgentNotFoundError(Exception):
         super().__init__(f"Agent not found: {agent_id}")
 
 
+class DailyLogNotFoundError(Exception):
+    """Raised when a daily log cannot be found in the database."""
+
+    def __init__(self, daily_log_id: str) -> None:
+        self.daily_log_id = daily_log_id
+        super().__init__(f"Daily log not found: {daily_log_id}")
+
+
+class LabourNotFoundError(Exception):
+    """Raised when a labour task cannot be found in the database."""
+
+    def __init__(self, labour_id: str) -> None:
+        self.labour_id = labour_id
+        super().__init__(f"Labour not found: {labour_id}")
+
+
+class ItemNotFoundError(Exception):
+    """Raised when an item cannot be found in the database."""
+
+    def __init__(self, item_id: str) -> None:
+        self.item_id = item_id
+        super().__init__(f"Item not found: {item_id}")
+
+
+class AssumptionNotFoundError(Exception):
+    """Raised when an assumption cannot be found in the database."""
+
+    def __init__(self, assumption_id: str) -> None:
+        self.assumption_id = assumption_id
+        super().__init__(f"Assumption not found: {assumption_id}")
+
+
+class ExclusionNotFoundError(Exception):
+    """Raised when an exclusion cannot be found in the database."""
+
+    def __init__(self, exclusion_id: str) -> None:
+        self.exclusion_id = exclusion_id
+        super().__init__(f"Exclusion not found: {exclusion_id}")
+
+
+class ResourceRateNotFoundError(Exception):
+    """Raised when a resource rate cannot be found in the database."""
+
+    def __init__(self, rate_id: str) -> None:
+        self.rate_id = rate_id
+        super().__init__(f"Resource rate not found: {rate_id}")
+
+
+class ProductivityRateNotFoundError(Exception):
+    """Raised when a productivity rate cannot be found in the database."""
+
+    def __init__(self, rate_id: str) -> None:
+        self.rate_id = rate_id
+        super().__init__(f"Productivity rate not found: {rate_id}")
+
+
+class PaymentMilestoneNotFoundError(Exception):
+    """Raised when a payment milestone cannot be found in the database."""
+
+    def __init__(self, milestone_id: str) -> None:
+        self.milestone_id = milestone_id
+        super().__init__(f"Payment milestone not found: {milestone_id}")
+
+
+class ConditionNotFoundError(Exception):
+    """Raised when a condition cannot be found in the database."""
+
+    def __init__(self, condition_id: str) -> None:
+        self.condition_id = condition_id
+        super().__init__(f"Condition not found: {condition_id}")
+
+
+class WarrantyNotFoundError(Exception):
+    """Raised when a warranty cannot be found in the database."""
+
+    def __init__(self, warranty_id: str) -> None:
+        self.warranty_id = warranty_id
+        super().__init__(f"Warranty not found: {warranty_id}")
+
+
+class ProjectActivationError(Exception):
+    """Raised when a project cannot be activated due to missing prerequisites."""
+
+    def __init__(self, project_id: str, reason: str) -> None:
+        self.project_id = project_id
+        self.reason = reason
+        super().__init__(f"Cannot activate project {project_id}: {reason}")
+
+
 class AgentBudgetExceededError(Exception):
     """Raised when an agent's daily budget is exceeded."""
 
@@ -249,3 +349,19 @@ class AgentBudgetExceededError(Exception):
             f"Agent '{name}' ({agent_id}) exceeded daily budget: "
             f"spent {spent} cents of {budget} cents"
         )
+
+
+class InsightNotFoundError(Exception):
+    """Raised when an insight cannot be found in the database."""
+
+    def __init__(self, insight_id: str) -> None:
+        self.insight_id = insight_id
+        super().__init__(f"Insight not found: {insight_id}")
+
+
+class MaterialCatalogEntryNotFoundError(Exception):
+    """Raised when a material catalog entry cannot be found in the database."""
+
+    def __init__(self, entry_id: str) -> None:
+        self.entry_id = entry_id
+        super().__init__(f"Material catalog entry not found: {entry_id}")

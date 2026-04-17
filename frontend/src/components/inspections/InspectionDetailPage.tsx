@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -21,6 +22,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useInspection } from '@/hooks/useInspections';
 import { ROUTES, INSPECTION_TYPES } from '@/lib/constants';
 import type { Inspection, InspectionItem } from '@/lib/constants';
+import { ProvenanceBadge } from '@/components/activity/ProvenanceBadge';
 import { downloadPdf } from '@/lib/pdf';
 import { format } from 'date-fns';
 
@@ -30,7 +32,7 @@ function OverallStatusBadge({ status }: { status: Inspection['overall_status'] }
     fail: { label: 'FAIL', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]', icon: XCircle },
     partial: { label: 'PARTIAL', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]', icon: MinusCircle },
   };
-  const { label, className, icon: Icon } = config[status];
+  const { label, className, icon: Icon } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted', icon: MinusCircle };
   return (
     <Badge className={`${className} gap-1 px-3 py-1 text-sm`}>
       <Icon className="h-4 w-4" />
@@ -50,16 +52,18 @@ function ItemStatusIcon({ status }: { status: InspectionItem['status'] }) {
   }
 }
 
-export function InspectionDetailPage() {
-  const navigate = useNavigate();
-  const { projectId, inspectionId } = useParams<{ projectId: string; inspectionId: string }>();
+export function InspectionDetailPage({ projectId: propProjectId, inspectionId: propInspectionId }: { projectId?: string; inspectionId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string; inspectionId: string }>();
+  const projectId = propProjectId || params.projectId;
+  const inspectionId = propInspectionId || params.inspectionId;
   const { data: project } = useProject(projectId);
   const { data: inspection, isLoading } = useInspection(projectId, inspectionId);
 
   const categories = useMemo(() => {
     if (!inspection) return [];
     const cats: { name: string; items: InspectionItem[] }[] = [];
-    for (const item of inspection.items) {
+    for (const item of (inspection.items || [])) {
       const existing = cats.find((c) => c.name === item.category);
       if (existing) {
         existing.items.push(item);
@@ -139,6 +143,16 @@ export function InspectionDetailPage() {
                 {format(new Date(inspection.inspection_date), 'MMMM d, yyyy')}
               </span>
             </div>
+            {inspection.created_by && (
+              <div className="mt-2">
+                <ProvenanceBadge
+                  actorType={inspection.created_by.startsWith('agent_') ? 'agent' : 'human'}
+                  actorId={inspection.created_by}
+                  timestamp={inspection.created_at}
+                  variant="full"
+                />
+              </div>
+            )}
           </div>
         </div>
 

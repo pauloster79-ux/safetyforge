@@ -1,0 +1,47 @@
+code: OK
+name: Oklahoma
+regulatory_body: Federal OSHA (no state plan) / Oklahoma Department of Labor
+state_plan: false
+primary_legislation: Federal Occupational Safety and Health Act (29 USC 651)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: OK-001
+    state: OK
+    requirement_name: Workers' Compensation Coverage
+    description: All Oklahoma employers must carry workers' compensation insurance or qualify as a self-insured employer through the Oklahoma Workers' Compensation Commission.
+    federal_equivalent: null
+    state_standard: "85A O.S. 1 et seq."
+    additional_details: Oklahoma reformed its workers' compensation system in 2013 with the Administrative Workers' Compensation Act. The system is administered by the Workers' Compensation Commission. Employers may opt out under specific conditions with approved alternative benefit plans.
+    applies_to: all
+    severity: mandatory
+
+  - id: OK-002
+    state: OK
+    requirement_name: Asbestos Abatement Licensing
+    description: Oklahoma requires licensing for all asbestos abatement contractors, supervisors, and workers. The Oklahoma Department of Labor oversees the asbestos licensing program.
+    federal_equivalent: "29 CFR 1926.1101 (Asbestos in Construction)"
+    state_standard: "40 O.S. 451 et seq.; OAC 380:50"
+    additional_details: All asbestos abatement projects must be reported to the Department of Labor prior to commencement. Workers must complete approved training courses and maintain current licenses.
+    applies_to: construction
+    severity: mandatory
+
+  - id: OK-003
+    state: OK
+    requirement_name: Construction Industries Board Licensing
+    description: Oklahoma requires contractors in electrical, plumbing, and mechanical trades to obtain licenses from the Construction Industries Board (CIB).
+    federal_equivalent: null
+    state_standard: "59 O.S. 1000 et seq."
+    additional_details: The CIB licenses and regulates electrical, plumbing, mechanical, and roofing contractors. General contractors must register with the CIB. Continuing education is required for license renewal.
+    applies_to: construction
+    severity: mandatory
+
+  - id: OK-004
+    state: OK
+    requirement_name: Oklahoma Underground Facilities Damage Prevention Act
+    description: Excavators must notify the Oklahoma One-Call system (OKIE811) at least 48 hours before excavation to locate underground utilities. Failure to notify is a violation subject to penalties.
+    federal_equivalent: null
+    state_standard: "63 O.S. 142.1 et seq."
+    additional_details: All facility operators must be members of the One-Call system. Excavators must maintain a minimum clearance from marked utilities. Violations can result in fines and liability for damages.
+    applies_to: construction
+    severity: mandatory

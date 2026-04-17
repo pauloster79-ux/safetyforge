@@ -206,6 +206,7 @@ class AgentOrchestrator:
                 EventType.INCIDENT_REPORTED,
                 EventType.CERTIFICATION_EXPIRING,
                 EventType.EQUIPMENT_INSPECTION_DUE,
+                EventType.DAILY_LOG_SUBMITTED,
             },
         )
 

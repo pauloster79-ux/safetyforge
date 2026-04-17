@@ -1,0 +1,57 @@
+code: NC
+name: North Carolina
+regulatory_body: North Carolina Department of Labor - Occupational Safety and Health Division (NC OSH)
+state_plan: true
+primary_legislation: North Carolina Occupational Safety and Health Act (NCGS 95, Article 16)
+construction_regulation: 13 NCAC 07A-07F (Construction Safety Standards)
+
+requirements:
+  - id: NC-001
+    state: NC
+    requirement_name: OSHA-Approved State Plan Coverage
+    description: North Carolina operates an OSHA-approved state plan enforced by the NC Department of Labor OSH Division, covering both private and public sector employees.
+    federal_equivalent: "29 CFR 1910/1926 (General Industry/Construction)"
+    state_standard: "NCGS 95-126 et seq."
+    additional_details: NC OSH adopts identical federal OSHA standards and has authority to promulgate standards that are more stringent than federal requirements. The state conducts its own inspections and enforcement.
+    applies_to: all
+    severity: mandatory
+
+  - id: NC-002
+    state: NC
+    requirement_name: Communication of Hazards in the Workplace
+    description: North Carolina requires employers to maintain a written hazard communication program and ensure employees have access to Safety Data Sheets for all hazardous chemicals in the workplace.
+    federal_equivalent: "29 CFR 1910.1200 (Hazard Communication)"
+    state_standard: "13 NCAC 07A .0101; NCGS 95-174"
+    additional_details: NC adopted the federal HazCom standard but also enacted the NC Hazardous Chemicals Right to Know Act which provides additional employee notification requirements beyond federal standards.
+    applies_to: all
+    severity: mandatory
+
+  - id: NC-003
+    state: NC
+    requirement_name: Retaliatory Employment Discrimination Act (REDA)
+    description: North Carolina prohibits employers from retaliating against employees who file OSHA complaints, report safety violations, or exercise other protected safety rights.
+    federal_equivalent: "29 CFR 1977 (Section 11(c) Whistleblower)"
+    state_standard: "NCGS 95-240 et seq."
+    additional_details: REDA provides broader protections than federal Section 11(c), covering retaliation related to workers' compensation claims, wage and hour complaints, and OSHA complaints. Employees must file within 180 days.
+    applies_to: all
+    severity: mandatory
+
+  - id: NC-004
+    state: NC
+    requirement_name: Construction Safety Training Requirements
+    description: Employers in the construction industry must provide safety training to all employees exposed to job site hazards before they begin work.
+    federal_equivalent: "29 CFR 1926.21 (Safety Training and Education)"
+    state_standard: "13 NCAC 07F .0101"
+    additional_details: Training must cover recognition and avoidance of unsafe conditions, applicable regulations, and emergency procedures. Records of training must be maintained and available for inspection.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NC-005
+    state: NC
+    requirement_name: Workers' Compensation Coverage
+    description: All North Carolina employers with three or more employees must carry workers' compensation insurance or qualify as self-insured.
+    federal_equivalent: null
+    state_standard: "NCGS 97-2 et seq."
+    additional_details: Coverage is required regardless of whether employees are full-time, part-time, or seasonal. The NC Industrial Commission administers the workers' compensation system.
+    applies_to: all
+    severity: mandatory

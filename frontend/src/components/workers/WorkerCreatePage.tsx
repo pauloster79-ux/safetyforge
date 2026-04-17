@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,7 +18,7 @@ import { useCreateWorker } from '@/hooks/useWorkers';
 import { ROUTES, WORKER_ROLES, TRADE_TYPES } from '@/lib/constants';
 
 export function WorkerCreatePage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const createWorker = useCreateWorker();
 
   const [form, setForm] = useState({

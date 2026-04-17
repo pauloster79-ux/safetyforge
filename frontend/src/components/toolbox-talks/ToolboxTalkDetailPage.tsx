@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Loader2,
@@ -25,9 +26,11 @@ import { format } from 'date-fns';
 
 type ContentLang = 'en' | 'es';
 
-export function ToolboxTalkDetailPage() {
-  const navigate = useNavigate();
-  const { projectId, talkId } = useParams<{ projectId: string; talkId: string }>();
+export function ToolboxTalkDetailPage({ projectId: propProjectId, talkId: propTalkId }: { projectId?: string; talkId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string; talkId: string }>();
+  const projectId = propProjectId || params.projectId;
+  const talkId = propTalkId || params.talkId;
   const { data: project } = useProject(projectId);
   const { data: talk, isLoading } = useToolboxTalk(projectId, talkId);
 
@@ -82,13 +85,13 @@ export function ToolboxTalkDetailPage() {
       ? 'en'
       : 'es';
 
-  const content: ToolboxTalkContent = effectiveLang === 'en' ? talk.content_en : talk.content_es;
-  const statusConfig = {
+  const content: ToolboxTalkContent = (effectiveLang === 'en' ? talk.content_en : talk.content_es) || { key_points: [], discussion_questions: [], safety_reminders: [] } as ToolboxTalkContent;
+  const statusConfig: Record<string, { label: string; className: string }> = {
     scheduled: { label: 'Scheduled', className: 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]' },
     in_progress: { label: 'In Progress', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
     completed: { label: 'Completed', className: 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]' },
   };
-  const { label: statusLabel, className: statusClassName } = statusConfig[talk.status];
+  const { label: statusLabel, className: statusClassName } = statusConfig[talk.status] || { label: talk.status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-8">
@@ -236,7 +239,7 @@ export function ToolboxTalkDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {content.key_points.map((point, idx) => (
+          {(content.key_points || []).map((point, idx) => (
             <div key={idx} className="space-y-2">
               <div className="flex items-start gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
@@ -270,7 +273,7 @@ export function ToolboxTalkDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {content.discussion_questions.map((q, idx) => (
+          {(content.discussion_questions || []).map((q, idx) => (
             <div key={idx} className="flex items-start gap-3 rounded-md bg-muted p-3">
               <span className="text-sm font-semibold text-muted-foreground">{idx + 1}.</span>
               <p className="text-sm text-[var(--concrete-600)]">{q}</p>
@@ -286,7 +289,7 @@ export function ToolboxTalkDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {content.safety_reminders.map((reminder, idx) => (
+          {(content.safety_reminders || []).map((reminder, idx) => (
             <div key={idx} className="flex items-start gap-2">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--pass)]" />
               <p className="text-sm text-[var(--concrete-600)]">{reminder}</p>
@@ -296,7 +299,7 @@ export function ToolboxTalkDetailPage() {
       </Card>
 
       {/* Attendance */}
-      {talk.attendees.length > 0 && (
+      {(talk.attendees?.length ?? 0) > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
@@ -305,7 +308,7 @@ export function ToolboxTalkDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {talk.attendees.map((attendee, idx) => (
+              {(talk.attendees || []).map((attendee, idx) => (
                 <div
                   key={idx}
                   className="flex items-center justify-between rounded-md bg-muted px-3 py-2"

@@ -1,4 +1,4 @@
-import type { Document, Company, Project, Inspection, ToolboxTalk, Worker, OshaLogEntry, Osha300Summary, MockInspectionResult, HazardReport, MorningBrief, Incident, SafetyMetrics, PrequalPackage, GcRelationship, SubComplianceSummary, StateRequirement, StateComplianceResult, EnvironmentalProgram, ExposureRecord, SwpppInspection, Equipment, EquipmentInspectionLog } from '@/lib/constants';
+import type { Document, Company, Project, Inspection, ToolboxTalk, Worker, OshaLogEntry, Osha300Summary, MockInspectionResult, HazardReport, MorningBrief, Incident, SafetyMetrics, PrequalPackage, GcRelationship, SubComplianceSummary, StateRequirement, StateComplianceResult, EnvironmentalProgram, ExposureRecord, SwpppInspection, Equipment, EquipmentInspectionLog, DailyLog } from '@/lib/constants';
 import type { ProjectAssignment } from '@/hooks/useProjectAssignments';
 
 export const DEMO_DOCUMENTS: Document[] = [
@@ -1395,44 +1395,64 @@ export const DEMO_SUB_COMPLIANCE: SubComplianceSummary[] = [
 
 // ---- State Compliance Demo Data ----
 
+export const DEMO_AVAILABLE_STATES: { code: string; name: string }[] = [
+  { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+  { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+  { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
+  { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+  { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
+  { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+  { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
+  { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+  { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
+  { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+  { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
+  { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+  { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
+  { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+  { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
+  { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+  { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' },
+];
+
 export const DEMO_STATE_REQUIREMENTS: Record<string, StateRequirement[]> = {
-  California: [
-    { id: 'ca_01', state: 'California', requirement_name: 'Heat Illness Prevention Program (Cal/OSHA)', description: 'Written heat illness prevention plan required for all outdoor worksites. Must include provision of water, shade, cool-down rest periods, and emergency procedures when temperatures exceed 80F.', state_standard: 'Title 8, CCR 3395', severity: 'mandatory' },
-    { id: 'ca_02', state: 'California', requirement_name: 'Injury & Illness Prevention Program (IIPP)', description: 'Every employer must establish and maintain an effective written IIPP. This is unique to California and goes beyond federal OSHA requirements.', state_standard: 'Title 8, CCR 3203', severity: 'mandatory' },
-    { id: 'ca_03', state: 'California', requirement_name: 'Wildfire Smoke Protection', description: 'Employers must protect workers from wildfire smoke exposure when AQI for PM2.5 is 151 or greater.', state_standard: 'Title 8, CCR 5141.1', severity: 'mandatory' },
-    { id: 'ca_04', state: 'California', requirement_name: 'Lead in Construction Standard', description: 'Cal/OSHA has stricter permissible exposure limits (PEL) for lead than federal OSHA: 50 ug/m3 vs federal 50, but lower action level of 30 ug/m3.', state_standard: 'Title 8, CCR 1532.1', severity: 'mandatory' },
-    { id: 'ca_05', state: 'California', requirement_name: 'Aerosol Transmissible Diseases (ATD)', description: 'Certain construction employers must have an ATD exposure control plan when work occurs in healthcare or correctional facilities.', state_standard: 'Title 8, CCR 5199', severity: 'recommended' },
-    { id: 'ca_06', state: 'California', requirement_name: 'Indoor Heat Illness Prevention', description: 'Indoor workplaces with temperatures at or above 82F must implement cooling measures, water access, and acclimatization procedures.', state_standard: 'Title 8, CCR 3396', severity: 'mandatory' },
-    { id: 'ca_07', state: 'California', requirement_name: 'Crane Certification Requirements', description: 'California requires crane operators to hold a valid Cal/OSHA or NCCCO certification, plus a California crane operator license for cranes over 15 tons.', state_standard: 'Title 8, CCR 5006.1', severity: 'mandatory' },
+  CA: [
+    { id: 'ca_01', state: 'CA', requirement_name: 'Heat Illness Prevention Program (Cal/OSHA)', description: 'Written heat illness prevention plan required for all outdoor worksites. Must include provision of water, shade, cool-down rest periods, and emergency procedures when temperatures exceed 80F.', state_standard: 'Title 8, CCR 3395', severity: 'mandatory' },
+    { id: 'ca_02', state: 'CA', requirement_name: 'Injury & Illness Prevention Program (IIPP)', description: 'Every employer must establish and maintain an effective written IIPP. This is unique to California and goes beyond federal OSHA requirements.', state_standard: 'Title 8, CCR 3203', severity: 'mandatory' },
+    { id: 'ca_03', state: 'CA', requirement_name: 'Wildfire Smoke Protection', description: 'Employers must protect workers from wildfire smoke exposure when AQI for PM2.5 is 151 or greater.', state_standard: 'Title 8, CCR 5141.1', severity: 'mandatory' },
+    { id: 'ca_04', state: 'CA', requirement_name: 'Lead in Construction Standard', description: 'Cal/OSHA has stricter permissible exposure limits (PEL) for lead than federal OSHA: 50 ug/m3 vs federal 50, but lower action level of 30 ug/m3.', state_standard: 'Title 8, CCR 1532.1', severity: 'mandatory' },
+    { id: 'ca_05', state: 'CA', requirement_name: 'Aerosol Transmissible Diseases (ATD)', description: 'Certain construction employers must have an ATD exposure control plan when work occurs in healthcare or correctional facilities.', state_standard: 'Title 8, CCR 5199', severity: 'recommended' },
+    { id: 'ca_06', state: 'CA', requirement_name: 'Indoor Heat Illness Prevention', description: 'Indoor workplaces with temperatures at or above 82F must implement cooling measures, water access, and acclimatization procedures.', state_standard: 'Title 8, CCR 3396', severity: 'mandatory' },
+    { id: 'ca_07', state: 'CA', requirement_name: 'Crane Certification Requirements', description: 'California requires crane operators to hold a valid Cal/OSHA or NCCCO certification, plus a California crane operator license for cranes over 15 tons.', state_standard: 'Title 8, CCR 5006.1', severity: 'mandatory' },
   ],
-  'New York': [
-    { id: 'ny_01', state: 'New York', requirement_name: 'Scaffold Safety Training (4-Hour)', description: 'All workers who erect, dismantle, or use scaffolds must complete a 4-hour scaffold safety training course approved by the NYC DOB.', state_standard: 'NYC Admin Code 3314.4.3.1', severity: 'mandatory' },
-    { id: 'ny_02', state: 'New York', requirement_name: 'Site Safety Manager Requirement', description: 'Buildings over a certain size require a Site Safety Manager with SSM certification from the NYC Department of Buildings.', state_standard: 'NYC Building Code 3310.5', severity: 'mandatory' },
-    { id: 'ny_03', state: 'New York', requirement_name: 'Fall Protection Plan Filing', description: 'A site-specific fall protection plan must be filed with the NYC DOB before work begins on buildings over 10 stories.', state_standard: 'NYC Building Code 3314.1.1', severity: 'mandatory' },
-    { id: 'ny_04', state: 'New York', requirement_name: 'OSHA 30 for Supervisors', description: 'All supervisors on NYC construction sites must hold an OSHA 30-Hour Construction certificate. Workers must hold OSHA 10-Hour.', state_standard: 'NYC Local Law 196', severity: 'mandatory' },
-    { id: 'ny_05', state: 'New York', requirement_name: 'Concrete Safety Manager', description: 'Projects involving concrete operations of certain scope require a designated Concrete Safety Manager.', state_standard: 'NYC Building Code 3310.10', severity: 'recommended' },
+  NY: [
+    { id: 'ny_01', state: 'NY', requirement_name: 'Scaffold Safety Training (4-Hour)', description: 'All workers who erect, dismantle, or use scaffolds must complete a 4-hour scaffold safety training course approved by the NYC DOB.', state_standard: 'NYC Admin Code 3314.4.3.1', severity: 'mandatory' },
+    { id: 'ny_02', state: 'NY', requirement_name: 'Site Safety Manager Requirement', description: 'Buildings over a certain size require a Site Safety Manager with SSM certification from the NYC Department of Buildings.', state_standard: 'NYC Building Code 3310.5', severity: 'mandatory' },
+    { id: 'ny_03', state: 'NY', requirement_name: 'Fall Protection Plan Filing', description: 'A site-specific fall protection plan must be filed with the NYC DOB before work begins on buildings over 10 stories.', state_standard: 'NYC Building Code 3314.1.1', severity: 'mandatory' },
+    { id: 'ny_04', state: 'NY', requirement_name: 'OSHA 30 for Supervisors', description: 'All supervisors on NYC construction sites must hold an OSHA 30-Hour Construction certificate. Workers must hold OSHA 10-Hour.', state_standard: 'NYC Local Law 196', severity: 'mandatory' },
+    { id: 'ny_05', state: 'NY', requirement_name: 'Concrete Safety Manager', description: 'Projects involving concrete operations of certain scope require a designated Concrete Safety Manager.', state_standard: 'NYC Building Code 3310.10', severity: 'recommended' },
   ],
-  Washington: [
-    { id: 'wa_01', state: 'Washington', requirement_name: 'Accident Prevention Program (APP)', description: 'All employers must develop and implement a written accident prevention program tailored to their workplace. This is Washington\'s equivalent of an IIPP.', state_standard: 'WAC 296-800-140', severity: 'mandatory' },
-    { id: 'wa_02', state: 'Washington', requirement_name: 'Outdoor Heat Exposure Rule', description: 'Employers must implement heat-related illness prevention measures when temperatures reach 80F for outdoor work.', state_standard: 'WAC 296-62-095', severity: 'mandatory' },
-    { id: 'wa_03', state: 'Washington', requirement_name: 'Wildfire Smoke Rule', description: 'Employers must protect workers when PM2.5 from wildfire smoke reaches certain levels, with increasing protections at higher AQI thresholds.', state_standard: 'WAC 296-62-085', severity: 'mandatory' },
-    { id: 'wa_04', state: 'Washington', requirement_name: 'Safety Committee Requirements', description: 'Employers with 11 or more employees must establish a safety committee that meets monthly.', state_standard: 'WAC 296-800-13020', severity: 'mandatory' },
+  WA: [
+    { id: 'wa_01', state: 'WA', requirement_name: 'Accident Prevention Program (APP)', description: 'All employers must develop and implement a written accident prevention program tailored to their workplace. This is Washington\'s equivalent of an IIPP.', state_standard: 'WAC 296-800-140', severity: 'mandatory' },
+    { id: 'wa_02', state: 'WA', requirement_name: 'Outdoor Heat Exposure Rule', description: 'Employers must implement heat-related illness prevention measures when temperatures reach 80F for outdoor work.', state_standard: 'WAC 296-62-095', severity: 'mandatory' },
+    { id: 'wa_03', state: 'WA', requirement_name: 'Wildfire Smoke Rule', description: 'Employers must protect workers when PM2.5 from wildfire smoke reaches certain levels, with increasing protections at higher AQI thresholds.', state_standard: 'WAC 296-62-085', severity: 'mandatory' },
+    { id: 'wa_04', state: 'WA', requirement_name: 'Safety Committee Requirements', description: 'Employers with 11 or more employees must establish a safety committee that meets monthly.', state_standard: 'WAC 296-800-13020', severity: 'mandatory' },
   ],
-  Oregon: [
-    { id: 'or_01', state: 'Oregon', requirement_name: 'Heat Illness Prevention Rule', description: 'Oregon OSHA requires employers to provide heat illness prevention measures when temperatures reach 80F, with enhanced protections at 90F.', state_standard: 'OAR 437-002-0156', severity: 'mandatory' },
-    { id: 'or_02', state: 'Oregon', requirement_name: 'Wildfire Smoke Protection Rule', description: 'Employers must protect workers from wildfire smoke when AQI reaches 101 (PM2.5), with mandatory respirator use at higher levels.', state_standard: 'OAR 437-002-1081', severity: 'mandatory' },
-    { id: 'or_03', state: 'Oregon', requirement_name: 'Safety Committee / Safety Meetings', description: 'Employers with 11+ employees must have a safety committee; those with 10 or fewer must hold safety meetings.', state_standard: 'OAR 437-001-0765', severity: 'mandatory' },
+  OR: [
+    { id: 'or_01', state: 'OR', requirement_name: 'Heat Illness Prevention Rule', description: 'Oregon OSHA requires employers to provide heat illness prevention measures when temperatures reach 80F, with enhanced protections at 90F.', state_standard: 'OAR 437-002-0156', severity: 'mandatory' },
+    { id: 'or_02', state: 'OR', requirement_name: 'Wildfire Smoke Protection Rule', description: 'Employers must protect workers from wildfire smoke when AQI reaches 101 (PM2.5), with mandatory respirator use at higher levels.', state_standard: 'OAR 437-002-1081', severity: 'mandatory' },
+    { id: 'or_03', state: 'OR', requirement_name: 'Safety Committee / Safety Meetings', description: 'Employers with 11+ employees must have a safety committee; those with 10 or fewer must hold safety meetings.', state_standard: 'OAR 437-001-0765', severity: 'mandatory' },
   ],
-  Michigan: [
-    { id: 'mi_01', state: 'Michigan', requirement_name: 'MIOSHA Part 1 General Rules', description: 'Michigan OSHA (MIOSHA) has adopted and supplemented federal standards. Employers must comply with Michigan-specific rules that in some cases exceed federal OSHA.', state_standard: 'MIOSHA Part 1', severity: 'mandatory' },
-    { id: 'mi_02', state: 'Michigan', requirement_name: 'Right to Know (Hazard Communication)', description: 'Michigan\'s right to know law requires employee training within 30 days of initial assignment or when new chemicals are introduced.', state_standard: 'MIOSHA Part 92', severity: 'mandatory' },
-    { id: 'mi_03', state: 'Michigan', requirement_name: 'Construction Safety Standards', description: 'MIOSHA has construction-specific standards in Parts 1-45 that supplement or modify federal OSHA construction standards.', state_standard: 'MIOSHA Construction Standards', severity: 'mandatory' },
+  MI: [
+    { id: 'mi_01', state: 'MI', requirement_name: 'MIOSHA Part 1 General Rules', description: 'Michigan OSHA (MIOSHA) has adopted and supplemented federal standards. Employers must comply with Michigan-specific rules that in some cases exceed federal OSHA.', state_standard: 'MIOSHA Part 1', severity: 'mandatory' },
+    { id: 'mi_02', state: 'MI', requirement_name: 'Right to Know (Hazard Communication)', description: 'Michigan\'s right to know law requires employee training within 30 days of initial assignment or when new chemicals are introduced.', state_standard: 'MIOSHA Part 92', severity: 'mandatory' },
+    { id: 'mi_03', state: 'MI', requirement_name: 'Construction Safety Standards', description: 'MIOSHA has construction-specific standards in Parts 1-45 that supplement or modify federal OSHA construction standards.', state_standard: 'MIOSHA Construction Standards', severity: 'mandatory' },
   ],
 };
 
 export const DEMO_STATE_COMPLIANCE_RESULTS: Record<string, StateComplianceResult> = {
-  California: {
-    state: 'California',
+  CA: {
+    state: 'CA',
     total_requirements: 7,
     met_requirements: 4,
     compliance_percentage: 57,
@@ -1442,8 +1462,8 @@ export const DEMO_STATE_COMPLIANCE_RESULTS: Record<string, StateComplianceResult
       { requirement: 'Indoor Heat Illness Prevention', status: 'gap', action_needed: 'Create an indoor heat illness prevention plan for work in enclosed spaces at or above 82F.' },
     ],
   },
-  'New York': {
-    state: 'New York',
+  NY: {
+    state: 'NY',
     total_requirements: 5,
     met_requirements: 2,
     compliance_percentage: 40,
@@ -1453,8 +1473,8 @@ export const DEMO_STATE_COMPLIANCE_RESULTS: Record<string, StateComplianceResult
       { requirement: 'Fall Protection Plan Filing', status: 'gap', action_needed: 'File a site-specific fall protection plan with NYC DOB before starting work on qualifying buildings.' },
     ],
   },
-  Washington: {
-    state: 'Washington',
+  WA: {
+    state: 'WA',
     total_requirements: 4,
     met_requirements: 3,
     compliance_percentage: 75,
@@ -1462,8 +1482,8 @@ export const DEMO_STATE_COMPLIANCE_RESULTS: Record<string, StateComplianceResult
       { requirement: 'Wildfire Smoke Rule', status: 'gap', action_needed: 'Develop a Washington-specific wildfire smoke exposure plan with AQI monitoring and tiered protection measures.' },
     ],
   },
-  Oregon: {
-    state: 'Oregon',
+  OR: {
+    state: 'OR',
     total_requirements: 3,
     met_requirements: 2,
     compliance_percentage: 67,
@@ -1471,8 +1491,8 @@ export const DEMO_STATE_COMPLIANCE_RESULTS: Record<string, StateComplianceResult
       { requirement: 'Wildfire Smoke Protection Rule', status: 'gap', action_needed: 'Develop an Oregon-specific wildfire smoke plan with mandatory respirator use thresholds per OAR 437-002-1081.' },
     ],
   },
-  Michigan: {
-    state: 'Michigan',
+  MI: {
+    state: 'MI',
     total_requirements: 3,
     met_requirements: 3,
     compliance_percentage: 100,
@@ -1901,5 +1921,95 @@ export const DEMO_PROJECT_ASSIGNMENTS: ProjectAssignment[] = [
     created_by: 'demo_user_001',
     updated_at: '2026-03-10T09:00:00Z',
     updated_by: 'demo_user_001',
+  },
+];
+
+export const DEMO_DAILY_LOGS: DailyLog[] = [
+  {
+    id: 'dlog_demo_001',
+    project_id: 'demo_proj_001',
+    company_id: 'demo_company_001',
+    log_date: '2026-04-09',
+    superintendent_name: 'Mike Johnson',
+    status: 'approved',
+    weather: { conditions: 'Sunny', temperature_high: '78\u00b0F', temperature_low: '55\u00b0F', wind: 'Light 5mph', precipitation: 'None' },
+    workers_on_site: 24,
+    work_performed: 'Continued framing on Building B, second floor. Electrical rough-in started in Building A.',
+    materials_delivered: [{ material: 'Lumber 2x6x12', quantity: '200 pcs', supplier: 'ABC Lumber', received_by: 'Mike J.', notes: '' }],
+    delays: [],
+    visitors: [{ name: 'Sarah Chen', company: 'City Building Dept', purpose: 'Framing inspection', time_in: '10:00 AM', time_out: '11:30 AM' }],
+    safety_incidents: 'No incidents reported.',
+    equipment_used: 'Crane #1, Skid steer, 2x forklifts',
+    notes: '',
+    inspections_summary: [{ id: 'insp_001', type: 'daily_site', status: 'pass' }],
+    toolbox_talks_summary: [{ id: 'talk_001', topic: 'Fall Protection', attendees: 18 }],
+    incidents_summary: [],
+    created_at: '2026-04-09T06:00:00Z',
+    created_by: 'demo_user_001',
+    updated_at: '2026-04-09T16:00:00Z',
+    updated_by: 'demo_user_001',
+    submitted_at: '2026-04-09T16:00:00Z',
+    submitted_by: 'demo_user_001',
+    approved_at: '2026-04-09T17:00:00Z',
+    approved_by: 'demo_user_002',
+    deleted: false,
+  },
+  {
+    id: 'dlog_demo_002',
+    project_id: 'demo_proj_001',
+    company_id: 'demo_company_001',
+    log_date: '2026-04-10',
+    superintendent_name: 'Mike Johnson',
+    status: 'draft',
+    weather: { conditions: 'Partly Cloudy', temperature_high: '72\u00b0F', temperature_low: '52\u00b0F', wind: 'Moderate 12mph', precipitation: 'None' },
+    workers_on_site: 22,
+    work_performed: 'Roofing started on Building A. Plumbing rough-in ongoing Building B.',
+    materials_delivered: [],
+    delays: [{ delay_type: 'equipment', duration_hours: 2, description: 'Crane maintenance delay', impact: 'Roofing start pushed to 10am' }],
+    visitors: [],
+    safety_incidents: '',
+    equipment_used: 'Crane #1, Boom lift',
+    notes: '',
+    inspections_summary: [],
+    toolbox_talks_summary: [],
+    incidents_summary: [],
+    created_at: '2026-04-10T06:00:00Z',
+    created_by: 'demo_user_001',
+    updated_at: '2026-04-10T06:00:00Z',
+    updated_by: 'demo_user_001',
+    submitted_at: null,
+    submitted_by: null,
+    approved_at: null,
+    approved_by: null,
+    deleted: false,
+  },
+  {
+    id: 'dlog_demo_003',
+    project_id: 'demo_proj_001',
+    company_id: 'demo_company_001',
+    log_date: '2026-04-08',
+    superintendent_name: 'Mike Johnson',
+    status: 'submitted',
+    weather: { conditions: 'Overcast', temperature_high: '65\u00b0F', temperature_low: '48\u00b0F', wind: 'Calm', precipitation: 'Light rain AM' },
+    workers_on_site: 20,
+    work_performed: 'Foundation work completed on Building C. Grading and compaction on north lot.',
+    materials_delivered: [{ material: 'Concrete 4000psi', quantity: '12 yards', supplier: 'Metro Ready Mix', received_by: 'Tom S.', notes: 'Delivered at 7:30 AM' }],
+    delays: [{ delay_type: 'weather', duration_hours: 1.5, description: 'Rain delay in morning', impact: 'Concrete pour started 1.5 hours late' }],
+    visitors: [],
+    safety_incidents: 'Minor first aid - worker cut finger on rebar. Treated on site.',
+    equipment_used: 'Concrete pump, 2x forklifts, Compactor',
+    notes: 'Rain cleared by 9am. Full crew resumed work.',
+    inspections_summary: [{ id: 'insp_002', type: 'daily_site', status: 'partial' }],
+    toolbox_talks_summary: [{ id: 'talk_002', topic: 'Concrete Safety', attendees: 15 }],
+    incidents_summary: [{ id: 'inc_001', severity: 'first_aid', description: 'Cut finger on rebar' }],
+    created_at: '2026-04-08T06:00:00Z',
+    created_by: 'demo_user_001',
+    updated_at: '2026-04-08T16:30:00Z',
+    updated_by: 'demo_user_001',
+    submitted_at: '2026-04-08T16:30:00Z',
+    submitted_by: 'demo_user_001',
+    approved_at: null,
+    approved_by: null,
+    deleted: false,
   },
 ];

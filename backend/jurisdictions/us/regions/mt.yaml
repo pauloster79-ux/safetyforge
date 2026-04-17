@@ -1,0 +1,47 @@
+code: MT
+name: Montana
+regulatory_body: Federal OSHA (no state plan)
+state_plan: false
+primary_legislation: Montana Safety Culture Act (MCA Title 39 Chapter 71)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: MT-001
+    state: MT
+    requirement_name: Workers' Compensation Coverage
+    description: Nearly all Montana employers must carry workers' compensation insurance through an insurer, the Montana State Fund, or approved self-insurance.
+    federal_equivalent: null
+    state_standard: "MCA 39-71-401"
+    additional_details: Montana has no minimum employee threshold. Sole proprietors and partners may elect coverage. Administered by the Montana Department of Labor and Industry.
+    applies_to: all
+    severity: mandatory
+
+  - id: MT-002
+    state: MT
+    requirement_name: Safety Culture Act Compliance
+    description: Employers must maintain a workplace safety program that includes hazard identification, employee training, and accident investigation procedures.
+    federal_equivalent: null
+    state_standard: "MCA 39-71-1501 through 39-71-1510"
+    additional_details: Employers who implement an approved workplace safety program may qualify for workers' compensation premium reductions. Program must be reviewed annually.
+    applies_to: all
+    severity: mandatory
+
+  - id: MT-003
+    state: MT
+    requirement_name: Construction Contractor Registration
+    description: Construction contractors must register with the Montana Department of Labor and Industry and maintain proof of workers' compensation insurance.
+    federal_equivalent: null
+    state_standard: "MCA 39-71-405"
+    additional_details: Independent contractors in construction must demonstrate independent contractor status or carry their own workers' compensation coverage. Unregistered contractors face penalties.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MT-004
+    state: MT
+    requirement_name: Wrongful Discharge Protection for Safety Reporting
+    description: Montana prohibits termination of employees for refusing to work in conditions that pose imminent danger or for reporting safety violations.
+    federal_equivalent: "29 CFR 1977 (Section 11(c) of OSH Act)"
+    state_standard: "MCA 39-2-904"
+    additional_details: Under the Montana Wrongful Discharge from Employment Act, employees terminated for reporting safety violations may recover lost wages and benefits.
+    applies_to: all
+    severity: mandatory

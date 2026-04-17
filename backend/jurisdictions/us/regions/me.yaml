@@ -1,0 +1,47 @@
+code: ME
+name: Maine
+regulatory_body: Federal OSHA (Region I)
+state_plan: false
+primary_legislation: Maine Workers' Compensation Act (39-A M.R.S.)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: ME-001
+    state: ME
+    requirement_name: Workers' Compensation Insurance
+    description: All Maine employers must provide workers' compensation coverage for their employees. There is no minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "39-A M.R.S. 401"
+    additional_details: Coverage may be obtained through private insurance carriers, the Maine Employers' Mutual Insurance Company, or approved self-insurance plans overseen by the Workers' Compensation Board.
+    applies_to: all
+    severity: mandatory
+
+  - id: ME-002
+    state: ME
+    requirement_name: Workplace Safety and Health Education
+    description: Maine requires employers to establish workplace safety committees or develop written safety programs for workplaces with a certain number of employees.
+    federal_equivalent: null
+    state_standard: "26 M.R.S. 565"
+    additional_details: The Maine Department of Labor SafetyWorks! program provides free consultation, training, and technical assistance to Maine employers on workplace safety.
+    applies_to: all
+    severity: mandatory
+
+  - id: ME-003
+    state: ME
+    requirement_name: Lead Abatement Licensing
+    description: Contractors performing lead abatement in Maine must be licensed by the Maine Department of Environmental Protection and follow state lead-safe work practices.
+    federal_equivalent: "40 CFR 745 (EPA RRP Rule)"
+    state_standard: "38 M.R.S. 1291 through 1292-B"
+    additional_details: Maine is an EPA-authorized state for lead programs. Lead abatement workers and inspectors must hold valid state certifications. Renovation work in pre-1978 buildings requires RRP certification.
+    applies_to: construction
+    severity: mandatory
+
+  - id: ME-004
+    state: ME
+    requirement_name: Asbestos Management and Abatement
+    description: Asbestos abatement contractors and workers must be licensed by the Maine Department of Environmental Protection. Advance notification is required for abatement projects.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "38 M.R.S. 1281 through 1290"
+    additional_details: Maine requires ten-day advance notification to DEP before starting asbestos abatement. Annual medical surveillance and training refresher courses are required for licensed workers.
+    applies_to: construction
+    severity: mandatory

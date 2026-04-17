@@ -8,7 +8,31 @@ import { isConfigured } from '@/lib/clerk';
 import { setTokenGetter } from '@/lib/api';
 import { setPdfTokenGetter } from '@/lib/pdf';
 import type { AuthContextType, ClerkLikeUser, VerifyTokenResponse, CompanyData } from './useAuth';
-import { DEMO_USER } from './useAuth';
+import { DEFAULT_DEMO_ALIAS, DEMO_USERS } from './useAuth';
+
+// Local helpers (mirror useAuth.ts) — kept here to avoid a circular import.
+function activeDemoAlias(): string {
+  try {
+    return sessionStorage.getItem('kerf_demo_user') || DEFAULT_DEMO_ALIAS;
+  } catch {
+    return DEFAULT_DEMO_ALIAS;
+  }
+}
+
+function demoUserForAlias(alias: string): ClerkLikeUser {
+  const found = DEMO_USERS.find((u) => u.alias === alias);
+  const fallback = DEMO_USERS.find((u) => u.alias === DEFAULT_DEMO_ALIAS)!;
+  const u = found ?? fallback;
+  return {
+    id: u.uid,
+    primaryEmailAddress: { emailAddress: u.email },
+    fullName: u.name,
+    firstName: u.name.split(' ')[0] ?? 'Demo',
+    lastName: (u.name.split(' ').slice(1).join(' ') || 'User').replace(/\s*\(.*\)\s*$/, ''),
+    imageUrl: null,
+    emailAddresses: [{ emailAddress: u.email, verification: { status: 'verified' } }],
+  };
+}
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -20,7 +44,7 @@ export function useClerkAuthProvider(): AuthContextType {
 
   const demoActiveOnInit = sessionStorage.getItem('kerf_demo') === 'true';
   const [demoUser, setDemoUser] = useState<ClerkLikeUser | null>(
-    demoActiveOnInit ? DEMO_USER : null
+    demoActiveOnInit ? demoUserForAlias(activeDemoAlias()) : null
   );
   const [isDemoMode, setIsDemoMode] = useState(demoActiveOnInit);
   const [isNewUser, setIsNewUser] = useState(false);
@@ -83,7 +107,7 @@ export function useClerkAuthProvider(): AuthContextType {
   // Register the token getter so api.ts and pdf.ts can get tokens
   useEffect(() => {
     const getter = async () => {
-      if (isDemoMode) return 'demo-token';
+      if (isDemoMode) return `demo-token-${activeDemoAlias()}`;
       if (!clerkAuth.isSignedIn) return null;
       return clerkAuth.getToken();
     };
@@ -104,8 +128,12 @@ export function useClerkAuthProvider(): AuthContextType {
   }, []);
 
   const signInDemo = useCallback(() => {
+    const alias = activeDemoAlias();
+    const matched = DEMO_USERS.find((u) => u.alias === alias);
     sessionStorage.setItem('kerf_demo', 'true');
-    setDemoUser(DEMO_USER);
+    sessionStorage.setItem('kerf_demo_user', alias);
+    sessionStorage.setItem('kerf_company_id', matched?.companyId ?? 'comp_gp04');
+    setDemoUser(demoUserForAlias(alias));
     setIsDemoMode(true);
   }, []);
 
@@ -130,7 +158,7 @@ export function useClerkAuthProvider(): AuthContextType {
         password,
       });
       if (result.status === 'complete') {
-        await clerkAuth.setActive?.({ session: result.createdSessionId });
+        await (clerkAuth as any).setActive?.({ session: result.createdSessionId });
       }
     },
     [signIn, clerkAuth]
@@ -146,7 +174,7 @@ export function useClerkAuthProvider(): AuthContextType {
         password,
       });
       if (result.status === 'complete') {
-        await clerkAuth.setActive?.({ session: result.createdSessionId });
+        await (clerkAuth as any).setActive?.({ session: result.createdSessionId });
       }
     },
     [signUp, clerkAuth]
@@ -154,6 +182,8 @@ export function useClerkAuthProvider(): AuthContextType {
 
   const handleSignOut = useCallback(async () => {
     sessionStorage.removeItem('kerf_demo');
+    sessionStorage.removeItem('kerf_demo_user');
+    sessionStorage.removeItem('kerf_company_id');
     setIsDemoMode(false);
     setDemoUser(null);
     setCompany(null);
@@ -164,7 +194,7 @@ export function useClerkAuthProvider(): AuthContextType {
   }, [clerkAuth]);
 
   const getToken = useCallback(async (): Promise<string | null> => {
-    if (isDemoMode) return 'demo-token';
+    if (isDemoMode) return `demo-token-${activeDemoAlias()}`;
     if (!clerkAuth.isSignedIn) return null;
     return clerkAuth.getToken();
   }, [isDemoMode, clerkAuth]);

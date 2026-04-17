@@ -44,6 +44,33 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0
       - name: Install Python deps
         run: cd backend && pip install -r requirements.txt && pip install pytest pytest-asyncio httpx
+      - name: Apply Neo4j schema
+        run: |
+          cd backend
+          # Split schema.cypher into individual statements and apply
+          python -c "
+          import subprocess, sys
+          content = open('graph/schema.cypher').read()
+          stmts = [s.strip() for s in content.split(';') if s.strip() and not s.strip().startswith('//')]
+          failed = 0
+          for stmt in stmts:
+              lines = [l for l in stmt.split('\n') if l.strip() and not l.strip().startswith('//')]
+              if not lines:
+                  continue
+              clean = '\n'.join(lines)
+              result = subprocess.run(
+                  ['cypher-shell', '-u', 'neo4j', '-p', 'password', '-a', 'bolt://localhost:7687', clean],
+                  capture_output=True, text=True
+              )
+              if result.returncode != 0 and 'already exists' not in result.stderr.lower():
+                  print(f'FAILED: {clean[:80]}...')
+                  print(result.stderr)
+                  failed += 1
+          if failed:
+              print(f'{failed} schema statements failed')
+              sys.exit(1)
+          print(f'Schema applied: {len(stmts)} statements')
+          "
       - name: Run tests
         env:
           NEO4J_TEST_URI: bolt://localhost:7687
@@ -63,8 +90,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: cd frontend && npm ci
-      - run: cd frontend && npx tsc --noEmit
-      - name: Build
+      - name: Build (includes tsc type-check)
         env:
           VITE_API_URL: https://api.kerf.build/api/v1
         run: cd frontend && npm run build

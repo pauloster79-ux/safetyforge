@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neo4j: Hybrid Knowledge Graph + Vector Storage</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #334155;
+      --border: #475569;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --accent-3: #34d399;
+      --warning: #fbbf24;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--surface-2);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: var(--accent-2);
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    p { margin-bottom: 1rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-grid .card { margin-bottom: 0; }
+
+    .card h4 {
+      color: var(--accent-3);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p:last-child { margin-bottom: 0; }
+
+    code {
+      background: var(--surface-2);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      color: var(--accent-3);
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: var(--text);
+    }
+
+    .comment { color: var(--text-muted); }
+    .keyword { color: var(--accent); }
+    .string { color: var(--accent-3); }
+    .label { color: var(--warning); }
+
+    .diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+      color: var(--text-muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--surface-2);
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    td { color: var(--text); }
+
+    tr:hover td { background: var(--surface); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2em 0.6em;
+      border-radius: 6px;
+      font-size: 0.8em;
+      font-weight: 600;
+    }
+
+    .badge-graph { background: #1e3a5f; color: var(--accent); }
+    .badge-vector { background: #1a3a2a; color: var(--accent-3); }
+    .badge-hybrid { background: #2d2554; color: var(--accent-2); }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--surface);
+      padding: 1rem 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+
+    .callout.insight { border-left-color: var(--accent-2); }
+    .callout.practical { border-left-color: var(--accent-3); }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--accent);
+    }
+
+    .callout.insight strong { color: var(--accent-2); }
+    .callout.practical strong { color: var(--accent-3); }
+
+    ul, ol {
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    li { margin-bottom: 0.4rem; }
+
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>Neo4j: Hybrid Knowledge Graph + Vector Storage</h1>
+      <p>How a single database can store structured knowledge, conversation history, and document embeddings &mdash; enabling hybrid retrieval that combines graph traversal with semantic similarity search.</p>
+    </header>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>1. The Core Idea</h2>
+      <p>
+        Neo4j is a native graph database that, since version 5.11, also supports
+        <strong>native vector indexes</strong>. This means a single database instance can serve as both:
+      </p>
+      <div class="card-grid">
+        <div class="card">
+          <h4>Knowledge Graph</h4>
+          <p>Entities, relationships, rules, and metadata stored as nodes and edges &mdash; queryable via Cypher with full traversal, path-finding, and pattern matching.</p>
+        </div>
+        <div class="card">
+          <h4>Vector Store</h4>
+          <p>Embedding vectors stored as properties on nodes, indexed for approximate nearest-neighbour (ANN) similarity search &mdash; no separate vector database required.</p>
+        </div>
+      </div>
+      <p>
+        This eliminates the need to synchronise two systems (a graph DB and a separate vector DB like
+        Pinecone, Weaviate, or Qdrant). The graph structure and the vector embeddings live on the
+        <em>same nodes</em>, enabling queries that combine both in a single Cypher statement.
+      </p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>2. What Can Be Stored</h2>
+
+      <h3>Conversations</h3>
+      <p>
+        Chat messages, agent interactions, and conversation threads can be modelled as graph structures.
+        Each message is a node linked to its conversation, its author (human or agent), and any entities
+        it references.
+      </p>
+      <div class="diagram">
+(:Conversation {id, created_at, title})
+    &larr;[:PART_OF]&mdash; (:Message {id, role, content, timestamp, embedding})
+                          &mdash;[:SENT_BY]&rarr; (:User | :Agent)
+                          &mdash;[:REFERENCES]&rarr; (:Entity)
+                          &mdash;[:FOLLOWS]&rarr; (:Message)  <span style="color: var(--accent);">// preserves order</span>
+      </div>
+
+      <h3>Documents &amp; Chunks</h3>
+      <p>
+        Documents are ingested, chunked, and each chunk is stored as a node with its text and embedding vector.
+        The graph preserves the document structure (sections, pages, parent-child) and links chunks to the
+        domain entities they mention.
+      </p>
+      <div class="diagram">
+(:Document {id, title, source, ingested_at})
+    &larr;[:CHUNK_OF]&mdash; (:Chunk {id, text, page, position, embedding})
+                          &mdash;[:MENTIONS]&rarr; (:Regulation | :Project | :Worker | ...)
+                          &mdash;[:NEXT_CHUNK]&rarr; (:Chunk)  <span style="color: var(--accent);">// preserves reading order</span>
+      </div>
+
+      <h3>Domain Knowledge</h3>
+      <p>
+        The same graph holds your structured domain data &mdash; regulations, projects, workers,
+        certifications &mdash; as richly connected nodes. This is the key advantage: document chunks
+        and conversation messages link <em>directly</em> to the domain entities they relate to.
+      </p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>3. Native Vector Indexes</h2>
+      <p>
+        Neo4j's vector index uses Hierarchical Navigable Small World (HNSW) graphs for efficient
+        approximate nearest-neighbour search. Vectors are stored as properties on nodes and indexed
+        separately from the graph structure.
+      </p>
+
+      <h3>Creating a Vector Index</h3>
+<pre><code><span class="comment">// Create a vector index on Chunk nodes</span>
+<span class="keyword">CREATE VECTOR INDEX</span> chunk_embeddings <span class="keyword">IF NOT EXISTS</span>
+<span class="keyword">FOR</span> (c:<span class="label">Chunk</span>)
+<span class="keyword">ON</span> (c.embedding)
+<span class="keyword">OPTIONS</span> {
+  indexConfig: {
+    `vector.dimensions`: 1536,
+    `vector.similarity_function`: <span class="string">'cosine'</span>
+  }
+}
+
+<span class="comment">// Create a vector index on Message nodes</span>
+<span class="keyword">CREATE VECTOR INDEX</span> message_embeddings <span class="keyword">IF NOT EXISTS</span>
+<span class="keyword">FOR</span> (m:<span class="label">Message</span>)
+<span class="keyword">ON</span> (m.embedding)
+<span class="keyword">OPTIONS</span> {
+  indexConfig: {
+    `vector.dimensions`: 1536,
+    `vector.similarity_function`: <span class="string">'cosine'</span>
+  }
+}</code></pre>
+
+      <h3>Querying by Vector Similarity</h3>
+<pre><code><span class="comment">// Find the 10 most similar chunks to a query embedding</span>
+<span class="keyword">CALL</span> db.index.vector.queryNodes(
+  <span class="string">'chunk_embeddings'</span>,    <span class="comment">// index name</span>
+  10,                       <span class="comment">// top-k results</span>
+  $queryEmbedding           <span class="comment">// the query vector</span>
+)
+<span class="keyword">YIELD</span> node <span class="keyword">AS</span> chunk, score
+<span class="keyword">RETURN</span> chunk.text, score
+<span class="keyword">ORDER BY</span> score <span class="keyword">DESC</span></code></pre>
+
+      <div class="callout">
+        <strong>Supported configurations</strong>
+        Vector dimensions up to 4096. Similarity functions: <code>cosine</code>,
+        <code>euclidean</code>, and <code>dot</code> (since Neo4j 5.18). Compatible with embeddings
+        from OpenAI, Anthropic (Voyage), Cohere, and open-source models.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>4. Hybrid Retrieval: The Real Power</h2>
+      <p>
+        The defining advantage is combining vector similarity with graph traversal
+        <strong>in a single query</strong>. This is variously called "GraphRAG" or "hybrid retrieval."
+      </p>
+
+      <h3>Pattern: Vector Search + Graph Context Expansion</h3>
+<pre><code><span class="comment">// Step 1: Find semantically similar chunks</span>
+<span class="keyword">CALL</span> db.index.vector.queryNodes(<span class="string">'chunk_embeddings'</span>, 5, $queryEmbedding)
+<span class="keyword">YIELD</span> node <span class="keyword">AS</span> chunk, score
+
+<span class="comment">// Step 2: Traverse the graph to enrich with structured context</span>
+<span class="keyword">MATCH</span> (chunk)-[:<span class="label">MENTIONS</span>]-&gt;(entity)
+<span class="keyword">OPTIONAL MATCH</span> (entity)-[:<span class="label">REGULATED_BY</span>]-&gt;(reg:<span class="label">Regulation</span>)
+<span class="keyword">OPTIONAL MATCH</span> (chunk)-[:<span class="label">CHUNK_OF</span>]-&gt;(doc:<span class="label">Document</span>)
+
+<span class="keyword">RETURN</span>
+  chunk.text       <span class="keyword">AS</span> chunkText,
+  score            <span class="keyword">AS</span> similarity,
+  doc.title        <span class="keyword">AS</span> sourceDocument,
+  collect(entity)  <span class="keyword">AS</span> relatedEntities,
+  collect(reg)     <span class="keyword">AS</span> applicableRegulations</code></pre>
+
+      <p>
+        This single query does what would otherwise require two separate systems: it finds
+        semantically relevant text <em>and</em> expands into the structured knowledge graph
+        to pull in related entities, regulations, and provenance.
+      </p>
+
+      <h3>Pattern: Conversation-Aware Retrieval</h3>
+<pre><code><span class="comment">// Find past conversation context relevant to the current query</span>
+<span class="keyword">CALL</span> db.index.vector.queryNodes(<span class="string">'message_embeddings'</span>, 5, $queryEmbedding)
+<span class="keyword">YIELD</span> node <span class="keyword">AS</span> msg, score
+<span class="keyword">WHERE</span> score &gt; 0.75
+
+<span class="comment">// Get the conversation thread and any entities discussed</span>
+<span class="keyword">MATCH</span> (msg)-[:<span class="label">PART_OF</span>]-&gt;(conv:<span class="label">Conversation</span>)
+<span class="keyword">MATCH</span> (msg)-[:<span class="label">REFERENCES</span>]-&gt;(entity)
+<span class="keyword">OPTIONAL MATCH</span> (msg)-[:<span class="label">FOLLOWS</span>]-&gt;(prev:<span class="label">Message</span>)
+
+<span class="keyword">RETURN</span>
+  msg.content      <span class="keyword">AS</span> messageText,
+  conv.title       <span class="keyword">AS</span> conversationTitle,
+  prev.content     <span class="keyword">AS</span> precedingMessage,
+  collect(entity)  <span class="keyword">AS</span> discussedEntities,
+  score            <span class="keyword">AS</span> relevance</code></pre>
+
+      <div class="callout insight">
+        <strong>Why this matters for agents</strong>
+        An agent answering a question can retrieve semantically similar past conversations
+        <em>and</em> follow the graph links to see what domain entities were discussed, what
+        decisions were made, and what the structured state of those entities is <em>now</em>.
+        The vector search finds relevance; the graph provides truth.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>5. Comparison: Single-Store vs. Dual-Store Architecture</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concern</th>
+            <th><span class="badge badge-hybrid">Neo4j Hybrid</span></th>
+            <th>Separate Graph + Vector DB</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Data consistency</td>
+            <td>Single transaction boundary</td>
+            <td>Eventual consistency; sync lag risk</td>
+          </tr>
+          <tr>
+            <td>Query capability</td>
+            <td>Vector + graph in one Cypher query</td>
+            <td>Two queries, application-level join</td>
+          </tr>
+          <tr>
+            <td>Operational complexity</td>
+            <td>One database to deploy, back up, monitor</td>
+            <td>Two systems with independent failure modes</td>
+          </tr>
+          <tr>
+            <td>Vector search performance</td>
+            <td>Good (HNSW); dedicated vector DBs may edge ahead at very large scale</td>
+            <td>Optimised for vector-only workloads</td>
+          </tr>
+          <tr>
+            <td>Graph traversal performance</td>
+            <td>Native, index-free adjacency</td>
+            <td>Not available in vector DB</td>
+          </tr>
+          <tr>
+            <td>Context enrichment</td>
+            <td>Immediate &mdash; traverse from vector result node</td>
+            <td>Requires a second lookup by ID in the graph DB</td>
+          </tr>
+          <tr>
+            <td>Access control</td>
+            <td>Graph-native permissions apply to both</td>
+            <td>Must enforce in two places</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout practical">
+        <strong>When to prefer the hybrid approach</strong>
+        When your retrieval needs to <em>combine</em> semantic similarity with structural
+        relationships &mdash; e.g., "find relevant safety documents <em>for this specific project's
+        jurisdiction</em>." The graph narrows the search space; the vector finds relevance within it.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>6. Practical Architecture</h2>
+
+      <div class="diagram">
+  <span style="color: var(--accent);">User / Agent</span>
+       |
+       v
+  <span style="color: var(--accent);">Application Layer</span>
+       |
+       |&mdash;&mdash; Embed query text (OpenAI / Voyage / local model)
+       |&mdash;&mdash; Send embedding + filters to Neo4j
+       |
+       v
+  +-------------------------------------------------+
+  |  <span style="color: var(--warning);">Neo4j</span>                                        |
+  |                                                 |
+  |  <span style="color: var(--accent-3);">Vector Index (HNSW)</span>                          |
+  |  &bull; Chunk embeddings                            |
+  |  &bull; Message embeddings                          |
+  |  &bull; Document embeddings                         |
+  |                                                 |
+  |  <span style="color: var(--accent);">Knowledge Graph</span>                              |
+  |  &bull; Domain entities + relationships             |
+  |  &bull; Document &rarr; Chunk &rarr; Entity links              |
+  |  &bull; Conversation &rarr; Message &rarr; Entity links        |
+  |  &bull; Temporal metadata (valid_from / valid_until)|
+  |  &bull; Provenance (source citations, actor trails) |
+  |                                                 |
+  |  <span style="color: var(--accent-2);">Hybrid Query Engine</span>                          |
+  |  &bull; Single Cypher query combines both           |
+  |  &bull; Vector similarity + graph traversal         |
+  |  &bull; Filtered by graph-native permissions        |
+  +-------------------------------------------------+
+      </div>
+
+      <h3>Ingestion Pipeline</h3>
+      <ol>
+        <li><strong>Document arrives</strong> &mdash; PDF, HTML, or structured data</li>
+        <li><strong>Chunk</strong> &mdash; split into semantically meaningful segments</li>
+        <li><strong>Embed</strong> &mdash; generate vector embedding for each chunk</li>
+        <li><strong>Extract entities</strong> &mdash; identify domain entities mentioned (NER or LLM extraction)</li>
+        <li><strong>Store in Neo4j</strong> &mdash; create Chunk nodes with <code>embedding</code> property, link to Document node, link to extracted Entity nodes via <code>MENTIONS</code> relationships</li>
+        <li><strong>Index</strong> &mdash; the vector index automatically picks up new <code>embedding</code> properties</li>
+      </ol>
+
+      <h3>Conversation Storage Pipeline</h3>
+      <ol>
+        <li><strong>Message received</strong> &mdash; from user or agent</li>
+        <li><strong>Embed</strong> &mdash; generate vector embedding of the message content</li>
+        <li><strong>Extract references</strong> &mdash; identify domain entities mentioned</li>
+        <li><strong>Store in Neo4j</strong> &mdash; create Message node with <code>embedding</code>, link to Conversation, User/Agent, referenced Entities, and preceding Message</li>
+      </ol>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>7. Advanced Patterns</h2>
+
+      <h3>Scoped Vector Search</h3>
+      <p>
+        Pre-filter the vector search using graph relationships, so only contextually relevant
+        nodes are searched. This dramatically improves precision.
+      </p>
+<pre><code><span class="comment">// Only search chunks from documents relevant to a specific project</span>
+<span class="keyword">MATCH</span> (p:<span class="label">Project</span> {id: $projectId})-[:<span class="label">GOVERNED_BY</span>]-&gt;(reg:<span class="label">Regulation</span>)
+<span class="keyword">MATCH</span> (chunk:<span class="label">Chunk</span>)-[:<span class="label">MENTIONS</span>]-&gt;(reg)
+<span class="keyword">WITH</span> collect(chunk) <span class="keyword">AS</span> candidates
+
+<span class="comment">// Vector search within the pre-filtered set</span>
+<span class="keyword">CALL</span> db.index.vector.queryNodes(<span class="string">'chunk_embeddings'</span>, 10, $queryEmbedding)
+<span class="keyword">YIELD</span> node <span class="keyword">AS</span> chunk, score
+<span class="keyword">WHERE</span> chunk <span class="keyword">IN</span> candidates
+
+<span class="keyword">RETURN</span> chunk.text, score</code></pre>
+
+      <h3>Multi-Hop Context Expansion</h3>
+      <p>
+        After finding relevant chunks via vector search, traverse multiple hops through the graph
+        to build a rich context window for the LLM.
+      </p>
+<pre><code><span class="comment">// Find similar chunks, then expand 2 hops into the knowledge graph</span>
+<span class="keyword">CALL</span> db.index.vector.queryNodes(<span class="string">'chunk_embeddings'</span>, 3, $queryEmbedding)
+<span class="keyword">YIELD</span> node <span class="keyword">AS</span> chunk, score
+
+<span class="comment">// Expand: chunk &rarr; entity &rarr; related entities (2 hops)</span>
+<span class="keyword">MATCH</span> path = (chunk)-[:<span class="label">MENTIONS</span>]-&gt;(e1)-[*1..2]-(e2)
+<span class="keyword">WHERE</span> <span class="keyword">NONE</span>(n <span class="keyword">IN</span> nodes(path) <span class="keyword">WHERE</span> n:<span class="label">Chunk</span> <span class="keyword">AND</span> n &lt;&gt; chunk)
+
+<span class="keyword">RETURN</span>
+  chunk.text <span class="keyword">AS</span> sourceText,
+  score,
+  [n <span class="keyword">IN</span> nodes(path) | labels(n)[0] + <span class="string">': '</span> + n.name] <span class="keyword">AS</span> contextPath</code></pre>
+
+      <h3>Temporal Filtering</h3>
+      <p>
+        Combine vector similarity with temporal validity to ensure only currently-active
+        knowledge is retrieved.
+      </p>
+<pre><code><span class="keyword">CALL</span> db.index.vector.queryNodes(<span class="string">'chunk_embeddings'</span>, 10, $queryEmbedding)
+<span class="keyword">YIELD</span> node <span class="keyword">AS</span> chunk, score
+
+<span class="keyword">MATCH</span> (chunk)-[:<span class="label">MENTIONS</span>]-&gt;(reg:<span class="label">Regulation</span>)
+<span class="keyword">WHERE</span> reg.valid_from &lt;= date() <span class="keyword">AND</span> reg.valid_until &gt;= date()
+
+<span class="keyword">RETURN</span> chunk.text, reg.name, reg.source, score</code></pre>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>8. Key Capabilities Summary</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Mechanism</th>
+            <th>Since</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Vector similarity search</td>
+            <td><code>db.index.vector.queryNodes()</code> with HNSW index</td>
+            <td>Neo4j 5.11</td>
+          </tr>
+          <tr>
+            <td>Multiple vector indexes</td>
+            <td>Different indexes on different node labels</td>
+            <td>Neo4j 5.11</td>
+          </tr>
+          <tr>
+            <td>Dot product similarity</td>
+            <td><code>vector.similarity_function: 'dot'</code></td>
+            <td>Neo4j 5.18</td>
+          </tr>
+          <tr>
+            <td>Hybrid queries</td>
+            <td>Vector search + Cypher traversal in one statement</td>
+            <td>Neo4j 5.11</td>
+          </tr>
+          <tr>
+            <td>Graph-native permissions</td>
+            <td>Traversability = access; no path = no data</td>
+            <td>All versions</td>
+          </tr>
+          <tr>
+            <td>Full-text search</td>
+            <td>Lucene-based full-text indexes (complementary to vector)</td>
+            <td>Neo4j 3.5+</td>
+          </tr>
+          <tr>
+            <td>Property existence constraints</td>
+            <td>Enforce required fields (e.g. source citations)</td>
+            <td>Neo4j 5.x</td>
+          </tr>
+          <tr>
+            <td>Property type constraints</td>
+            <td>Enforce data types on properties</td>
+            <td>Neo4j 5.9</td>
+          </tr>
+          <tr>
+            <td>Max vector dimensions</td>
+            <td>Up to 4096 dimensions per vector</td>
+            <td>Neo4j 5.11</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <section>
+      <h2>9. When to Use This Pattern</h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>Good Fit</h4>
+          <ul>
+            <li>RAG where context requires structured relationships</li>
+            <li>Conversational agents with domain-specific knowledge</li>
+            <li>Compliance / regulatory systems with document references</li>
+            <li>Multi-tenant applications needing unified access control</li>
+            <li>Systems where provenance and auditability matter</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Consider Alternatives</h4>
+          <ul>
+            <li>Pure vector search at extreme scale (billions of vectors)</li>
+            <li>Simple semantic search without relationship context</li>
+            <li>Workloads that are 99% vector, 1% graph</li>
+            <li>Cost-constrained deployments where a lightweight vector DB suffices</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Neo4j Hybrid Graph + Vector Storage &mdash; Reference Guide</p>
+    </footer>
+
+  </div>
+</body>
+</html>

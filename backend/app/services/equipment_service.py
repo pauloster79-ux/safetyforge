@@ -149,6 +149,14 @@ class EquipmentService(BaseService):
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=equip_id,
+            entity_type="Equipment",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created equipment: {data.name}",
+        )
         return Equipment(**result["equipment"])
 
     def get(self, company_id: str, equipment_id: str) -> Equipment:
@@ -277,6 +285,14 @@ class EquipmentService(BaseService):
         )
         if result is None:
             raise EquipmentNotFoundError(equipment_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=equipment_id,
+            entity_type="Equipment",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated equipment {equipment_id}",
+        )
         return Equipment(**result["equipment"])
 
     def delete(self, company_id: str, equipment_id: str) -> None:
@@ -305,6 +321,14 @@ class EquipmentService(BaseService):
         )
         if result is None:
             raise EquipmentNotFoundError(equipment_id)
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=equipment_id,
+            entity_type="Equipment",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Archived equipment {equipment_id}",
+        )
 
     # -- Inspection Logs ---------------------------------------------------------------
 
@@ -378,6 +402,15 @@ class EquipmentService(BaseService):
 
         log_data = result["log_result"]
         log_data["items"] = json.loads(log_data.pop("_items_json", "[]"))
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=log_id,
+            entity_type="EquipmentInspectionLog",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created inspection log for equipment {equipment_id}",
+            related_entity_ids=[equipment_id],
+        )
         return EquipmentInspectionLog(**log_data)
 
     def list_inspection_logs(

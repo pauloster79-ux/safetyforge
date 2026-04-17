@@ -1,0 +1,57 @@
+code: SC
+name: South Carolina
+regulatory_body: South Carolina Department of Labor, Licensing and Regulation - OSHA Division (SC OSHA)
+state_plan: true
+primary_legislation: South Carolina Occupational Safety and Health Act (SC Code 41-15)
+construction_regulation: SC OSHA Regulation 71 (Construction)
+
+requirements:
+  - id: SC-001
+    state: SC
+    requirement_name: OSHA-Approved State Plan Coverage
+    description: South Carolina operates an OSHA-approved state plan enforced by SC OSHA, covering both private and public sector employees with standards at least as effective as federal OSHA.
+    federal_equivalent: "29 CFR 1910/1926 (General Industry/Construction)"
+    state_standard: "SC Code 41-15-10 et seq."
+    additional_details: SC OSHA adopts federal OSHA standards by reference and has authority to enforce them through inspections, citations, and penalties. The state plan covers all workers including state and local government employees.
+    applies_to: all
+    severity: mandatory
+
+  - id: SC-002
+    state: SC
+    requirement_name: Workplace Posting Requirements
+    description: South Carolina employers must display the SC OSHA poster informing employees of their rights and responsibilities under state occupational safety and health law.
+    federal_equivalent: "29 CFR 1903.2 (OSHA Posting Requirements)"
+    state_standard: "SC Code 41-15-320; SC Regulation 71-100"
+    additional_details: The SC OSHA poster replaces the federal OSHA poster in South Carolina workplaces. Employers must also post any citations received from SC OSHA at or near the location of the violation.
+    applies_to: all
+    severity: mandatory
+
+  - id: SC-003
+    state: SC
+    requirement_name: Workers' Compensation Coverage
+    description: All South Carolina employers with four or more employees must carry workers' compensation insurance. Coverage is mandatory from the first employee for certain hazardous occupations.
+    federal_equivalent: null
+    state_standard: "SC Code 42-1-10 et seq."
+    additional_details: The South Carolina Workers' Compensation Commission administers the system. Employers may obtain coverage through private carriers or self-insurance. Agricultural employers with fewer than specified seasonal workers may be exempt.
+    applies_to: all
+    severity: mandatory
+
+  - id: SC-004
+    state: SC
+    requirement_name: Residential Builders License
+    description: South Carolina requires licensing for residential builders and specialty contractors through the South Carolina Residential Builders Commission.
+    federal_equivalent: null
+    state_standard: "SC Code 40-59-10 et seq."
+    additional_details: License categories include residential builder, residential specialty contractor, and home inspector. Applicants must pass examinations and demonstrate financial responsibility. License renewal requires continuing education.
+    applies_to: construction
+    severity: mandatory
+
+  - id: SC-005
+    state: SC
+    requirement_name: Trenching and Excavation Safety Emphasis
+    description: SC OSHA maintains a special emphasis program on trenching and excavation safety in construction, with enhanced inspection targeting and enforcement.
+    federal_equivalent: "29 CFR 1926 Subpart P (Excavations)"
+    state_standard: "SC Regulation 71-1926 Subpart P"
+    additional_details: SC OSHA conducts targeted inspections of excavation and trenching operations. Employers must ensure protective systems are in place for all trenches five feet or deeper. A competent person must inspect excavations daily and after any hazard-increasing event.
+    applies_to: construction
+    severity: mandatory

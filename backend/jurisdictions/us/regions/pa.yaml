@@ -1,0 +1,57 @@
+code: PA
+name: Pennsylvania
+regulatory_body: Federal OSHA (no state plan) / Pennsylvania Department of Labor & Industry
+state_plan: false
+primary_legislation: Federal Occupational Safety and Health Act (29 USC 651)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: PA-001
+    state: PA
+    requirement_name: Workers' Compensation Coverage
+    description: All Pennsylvania employers must provide workers' compensation coverage for their employees through private insurance, self-insurance, or the State Workers' Insurance Fund (SWIF).
+    federal_equivalent: null
+    state_standard: "77 P.S. 1 et seq. (Workers' Compensation Act)"
+    additional_details: Pennsylvania requires coverage from the first day of employment. There is no minimum employee count exemption. The penalty for failure to insure includes criminal prosecution and civil liability.
+    applies_to: all
+    severity: mandatory
+
+  - id: PA-002
+    state: PA
+    requirement_name: Pennsylvania Construction Workplace Misclassification Act
+    description: Pennsylvania prohibits the misclassification of construction industry employees as independent contractors. Employers must properly classify workers and provide required benefits.
+    federal_equivalent: null
+    state_standard: "43 P.S. 933.1 et seq."
+    additional_details: The Act establishes a strict test for independent contractor status in construction. Misclassification results in penalties including back payment of workers' compensation premiums, unemployment taxes, and civil fines up to $2,500 per misclassified employee.
+    applies_to: construction
+    severity: mandatory
+
+  - id: PA-003
+    state: PA
+    requirement_name: Pennsylvania One Call System (PA 811)
+    description: Excavators must contact PA One Call at least three business days before any excavation work. Failure to notify is a violation subject to penalties and liability for damages.
+    federal_equivalent: null
+    state_standard: "73 P.S. 176 et seq. (Underground Utility Line Protection Act)"
+    additional_details: The Act requires facility owners to mark underground lines within the notification period. Excavators must maintain an 18-inch tolerance zone around marked facilities. Penalties include fines up to $50,000 for willful violations.
+    applies_to: construction
+    severity: mandatory
+
+  - id: PA-004
+    state: PA
+    requirement_name: Employer Posting and Notification Requirements
+    description: Pennsylvania employers must post workplace safety notices including the Abstract of the Workers' Compensation Act, unemployment compensation notice, and minimum wage poster.
+    federal_equivalent: "29 CFR 1903.2 (OSHA Posting Requirements)"
+    state_standard: "34 Pa. Code 129.23; 77 P.S. 1"
+    additional_details: Required postings must be in conspicuous locations accessible to all employees. The Department of Labor & Industry provides required poster sets. Failure to post can result in citations and fines.
+    applies_to: all
+    severity: mandatory
+
+  - id: PA-005
+    state: PA
+    requirement_name: Asbestos Occupations Accreditation and Certification Act
+    description: Pennsylvania requires accreditation for all individuals and contractors performing asbestos abatement, inspection, or management activities.
+    federal_equivalent: "29 CFR 1926.1101 (Asbestos in Construction)"
+    state_standard: "63 P.S. 2101 et seq."
+    additional_details: The Department of Labor & Industry issues accreditation for asbestos workers, contractors, supervisors, inspectors, management planners, and project designers. Training must be completed at approved facilities. Accreditation must be renewed annually.
+    applies_to: construction
+    severity: mandatory

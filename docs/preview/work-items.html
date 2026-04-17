@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf — Work Item UI Design</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --machine: #F5B800; --machine-dark: #D9A200; --machine-bright: #FFCA18;
+    --machine-wash: rgba(245,184,0,0.1);
+    --concrete-50: #f4f5f3; --concrete-100: #e6e8e3; --concrete-200: #d4d7d0;
+    --concrete-400: #71766b; --concrete-500: #545951; --concrete-600: #3e423a;
+    --concrete-700: #2e312b; --concrete-800: #191b17; --concrete-900: #0d0e0c;
+    --pass: #2d8a4e; --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030; --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b; --warn-bg: rgba(184,134,11,0.08);
+    --bg: var(--concrete-50); --fg: var(--concrete-900); --card: #ffffff;
+    --border: var(--concrete-100); --muted: var(--concrete-400); --radius: 3px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', system-ui, sans-serif; color: var(--fg); background: var(--concrete-900); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .tab-nav { display: flex; gap: 0; background: var(--concrete-900); padding: 16px 16px 0; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 16px; background: var(--concrete-800); color: var(--concrete-400); border: none; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; border-radius: var(--radius) var(--radius) 0 0; }
+  .tab-btn.active { background: var(--bg); color: var(--fg); }
+  .tab-btn:hover:not(.active) { background: var(--concrete-700); }
+  .tab-content { display: none; background: var(--bg); min-height: 100vh; padding: 24px; }
+  .tab-content.active { display: block; }
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 1.1rem; font-weight: 700; margin-top: 32px; margin-bottom: 12px; }
+  h3 { font-size: 0.95rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 10px; max-width: 700px; font-size: 0.875rem; color: var(--concrete-600); }
+  .subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 24px; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .design-note { background: var(--machine-wash); border-left: 2px solid var(--machine); padding: 12px 16px; margin: 16px 0; border-radius: 0 var(--radius) var(--radius) 0; font-size: 0.82rem; max-width: 700px; }
+  .design-note strong { color: var(--fg); }
+
+  /* Phone */
+  .phone-frame { width: 375px; height: 780px; border: 2px solid var(--concrete-200); border-radius: 32px; overflow: hidden; background: var(--card); margin: 20px auto; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+  .phone-notch { width: 120px; height: 24px; background: var(--concrete-900); border-radius: 0 0 12px 12px; margin: 0 auto; }
+  .phone-screen { height: calc(100% - 24px); overflow-y: auto; display: flex; flex-direction: column; }
+
+  /* Desktop */
+  .desktop-frame { width: 100%; max-width: 1100px; height: 700px; border: 2px solid var(--concrete-200); border-radius: 8px; overflow: hidden; background: var(--card); margin: 20px auto; box-shadow: 0 8px 32px rgba(0,0,0,0.08); display: flex; }
+  .desktop-sidebar { width: 380px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--card); }
+  .desktop-canvas { flex: 1; display: flex; flex-direction: column; background: var(--bg); overflow-y: auto; }
+
+  /* Header */
+  .app-header { display: flex; align-items: center; padding: 0 16px; height: 48px; background: var(--card); border-bottom: 1px solid var(--border); gap: 12px; }
+  .app-header .hamburger { font-size: 1rem; cursor: pointer; color: var(--concrete-600); }
+  .app-header .title { flex: 1; font-weight: 700; font-size: 0.875rem; }
+  .kerf-logo { width: 20px; height: 20px; background: var(--machine); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; color: var(--concrete-900); }
+  .avatar { width: 28px; height: 28px; border-radius: 2px; background: var(--concrete-100); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--concrete-600); }
+
+  /* Chat */
+  .chat-area { flex: 1; padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+  .msg { max-width: 85%; padding: 8px 12px; border-radius: var(--radius); font-size: 0.82rem; line-height: 1.5; }
+  .msg.user { background: var(--machine); color: var(--concrete-900); align-self: flex-end; font-weight: 500; }
+  .msg.agent { background: var(--card); color: var(--fg); align-self: flex-start; border: 1px solid var(--border); }
+  .msg .msg-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 3px; }
+  .chat-input { display: flex; align-items: center; padding: 8px 12px; border-top: 1px solid var(--border); gap: 6px; background: var(--card); }
+  .chat-input input { flex: 1; border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; font-size: 0.82rem; outline: none; font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); }
+  .chat-input input:focus { border-color: var(--machine); box-shadow: 0 0 0 2px var(--machine-wash); }
+  .mic-btn { width: 32px; height: 32px; border-radius: var(--radius); background: var(--machine); color: var(--concrete-900); border: none; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
+  .send-btn { width: 32px; height: 32px; border-radius: var(--radius); background: var(--concrete-800); color: var(--concrete-50); border: none; cursor: pointer; font-size: 0.85rem; }
+
+  /* Work Item Card — the core component */
+  .wi-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin: 6px 0; align-self: flex-start; max-width: 95%; overflow: hidden; }
+  .wi-card.draft { border-left: 3px solid var(--machine); }
+  .wi-card.confirmed { border-left: 3px solid var(--pass); }
+  .wi-card .wi-header { display: flex; align-items: center; padding: 8px 12px; gap: 8px; border-bottom: 1px solid var(--concrete-50); cursor: pointer; }
+  .wi-card .wi-header .wi-icon { font-size: 0.9rem; }
+  .wi-card .wi-header .wi-title { flex: 1; font-size: 0.82rem; font-weight: 600; }
+  .wi-card .wi-header .wi-cost { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; }
+  .wi-card .wi-header .wi-status { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 1px 6px; border-radius: var(--radius); }
+  .wi-card .wi-header .wi-status.draft-s { background: var(--machine-wash); color: var(--machine-dark); }
+  .wi-card .wi-header .wi-status.confirmed-s { background: var(--pass-bg); color: var(--pass); }
+
+  /* Work Item expanded detail */
+  .wi-detail { padding: 0 12px 10px; }
+  .wi-detail .wi-row { display: grid; grid-template-columns: 100px 1fr; gap: 4px; padding: 4px 0; font-size: 0.78rem; border-bottom: 1px solid var(--concrete-50); }
+  .wi-detail .wi-row:last-child { border-bottom: none; }
+  .wi-detail .wi-row .wi-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
+  .wi-detail .wi-row .wi-value { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .wi-detail .wi-row .wi-value.editable { cursor: pointer; border-bottom: 1px dashed var(--concrete-200); }
+  .wi-detail .wi-row .wi-value.editable:hover { border-bottom-color: var(--machine); background: var(--machine-wash); }
+  .wi-actions { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--concrete-50); }
+  .kerf-btn { padding: 5px 12px; border-radius: var(--radius); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; }
+  .kerf-btn.primary { background: var(--machine); color: var(--concrete-900); }
+  .kerf-btn.primary:hover { background: var(--machine-dark); }
+  .kerf-btn.secondary { background: var(--concrete-50); color: var(--fg); border: 1px solid var(--border); }
+  .kerf-btn.sm { padding: 3px 8px; font-size: 0.7rem; }
+  .kerf-btn.ghost { background: none; color: var(--muted); border: none; }
+  .kerf-btn.ghost:hover { color: var(--fg); }
+
+  /* Work Package group */
+  .wp-group { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin: 8px 0; overflow: hidden; }
+  .wp-header { display: flex; align-items: center; padding: 8px 12px; background: var(--concrete-50); border-bottom: 1px solid var(--border); gap: 8px; cursor: pointer; }
+  .wp-header .wp-title { flex: 1; font-size: 0.85rem; font-weight: 600; }
+  .wp-header .wp-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+  .wp-header .wp-cost { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; }
+  .wp-items { padding: 4px 8px; }
+  .wp-items .wi-card { max-width: 100%; margin: 4px 0; }
+
+  /* Canvas header */
+  .canvas-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--card); }
+  .canvas-header h3 { margin: 0; font-size: 0.85rem; }
+
+  /* Inline edit */
+  .inline-edit { display: flex; gap: 4px; align-items: center; }
+  .inline-edit input { border: 1px solid var(--machine); border-radius: var(--radius); padding: 2px 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 60px; background: var(--machine-wash); }
+  .inline-edit .edit-save { font-size: 0.7rem; color: var(--pass); cursor: pointer; }
+
+  /* Compact item row for canvas table */
+  .item-row { display: grid; grid-template-columns: 1fr 50px 50px 60px 50px 50px 70px 32px; gap: 4px; padding: 5px 12px; border-bottom: 1px solid var(--concrete-50); align-items: center; font-size: 0.78rem; }
+  .item-row:hover { background: var(--machine-wash); }
+  .item-row.header { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); background: var(--concrete-50); padding: 6px 12px; }
+  .item-row .mono-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .item-row .edit-icon { color: var(--muted); cursor: pointer; font-size: 0.75rem; }
+  .item-row .edit-icon:hover { color: var(--machine-dark); }
+  .item-row.group { background: var(--concrete-50); font-weight: 600; grid-template-columns: 1fr auto; padding: 8px 12px; }
+  .item-row.subtotal { background: var(--concrete-100); font-weight: 600; grid-template-columns: 1fr 70px; padding: 5px 12px; }
+  .item-row.total { background: var(--concrete-900); color: var(--concrete-50); font-weight: 700; grid-template-columns: 1fr 70px; padding: 8px 12px; }
+  .item-row.total-accent { background: var(--machine); color: var(--concrete-900); font-weight: 700; grid-template-columns: 1fr 70px; padding: 8px 12px; font-size: 0.88rem; }
+
+  .status-badge { display: inline-block; padding: 1px 6px; border-radius: var(--radius); font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+  .status-badge.draft { background: var(--machine-wash); color: var(--machine-dark); }
+  .status-badge.confirmed { background: var(--pass-bg); color: var(--pass); }
+</style>
+</head>
+<body>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('concept')">Concept</button>
+  <button class="tab-btn" onclick="showTab('mobile-create')">Mobile: Create</button>
+  <button class="tab-btn" onclick="showTab('mobile-edit')">Mobile: Edit</button>
+  <button class="tab-btn" onclick="showTab('mobile-package')">Mobile: Package</button>
+  <button class="tab-btn" onclick="showTab('desktop-builder')">Desktop: Builder</button>
+  <button class="tab-btn" onclick="showTab('jake')">Jake: Simple Job</button>
+</div>
+
+<!-- CONCEPT -->
+<div id="concept" class="tab-content active">
+  <h1>Work Item UI Design</h1>
+  <div class="subtitle">From conversation to structured work · Scales from solo to 100-person crew</div>
+
+  <h2>The Core Idea</h2>
+  <p>A WorkItem is the atomic unit of deliverable work. It has a description, optional quantity, labour estimate, material estimate, and a lifecycle state. The user creates them by talking — the agent extracts structured items from natural language and presents them as editable cards for review.</p>
+
+  <div class="design-note">
+    <strong>The card IS the work item.</strong> It appears in chat as a draft. The user can confirm it (one tap), edit any field (tap the value), or dismiss it. On desktop, the same card appears in the canvas table view. There's no separate "create form" — the conversation IS the form.
+  </div>
+
+  <h2>Work Item Lifecycle</h2>
+  <table style="max-width: 700px; border-collapse: collapse; font-size: 0.82rem;">
+    <thead><tr><th style="background: var(--concrete-900); color: var(--concrete-50); padding: 6px 10px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">State</th><th style="background: var(--concrete-900); color: var(--concrete-50); padding: 6px 10px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Card Appearance</th><th style="background: var(--concrete-900); color: var(--concrete-50); padding: 6px 10px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">What Happens</th></tr></thead>
+    <tbody>
+      <tr><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);"><span class="status-badge draft">Draft</span></td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Yellow left border. Editable.</td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Agent extracted from conversation. Awaiting user review.</td></tr>
+      <tr><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);"><span class="status-badge confirmed">Estimated</span></td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Green left border. Confirmed.</td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">User confirmed. Part of the estimate. Still editable.</td></tr>
+      <tr><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);"><span class="status-badge" style="background: rgba(52,152,219,0.1); color: #2980b9;">Scheduled</span></td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Blue indicator. Has dates + assignment.</td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Assigned to worker/crew with planned dates.</td></tr>
+      <tr><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);"><span class="status-badge" style="background: rgba(142,68,173,0.1); color: #8e44ad;">In Progress</span></td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Shows est. vs actual time.</td><td style="padding: 6px 10px; border-bottom: 1px solid var(--border);">Work underway. Time entries logging against it.</td></tr>
+      <tr><td style="padding: 6px 10px;"><span class="status-badge confirmed">Complete</span></td><td style="padding: 6px 10px;">Muted. Shows final vs estimated.</td><td style="padding: 6px 10px;">Work done. Actual cost known.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Work Package</h2>
+  <p>A WorkPackage is an optional grouping. It emerges naturally — when Sarah says "reception area" the agent creates a package. Or the user can group items later. Solo contractors like Jake never see packages — their items are flat on the project.</p>
+
+  <h2>Card Anatomy</h2>
+  <div style="max-width: 340px; margin: 16px 0;">
+    <div class="wi-card draft">
+      <div class="wi-header">
+        <span class="wi-icon">⚡</span>
+        <span class="wi-title">Standard receptacle</span>
+        <span class="wi-cost">$396</span>
+        <span class="wi-status draft-s">Draft</span>
+      </div>
+      <div class="wi-detail">
+        <div class="wi-row"><span class="wi-label">Quantity</span><span class="wi-value editable">6 ea</span></div>
+        <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$3.40 /ea = $20.40</span></div>
+        <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.38 hrs/ea × $65 = $375.60</span></div>
+        <div class="wi-row"><span class="wi-label">Total</span><span class="wi-value" style="font-weight: 600;">$396.00</span></div>
+        <div class="wi-row"><span class="wi-label">Rate source</span><span class="wi-value" style="color: var(--muted); font-size: 10px;">Your avg across 14 jobs</span></div>
+      </div>
+      <div class="wi-actions">
+        <button class="kerf-btn primary sm">✓ Confirm</button>
+        <button class="kerf-btn secondary sm">Edit</button>
+        <button class="kerf-btn ghost sm">✕ Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-note">
+    <strong>Every value with a dashed underline is tappable/clickable to edit.</strong> Tap "6 ea" → inline number input. Tap "$3.40 /ea" → edit the unit price. Tap "0.38 hrs/ea" → edit the labour rate. The card recalculates instantly. This is how the user corrects the agent without typing a chat message.
+  </div>
+</div>
+
+<!-- MOBILE CREATE -->
+<div id="mobile-create" class="tab-content">
+  <h1>Mobile: Creating Work Items</h1>
+  <div class="subtitle">Conversational · Agent extracts · Cards appear for review</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Estimate · 4th Street</span>
+        <div class="avatar">SC</div>
+      </div>
+
+      <div class="chat-area">
+        <div class="msg agent">
+          <div class="msg-label">Kerf</div>
+          What are you seeing in the reception area?
+        </div>
+
+        <div class="msg user">6 standard receptacles, 2 dedicated for the front desk computers, and a floor box by the entrance</div>
+
+        <div class="msg agent" style="font-size: 0.78rem;">
+          <div class="msg-label">Kerf</div>
+          Got it. 3 items for Reception. I've used your historical rates. Review and confirm:
+        </div>
+
+        <!-- Work items appear as draft cards -->
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">Standard receptacle</span>
+            <span class="wi-cost">$396</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">6 ea</span></div>
+            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$3.40 /ea</span></div>
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.38 hrs/ea × $65</span></div>
+          </div>
+          <div class="wi-actions">
+            <button class="kerf-btn primary sm">✓ Confirm</button>
+            <button class="kerf-btn secondary sm">Edit</button>
+            <button class="kerf-btn ghost sm">✕</button>
+          </div>
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">Dedicated circuit</span>
+            <span class="wi-cost">$284</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">2 ea</span></div>
+            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$12.00 /ea</span></div>
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.80 hrs/ea × $65</span></div>
+          </div>
+          <div class="wi-actions">
+            <button class="kerf-btn primary sm">✓ Confirm</button>
+            <button class="kerf-btn secondary sm">Edit</button>
+            <button class="kerf-btn ghost sm">✕</button>
+          </div>
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">Floor box assembly</span>
+            <span class="wi-cost">$183</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">1 ea</span></div>
+            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$85.00</span></div>
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">1.50 hrs × $65</span></div>
+          </div>
+          <div class="wi-actions">
+            <button class="kerf-btn primary sm">✓ Confirm</button>
+            <button class="kerf-btn secondary sm">Edit</button>
+            <button class="kerf-btn ghost sm">✕</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin: 4px 0; align-self: flex-start;">
+          <button class="kerf-btn primary">✓ Confirm All 3</button>
+          <button class="kerf-btn secondary">Edit Before Confirming</button>
+        </div>
+
+        <div class="msg user">Confirm all. Also 8 LED troffers in the ceiling.</div>
+
+        <div class="msg agent" style="font-size: 0.78rem;">
+          <div class="msg-label">Kerf</div>
+          Reception items confirmed. Adding troffers:
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">💡</span>
+            <span class="wi-title">LED troffer 2×4</span>
+            <span class="wi-cost">$1,396</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">8 ea</span></div>
+            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$142.00 /ea</span></div>
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.50 hrs/ea × $65</span></div>
+          </div>
+          <div class="wi-actions">
+            <button class="kerf-btn primary sm">✓ Confirm</button>
+            <button class="kerf-btn secondary sm">Edit</button>
+            <button class="kerf-btn ghost sm">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" placeholder="Describe more work items...">
+        <button class="mic-btn">🎤</button>
+        <button class="send-btn">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE EDIT -->
+<div id="mobile-edit" class="tab-content">
+  <h1>Mobile: Editing a Work Item</h1>
+  <div class="subtitle">Tap any value to edit inline · Or tell Kerf what to change</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">←</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Edit Work Item</span>
+        <div class="avatar">SC</div>
+      </div>
+
+      <div style="flex: 1; background: var(--bg); padding: 12px; overflow-y: auto;">
+        <div class="wi-card draft" style="max-width: 100%; border-width: 2px;">
+          <div class="wi-header" style="background: var(--machine-wash);">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">Standard receptacle</span>
+            <span class="wi-status draft-s">Editing</span>
+          </div>
+          <div class="wi-detail" style="padding: 12px;">
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Description</span>
+              <input type="text" value="Standard receptacle" style="border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; width: 100%;">
+            </div>
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Quantity</span>
+              <div class="inline-edit">
+                <input value="6" style="width: 50px;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">ea</span>
+              </div>
+            </div>
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Mat. cost</span>
+              <div class="inline-edit">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$</span>
+                <input value="3.40" style="width: 60px;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">/ea</span>
+              </div>
+            </div>
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Lab. rate</span>
+              <div class="inline-edit">
+                <input value="0.38" style="width: 50px;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">hrs/ea × $</span>
+                <input value="65" style="width: 40px;">
+              </div>
+            </div>
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Category</span>
+              <select style="border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; background: white;">
+                <option selected>Electrical — Receptacles</option>
+                <option>Electrical — Circuits</option>
+                <option>Electrical — Lighting</option>
+              </select>
+            </div>
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Notes</span>
+              <input type="text" placeholder="Add a note..." style="border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; width: 100%;">
+            </div>
+
+            <div style="background: var(--concrete-50); padding: 8px; border-radius: var(--radius); margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                <span style="font-weight: 600;">Total</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 14px;">$396.00</span>
+              </div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px;">
+                Material $20.40 + Labour $375.60
+              </div>
+            </div>
+          </div>
+          <div class="wi-actions" style="padding: 10px 12px;">
+            <button class="kerf-btn primary" style="flex: 1;">Save Changes</button>
+            <button class="kerf-btn secondary">Cancel</button>
+          </div>
+        </div>
+
+        <div class="design-note" style="max-width: 100%; margin-top: 16px;">
+          <strong>Two ways to edit:</strong><br>
+          1. Tap a value to edit it directly (shown here)<br>
+          2. Tell Kerf: "Change the receptacles to 8 instead of 6" — the card updates and shows the new total
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE PACKAGE -->
+<div id="mobile-package" class="tab-content">
+  <h1>Mobile: Work Packages</h1>
+  <div class="subtitle">Natural grouping from conversation · Collapsible in review</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Estimate · 4th Street</span>
+        <div class="avatar">SC</div>
+      </div>
+
+      <div class="chat-area">
+        <div class="msg agent" style="font-size: 0.78rem;">
+          <div class="msg-label">Kerf</div>
+          Here's the estimate so far. I've grouped by area. Tap any package to expand.
+        </div>
+
+        <!-- Work Package: Reception -->
+        <div class="wp-group" style="max-width: 95%; align-self: flex-start;">
+          <div class="wp-header">
+            <span>▸</span>
+            <span class="wp-title">Reception</span>
+            <span class="wp-meta">4 items</span>
+            <span class="wp-cost">$4,467</span>
+            <span class="status-badge confirmed">✓</span>
+          </div>
+        </div>
+
+        <!-- Work Package: Exam Rooms — expanded -->
+        <div class="wp-group" style="max-width: 95%; align-self: flex-start;">
+          <div class="wp-header">
+            <span>▾</span>
+            <span class="wp-title">Exam Rooms (×10)</span>
+            <span class="wp-meta">7 items</span>
+            <span class="wp-cost">$30,980</span>
+            <span class="status-badge confirmed">✓</span>
+          </div>
+          <div class="wp-items">
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">⚡</span>
+                <span class="wi-title">Standard receptacle ×40</span>
+                <span class="wi-cost">$2,640</span>
+              </div>
+            </div>
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">⚡</span>
+                <span class="wi-title">GFI receptacle ×10</span>
+                <span class="wi-cost">$860</span>
+              </div>
+            </div>
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">⚡</span>
+                <span class="wi-title">Dedicated circuit ×10</span>
+                <span class="wi-cost">$1,420</span>
+              </div>
+            </div>
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">💡</span>
+                <span class="wi-title">LED troffer ×20</span>
+                <span class="wi-cost">$4,600</span>
+              </div>
+            </div>
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">📡</span>
+                <span class="wi-title">Occupancy sensor ×10</span>
+                <span class="wi-cost">$820</span>
+              </div>
+            </div>
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">🔌</span>
+                <span class="wi-title">Arc-fault breakers ×10</span>
+                <span class="wi-cost" style="color: var(--warn);">$2,400</span>
+              </div>
+            </div>
+            <div class="wi-card confirmed">
+              <div class="wi-header">
+                <span class="wi-icon">🔩</span>
+                <span class="wi-title">Conduit + wire</span>
+                <span class="wi-cost">$18,240</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work Package: Hallways — collapsed -->
+        <div class="wp-group" style="max-width: 95%; align-self: flex-start;">
+          <div class="wp-header">
+            <span>▸</span>
+            <span class="wp-title">Hallways & Common</span>
+            <span class="wp-meta">5 items</span>
+            <span class="wp-cost">$12,340</span>
+            <span class="status-badge confirmed">✓</span>
+          </div>
+        </div>
+
+        <!-- Work Package: Panels — collapsed -->
+        <div class="wp-group" style="max-width: 95%; align-self: flex-start;">
+          <div class="wp-header">
+            <span>▸</span>
+            <span class="wp-title">Panels & Feeders</span>
+            <span class="wp-meta">3 items</span>
+            <span class="wp-cost">$18,600</span>
+            <span class="status-badge confirmed">✓</span>
+          </div>
+        </div>
+
+        <!-- Work Package: Fire Alarm — still draft -->
+        <div class="wp-group" style="max-width: 95%; align-self: flex-start; border-color: var(--machine);">
+          <div class="wp-header" style="background: var(--machine-wash);">
+            <span>▸</span>
+            <span class="wp-title">Fire Alarm</span>
+            <span class="wp-meta">2 items</span>
+            <span class="wp-cost">$8,420</span>
+            <span class="status-badge draft">Draft</span>
+          </div>
+        </div>
+
+        <div class="msg user">Confirm the fire alarm items. What's the total?</div>
+
+        <!-- Summary card -->
+        <div class="wi-card" style="border-color: var(--machine); border-width: 2px; max-width: 95%;">
+          <div class="wi-header" style="background: var(--machine-wash);">
+            <span class="wi-icon">💰</span>
+            <span class="wi-title" style="font-size: 0.88rem;">Estimate Total</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value">21 items in 5 packages</span></div>
+            <div class="wi-row"><span class="wi-label">Direct cost</span><span class="wi-value">$74,807</span></div>
+            <div class="wi-row"><span class="wi-label">Labour adj.</span><span class="wi-value">+12% ($8,977)</span></div>
+            <div class="wi-row"><span class="wi-label">Overhead</span><span class="wi-value">12% ($10,054)</span></div>
+            <div class="wi-row"><span class="wi-label">Profit</span><span class="wi-value">10% ($9,384)</span></div>
+            <div class="wi-row" style="border-top: 2px solid var(--machine); padding-top: 6px;">
+              <span class="wi-label" style="font-weight: 700; color: var(--fg);">Bid Total</span>
+              <span class="wi-value" style="font-size: 16px; color: var(--machine-dark);">$148,200</span>
+            </div>
+            <div class="wi-row"><span class="wi-label">Margin</span><span class="wi-value" style="color: var(--pass);">14.2%</span></div>
+          </div>
+          <div class="wi-actions">
+            <button class="kerf-btn primary">Generate Proposal</button>
+            <button class="kerf-btn secondary">Adjust Margin</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" placeholder="Message Kerf...">
+        <button class="mic-btn">🎤</button>
+        <button class="send-btn">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DESKTOP BUILDER -->
+<div id="desktop-builder" class="tab-content">
+  <h1>Desktop: Estimate Builder</h1>
+  <div class="subtitle">Chat builds · Canvas shows structured table · Both editable</div>
+
+  <div class="desktop-frame">
+    <div class="desktop-sidebar">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">4th Street Estimate</span>
+      </div>
+      <div class="chat-area" style="flex: 1;">
+        <div class="msg user" style="font-size: 0.78rem;">Reception: 6 receptacles, 2 dedicated, floor box, 8 troffers, switch and dimmer</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Added 6 items to Reception package. Using your City Electric rates. →</div>
+        <div class="msg user" style="font-size: 0.78rem;">Actually make it 8 receptacles not 6</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Updated. Receptacles: 6 → 8. Reception subtotal: $3,171 → $3,567. →</div>
+        <div class="msg user" style="font-size: 0.78rem;">10 exam rooms, each 4 receptacles, 1 GFI, 1 dedicated, 2 troffers, occ sensor</div>
+        <div class="msg agent" style="font-size: 0.78rem;">Added Exam Rooms package (7 items × 10). Arc-fault breakers added per NEC 2023. Medical office labour adj. (+12%) applied. →</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" placeholder="Describe more work..." style="font-size: 0.78rem;">
+        <button class="mic-btn" style="width: 28px; height: 28px; font-size: 0.8rem;">🎤</button>
+        <button class="send-btn" style="width: 28px; height: 28px; font-size: 0.8rem;">↑</button>
+      </div>
+    </div>
+
+    <div class="desktop-canvas">
+      <div class="canvas-header">
+        <div>
+          <h3 style="font-size: 0.85rem;">4th Street Medical Office</h3>
+          <span class="label">Estimate · Peterson GC · 21 items · 5 packages</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="kerf-btn secondary">Export</button>
+          <button class="kerf-btn secondary">+ Add Item</button>
+          <button class="kerf-btn primary">Generate Proposal</button>
+        </div>
+      </div>
+      <div style="overflow-y: auto; flex: 1;">
+        <div class="item-row header">
+          <span>Description</span><span>Qty</span><span>Unit</span><span>Mat $/ea</span><span>Lab hrs</span><span>$/hr</span><span>Total</span><span></span>
+        </div>
+
+        <div class="item-row group"><span>📦 Reception</span><span class="status-badge confirmed" style="font-size: 9px;">Confirmed</span></div>
+        <div class="item-row">
+          <span>Standard receptacle</span><span class="mono-val">8</span><span class="mono-val">ea</span><span class="mono-val">$3.40</span><span class="mono-val">3.04</span><span class="mono-val">$65</span><span class="mono-val" style="font-weight: 600;">$225</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Dedicated circuit</span><span class="mono-val">2</span><span class="mono-val">ea</span><span class="mono-val">$12.00</span><span class="mono-val">1.60</span><span class="mono-val">$65</span><span class="mono-val">$128</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Floor box assembly</span><span class="mono-val">1</span><span class="mono-val">ea</span><span class="mono-val">$85.00</span><span class="mono-val">1.50</span><span class="mono-val">$65</span><span class="mono-val">$183</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>LED troffer 2×4</span><span class="mono-val">8</span><span class="mono-val">ea</span><span class="mono-val">$142</span><span class="mono-val">4.00</span><span class="mono-val">$65</span><span class="mono-val">$1,396</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Switch + Dimmer</span><span class="mono-val">2</span><span class="mono-val">ea</span><span class="mono-val">$16.10</span><span class="mono-val">0.60</span><span class="mono-val">$65</span><span class="mono-val">$71</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Branch conduit + wire</span><span class="mono-val">260</span><span class="mono-val">LF</span><span class="mono-val">$1.85</span><span class="mono-val">13.00</span><span class="mono-val">$65</span><span class="mono-val">$1,326</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row subtotal"><span style="text-align: right;">Reception Subtotal</span><span class="mono-val" style="font-weight: 700;">$3,567</span></div>
+
+        <div class="item-row group"><span>📦 Exam Rooms (×10)</span><span class="status-badge confirmed" style="font-size: 9px;">Confirmed</span></div>
+        <div class="item-row">
+          <span>Standard receptacle</span><span class="mono-val">40</span><span class="mono-val">ea</span><span class="mono-val">$3.40</span><span class="mono-val">15.20</span><span class="mono-val">$65</span><span class="mono-val">$1,124</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>GFI receptacle</span><span class="mono-val">10</span><span class="mono-val">ea</span><span class="mono-val">$18.50</span><span class="mono-val">4.50</span><span class="mono-val">$65</span><span class="mono-val">$478</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Dedicated circuit</span><span class="mono-val">10</span><span class="mono-val">ea</span><span class="mono-val">$12.00</span><span class="mono-val">8.00</span><span class="mono-val">$65</span><span class="mono-val">$640</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>LED troffer 2×4</span><span class="mono-val">20</span><span class="mono-val">ea</span><span class="mono-val">$142</span><span class="mono-val">10.00</span><span class="mono-val">$65</span><span class="mono-val">$3,490</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Occupancy sensor</span><span class="mono-val">10</span><span class="mono-val">ea</span><span class="mono-val">$32.00</span><span class="mono-val">4.00</span><span class="mono-val">$65</span><span class="mono-val">$580</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span style="color: var(--warn);">Arc-fault breakers <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted);">NEC 2023</span></span><span class="mono-val">10</span><span class="mono-val">ea</span><span class="mono-val">$48.00</span><span class="mono-val">2.50</span><span class="mono-val">$65</span><span class="mono-val">$643</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row">
+          <span>Branch conduit + wire</span><span class="mono-val">1,800</span><span class="mono-val">LF</span><span class="mono-val">$1.85</span><span class="mono-val">90.00</span><span class="mono-val">$65</span><span class="mono-val">$9,180</span><span class="edit-icon">✎</span>
+        </div>
+        <div class="item-row subtotal"><span style="text-align: right;">Exam Rooms Subtotal</span><span class="mono-val" style="font-weight: 700;">$16,135</span></div>
+
+        <div class="item-row group" style="opacity: 0.6;"><span>📦 Hallways & Common — 5 items</span><span class="mono-val">$12,340</span></div>
+        <div class="item-row group" style="opacity: 0.6;"><span>📦 Panels & Feeders — 3 items</span><span class="mono-val">$18,600</span></div>
+        <div class="item-row group" style="opacity: 0.6;"><span>📦 Fire Alarm — 2 items</span><span class="mono-val">$8,420</span></div>
+
+        <div class="item-row total"><span style="text-align: right;">Direct Cost</span><span class="mono-val">$74,807</span></div>
+        <div class="item-row" style="background: var(--concrete-800); color: var(--concrete-200); font-size: 0.75rem;"><span style="text-align: right;">Labour Adj (+12%) + Overhead (12%) + Profit (10%)</span><span class="mono-val">$73,393</span></div>
+        <div class="item-row total-accent"><span style="text-align: right;">BID TOTAL</span><span class="mono-val">$148,200</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JAKE: SIMPLE JOB -->
+<div id="jake" class="tab-content">
+  <h1>Jake: Simple Job — No Packages</h1>
+  <div class="subtitle">Solo electrician · Flat work items · 30-second estimate</div>
+
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="app-header">
+        <span class="hamburger">☰</span>
+        <div class="kerf-logo">K</div>
+        <span class="title">Kerf</span>
+        <div class="avatar">JT</div>
+      </div>
+
+      <div class="chat-area">
+        <div class="msg user">New job, Johnson kitchen remodel. 200 amp panel upgrade, 12 new circuits, 6 receptacles in the island, 4 in the pantry.</div>
+
+        <div class="msg agent">
+          <div class="msg-label">Kerf</div>
+          Created project: Johnson Kitchen Remodel. Here are 4 work items based on your last 12 similar jobs:
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">200A panel upgrade</span>
+            <span class="wi-cost">$2,840</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value">8.5 hrs × $75</span></div>
+            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value">Panel + breakers ≈ $1,200</span></div>
+            <div class="wi-row"><span class="wi-label">Source</span><span class="wi-value" style="font-size: 10px; color: var(--muted);">Your avg: 12 panel upgrades, $2,640-$3,100</span></div>
+          </div>
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">🔌</span>
+            <span class="wi-title">New circuits ×12</span>
+            <span class="wi-cost">$3,120</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value">1.5 hrs/circuit × $75</span></div>
+            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value">Wire + breakers ≈ $90/circuit</span></div>
+          </div>
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">Island receptacles ×6</span>
+            <span class="wi-cost">$840</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value">0.45 hrs/ea × $75</span></div>
+            <div class="wi-row"><span class="wi-label">Note</span><span class="wi-value" style="font-size: 10px; color: var(--warn);">Island = under-floor conduit, +20% vs wall</span></div>
+          </div>
+        </div>
+
+        <div class="wi-card draft">
+          <div class="wi-header">
+            <span class="wi-icon">⚡</span>
+            <span class="wi-title">Pantry receptacles ×4</span>
+            <span class="wi-cost">$420</span>
+            <span class="wi-status draft-s">Draft</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin: 6px 0; align-self: flex-start;">
+          <button class="kerf-btn primary">✓ Confirm All</button>
+        </div>
+
+        <div class="msg user">Confirm all. What should I quote?</div>
+
+        <div class="msg agent">
+          <div class="msg-label">Kerf</div>
+          Total cost: $7,220. With your usual 35% markup, quote <strong>$9,747</strong>. Your last 3 kitchen remodels averaged 32% margin — this is consistent. Want me to send the quote to Mrs Johnson?
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" placeholder="Message Kerf...">
+        <button class="mic-btn">🎤</button>
+        <button class="send-btn">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-note" style="max-width: 375px; margin: 16px auto;">
+    <strong>No work packages. No complexity.</strong> Jake said one sentence and got 4 work items with costs based on his own history. The same data model — just no grouping. If Jake grows to 10 employees and starts doing commercial work, packages emerge naturally. The schema doesn't change.
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

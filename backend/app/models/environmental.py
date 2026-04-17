@@ -152,11 +152,20 @@ class EnvironmentalProgramUpdate(BaseModel):
 
 
 class EnvironmentalProgram(BaseModel):
-    """Full environmental program model with ID and audit fields."""
+    """Full environmental program model with ID and audit fields.
+
+    In the new ontology, EnvironmentalProgram is absorbed into Document
+    with type: 'environmental_compliance'. This model is kept for backward
+    compatibility with existing routers and services.
+    """
 
     id: str
     company_id: str
     program_type: EnvironmentalProgramType
+    type: str = Field(
+        default="environmental_compliance",
+        description="Document type in new ontology — always 'environmental_compliance'",
+    )
     title: str
     content: dict = Field(default_factory=dict)
     applicable_projects: list[str] = Field(default_factory=list)
@@ -164,7 +173,11 @@ class EnvironmentalProgram(BaseModel):
     next_review_due: date | None = None
     status: str = "active"
     created_at: datetime
+    created_by: str = ""
+    created_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
     updated_at: datetime
+    updated_by: str = ""
+    updated_by_type: str = Field(default="human", description="Actor type: 'human' or 'agent'")
     deleted: bool = False
 
 

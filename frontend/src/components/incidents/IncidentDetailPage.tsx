@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   AlertTriangle,
@@ -23,6 +24,7 @@ import { useIncident, useUpdateIncident, useInvestigateIncident } from '@/hooks/
 import { useProject } from '@/hooks/useProjects';
 import { ROUTES } from '@/lib/constants';
 import type { Incident } from '@/lib/constants';
+import { ProvenanceBadge } from '@/components/activity/ProvenanceBadge';
 import { format } from 'date-fns';
 
 const SEVERITY_CONFIG: Record<Incident['severity'], { label: string; className: string }> = {
@@ -88,9 +90,11 @@ function StatusStepper({ currentStatus }: { currentStatus: Incident['status'] })
   );
 }
 
-export function IncidentDetailPage() {
-  const navigate = useNavigate();
-  const { projectId, id } = useParams<{ projectId: string; id: string }>();
+export function IncidentDetailPage({ projectId: propProjectId, incidentId: propIncidentId }: { projectId?: string; incidentId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string; id: string }>();
+  const projectId = propProjectId || params.projectId;
+  const id = propIncidentId || params.id;
   const { data: incident, isLoading } = useIncident(projectId, id);
   const { data: project } = useProject(projectId);
   const updateIncident = useUpdateIncident(projectId || '');
@@ -174,6 +178,16 @@ export function IncidentDetailPage() {
                 {incident.location}
               </span>
             </div>
+            {incident.created_by && (
+              <div className="mt-2">
+                <ProvenanceBadge
+                  actorType={incident.created_by.startsWith('agent_') ? 'agent' : 'human'}
+                  actorId={incident.created_by}
+                  timestamp={incident.created_at}
+                  variant="full"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

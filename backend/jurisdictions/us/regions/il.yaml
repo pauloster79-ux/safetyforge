@@ -1,0 +1,57 @@
+code: IL
+name: Illinois
+regulatory_body: Federal OSHA (Region V)
+state_plan: false
+primary_legislation: Illinois Occupational Safety and Health Act (820 ILCS 219)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: IL-001
+    state: IL
+    requirement_name: Illinois Safety and Health Act Compliance
+    description: Illinois requires all employers to furnish a place of employment free from recognized hazards. While federal OSHA covers private sector enforcement, the state act covers public sector employees.
+    federal_equivalent: "29 CFR 1903 (General Duty Clause)"
+    state_standard: "820 ILCS 219/10"
+    additional_details: Illinois OSHA covers state and local government employees not covered by federal OSHA. The Department of Labor enforces these requirements.
+    applies_to: all
+    severity: mandatory
+
+  - id: IL-002
+    state: IL
+    requirement_name: Workers' Compensation Insurance
+    description: All Illinois employers must provide workers' compensation insurance for their employees, with no minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "820 ILCS 305/4"
+    additional_details: Coverage can be obtained through private insurance, the assigned risk pool, or self-insurance approved by the Illinois Workers' Compensation Commission.
+    applies_to: all
+    severity: mandatory
+
+  - id: IL-003
+    state: IL
+    requirement_name: Day and Temporary Labor Services Act
+    description: Staffing agencies providing temporary workers to construction and other worksites must ensure safety training is provided before assignment.
+    federal_equivalent: null
+    state_standard: "820 ILCS 175"
+    additional_details: Temporary labor agencies must provide general safety awareness training and confirm that the host employer has a safety program. Written notice of job hazards is required.
+    applies_to: all
+    severity: mandatory
+
+  - id: IL-004
+    state: IL
+    requirement_name: Lead Poisoning Prevention Act
+    description: Contractors performing lead abatement work must be licensed and follow state-mandated lead-safe work practices.
+    federal_equivalent: "40 CFR 745 (EPA RRP Rule)"
+    state_standard: "410 ILCS 45"
+    additional_details: The Illinois Department of Public Health licenses lead abatement contractors, supervisors, and workers. Training and certification are required before performing lead work.
+    applies_to: construction
+    severity: mandatory
+
+  - id: IL-005
+    state: IL
+    requirement_name: Structural Pest Control Act Licensing
+    description: Employers performing asbestos or hazardous material abatement in construction must comply with Illinois licensing and notification requirements.
+    federal_equivalent: "29 CFR 1926.1101 (Asbestos)"
+    state_standard: "225 ILCS 235"
+    additional_details: Illinois requires separate state licensing for asbestos abatement contractors. Ten-day advance notification to the Illinois EPA is required before starting asbestos removal.
+    applies_to: construction
+    severity: mandatory

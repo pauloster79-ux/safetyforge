@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,7 +20,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { ROUTES, EQUIPMENT_TYPES, CERTIFICATION_TYPES } from '@/lib/constants';
 
 export function EquipmentCreatePage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const createEquipment = useCreateEquipment();
   const { data: projects } = useProjects();
 

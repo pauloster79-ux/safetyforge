@@ -83,6 +83,14 @@ class InvitationService(BaseService):
             """,
             {"company_id": company_id, "props": props},
         )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=invitation_id,
+            entity_type="Invitation",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created invitation for {data.email} as {data.role.value}",
+        )
         return Invitation(**result["invitation"])
 
     def get_invitation_by_token(self, token: str) -> Invitation:
@@ -187,6 +195,24 @@ class InvitationService(BaseService):
 
         updated_invitation = Invitation(**result["invitation"])
         member = Member(**result["member"])
+        self._emit_audit(
+            event_type="state.transitioned",
+            entity_id=invitation.id,
+            entity_type="Invitation",
+            company_id=invitation.company_id,
+            actor=actor,
+            summary=f"Invitation accepted by {email}",
+            prev_state="pending",
+            new_state="accepted",
+        )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=member_id,
+            entity_type="Member",
+            company_id=invitation.company_id,
+            actor=actor,
+            summary=f"Member {email} joined via invitation",
+        )
         return updated_invitation, member
 
     def list_invitations(self, company_id: str) -> list[Invitation]:
@@ -232,3 +258,12 @@ class InvitationService(BaseService):
         )
         if result is None:
             raise InvitationNotFoundError(invitation_id)
+        self._emit_audit(
+            event_type="state.transitioned",
+            entity_id=invitation_id,
+            entity_type="Invitation",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Revoked invitation {invitation_id}",
+            new_state="revoked",
+        )

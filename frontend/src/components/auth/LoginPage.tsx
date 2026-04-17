@@ -84,10 +84,10 @@ export function LoginPage() {
             <HardHat className="h-7 w-7 text-white" />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-foreground">
-            Safety<span className="text-primary">Forge</span>
+            Kerf
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            AI-powered safety compliance documents
+            Safety, daily logs, and time tracking for contractors
           </p>
         </div>
 

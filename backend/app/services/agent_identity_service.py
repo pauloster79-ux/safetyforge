@@ -51,7 +51,7 @@ class AgentIdentityService(BaseService):
             """
             MATCH (c:Company {id: $company_id})
             CREATE (a:AgentIdentity {
-                agent_id: $agent_id,
+                id: $agent_id,
                 name: $name,
                 agent_type: $agent_type,
                 status: $status,
@@ -66,7 +66,6 @@ class AgentIdentityService(BaseService):
                 scopes: $scopes_json,
                 rate_limit_per_minute: 60
             }]->(c)
-            CREATE (c)-[:HAS_AGENT]->(a)
             RETURN a {.*, company_id: c.id} AS agent
             """,
             {
@@ -87,6 +86,14 @@ class AgentIdentityService(BaseService):
             from app.exceptions import CompanyNotFoundError
             raise CompanyNotFoundError(company_id)
 
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=agent_id,
+            entity_type="AgentIdentity",
+            company_id=company_id,
+            actor=Actor.human(registered_by),
+            summary=f"Registered agent '{data.name}' ({data.agent_type.value})",
+        )
         return self._to_model(result["agent"])
 
     def get(self, agent_id: str, company_id: str) -> AgentIdentity:
@@ -104,7 +111,7 @@ class AgentIdentityService(BaseService):
         """
         result = self._read_tx_single(
             """
-            MATCH (a:AgentIdentity {agent_id: $agent_id})-[:BELONGS_TO]->(c:Company {id: $company_id})
+            MATCH (a:AgentIdentity {id: $agent_id})-[:BELONGS_TO]->(c:Company {id: $company_id})
             RETURN a {.*, company_id: c.id} AS agent
             """,
             {"agent_id": agent_id, "company_id": company_id},
@@ -175,7 +182,7 @@ class AgentIdentityService(BaseService):
 
         result = self._write_tx_single(
             f"""
-            MATCH (a:AgentIdentity {{agent_id: $agent_id}})-[r:BELONGS_TO]->(c:Company {{id: $company_id}})
+            MATCH (a:AgentIdentity {{id: $agent_id}})-[r:BELONGS_TO]->(c:Company {{id: $company_id}})
             SET {set_clauses}{scope_update}
             RETURN a {{.*, company_id: c.id}} AS agent
             """,
@@ -185,6 +192,14 @@ class AgentIdentityService(BaseService):
         if result is None:
             raise AgentNotFoundError(agent_id)
 
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=agent_id,
+            entity_type="AgentIdentity",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Updated agent {agent_id} configuration",
+        )
         return self._to_model(result["agent"])
 
     def suspend(self, agent_id: str, company_id: str) -> AgentIdentity:
@@ -215,7 +230,7 @@ class AgentIdentityService(BaseService):
         """
         result = self._write_tx_single(
             """
-            MATCH (a:AgentIdentity {agent_id: $agent_id})
+            MATCH (a:AgentIdentity {id: $agent_id})
             SET a.daily_spend_cents = coalesce(a.daily_spend_cents, 0) + $cost_cents
             RETURN a.daily_spend_cents AS spent, a.daily_budget_cents AS budget, a.name AS name
             """,
@@ -263,7 +278,7 @@ class AgentIdentityService(BaseService):
         results = self._read_tx(
             """
             MATCH (a:AgentIdentity)-[:BELONGS_TO]->(c:Company {id: $company_id})
-            RETURN a.agent_id AS agent_id,
+            RETURN a.id AS agent_id,
                    a.name AS name,
                    a.agent_type AS agent_type,
                    a.daily_budget_cents AS daily_budget_cents,
@@ -279,6 +294,7 @@ class AgentIdentityService(BaseService):
             spent = r["daily_spend_cents"]
             reports.append(
                 AgentSpendReport(
+                    id=r["agent_id"],
                     agent_id=r["agent_id"],
                     name=r["name"],
                     agent_type=r["agent_type"],
@@ -324,8 +340,13 @@ class AgentIdentityService(BaseService):
         if isinstance(scopes, str):
             scopes = json.loads(scopes)
 
+        # The node property is 'id' in the new schema; fall back to 'agent_id'
+        # for backwards compatibility during transition.
+        agent_id_value = data.get("id") or data.get("agent_id", "")
+
         return AgentIdentity(
-            agent_id=data["agent_id"],
+            id=agent_id_value,
+            agent_id=agent_id_value,
             name=data["name"],
             agent_type=data["agent_type"],
             status=data["status"],

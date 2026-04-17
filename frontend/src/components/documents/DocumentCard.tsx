@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { FileText, Clock, MoreVertical, Pencil, Trash2, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,7 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ document, onDelete, viewMode }: DocumentCardProps) {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const docType = DOCUMENT_TYPES.find((t) => t.id === document.document_type);
 
   if (viewMode === 'table') {

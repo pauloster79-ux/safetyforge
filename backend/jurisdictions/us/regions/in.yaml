@@ -1,0 +1,57 @@
+code: IN
+name: Indiana
+regulatory_body: Indiana Occupational Safety and Health Administration (IOSHA)
+state_plan: true
+primary_legislation: Indiana Code Title 22, Article 8 (Occupational Safety and Health)
+construction_regulation: IC 22-8-1.1 and adopted federal standards
+
+requirements:
+  - id: IN-001
+    state: IN
+    requirement_name: Indiana OSHA Compliance
+    description: All employers in Indiana must comply with IOSHA standards, which adopt and enforce federal OSHA standards for both private and public sector workplaces.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "IC 22-8-1.1-2"
+    additional_details: IOSHA has jurisdiction over all private sector and state/local government workplaces. Standards are at least as effective as federal OSHA.
+    applies_to: all
+    severity: mandatory
+
+  - id: IN-002
+    state: IN
+    requirement_name: Construction Safety Training
+    description: Construction employers must ensure workers receive adequate safety training before beginning work, including site-specific hazard awareness.
+    federal_equivalent: "29 CFR 1926.21"
+    state_standard: "IC 22-8-1.1-23"
+    additional_details: IOSHA enforces training requirements through inspections. Employers must document training and maintain records accessible for inspection.
+    applies_to: construction
+    severity: mandatory
+
+  - id: IN-003
+    state: IN
+    requirement_name: Workers' Compensation Insurance
+    description: Indiana employers with one or more employees must carry workers' compensation insurance or qualify as a self-insurer.
+    federal_equivalent: null
+    state_standard: "IC 22-3-2-2"
+    additional_details: Coverage must be obtained through an authorized insurer or approved self-insurance. The Workers' Compensation Board of Indiana oversees compliance.
+    applies_to: all
+    severity: mandatory
+
+  - id: IN-004
+    state: IN
+    requirement_name: Trench Safety Standards
+    description: All excavation and trenching work must comply with IOSHA trench safety standards, including protective systems for trenches five feet or deeper.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "IC 22-8-1.1 (adopting 29 CFR 1926 Subpart P)"
+    additional_details: Employers must designate a competent person to inspect excavations daily and after rainstorms. Protective systems include sloping, shoring, or shielding.
+    applies_to: construction
+    severity: mandatory
+
+  - id: IN-005
+    state: IN
+    requirement_name: Public Sector Workplace Safety
+    description: State and local government employers must comply with the same occupational safety and health standards as private sector employers under IOSHA.
+    federal_equivalent: null
+    state_standard: "IC 22-8-1.1-2(b)"
+    additional_details: This is a key distinction from federal-OSHA-only states. IOSHA conducts inspections and can issue citations to government employers.
+    applies_to: all
+    severity: mandatory

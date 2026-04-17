@@ -1,0 +1,57 @@
+code: KY
+name: Kentucky
+regulatory_body: Kentucky Occupational Safety and Health Program (Kentucky OSH)
+state_plan: true
+primary_legislation: Kentucky Revised Statutes Chapter 338
+construction_regulation: 803 KAR Chapter 2 (Construction Standards)
+
+requirements:
+  - id: KY-001
+    state: KY
+    requirement_name: Kentucky OSH Compliance
+    description: All employers in Kentucky must comply with Kentucky OSH standards, which adopt and may exceed federal OSHA standards for private and public sector workplaces.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "KRS 338.031"
+    additional_details: Kentucky operates an OSHA-approved state plan covering all private sector and state/local government employees. The Kentucky Labor Cabinet enforces standards.
+    applies_to: all
+    severity: mandatory
+
+  - id: KY-002
+    state: KY
+    requirement_name: Construction Safety and Health Standards
+    description: Kentucky adopts federal construction safety standards and enforces them through state inspectors. Employers must comply with fall protection, scaffolding, and excavation requirements.
+    federal_equivalent: "29 CFR 1926"
+    state_standard: "803 KAR 2:005 through 2:600"
+    additional_details: Kentucky OSH conducts construction site inspections and issues state citations. Penalties may differ from federal OSHA penalty structures.
+    applies_to: construction
+    severity: mandatory
+
+  - id: KY-003
+    state: KY
+    requirement_name: Workers' Compensation Insurance
+    description: Kentucky employers with one or more employees must provide workers' compensation insurance. Sole proprietors and partners may elect coverage.
+    federal_equivalent: null
+    state_standard: "KRS 342.340"
+    additional_details: Coverage can be obtained through the Kentucky Employers' Mutual Insurance Authority (KEMI), private carriers, or approved self-insurance programs.
+    applies_to: all
+    severity: mandatory
+
+  - id: KY-004
+    state: KY
+    requirement_name: Workplace Safety Training and Recordkeeping
+    description: Employers must maintain records of occupational injuries and illnesses and ensure employees receive required safety training per Kentucky OSH standards.
+    federal_equivalent: "29 CFR 1904"
+    state_standard: "KRS 338.051"
+    additional_details: Kentucky OSH requires OSHA 300 logs and annual summaries. Training records must be maintained and available for inspection.
+    applies_to: all
+    severity: mandatory
+
+  - id: KY-005
+    state: KY
+    requirement_name: Asbestos Abatement Licensing
+    description: Contractors performing asbestos abatement must be licensed by the Kentucky Department for Environmental Protection and comply with state notification requirements.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "KRS 224.876 through 224.892"
+    additional_details: Ten-day advance notification is required before asbestos abatement work begins. Workers must hold valid asbestos training certifications.
+    applies_to: construction
+    severity: mandatory

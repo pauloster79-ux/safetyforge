@@ -95,11 +95,19 @@ class AgentIdentityUpdate(BaseModel):
 
 
 class AgentIdentity(BaseModel):
-    """Full agent identity model with all fields."""
+    """Full agent identity model with all fields.
+
+    Primary ID is now 'id' (new ontology). The 'agent_id' field is kept
+    as an alias for backward compatibility.
+    """
 
     model_config = ConfigDict(protected_namespaces=())
 
-    agent_id: str
+    id: str = Field(..., description="Primary identifier (new ontology)")
+    agent_id: str = Field(
+        default="",
+        description="Deprecated alias for id — use id instead",
+    )
     name: str
     agent_type: AgentType
     status: AgentStatus
@@ -111,11 +119,19 @@ class AgentIdentity(BaseModel):
     created_at: str
     created_by: str
 
+    def model_post_init(self, __context: object) -> None:
+        """Sync agent_id with id for backward compatibility."""
+        if not self.agent_id:
+            object.__setattr__(self, "agent_id", self.id)
+        elif not self.id:
+            object.__setattr__(self, "id", self.agent_id)
+
 
 class AgentSpendReport(BaseModel):
     """Agent spend report for cost monitoring."""
 
-    agent_id: str
+    id: str = Field(..., description="Primary identifier")
+    agent_id: str = Field(default="", description="Deprecated alias for id")
     name: str
     agent_type: str
     daily_budget_cents: int

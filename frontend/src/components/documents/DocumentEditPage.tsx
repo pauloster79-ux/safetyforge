@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Save,
@@ -58,9 +59,10 @@ function formatDate(dateStr: string): string {
   }
 }
 
-export function DocumentEditPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+export function DocumentEditPage({ documentId: propDocumentId }: { documentId?: string } = {}) {
+  const params = useParams<{ id: string }>();
+  const id = propDocumentId || params.id;
+  const navigate = useCanvasNavigate();
   const { getToken, isDemoMode } = useAuth();
 
   const { data: document, isLoading } = useDocument(id);

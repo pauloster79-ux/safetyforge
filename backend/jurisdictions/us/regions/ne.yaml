@@ -1,0 +1,47 @@
+code: NE
+name: Nebraska
+regulatory_body: Federal OSHA (no state plan)
+state_plan: false
+primary_legislation: Nebraska Workers' Compensation Act (Neb. Rev. Stat. 48-101 et seq.)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: NE-001
+    state: NE
+    requirement_name: Workers' Compensation Coverage
+    description: All Nebraska employers with one or more employees must carry workers' compensation insurance or be approved for self-insurance.
+    federal_equivalent: null
+    state_standard: "Neb. Rev. Stat. 48-106"
+    additional_details: No minimum employee threshold. Administered by the Nebraska Workers' Compensation Court. Agricultural employers with fewer than 10 employees may be exempt.
+    applies_to: all
+    severity: mandatory
+
+  - id: NE-002
+    state: NE
+    requirement_name: Construction Contractor Registration
+    description: Contractors performing construction work in Nebraska must register with the Secretary of State and comply with the Nebraska Contractor Registration Act.
+    federal_equivalent: null
+    state_standard: "Neb. Rev. Stat. 48-2103"
+    additional_details: Registration requires proof of workers' compensation insurance and unemployment insurance coverage. Failure to register can result in stop-work orders.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NE-003
+    state: NE
+    requirement_name: Workplace Safety Consultation Program
+    description: Nebraska offers a free on-site safety consultation program through the Nebraska Department of Labor. Employers in high-hazard industries may be targeted for outreach.
+    federal_equivalent: "OSHA On-Site Consultation Program (Section 21(d))"
+    state_standard: "Neb. Rev. Stat. 48-443"
+    additional_details: Participation is voluntary but employers found in violation during a consultation may be required to correct hazards within set timeframes.
+    applies_to: all
+    severity: mandatory
+
+  - id: NE-004
+    state: NE
+    requirement_name: Injury Reporting Requirements
+    description: Employers must file a first report of injury with the Nebraska Workers' Compensation Court within 10 days of knowledge of a workplace injury.
+    federal_equivalent: "29 CFR 1904 (OSHA Recordkeeping)"
+    state_standard: "Neb. Rev. Stat. 48-144.01"
+    additional_details: Late reporting can result in penalties. Fatalities and catastrophic incidents also require separate reporting to federal OSHA.
+    applies_to: all
+    severity: mandatory

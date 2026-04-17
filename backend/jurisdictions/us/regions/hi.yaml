@@ -1,0 +1,47 @@
+code: HI
+name: Hawaii
+regulatory_body: Hawaii Occupational Safety and Health (HIOSH)
+state_plan: true
+primary_legislation: Hawaii Revised Statutes Chapter 396
+construction_regulation: Hawaii Administrative Rules Title 12, Chapter 110
+
+requirements:
+  - id: HI-001
+    state: HI
+    requirement_name: Hawaii Occupational Safety and Health Law Compliance
+    description: All employers must comply with HIOSH standards, which mirror or exceed federal OSHA standards. Hawaii operates its own state plan covering both private and public sector workers.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "HRS 396-4"
+    additional_details: HIOSH enforces standards for general industry, construction, and agriculture. Public sector employees are covered, unlike federal OSHA-only states.
+    applies_to: all
+    severity: mandatory
+
+  - id: HI-002
+    state: HI
+    requirement_name: Hazard Communication and Chemical Safety
+    description: Employers must maintain a written hazard communication program, provide Safety Data Sheets, and train employees on chemical hazards in the workplace.
+    federal_equivalent: "29 CFR 1910.1200"
+    state_standard: "HAR 12-110-2"
+    additional_details: Hawaii adopts the federal HazCom standard but HIOSH conducts its own enforcement inspections and may issue state-level citations.
+    applies_to: all
+    severity: mandatory
+
+  - id: HI-003
+    state: HI
+    requirement_name: Temporary Disability Insurance (TDI)
+    description: Hawaii requires employers to provide temporary disability insurance to employees for non-work-related injuries or illnesses, ensuring income replacement during recovery.
+    federal_equivalent: null
+    state_standard: "HRS Chapter 392"
+    additional_details: Employers must provide TDI coverage through an approved insurer or self-insurance plan. Benefits cover up to 26 weeks of wage replacement.
+    applies_to: all
+    severity: mandatory
+
+  - id: HI-004
+    state: HI
+    requirement_name: Construction Fall Protection
+    description: Fall protection is required for construction work at heights of six feet or more, consistent with federal standards but enforced by HIOSH.
+    federal_equivalent: "29 CFR 1926.501"
+    state_standard: "HAR 12-111-1"
+    additional_details: HIOSH enforces construction fall protection with state inspectors. Employers must provide guardrails, safety nets, or personal fall arrest systems.
+    applies_to: construction
+    severity: mandatory

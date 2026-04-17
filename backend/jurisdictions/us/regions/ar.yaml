@@ -1,0 +1,47 @@
+code: AR
+name: Arkansas
+regulatory_body: Arkansas Department of Labor and Licensing
+state_plan: false
+primary_legislation: Arkansas Code Title 11
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: AR-001
+    state: AR
+    requirement_name: Workers' Compensation Insurance
+    description: Employers with three or more employees must carry workers' compensation insurance for occupational injuries and illnesses.
+    federal_equivalent: null
+    state_standard: "Arkansas Code 11-9-101 et seq."
+    additional_details: Covers medical treatment, temporary and permanent disability benefits, and death benefits. Non-compliance can result in civil penalties and lawsuits.
+    applies_to: all
+    severity: mandatory
+
+  - id: AR-002
+    state: AR
+    requirement_name: Contractor Licensing Requirements
+    description: Commercial contractors must be licensed by the Arkansas Contractors Licensing Board for projects exceeding $50,000.
+    federal_equivalent: null
+    state_standard: "Arkansas Code 17-25-101 et seq."
+    additional_details: Applicants must demonstrate financial responsibility and pass examinations. License categories include building, heavy/highway, mechanical, and roofing.
+    applies_to: construction
+    severity: mandatory
+
+  - id: AR-003
+    state: AR
+    requirement_name: Asbestos Abatement Regulations
+    description: Arkansas requires licensing for asbestos abatement contractors and accredited training for all workers performing asbestos removal.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "ADEQ Regulation 21"
+    additional_details: Projects must be notified to the Arkansas Department of Energy and Environment. Air monitoring and proper waste disposal are required.
+    applies_to: construction
+    severity: mandatory
+
+  - id: AR-004
+    state: AR
+    requirement_name: Boiler and Pressure Vessel Safety
+    description: All boilers and pressure vessels in Arkansas must be inspected and certified by the Department of Labor and Licensing.
+    federal_equivalent: null
+    state_standard: "Arkansas Code 20-23-101 et seq."
+    additional_details: Annual inspections are required. Operators of high-pressure boilers must hold valid certificates of competency.
+    applies_to: all
+    severity: mandatory

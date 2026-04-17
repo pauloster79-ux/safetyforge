@@ -54,6 +54,14 @@ class CompanyService(BaseService):
             "CREATE (c:Company $props) RETURN c {.*} AS company",
             {"props": props},
         )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=company_id,
+            entity_type="Company",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created company '{data.name}'",
+        )
         return Company(**result["company"])
 
     def get(self, company_id: str) -> Company:
@@ -131,6 +139,14 @@ class CompanyService(BaseService):
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=company_id,
+            entity_type="Company",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated company '{company_id}'",
+        )
         return Company(**result["company"])
 
     def update_subscription(
@@ -165,6 +181,15 @@ class CompanyService(BaseService):
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="state.transitioned",
+            entity_id=company_id,
+            entity_type="Company",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Subscription updated to {status.value}",
+            new_state=status.value,
+        )
 
     def delete(self, company_id: str) -> None:
         """Delete a company and all its relationships.

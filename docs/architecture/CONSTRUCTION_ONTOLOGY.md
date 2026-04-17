@@ -427,7 +427,8 @@ The same graph query ("does this worker have the certs required for this activit
 | `address` | string | No | No | Project site address |
 | `client_name` | string | No | No | Client/owner name |
 | `project_type` | string | No | Filter | Type of construction project |
-| `status` | string | Yes | Filter | Project lifecycle status |
+| `state` | string | Yes | Filter | Project lifecycle stage | <!-- CHANGED: was 'status', now 'state' for lifecycle -->
+| `status` | string | Yes | Filter | Operating condition within the current state | <!-- NEW: replaces overloaded status -->
 | `start_date` | date | No | Sort | Project start date |
 | `end_date` | date | No | No | Project end date |
 | `estimated_workers` | integer | No | No | Estimated peak worker count |
@@ -437,11 +438,19 @@ The same graph query ("does this worker have the certs required for this activit
 | `emergency_contact_name` | string | No | No | Site emergency contact name |
 | `emergency_contact_phone` | string | No | No | Site emergency contact phone |
 | `compliance_score` | integer | No | No | Calculated compliance score (0-100) |
+| `estimate_confidence` | string | No | No | Class of estimate accuracy | <!-- NEW: Domain 17 -->
+| `target_margin_percent` | float | No | No | Contractor's target margin for this project | <!-- NEW: Domain 17 -->
+| `contract_type` | string | No | Filter | Type of contract governing this project | <!-- NEW: Domain 17 -->
+| `quote_valid_until` | date | No | No | Expiry date of the submitted quote | <!-- NEW: Domain 17 -->
+| `quote_submitted_at` | datetime | No | No | When the quote was sent to the client | <!-- NEW: Domain 17 -->
 | `created_at` | datetime | Yes | Sort | Timestamp of project creation |
 | `updated_at` | datetime | Yes | No | Timestamp of last update |
 
 **Enums:**
-- `status`: active | completed | on_hold
+- `state`: lead | quoted | active | completed | closed | lost <!-- CHANGED: lifecycle stages, was 'status: active | completed | on_hold' -->
+- `status`: normal | on_hold | delayed | suspended <!-- NEW: operating condition within state -->
+- `estimate_confidence`: concept | budget | definitive <!-- NEW: Domain 17 -->
+- `contract_type`: lump_sum | schedule_of_rates | cost_plus | time_and_materials <!-- NEW: Domain 17 -->
 
 ---
 
@@ -2492,6 +2501,281 @@ Note: Quality inspections reuse the `Inspection` node with `category: "quality"`
 
 ---
 
+## Domain 16: Work Structure <!-- NEW DOMAIN -->
+
+> The atomic units of deliverable work. WorkItems flow through the full lifecycle: estimated (draft) → scheduled → in progress → complete → invoiced. They are the "estimate line is the task is the cost line" principle — one entity, not three. WorkPackages group WorkItems into logical divisions. WorkCategories classify the type of work for historical analysis. Labour and Item nodes provide the cost breakdown within each WorkItem.
+
+### WorkItem <!-- NEW -->
+
+> A discrete piece of deliverable work with a cost. The atomic unit of the platform — flows through lifecycle states from quoting through execution to invoicing. Each WorkItem's cost is built up from its Labour and Item children.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`wi_{token_hex(8)}`) |
+| `description` | string | Yes | No | What the work is |
+| `state` | string | Yes | Filter | Lifecycle state |
+| `quantity` | float | No | No | Amount of work (e.g. 2, 15, 100) |
+| `unit` | string | No | No | Unit of measurement (EA, LF, SF, CY, LS, etc.) |
+| `labour_total_cents` | integer | No | No | Computed sum of Labour children costs in cents |
+| `items_total_cents` | integer | No | No | Computed sum of Item children costs in cents |
+| `margin_pct` | float | No | No | Markup percentage (0.0–100.0) |
+| `sell_price_cents` | integer | No | No | (labour + items) × (1 + margin_pct/100) in cents |
+| `is_alternate` | boolean | No | No | Whether this is a VE/alternate version of another WorkItem |
+| `alternate_label` | string | No | No | Alternate identifier shown in quote (e.g. "VE-1") |
+| `alternate_description` | string | No | No | Why this alternate exists |
+| `alternate_price_adjustment_cents` | integer | No | No | Net price difference from base WorkItem in cents |
+| `planned_start` | date | No | Sort | Planned start date (scheduling) |
+| `planned_end` | date | No | No | Planned end date |
+| `actual_start` | date | No | No | Actual start date (execution) |
+| `actual_end` | date | No | No | Actual end date |
+| `notes` | string | No | No | Additional notes |
+| `deleted` | boolean | Yes | No | Soft delete flag |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+**Enums:**
+- `state`: draft | scheduled | in_progress | complete | invoiced | on_hold | cancelled | superseded
+
+---
+
+### Labour <!-- NEW -->
+
+> A discrete labour task within a WorkItem. Represents work done by people — has a rate, hours, and cost. Connects to workers, crews, productivity rates, and accumulates TimeEntries during execution.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`lab_{token_hex(8)}`) |
+| `task` | string | Yes | No | What the labour task is (e.g. "Core drill slab", "Install receptacle") |
+| `rate_cents` | integer | Yes | No | Hourly rate in cents |
+| `hours` | float | Yes | No | Estimated hours |
+| `cost_cents` | integer | Yes | No | rate_cents × hours, in cents |
+| `notes` | string | No | No | Additional notes |
+| `created_at` | datetime | Yes | No | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+---
+
+### Item <!-- NEW -->
+
+> A discrete item used by a WorkItem — materials, equipment, fixtures, rentals, or any non-labour cost component. A bath is an item. A floor box is an item. A crane hire is an item.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`item_{token_hex(8)}`) |
+| `description` | string | Yes | No | What the item is (e.g. "Floor box (Arlington FLBR5420)") |
+| `product` | string | No | No | Specific product name or model number |
+| `quantity` | float | Yes | No | Number of units |
+| `unit` | string | No | No | Unit of measurement (EA, LF, SF, etc.) |
+| `unit_cost_cents` | integer | Yes | No | Cost per unit in cents |
+| `total_cents` | integer | Yes | No | quantity × unit_cost_cents in cents |
+| `notes` | string | No | No | Additional notes |
+| `created_at` | datetime | Yes | No | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+---
+
+### WorkPackage <!-- NEW -->
+
+> An optional grouping of WorkItems within a project. Used for organising scope into logical phases, trades, or divisions (e.g. "Panel Upgrade", "Kitchen Circuits", "Electrical Distribution").
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`wp_{token_hex(8)}`) |
+| `name` | string | Yes | No | Package name (e.g. "Electrical Distribution") |
+| `description` | string | No | No | Package description |
+| `sort_order` | integer | No | No | Display ordering within the project |
+| `deleted` | boolean | Yes | No | Soft delete flag |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+---
+
+### WorkCategory <!-- NEW -->
+
+> A hierarchical taxonomy for classifying WorkItems by type of work. Company-specific — each company can customise their category tree. Optionally links to regulatory Activity nodes for compliance traversal.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`wcat_{token_hex(8)}`) |
+| `name` | string | Yes | No | Category name (e.g. "Conduit Installation", "Panel Upgrades") |
+| `description` | string | No | No | Category description |
+| `level` | integer | No | No | Depth in the hierarchy (0 = root) |
+| `deleted` | boolean | Yes | No | Soft delete flag |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+---
+
+### Relationships
+
+| Relationship | From | To | Properties | Description |
+|---|---|---|---|---|
+| `HAS_WORK_ITEM` | Project | WorkItem | | Project contains this work item |
+| `HAS_WORK_PACKAGE` | Project | WorkPackage | | Project has this grouping |
+| `CONTAINS` | WorkPackage | WorkItem | | Package groups this work item |
+| `HAS_LABOUR` | WorkItem | Labour | | Work item has this labour task |
+| `HAS_ITEM` | WorkItem | Item | | Work item uses this item |
+| `CATEGORISED_AS` | WorkItem | WorkCategory | | Work item is classified as this type |
+| `HAS_WORK_CATEGORY` | Company | WorkCategory | | Company owns this category |
+| `PARENT_CATEGORY` | WorkCategory | WorkCategory | | Child → parent hierarchy |
+| `LINKS_TO_ACTIVITY` | WorkCategory | Activity | | Category maps to regulatory activity |
+| `ASSIGNED_TO_WORKER` | WorkItem | Worker | | Worker assigned to this work item |
+| `ASSIGNED_TO_CREW` | WorkItem | Crew | | Crew assigned to this work item |
+| `LABOUR_BY_WORKER` | Labour | Worker | | Worker performing this labour task |
+| `WORK_ITEM_TIME` | WorkItem | TimeEntry | | Time entry logged against this work item |
+| `LABOUR_TIME` | Labour | TimeEntry | | Time entry charged to this specific labour task |
+| `ALTERNATE_TO` | WorkItem | WorkItem | | This work item is a VE alternate to the target (base) |
+| `ITEM_SUPPLIED_BY` | Item | Contact | | Supplier for this item |
+| `ITEM_RATE_FROM` | Item | ResourceRate | | Rate used to price this item |
+| `LABOUR_RATE_FROM` | Labour | ResourceRate | | Rate used to price this labour |
+| `LABOUR_PRODUCTIVITY_FROM` | Labour | ProductivityRate | | Productivity rate that determined the hours |
+
+---
+
+## Domain 17: Quoting <!-- NEW DOMAIN -->
+
+> The commercial intelligence layer for construction quotes. Assumptions and Exclusions are structured graph data — not prose in a PDF — making quotes defensible, learnable, and commercially strategic. ResourceRates and ProductivityRates capture company-specific cost knowledge that improves with every completed job.
+
+### Assumption <!-- NEW -->
+
+> A structured qualification attached to a Project during quoting. Establishes the conditions under which the price is valid. When an assumption has variation_trigger=true, the system monitors for the condition during construction and auto-drafts variation claims when violated. Company-level templates (is_template=true) are copied to projects and auto-suggested by trade type.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`asmp_{token_hex(8)}`) |
+| `category` | string | Yes | Filter | Type of assumption |
+| `statement` | string | Yes | No | Human-readable assumption text (appears in quote document) |
+| `relied_on_value` | string | No | No | The specific value relied upon (e.g. "19", "Rev A", "2026-06-02") |
+| `relied_on_unit` | string | No | No | Unit for the value (e.g. "weeks", "drawing_revision", "date") |
+| `source_document` | string | No | No | Document the assumption references |
+| `variation_trigger` | boolean | Yes | No | Whether violation of this assumption triggers a potential variation |
+| `trigger_description` | string | No | No | What condition would violate this assumption |
+| `is_template` | boolean | Yes | Filter | Whether this is a company-level reusable template |
+| `trade_type` | string | No | Filter | Which trade this assumption applies to (e.g. "electrical", "concrete") |
+| `status` | string | Yes | Filter | Assumption lifecycle status |
+| `triggered_at` | datetime | No | No | When the trigger condition was detected |
+| `triggered_by_event` | string | No | No | Reference to what triggered it (daily log, schedule update, etc.) |
+| `sort_order` | integer | No | No | Display ordering within the quote |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+**Enums:**
+- `category`: schedule | quantities | access | coordination | site_conditions | design_completeness | pricing | regulatory
+- `status`: active | triggered | void
+
+---
+
+### Exclusion <!-- NEW -->
+
+> A structured scope boundary that explicitly states what is NOT included in the price. Reusable at company level (trade-standard exclusions) and specific at project level. When disputes arise about scope, exclusions provide the contractual reference. New exclusions are created from lessons learned — the system never forgets a scope gap.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`excl_{token_hex(8)}`) |
+| `category` | string | Yes | Filter | Type of exclusion |
+| `statement` | string | Yes | No | Human-readable exclusion text (appears in quote document) |
+| `partial_inclusion` | string | No | No | What IS included despite the exclusion (e.g. "raceways and boxes only") |
+| `is_template` | boolean | Yes | Filter | Whether this is a company-level reusable template |
+| `trade_type` | string | No | Filter | Which trade this exclusion applies to (e.g. "electrical", "concrete") |
+| `source` | string | No | No | Why this exclusion exists (e.g. "Added after Buckhead Dental dispute 2025-11") |
+| `sort_order` | integer | No | No | Display ordering within the quote |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+**Enums:**
+- `category`: scope | trade_boundary | conditions | risk | regulatory
+
+---
+
+### ResourceRate <!-- NEW -->
+
+> A company-level rate for a specific resource — labour, material, or equipment. Can be entered manually or derived from completed job actuals. Derived rates include sample size and standard deviation, improving with every completed job. The rate library is what things actually cost this contractor, not book rates or industry averages.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`rr_{token_hex(8)}`) |
+| `resource_type` | string | Yes | Filter | Type of resource |
+| `description` | string | Yes | No | Human-readable (e.g. "Journeyman Electrician — loaded rate") |
+| `rate_cents` | integer | Yes | No | Rate in cents per unit |
+| `unit` | string | Yes | No | What the rate is per |
+| `source` | string | Yes | Filter | How this rate was established |
+| `base_rate_cents` | integer | No | No | Pre-burden rate in cents (for labour) |
+| `burden_percent` | float | No | No | On-cost percentage (for labour — super, payroll tax, leave, WC) |
+| `non_productive_percent` | float | No | No | Non-productive time adjustment (for labour) |
+| `supplier_name` | string | No | No | Supplier providing this rate (for materials/equipment) |
+| `quote_valid_until` | date | No | No | Supplier quote expiry date |
+| `sample_size` | integer | No | No | Number of completed jobs this rate was derived from |
+| `std_deviation_cents` | integer | No | No | Standard deviation of the rate across jobs (for derived rates) |
+| `last_derived_at` | datetime | No | No | When rate was last recalculated from actuals |
+| `active` | boolean | Yes | Filter | Whether this rate is current |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+**Enums:**
+- `resource_type`: labour | material | equipment
+- `unit`: per_hour | per_day | per_unit | per_lf | per_sf | per_cy | per_ea | per_ton | lump_sum
+- `source`: manual_entry | derived_from_actuals | supplier_quote
+
+---
+
+### ProductivityRate <!-- NEW -->
+
+> How fast a crew produces output for a specific type of work. Company-specific and condition-specific — Sarah's EMT conduit productivity in drop ceilings is 32 LF/hour, not the 40 LF/hour book rate. Derived from actual TimeEntry data across completed jobs. Linked to CostCode and/or WorkCategory for lookup during quoting.
+
+| Property | Type | Required | Indexed | Description |
+|---|---|---|---|---|
+| `id` | string | Yes | Unique | Internal identifier (`pr_{token_hex(8)}`) |
+| `description` | string | Yes | No | Human-readable (e.g. "EMT conduit in commercial drop ceiling") |
+| `rate` | float | Yes | No | Output per unit of time |
+| `rate_unit` | string | Yes | No | Unit of output (LF, SF, CY, EA, etc.) |
+| `time_unit` | string | Yes | No | Time period for the rate |
+| `crew_composition` | string | No | No | Typical crew (e.g. "1 journeyman + 1 apprentice") |
+| `conditions` | string | No | No | When this rate applies (e.g. "9ft+ ceiling, standard access") |
+| `source` | string | Yes | Filter | How this rate was established |
+| `sample_size` | integer | No | No | Number of completed jobs |
+| `std_deviation` | float | No | No | Variability of the rate across jobs |
+| `includes_non_productive` | boolean | Yes | No | Whether non-productive time (breaks, setup) is baked in |
+| `last_derived_at` | datetime | No | No | When rate was last recalculated |
+| `active` | boolean | Yes | Filter | Whether this rate is current |
+| `created_at` | datetime | Yes | Sort | Timestamp of creation |
+| `updated_at` | datetime | Yes | No | Timestamp of last update |
+| + Actor Provenance fields | | | | |
+
+**Enums:**
+- `time_unit`: per_hour | per_day | per_week
+- `source`: manual_entry | derived_from_actuals
+
+---
+
+### Relationships
+
+| Relationship | From | To | Properties | Description |
+|---|---|---|---|---|
+| `HAS_ASSUMPTION` | Project | Assumption | | Project carries this assumption in its quote |
+| `ASSUMPTION_AFFECTS` | Assumption | WorkItem | | This assumption's violation impacts this work item's cost |
+| `ASSUMPTION_TEMPLATE_OF` | Company | Assumption | | Company owns this reusable assumption template |
+| `ASSUMPTION_FROM_TEMPLATE` | Assumption | Assumption | | Project assumption was copied from this template |
+| `TRIGGERED_VARIATION` | Assumption | ChangeEvent | | Triggered assumption led to this change event |
+| `HAS_EXCLUSION` | Project | Exclusion | | Project carries this exclusion in its quote |
+| `EXCLUSION_TEMPLATE_OF` | Company | Exclusion | | Company owns this reusable exclusion template |
+| `EXCLUSION_FROM_TEMPLATE` | Exclusion | Exclusion | | Project exclusion was copied from this template |
+| `EXCLUSION_CONTRADICTS` | Exclusion | Document | `spec_section` (string) | Agent detected this exclusion may contradict a spec requirement |
+| `HAS_RATE` | Company | ResourceRate | | Company owns this rate in their rate library |
+| `RATE_FOR_CODE` | ResourceRate | CostCode | | Rate applies to work classified under this cost code |
+| `HAS_PRODUCTIVITY` | Company | ProductivityRate | | Company owns this productivity rate |
+| `PRODUCTIVITY_FOR_CODE` | ProductivityRate | CostCode | | Productivity applies to this cost code |
+| `PRODUCTIVITY_FOR_CATEGORY` | ProductivityRate | WorkCategory | | Productivity applies to this work category |
+
+---
+
 ## Cross-Domain Edge Catalogue
 
 These are the edges that connect domains and enable multi-hop agent reasoning. Each one is annotated with the question it answers.
@@ -2568,6 +2852,38 @@ These are the edges that connect domains and enable multi-hop agent reasoning. E
 # "What's the procurement status for this submittal?"
 (Submittal)-[:SUBMITTAL_SATISFIES_SPEC]->(SpecSection)
 (PurchaseOrder)-[:PO_FROM_SUBMITTAL]->(Submittal)
+```
+
+### Work Structure <> Time (execution tracking) <!-- NEW -->
+```
+# "How is this work item tracking against estimate?"
+(WorkItem)-[:HAS_LABOUR]->(Labour {hours: estimated})<-[:LABOUR_TIME]-(TimeEntry {hours_total: actual})
+
+# "What did we actually spend on items for this work?"
+(WorkItem)-[:HAS_ITEM]->(Item {total_cents: estimated})<-[:ITEM_FULFILLED_BY]-(PurchaseOrder {total_amount: actual})
+```
+
+### Quoting <> Financial (variation chain) <!-- NEW -->
+```
+# "What assumptions protect this project's margin?"
+(Company)-[:OWNS_PROJECT]->(Project)-[:HAS_ASSUMPTION]->(Assumption)-[:ASSUMPTION_AFFECTS]->(WorkItem)
+
+# "Has this assumption been violated? What's the contractual basis?"
+(Assumption {variation_trigger: true, status: 'triggered'})-[:TRIGGERED_VARIATION]->(ChangeEvent)-[:EVENT_BECAME_PCO]->(PCO)
+
+# "What are our actual rates vs quoted rates for this work type?"
+(Company)-[:HAS_RATE]->(ResourceRate)-[:RATE_FOR_CODE]->(CostCode)<-[:CHARGED_TO]-(TimeEntry)
+
+# "How does our quoted productivity compare to actuals?"
+(Company)-[:HAS_PRODUCTIVITY]->(ProductivityRate)-[:PRODUCTIVITY_FOR_CODE]->(CostCode)
+```
+
+### Quoting <> Daily Log (trigger detection) <!-- NEW -->
+```
+# "Did today's daily log trigger any assumptions?"
+(DailyLog)-[:HAD_DELAY]->(DelayRecord)
+(Project)-[:HAS_ASSUMPTION]->(Assumption {variation_trigger: true, category: 'schedule'})
+  // Agent compares delay duration against assumption relied_on_value
 ```
 
 ### Location as hub (all domains)
@@ -2682,9 +2998,18 @@ A typical company with 50 workers, 5 projects, 6 months of data:
 | Observations | 200 |
 | ITPs + Checkpoints | 50 |
 | Material Tests | 100 |
-| **Subtotal per company** | **~2,170 nodes, ~8,000 edges** |
+| WorkItems | 500 (avg 25 per project × 20 projects) | <!-- NEW -->
+| Labour (per WorkItem) | 1,000 (avg 2 per WorkItem) | <!-- NEW -->
+| Items (per WorkItem) | 2,000 (avg 4 per WorkItem) | <!-- NEW -->
+| WorkPackages | 100 (avg 5 per project) | <!-- NEW -->
+| WorkCategories | 30 | <!-- NEW -->
+| Assumptions | 200 (avg 5 per quote + 20 templates) | <!-- NEW -->
+| Exclusions | 250 (avg 8 per quote + 30 templates) | <!-- NEW -->
+| ResourceRates | 50 | <!-- NEW -->
+| ProductivityRates | 40 | <!-- NEW -->
+| **Subtotal per company** | **~6,490 nodes, ~24,000 edges** | <!-- UPDATED from ~2,170 -->
 
-At 1,000 companies: ~2.2M operational nodes + 330 shared regulatory nodes.
+At 1,000 companies: ~6.5M operational nodes + 330 shared regulatory nodes. <!-- UPDATED from ~2.2M -->
 
 ---
 

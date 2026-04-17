@@ -38,9 +38,15 @@ TOOL_ACTION_MAP: dict[str, ActionClass] = {
     "get_worker_profile": ActionClass.READ_ONLY,
     "generate_morning_brief": ActionClass.READ_ONLY,
     "get_changes_since": ActionClass.READ_ONLY,
+    "get_daily_log_status": ActionClass.READ_ONLY,
     "get_inspection_results": ActionClass.READ_ONLY,
     "get_regulatory_requirements": ActionClass.READ_ONLY,
     "query_graph": ActionClass.READ_ONLY,
+    "update_inspection_item": ActionClass.LOW_RISK_WRITE,
+    "skip_item": ActionClass.LOW_RISK_WRITE,
+    "go_back": ActionClass.READ_ONLY,
+    "add_note": ActionClass.LOW_RISK_WRITE,
+    "complete_inspection": ActionClass.LOW_RISK_WRITE,
     # Low-risk write tools
     "report_hazard": ActionClass.LOW_RISK_WRITE,
     "report_incident": ActionClass.LOW_RISK_WRITE,
@@ -48,6 +54,63 @@ TOOL_ACTION_MAP: dict[str, ActionClass] = {
     "generate_toolbox_talk": ActionClass.LOW_RISK_WRITE,
     "generate_safety_plan": ActionClass.LOW_RISK_WRITE,
     "assign_worker_to_project": ActionClass.LOW_RISK_WRITE,
+    # Execute & Document tools
+    "create_daily_log": ActionClass.LOW_RISK_WRITE,
+    "auto_populate_daily_log": ActionClass.READ_ONLY,
+    "record_time": ActionClass.LOW_RISK_WRITE,
+    "report_quality_observation": ActionClass.LOW_RISK_WRITE,
+    # Manage Money tools
+    "get_job_cost_summary": ActionClass.READ_ONLY,
+    "detect_variation": ActionClass.READ_ONLY,
+    "create_variation": ActionClass.LOW_RISK_WRITE,
+    "get_financial_overview": ActionClass.READ_ONLY,
+    # Find & Qualify Work tools
+    "capture_lead": ActionClass.LOW_RISK_WRITE,
+    "qualify_project": ActionClass.READ_ONLY,
+    "check_capacity": ActionClass.READ_ONLY,
+    # Plan & Mobilise tools
+    "get_schedule": ActionClass.READ_ONLY,
+    "assign_workers": ActionClass.LOW_RISK_WRITE,
+    "detect_conflicts": ActionClass.READ_ONLY,
+    # Sub Management tools
+    "check_sub_compliance": ActionClass.READ_ONLY,
+    "get_sub_performance": ActionClass.READ_ONLY,
+    "list_subs": ActionClass.READ_ONLY,
+    # Estimate & Price tools
+    "create_work_item": ActionClass.LOW_RISK_WRITE,
+    "update_work_item": ActionClass.LOW_RISK_WRITE,
+    "get_estimate_summary": ActionClass.READ_ONLY,
+    "search_historical_rates": ActionClass.READ_ONLY,
+    "add_item_to_work_item": ActionClass.LOW_RISK_WRITE,
+    # Source cascade (Layer 3) tools
+    "get_rate_suggestion": ActionClass.READ_ONLY,
+    "suggest_productivity": ActionClass.READ_ONLY,
+    "get_material_history": ActionClass.READ_ONLY,
+    "search_material_price": ActionClass.READ_ONLY,
+    "capture_rate": ActionClass.LOW_RISK_WRITE,
+    "capture_material_price": ActionClass.LOW_RISK_WRITE,
+    "create_insight": ActionClass.LOW_RISK_WRITE,
+    # Layer 4 (knowledge accumulation) tools
+    "offer_insight_capture": ActionClass.READ_ONLY,
+    "find_applicable_insights": ActionClass.READ_ONLY,
+    "derive_productivity_from_completion": ActionClass.READ_ONLY,
+    "apply_insight": ActionClass.LOW_RISK_WRITE,
+    "reject_insight": ActionClass.LOW_RISK_WRITE,
+    "correct_insight": ActionClass.LOW_RISK_WRITE,
+    "find_applicable_insights_for_work": ActionClass.READ_ONLY,
+    "derive_productivity_from_actuals": ActionClass.READ_ONLY,
+    "update_productivity_rate_from_actuals": ActionClass.LOW_RISK_WRITE,
+    "accept_productivity_update": ActionClass.LOW_RISK_WRITE,
+    "update_material_price_from_purchase": ActionClass.LOW_RISK_WRITE,
+    "update_rate_from_purchase": ActionClass.LOW_RISK_WRITE,
+    "list_contractor_knowledge": ActionClass.READ_ONLY,
+    # Propose & Win tools
+    "generate_proposal": ActionClass.LOW_RISK_WRITE,
+    "update_project_status": ActionClass.LOW_RISK_WRITE,
+    # Get Paid tools
+    "generate_invoice": ActionClass.LOW_RISK_WRITE,
+    "track_payment_status": ActionClass.READ_ONLY,
+    "record_payment": ActionClass.LOW_RISK_WRITE,
     # High-risk write tools
     "resolve_corrective_action": ActionClass.HIGH_RISK_WRITE,
     "update_worker_certification": ActionClass.HIGH_RISK_WRITE,
@@ -62,6 +125,7 @@ TOOL_SCOPE_MAP: dict[str, str] = {
     "get_worker_profile": "read:workers",
     "generate_morning_brief": "read:briefings",
     "get_changes_since": "read:projects",
+    "get_daily_log_status": "read:projects",
     "get_inspection_results": "read:inspections",
     "get_regulatory_requirements": "read:compliance",
     "query_graph": "read:all",
@@ -74,6 +138,63 @@ TOOL_SCOPE_MAP: dict[str, str] = {
     "generate_toolbox_talk": "write:safety",
     "generate_safety_plan": "write:documents",
     "assign_worker_to_project": "write:projects",
+    # Execute & Document tools
+    "create_daily_log": "write:projects",
+    "auto_populate_daily_log": "read:projects",
+    "record_time": "write:projects",
+    "report_quality_observation": "write:inspections",
+    # Manage Money tools
+    "get_job_cost_summary": "read:projects",
+    "detect_variation": "read:projects",
+    "create_variation": "write:projects",
+    "get_financial_overview": "read:projects",
+    # Find & Qualify Work tools
+    "capture_lead": "write:projects",
+    "qualify_project": "read:projects",
+    "check_capacity": "read:projects",
+    # Plan & Mobilise tools
+    "get_schedule": "read:projects",
+    "assign_workers": "write:projects",
+    "detect_conflicts": "read:projects",
+    # Sub Management tools
+    "check_sub_compliance": "read:compliance",
+    "get_sub_performance": "read:compliance",
+    "list_subs": "read:compliance",
+    # Estimate & Price tools
+    "create_work_item": "write:projects",
+    "update_work_item": "write:projects",
+    "get_estimate_summary": "read:projects",
+    "search_historical_rates": "read:projects",
+    "add_item_to_work_item": "write:projects",
+    # Source cascade (Layer 3) tools
+    "get_rate_suggestion": "read:projects",
+    "suggest_productivity": "read:projects",
+    "get_material_history": "read:projects",
+    "search_material_price": "read:projects",
+    "capture_rate": "write:projects",
+    "capture_material_price": "write:projects",
+    "create_insight": "write:projects",
+    # Layer 4 (knowledge accumulation) tools
+    "offer_insight_capture": "read:projects",
+    "find_applicable_insights": "read:projects",
+    "derive_productivity_from_completion": "read:projects",
+    "apply_insight": "write:projects",
+    "reject_insight": "write:projects",
+    "correct_insight": "write:projects",
+    "find_applicable_insights_for_work": "read:projects",
+    "derive_productivity_from_actuals": "read:projects",
+    "update_productivity_rate_from_actuals": "write:projects",
+    "accept_productivity_update": "write:projects",
+    "update_material_price_from_purchase": "write:projects",
+    "update_rate_from_purchase": "write:projects",
+    "list_contractor_knowledge": "read:projects",
+    # Propose & Win tools
+    "generate_proposal": "write:documents",
+    "update_project_status": "write:projects",
+    # Get Paid tools
+    "generate_invoice": "write:invoices",
+    "track_payment_status": "read:invoices",
+    "record_payment": "write:invoices",
 }
 
 
@@ -210,6 +331,7 @@ class GuardrailsService(BaseService):
         parameters: dict[str, Any] | None = None,
         reasoning: str = "",
         confidence: float | None = None,
+        actor_type: str = "agent",
     ) -> GuardrailCheckResult:
         """Run all pre-execution guardrail checks.
 
@@ -220,11 +342,25 @@ class GuardrailsService(BaseService):
             parameters: Tool invocation parameters.
             reasoning: Agent's reasoning for the action.
             confidence: Agent's confidence level.
+            actor_type: Either 'human' or 'agent'. Human actors bypass all
+                guardrail checks — they are authenticated via Clerk and
+                subject to REST-layer authz, not agent-specific guardrails.
 
         Returns:
             A GuardrailCheckResult indicating whether to proceed.
         """
         action_class = self.classify_tool(tool_name)
+
+        # Human actors bypass agent guardrails entirely.
+        # Human chat users are authenticated via Clerk and go through standard
+        # REST-layer authorization. Agent guardrails (scope, rate limit, budget)
+        # apply only to registered AI agents.
+        if actor_type == "human":
+            return GuardrailCheckResult(
+                allowed=True,
+                action_class=action_class,
+                rate_limit_remaining=None,
+            )
 
         # 1. Verify agent exists, is active, and get scopes + rate limit
         agent_data = self._get_agent_data(agent_id, company_id)
@@ -378,7 +514,7 @@ class GuardrailsService(BaseService):
 
         result = self._read_tx_single(
             """
-            MATCH (a:AgentIdentity {agent_id: $agent_id, status: 'active'})
+            MATCH (a:AgentIdentity {id: $agent_id, status: 'active'})
                   -[r:BELONGS_TO]->(c:Company {id: $company_id})
             RETURN a.name AS name,
                    a.scopes AS scopes,

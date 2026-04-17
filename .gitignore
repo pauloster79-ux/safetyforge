@@ -59,6 +59,13 @@ coverage/
 # Secrets
 **/service-account*.json
 
+# Runtime uploads
+backend/uploads/
+
+# Vite cache
+.vite/
+**/.vite/
+
 # Misc
 *.log
 *.bak

@@ -178,7 +178,7 @@ function InspectionResults({ result }: { result: MockInspectionResult }) {
   const groupedFindings = severityOrder
     .map((sev) => ({
       severity: sev,
-      findings: result.findings.filter((f) => f.severity === sev),
+      findings: (result.findings || []).filter((f) => f.severity === sev),
     }))
     .filter((g) => g.findings.length > 0);
 
@@ -265,11 +265,11 @@ function InspectionResults({ result }: { result: MockInspectionResult }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Areas Checked</CardTitle>
-          <CardDescription>{result.areas_checked.length} compliance areas reviewed</CardDescription>
+          <CardDescription>{(result.areas_checked || []).length} compliance areas reviewed</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {result.areas_checked.map((area) => (
+            {(result.areas_checked || []).map((area) => (
               <Badge
                 key={area}
                 variant="outline"
@@ -286,14 +286,14 @@ function InspectionResults({ result }: { result: MockInspectionResult }) {
   );
 }
 
-export function MockInspectionPage() {
+export function MockInspectionPage({ projectId: propProjectId }: { projectId?: string } = {}) {
   const { id: resultId } = useParams<{ id: string }>();
   const { data: projects } = useProjects();
   const { data: results } = useMockInspectionResults();
   const { data: specificResult } = useMockInspectionResult(resultId);
   const runInspection = useRunMockInspection();
 
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('company-wide');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(propProjectId || 'company-wide');
   const [isRunning, setIsRunning] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
   const [currentResult, setCurrentResult] = useState<MockInspectionResult | null>(null);

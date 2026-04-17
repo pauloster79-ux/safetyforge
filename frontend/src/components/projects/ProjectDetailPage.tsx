@@ -1,8 +1,6 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  ClipboardCheck,
   FileText,
   MapPin,
   Users,
@@ -15,50 +13,44 @@ import {
   XCircle,
   AlertCircle,
   Calendar,
-  Save,
   MessageSquare,
-  Shield,
-  Camera,
   Sun,
-  Siren,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { useProject, useUpdateProject } from '@/hooks/useProjects';
+import { useProject } from '@/hooks/useProjects';
 import { useInspections } from '@/hooks/useInspections';
 import { useToolboxTalks } from '@/hooks/useToolboxTalks';
 import { useDocuments } from '@/hooks/useDocuments';
-import { useHazardReports } from '@/hooks/useHazardReports';
-import { useIncidents } from '@/hooks/useIncidents';
 import { useMorningBrief } from '@/hooks/useMorningBrief';
-import { useProjectAssignments, useCreateAssignment, useDeleteAssignment } from '@/hooks/useProjectAssignments';
-import { useWorkers } from '@/hooks/useWorkers';
-import { useEquipment } from '@/hooks/useEquipment';
-import { ROUTES, PROJECT_TYPES, INSPECTION_TYPES } from '@/lib/constants';
-import type { Project, Inspection, Incident } from '@/lib/constants';
+import { useDailyLogs } from '@/hooks/useDailyLogs';
+import { INSPECTION_TYPES } from '@/lib/constants';
+import type { Project, Inspection } from '@/lib/constants';
+import { useShell } from '@/hooks/useShell';
+import { useProjectActivity } from '@/hooks/useActivityStream';
 import { ComplianceRing } from './ComplianceRing';
+import { SafetyTab } from './SafetyTab';
+import { TeamTab } from './TeamTab';
+import { ContractTab } from './ContractTab';
+import { WorkTab } from './WorkTab';
+import { ActivityStream } from '@/components/activity/ActivityStream';
+import { ProvenanceBadge } from '@/components/activity/ProvenanceBadge';
 import { format } from 'date-fns';
 
-function StatusBadge({ status }: { status: Project['status'] }) {
-  const config = {
+function StateBadge({ state }: { state: string }) {
+  const config: Record<string, { label: string; className: string }> = {
     active: { label: 'Active', className: 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]' },
     on_hold: { label: 'On Hold', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
     completed: { label: 'Completed', className: 'bg-muted text-muted-foreground hover:bg-muted' },
+    lead: { label: 'Lead', className: 'bg-blue-50 text-blue-700 hover:bg-blue-50' },
+    quoted: { label: 'Quoted', className: 'bg-purple-50 text-purple-700 hover:bg-purple-50' },
+    closed: { label: 'Closed', className: 'bg-muted text-muted-foreground hover:bg-muted' },
+    lost: { label: 'Lost', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[state] || { label: state, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -73,39 +65,129 @@ function InspectionStatusIcon({ status }: { status: Inspection['overall_status']
   }
 }
 
-function InspectionStatusBadge({ status }: { status: Inspection['overall_status'] }) {
-  const config = {
-    pass: { label: 'Pass', className: 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]' },
-    fail: { label: 'Fail', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' },
-    partial: { label: 'Partial', className: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' },
-  };
-  const { label, className } = config[status];
-  return <Badge className={className}>{label}</Badge>;
+/**
+ * Send a chat message programmatically. Finds the chat input, sets its value
+ * via the native setter (so React picks up the change), then clicks Send.
+ */
+function sendChatMessage(message: string) {
+  const input = document.querySelector<HTMLInputElement>('input[placeholder="Ask a question..."]');
+  if (!input) return;
+  const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+  nativeSetter?.call(input, message);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.focus();
+  setTimeout(() => {
+    // Find the send button (last button in the input's form/row)
+    const sendBtn = input.closest('form')?.querySelector('button[type="submit"]')
+      || input.parentElement?.querySelector('button');
+    (sendBtn as HTMLElement | null)?.click();
+  }, 50);
 }
 
-export function ProjectDetailPage() {
-  const navigate = useNavigate();
-  const { projectId } = useParams<{ projectId: string }>();
+function ContextualActions({ project }: { project: Project }) {
+  const shell = useShell();
+
+  switch (project.state) {
+    case 'lead':
+      return (
+        <div className="flex flex-col gap-2">
+          <Button
+            className="bg-primary hover:bg-[var(--machine-dark)]"
+            onClick={() => sendChatMessage(`Help me build a quote for ${project.name}`)}
+            title="Start a new quote for this lead — Kerf will help build the work items"
+          >
+            <Briefcase className="mr-2 h-4 w-4" />
+            New Quote
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => sendChatMessage(`Qualify the ${project.name} lead — what do we know so far?`)}
+            title="Ask Kerf what it knows about this lead — GC history, capacity, certifications, gaps"
+          >
+            Qualify Lead
+          </Button>
+        </div>
+      );
+    case 'quoted':
+      return (
+        <div className="flex flex-col gap-2">
+          <Button
+            className="bg-primary hover:bg-[var(--machine-dark)]"
+            onClick={() => sendChatMessage(`Mark ${project.name} as won — the client accepted the quote`)}
+            title="Client accepted the quote — move project to awarded/active and set up the contract"
+          >
+            Mark as Won
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => sendChatMessage(`Follow up on the quote for ${project.name}`)}
+            title="Still waiting on a decision — draft a follow-up message to the client"
+          >
+            Follow Up
+          </Button>
+        </div>
+      );
+    case 'active':
+      return (
+        <div className="flex flex-col gap-2">
+          <Button
+            className="bg-primary hover:bg-[var(--machine-dark)]"
+            onClick={() => sendChatMessage(`Record time on ${project.name}`)}
+            title="Log time entries against this project's work items"
+          >
+            Record Time
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => shell.openCanvas({ component: 'InspectionCreatePage', props: { projectId: project.id }, label: 'New Inspection' })}
+            title="Start a safety or quality inspection on this project"
+          >
+            New Inspection
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => shell.openCanvas({ component: 'DailyLogListPage', props: { projectId: project.id }, label: 'Daily Logs' })}
+            title="Open daily logs for this project"
+          >
+            Daily Log
+          </Button>
+        </div>
+      );
+    case 'completed':
+      return (
+        <div className="flex flex-col gap-2">
+          <Button
+            className="bg-primary hover:bg-[var(--machine-dark)]"
+            onClick={() => sendChatMessage(`Generate the final invoice for ${project.name}`)}
+            title="Build the final invoice from work item completion"
+          >
+            Generate Invoice
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => sendChatMessage(`Close out ${project.name} — run me through the checklist`)}
+            title="Walk through the closeout checklist — deficiencies, warranty, as-builts"
+          >
+            Close Out
+          </Button>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+export function ProjectDetailPage({ projectId: propProjectId }: { projectId?: string } = {}) {
+  const shell = useShell();
+  const params = useParams<{ projectId: string }>();
+  const projectId = propProjectId || params.projectId;
   const { data: project, isLoading } = useProject(projectId);
   const { data: inspections } = useInspections(projectId);
   const { data: toolboxTalks } = useToolboxTalks(projectId);
   const { data: documents } = useDocuments();
-  const { data: hazardReports } = useHazardReports(projectId);
-  const { data: incidents } = useIncidents(projectId);
   const { data: morningBrief } = useMorningBrief(projectId);
-  const { data: workerAssignments } = useProjectAssignments({ project_id: projectId, resource_type: 'worker', status: 'active' });
-  const { data: equipmentAssignments } = useProjectAssignments({ project_id: projectId, resource_type: 'equipment' });
-  const { data: allWorkers } = useWorkers();
-  const { data: allEquipment } = useEquipment();
-  const createAssignment = useCreateAssignment();
-  const deleteAssignment = useDeleteAssignment();
-  const updateProject = useUpdateProject();
-
-  const [editForm, setEditForm] = useState<Partial<Project> | null>(null);
-  const [showAssignWorker, setShowAssignWorker] = useState(false);
-  const [showAssignEquipment, setShowAssignEquipment] = useState(false);
-  const [assignRole, setAssignRole] = useState('');
-  const [selectedResourceId, setSelectedResourceId] = useState('');
+  const { data: dailyLogs } = useDailyLogs(projectId);
+  const activityQuery = useProjectActivity(projectId);
 
   if (isLoading) {
     return (
@@ -119,7 +201,7 @@ export function ProjectDetailPage() {
     return (
       <div className="flex flex-col items-center py-16 text-center">
         <p className="text-sm text-muted-foreground">Project not found</p>
-        <Button variant="outline" className="mt-4" onClick={() => navigate(ROUTES.PROJECTS)}>
+        <Button variant="outline" className="mt-4" onClick={() => shell.openCanvas({ component: 'ProjectListPage', props: {}, label: 'Projects' })}>
           Back to Projects
         </Button>
       </div>
@@ -128,16 +210,6 @@ export function ProjectDetailPage() {
 
   const inspectionTypeName = (typeId: string) =>
     INSPECTION_TYPES.find((t) => t.id === typeId)?.name || typeId;
-
-  const handleEditChange = (field: string, value: unknown) => {
-    setEditForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveSettings = async () => {
-    if (!editForm || !projectId) return;
-    await updateProject.mutateAsync({ id: projectId, ...editForm });
-    setEditForm(null);
-  };
 
   const passCount = inspections?.filter((i) => i.overall_status === 'pass').length ?? 0;
   const failCount = inspections?.filter((i) => i.overall_status === 'fail').length ?? 0;
@@ -152,14 +224,14 @@ export function ProjectDetailPage() {
             variant="ghost"
             size="icon"
             className="mt-1"
-            onClick={() => navigate(ROUTES.PROJECTS)}
+            onClick={() => shell.goBack()}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
-              <StatusBadge status={project.status} />
+              <StateBadge state={project.state} />
             </div>
             <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
@@ -168,79 +240,49 @@ export function ProjectDetailPage() {
             {project.client_name && (
               <p className="mt-0.5 text-sm text-muted-foreground">{project.client_name}</p>
             )}
+            {project.created_by && (
+              <div className="mt-2">
+                <ProvenanceBadge
+                  actorType={project.created_by.startsWith('agent_') ? 'agent' : 'human'}
+                  actorId={project.created_by}
+                  timestamp={project.created_at}
+                  variant="full"
+                />
+              </div>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <ComplianceRing score={project.compliance_score} size="lg" />
-          <div className="flex flex-col gap-2">
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => navigate(ROUTES.INSPECTION_NEW(project.id))}
-            >
-              <ClipboardCheck className="mr-2 h-4 w-4" />
-              New Inspection
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate(ROUTES.TOOLBOX_TALK_NEW(project.id))}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              New Toolbox Talk
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate(ROUTES.HAZARD_REPORT_NEW(project.id))}
-            >
-              <Camera className="mr-2 h-4 w-4" />
-              Photo Assessment
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate(ROUTES.INCIDENT_NEW(project.id))}
-            >
-              <Siren className="mr-2 h-4 w-4" />
-              Report Incident
-            </Button>
-            <Button
-              variant="outline"
-              className="border-primary text-[var(--machine-dark)] hover:bg-[var(--machine-wash)]"
-              onClick={() => navigate(`${ROUTES.MOCK_INSPECTION}?project=${project.id}`)}
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              Mock Inspection
-            </Button>
+          <div
+            className="flex flex-col items-center"
+            title={`Compliance score: ${project.compliance_score}/100 — based on worker certifications, inspections, incidents and hazards`}
+          >
+            <ComplianceRing score={project.compliance_score} size="lg" />
+            <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Compliance
+            </span>
           </div>
+          <ContextualActions project={project} />
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — 7 lifecycle tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="inspections">
-            Inspections {inspections ? `(${inspections.length})` : ''}
+          <TabsTrigger value="contract">Contract</TabsTrigger>
+          <TabsTrigger value="work">Work</TabsTrigger>
+          <TabsTrigger value="daily-logs">
+            Daily Logs {dailyLogs ? `(${dailyLogs.length})` : ''}
           </TabsTrigger>
-          <TabsTrigger value="toolbox-talks">
-            Toolbox Talks {toolboxTalks ? `(${toolboxTalks.length})` : ''}
-          </TabsTrigger>
-          <TabsTrigger value="hazards">
-            Hazards {hazardReports ? `(${hazardReports.length})` : ''}
-          </TabsTrigger>
-          <TabsTrigger value="incidents">
-            Incidents {incidents ? `(${incidents.length})` : ''}
-          </TabsTrigger>
-          <TabsTrigger value="workers">
-            Workers {workerAssignments?.length ? `(${workerAssignments.length})` : ''}
-          </TabsTrigger>
-          <TabsTrigger value="equipment-tab">
-            Equipment {equipmentAssignments?.length ? `(${equipmentAssignments.length})` : ''}
-          </TabsTrigger>
+          <TabsTrigger value="safety">Safety</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
+        {/* ═══════ Overview ═══════ */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -305,12 +347,12 @@ export function ProjectDetailPage() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Type</span>
-                  <span className="font-medium text-[var(--concrete-600)] capitalize">{project.project_type}</span>
+                  <span className="font-medium capitalize">{project.project_type}</span>
                 </div>
                 {project.start_date && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Start Date</span>
-                    <span className="font-medium text-[var(--concrete-600)]">
+                    <span className="font-medium">
                       {format(new Date(project.start_date), 'MMM d, yyyy')}
                     </span>
                   </div>
@@ -318,16 +360,16 @@ export function ProjectDetailPage() {
                 {project.end_date && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">End Date</span>
-                    <span className="font-medium text-[var(--concrete-600)]">
+                    <span className="font-medium">
                       {format(new Date(project.end_date), 'MMM d, yyyy')}
                     </span>
                   </div>
                 )}
-                {project.trade_types.length > 0 && (
+                {project.trade_types?.length > 0 && (
                   <div>
                     <span className="text-muted-foreground">Trades</span>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {project.trade_types.map((trade) => (
+                      {(project.trade_types || []).map((trade) => (
                         <Badge key={trade} variant="secondary" className="text-xs capitalize">
                           {trade.replace('_', ' ')}
                         </Badge>
@@ -338,7 +380,7 @@ export function ProjectDetailPage() {
                 {project.description && (
                   <div>
                     <span className="text-muted-foreground">Description</span>
-                    <p className="mt-1 text-[var(--concrete-600)]">{project.description}</p>
+                    <p className="mt-1">{project.description}</p>
                   </div>
                 )}
               </CardContent>
@@ -353,7 +395,7 @@ export function ProjectDetailPage() {
                   <div className="flex gap-2">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warn)]" />
                     <div>
-                      <span className="font-medium text-[var(--concrete-600)]">Special Hazards</span>
+                      <span className="font-medium">Special Hazards</span>
                       <p className="mt-0.5 text-muted-foreground">{project.special_hazards}</p>
                     </div>
                   </div>
@@ -362,7 +404,7 @@ export function ProjectDetailPage() {
                   <div className="flex gap-2">
                     <Hospital className="mt-0.5 h-4 w-4 shrink-0 text-[var(--info)]" />
                     <div>
-                      <span className="font-medium text-[var(--concrete-600)]">Nearest Hospital</span>
+                      <span className="font-medium">Nearest Hospital</span>
                       <p className="mt-0.5 text-muted-foreground">{project.nearest_hospital}</p>
                     </div>
                   </div>
@@ -371,7 +413,7 @@ export function ProjectDetailPage() {
                   <div className="flex gap-2">
                     <Phone className="mt-0.5 h-4 w-4 shrink-0 text-[var(--pass)]" />
                     <div>
-                      <span className="font-medium text-[var(--concrete-600)]">Emergency Contact</span>
+                      <span className="font-medium">Emergency Contact</span>
                       <p className="mt-0.5 text-muted-foreground">
                         {project.emergency_contact_name} — {project.emergency_contact_phone}
                       </p>
@@ -386,7 +428,7 @@ export function ProjectDetailPage() {
           {morningBrief && (
             <Card
               className="cursor-pointer border-primary bg-gradient-to-r from-[var(--machine-wash)] to-[var(--warn-bg)] transition-shadow hover:shadow-md"
-              onClick={() => navigate(ROUTES.MORNING_BRIEF(project.id))}
+              onClick={() => shell.openCanvas({ component: 'MorningBriefPage', props: { projectId: project.id }, label: 'Morning Brief' })}
             >
               <CardContent className="flex items-center justify-between py-5">
                 <div className="flex items-center gap-4">
@@ -411,8 +453,8 @@ export function ProjectDetailPage() {
                       <p className="text-sm font-semibold text-foreground">Morning Safety Brief</p>
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {morningBrief.alerts.filter(a => a.severity === 'critical').length} critical,{' '}
-                      {morningBrief.alerts.filter(a => a.severity === 'warning').length} warnings
+                      {morningBrief.alerts?.filter(a => a.severity === 'critical').length ?? 0} critical,{' '}
+                      {morningBrief.alerts?.filter(a => a.severity === 'warning').length ?? 0} warnings
                     </p>
                   </div>
                 </div>
@@ -423,7 +465,7 @@ export function ProjectDetailPage() {
             </Card>
           )}
 
-          {/* Recent Activity */}
+          {/* Recent Inspections */}
           {inspections && inspections.length > 0 && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -431,17 +473,6 @@ export function ProjectDetailPage() {
                   <CardTitle className="text-base">Recent Inspections</CardTitle>
                   <CardDescription>Latest inspection activity for this project</CardDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-[var(--machine-dark)] hover:text-primary"
-                  onClick={() => {
-                    const tabsTrigger = document.querySelector('[data-state][value="inspections"]') as HTMLElement;
-                    tabsTrigger?.click();
-                  }}
-                >
-                  View All
-                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -449,11 +480,11 @@ export function ProjectDetailPage() {
                     <button
                       key={insp.id}
                       className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted"
-                      onClick={() => navigate(ROUTES.INSPECTION_DETAIL(project.id, insp.id))}
+                      onClick={() => shell.openCanvas({ component: 'InspectionDetailPage', props: { projectId: project.id, inspectionId: insp.id }, label: 'Inspection' })}
                     >
                       <InspectionStatusIcon status={insp.overall_status} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[var(--concrete-600)]">
+                        <p className="truncate text-sm font-medium">
                           {inspectionTypeName(insp.inspection_type)}
                         </p>
                         <p className="text-xs text-muted-foreground">{insp.inspector_name}</p>
@@ -467,6 +498,7 @@ export function ProjectDetailPage() {
               </CardContent>
             </Card>
           )}
+
           {/* Recent Toolbox Talks */}
           {toolboxTalks && toolboxTalks.length > 0 && (
             <Card>
@@ -475,17 +507,6 @@ export function ProjectDetailPage() {
                   <CardTitle className="text-base">Recent Toolbox Talks</CardTitle>
                   <CardDescription>Latest safety talks for this project</CardDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-[var(--machine-dark)] hover:text-primary"
-                  onClick={() => {
-                    const tabsTrigger = document.querySelector('[data-state][value="toolbox-talks"]') as HTMLElement;
-                    tabsTrigger?.click();
-                  }}
-                >
-                  View All
-                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -493,32 +514,28 @@ export function ProjectDetailPage() {
                     <button
                       key={talk.id}
                       className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted"
-                      onClick={() => navigate(
-                        talk.status === 'completed'
-                          ? ROUTES.TOOLBOX_TALK_DETAIL(project.id, talk.id)
-                          : ROUTES.TOOLBOX_TALK_DELIVER(project.id, talk.id)
-                      )}
+                      onClick={() => shell.openCanvas({
+                        component: talk.status === 'completed' ? 'ToolboxTalkDetailPage' : 'ToolboxTalkDeliverPage',
+                        props: { projectId: project.id, talkId: talk.id },
+                        label: 'Toolbox Talk',
+                      })}
                     >
                       <MessageSquare className={`h-5 w-5 ${talk.status === 'completed' ? 'text-[var(--pass)]' : 'text-[var(--info)]'}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[var(--concrete-600)]">
-                          {talk.topic}
-                        </p>
+                        <p className="truncate text-sm font-medium">{talk.topic}</p>
                         <p className="text-xs text-muted-foreground">
-                          {talk.attendees.length} attendees
+                          {(talk.attendees?.length ?? 0)} attendees
                         </p>
                       </div>
-                      <div className="text-right">
-                        <Badge
-                          className={
-                            talk.status === 'completed'
-                              ? 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]'
-                              : 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]'
-                          }
-                        >
-                          {talk.status === 'completed' ? 'Completed' : 'Scheduled'}
-                        </Badge>
-                      </div>
+                      <Badge
+                        className={
+                          talk.status === 'completed'
+                            ? 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]'
+                            : 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]'
+                        }
+                      >
+                        {talk.status === 'completed' ? 'Completed' : 'Scheduled'}
+                      </Badge>
                     </button>
                   ))}
                 </div>
@@ -527,56 +544,64 @@ export function ProjectDetailPage() {
           )}
         </TabsContent>
 
-        {/* Inspections Tab */}
-        <TabsContent value="inspections" className="space-y-4">
+        {/* ═══════ Contract ═══════ */}
+        <TabsContent value="contract">
+          <ContractTab project={project} />
+        </TabsContent>
+
+        {/* ═══════ Work ═══════ */}
+        <TabsContent value="work">
+          <WorkTab projectId={project.id} />
+        </TabsContent>
+
+        {/* ═══════ Daily Logs ═══════ */}
+        <TabsContent value="daily-logs" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Inspections</h2>
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => navigate(ROUTES.INSPECTION_NEW(project.id))}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Inspection
-            </Button>
+            <h2 className="text-lg font-semibold text-foreground">Daily Logs</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => shell.openCanvas({ component: 'DailyLogListPage', props: { projectId: project.id }, label: 'Daily Logs' })}
+              >
+                View All
+              </Button>
+              <Button
+                className="bg-primary hover:bg-[var(--machine-dark)]"
+                onClick={() => shell.openCanvas({ component: 'DailyLogListPage', props: { projectId: project.id }, label: 'Daily Logs' })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Daily Log
+              </Button>
+            </div>
           </div>
 
-          {inspections && inspections.length > 0 ? (
+          {dailyLogs && dailyLogs.length > 0 ? (
             <div className="space-y-3">
-              {inspections.map((insp) => {
-                const failedItems = insp.items.filter((i) => i.status === 'fail').length;
-                const totalItems = insp.items.length;
-
+              {dailyLogs.slice(0, 5).map((log) => {
+                const statusColors: Record<string, string> = {
+                  draft: 'bg-yellow-100 text-yellow-800',
+                  submitted: 'bg-blue-100 text-blue-800',
+                  approved: 'bg-green-100 text-green-800',
+                };
                 return (
                   <Card
-                    key={insp.id}
-                    className="cursor-pointer transition-shadow hover:shadow-md"
-                    onClick={() => navigate(ROUTES.INSPECTION_DETAIL(project.id, insp.id))}
+                    key={log.id}
+                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                    onClick={() => shell.openCanvas({ component: 'DailyLogDetailPage', props: { projectId: project.id, dailyLogId: log.id }, label: 'Daily Log' })}
                   >
-                    <CardContent className="flex items-center gap-4 py-4">
-                      <InspectionStatusIcon status={insp.overall_status} />
-                      <div className="min-w-0 flex-1">
+                    <CardContent className="flex items-center justify-between py-4">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground">
-                            {inspectionTypeName(insp.inspection_type)}
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium text-foreground">
+                            {format(new Date(log.log_date + 'T00:00:00'), 'EEEE, MMM d, yyyy')}
                           </p>
-                          <InspectionStatusBadge status={insp.overall_status} />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {insp.inspector_name} — {totalItems} items checked
-                          {failedItems > 0 && (
-                            <span className="text-[var(--fail)]"> ({failedItems} failed)</span>
-                          )}
+                          {log.superintendent_name} - {log.workers_on_site} workers - {log.weather.conditions}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {format(new Date(insp.inspection_date), 'MMM d, yyyy')}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {insp.workers_on_site} workers on site
-                        </p>
-                      </div>
+                      <Badge className={statusColors[log.status]}>{log.status}</Badge>
                     </CardContent>
                   </Card>
                 );
@@ -584,539 +609,32 @@ export function ProjectDetailPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center py-12 text-center">
-              <ClipboardCheck className="h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">No inspections yet</p>
+              <FileText className="h-12 w-12 text-muted-foreground" />
+              <p className="mt-3 text-sm font-medium text-muted-foreground">No daily logs yet</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Complete your first daily inspection to track compliance
-              </p>
-              <Button
-                className="mt-4 bg-primary hover:bg-[var(--machine-dark)]"
-                onClick={() => navigate(ROUTES.INSPECTION_NEW(project.id))}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Inspection
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Toolbox Talks Tab */}
-        <TabsContent value="toolbox-talks" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Toolbox Talks</h2>
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => navigate(ROUTES.TOOLBOX_TALK_NEW(project.id))}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Toolbox Talk
-            </Button>
-          </div>
-
-          {toolboxTalks && toolboxTalks.length > 0 ? (
-            <div className="space-y-3">
-              {toolboxTalks.map((talk) => (
-                <Card
-                  key={talk.id}
-                  className="cursor-pointer transition-shadow hover:shadow-md"
-                  onClick={() => navigate(
-                    talk.status === 'completed'
-                      ? ROUTES.TOOLBOX_TALK_DETAIL(project.id, talk.id)
-                      : ROUTES.TOOLBOX_TALK_DELIVER(project.id, talk.id)
-                  )}
-                >
-                  <CardContent className="flex items-center gap-4 py-4">
-                    <MessageSquare className={`h-5 w-5 ${talk.status === 'completed' ? 'text-[var(--pass)]' : 'text-[var(--info)]'}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground">{talk.topic}</p>
-                        <Badge
-                          className={
-                            talk.status === 'completed'
-                              ? 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]'
-                              : talk.status === 'in_progress'
-                                ? 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]'
-                                : 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]'
-                          }
-                        >
-                          {talk.status === 'completed' ? 'Completed' : talk.status === 'in_progress' ? 'In Progress' : 'Scheduled'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {talk.attendees.length} attendees
-                        {talk.presented_by && ` — ${talk.presented_by}`}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(talk.scheduled_date), 'MMM d, yyyy')}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{talk.duration_minutes} min</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center py-12 text-center">
-              <MessageSquare className="h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">No toolbox talks yet</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Schedule your first toolbox talk to keep your crew safe
-              </p>
-              <Button
-                className="mt-4 bg-primary hover:bg-[var(--machine-dark)]"
-                onClick={() => navigate(ROUTES.TOOLBOX_TALK_NEW(project.id))}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Toolbox Talk
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Hazards Tab */}
-        <TabsContent value="hazards" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Hazard Reports</h2>
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => navigate(ROUTES.HAZARD_REPORT_NEW(project.id))}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Photo Assessment
-            </Button>
-          </div>
-
-          {hazardReports && hazardReports.length > 0 ? (
-            <div className="space-y-3">
-              {hazardReports.map((report) => (
-                <Card
-                  key={report.id}
-                  className="cursor-pointer transition-shadow hover:shadow-md"
-                  onClick={() => navigate(ROUTES.HAZARD_REPORT_DETAIL(project.id, report.id))}
-                >
-                  <CardContent className="flex items-center gap-4 py-4">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                      report.highest_severity === 'imminent_danger' || report.highest_severity === 'high'
-                        ? 'bg-[var(--fail-bg)]' : report.highest_severity === 'medium'
-                        ? 'bg-[var(--warn-bg)]' : 'bg-[var(--info-bg)]'
-                    }`}>
-                      <Camera className={`h-5 w-5 ${
-                        report.highest_severity === 'imminent_danger' || report.highest_severity === 'high'
-                          ? 'text-[var(--fail)]' : report.highest_severity === 'medium'
-                          ? 'text-[var(--warn)]' : 'text-[var(--info)]'
-                      }`} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground">{report.description || report.location}</p>
-                        <Badge className={
-                          report.status === 'open' ? 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' :
-                          report.status === 'in_progress' ? 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]' :
-                          report.status === 'corrected' ? 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]' :
-                          'bg-muted text-[var(--concrete-600)] hover:bg-muted'
-                        }>
-                          {report.status === 'in_progress' ? 'In Progress' : report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {report.hazard_count} hazard{report.hazard_count !== 1 ? 's' : ''} identified
-                        {report.highest_severity && ` — Highest: ${report.highest_severity}`}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(report.created_at), 'MMM d, yyyy')}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{report.location}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Camera className="h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">No hazard reports yet</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Take a photo to identify hazards with AI analysis
-              </p>
-              <Button
-                className="mt-4 bg-primary hover:bg-[var(--machine-dark)]"
-                onClick={() => navigate(ROUTES.HAZARD_REPORT_NEW(project.id))}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Photo Assessment
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Incidents Tab */}
-        <TabsContent value="incidents" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Incidents</h2>
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => navigate(ROUTES.INCIDENT_NEW(project.id))}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Report Incident
-            </Button>
-          </div>
-
-          {incidents && incidents.length > 0 ? (
-            <div className="space-y-3">
-              {incidents.map((incident) => {
-                const severityColors: Record<Incident['severity'], string> = {
-                  fatality: 'bg-black text-white hover:bg-black',
-                  hospitalization: 'bg-[var(--fail)] text-white hover:bg-[var(--fail)]',
-                  medical_treatment: 'bg-primary text-primary-foreground hover:bg-primary',
-                  first_aid: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]',
-                  near_miss: 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]',
-                  property_damage: 'bg-muted text-[var(--concrete-600)] hover:bg-muted',
-                };
-                const severityLabels: Record<Incident['severity'], string> = {
-                  fatality: 'Fatality',
-                  hospitalization: 'Hospitalization',
-                  medical_treatment: 'Medical Treatment',
-                  first_aid: 'First Aid',
-                  near_miss: 'Near Miss',
-                  property_damage: 'Property Damage',
-                };
-                const statusLabels: Record<Incident['status'], string> = {
-                  reported: 'Reported',
-                  investigating: 'Investigating',
-                  corrective_actions: 'Corrective Actions',
-                  closed: 'Closed',
-                };
-                const statusColors: Record<Incident['status'], string> = {
-                  reported: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]',
-                  investigating: 'bg-[var(--warn-bg)] text-[var(--warn)] hover:bg-[var(--warn-bg)]',
-                  corrective_actions: 'bg-[var(--info-bg)] text-[var(--info)] hover:bg-[var(--info-bg)]',
-                  closed: 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]',
-                };
-
-                return (
-                  <Card
-                    key={incident.id}
-                    className="cursor-pointer transition-shadow hover:shadow-md"
-                    onClick={() => navigate(ROUTES.INCIDENT_DETAIL(project.id, incident.id))}
-                  >
-                    <CardContent className="flex items-center gap-4 py-4">
-                      <Siren className={`h-5 w-5 ${
-                        incident.severity === 'fatality' || incident.severity === 'hospitalization'
-                          ? 'text-[var(--fail)]'
-                          : incident.severity === 'near_miss'
-                            ? 'text-[var(--info)]'
-                            : 'text-[var(--warn)]'
-                      }`} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-foreground">
-                            {incident.description.length > 80
-                              ? incident.description.slice(0, 80) + '...'
-                              : incident.description}
-                          </p>
-                          <Badge className={severityColors[incident.severity]}>
-                            {severityLabels[incident.severity]}
-                          </Badge>
-                          <Badge className={statusColors[incident.status]}>
-                            {statusLabels[incident.status]}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{incident.location}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {format(new Date(incident.incident_date), 'MMM d, yyyy')}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{incident.incident_time}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Siren className="h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">No incidents reported</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Report incidents to track safety performance and identify trends
-              </p>
-              <Button
-                className="mt-4 bg-primary hover:bg-[var(--machine-dark)]"
-                onClick={() => navigate(ROUTES.INCIDENT_NEW(project.id))}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Report Incident
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Assigned Workers Tab */}
-        <TabsContent value="workers" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Assigned Workers</h2>
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => setShowAssignWorker(!showAssignWorker)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Assign Worker
-            </Button>
-          </div>
-
-          {showAssignWorker && (
-            <Card>
-              <CardContent className="pt-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Worker</Label>
-                    <Select value={selectedResourceId} onValueChange={setSelectedResourceId}>
-                      <SelectTrigger><SelectValue placeholder="Select worker" /></SelectTrigger>
-                      <SelectContent>
-                        {allWorkers
-                          ?.filter(w => !workerAssignments?.some(a => a.resource_id === w.id))
-                          .map(w => (
-                            <SelectItem key={w.id} value={w.id}>
-                              {w.first_name} {w.last_name} — {w.role}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Role on Project</Label>
-                    <Input
-                      value={assignRole}
-                      onChange={e => setAssignRole(e.target.value)}
-                      placeholder="e.g. Foreman, Electrician"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      className="bg-primary hover:bg-[var(--machine-dark)]"
-                      disabled={!selectedResourceId}
-                      onClick={() => {
-                        createAssignment.mutate({
-                          resource_type: 'worker',
-                          resource_id: selectedResourceId,
-                          project_id: project.id,
-                          role: assignRole || undefined,
-                          start_date: new Date().toISOString().split('T')[0],
-                        });
-                        setSelectedResourceId('');
-                        setAssignRole('');
-                        setShowAssignWorker(false);
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {workerAssignments && workerAssignments.length > 0 ? (
-            <div className="space-y-2">
-              {workerAssignments.map(assignment => {
-                const worker = allWorkers?.find(w => w.id === assignment.resource_id);
-                return (
-                  <Card key={assignment.id}>
-                    <CardContent className="flex items-center justify-between py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
-                          {worker ? `${worker.first_name[0]}${worker.last_name[0]}` : '??'}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {worker ? `${worker.first_name} ${worker.last_name}` : assignment.resource_id}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {assignment.role || worker?.role || 'No role assigned'}
-                            {worker?.language_preference && (
-                              <span className="ml-2 text-[var(--machine)]">{worker.language_preference.toUpperCase()}</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {worker && (
-                          <div className="text-right text-xs">
-                            <span className="text-[var(--pass)]">{worker.total_certifications || 0} certs</span>
-                            {(worker.expiring_soon || 0) > 0 && (
-                              <span className="ml-2 text-[var(--warn)]">{worker.expiring_soon} exp. soon</span>
-                            )}
-                            {(worker.expired || 0) > 0 && (
-                              <span className="ml-2 text-[var(--fail)]">{worker.expired} expired</span>
-                            )}
-                          </div>
-                        )}
-                        <Badge className="bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]">
-                          {assignment.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-[var(--fail)]"
-                          onClick={() => deleteAssignment.mutate(assignment.id)}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <Users className="mx-auto h-10 w-10 text-muted-foreground/50" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">No workers assigned</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Assign workers to track certifications and training compliance for this project
+                Create your first daily log to track daily site activity
               </p>
             </div>
           )}
         </TabsContent>
 
-        {/* Assigned Equipment Tab */}
-        <TabsContent value="equipment-tab" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Assigned Equipment</h2>
-            <Button
-              className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => setShowAssignEquipment(!showAssignEquipment)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Assign Equipment
-            </Button>
-          </div>
-
-          {showAssignEquipment && (
-            <Card>
-              <CardContent className="pt-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Equipment</Label>
-                    <Select value={selectedResourceId} onValueChange={setSelectedResourceId}>
-                      <SelectTrigger><SelectValue placeholder="Select equipment" /></SelectTrigger>
-                      <SelectContent>
-                        {allEquipment
-                          ?.filter(e => !equipmentAssignments?.some(a => a.resource_id === e.id && a.status === 'active'))
-                          .map(e => (
-                            <SelectItem key={e.id} value={e.id}>
-                              {e.name} — {e.equipment_type}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Role / Purpose</Label>
-                    <Input
-                      value={assignRole}
-                      onChange={e => setAssignRole(e.target.value)}
-                      placeholder="e.g. Main crane, Material transport"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      className="bg-primary hover:bg-[var(--machine-dark)]"
-                      disabled={!selectedResourceId}
-                      onClick={() => {
-                        createAssignment.mutate({
-                          resource_type: 'equipment',
-                          resource_id: selectedResourceId,
-                          project_id: project.id,
-                          role: assignRole || undefined,
-                          start_date: new Date().toISOString().split('T')[0],
-                        });
-                        setSelectedResourceId('');
-                        setAssignRole('');
-                        setShowAssignEquipment(false);
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {equipmentAssignments && equipmentAssignments.length > 0 ? (
-            <div className="space-y-2">
-              {equipmentAssignments.map(assignment => {
-                const equip = allEquipment?.find(e => e.id === assignment.resource_id);
-                return (
-                  <Card key={assignment.id}>
-                    <CardContent className="flex items-center justify-between py-3 px-4">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {equip?.name || assignment.resource_id}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {equip?.equipment_type || ''} {equip?.make && equip?.model ? `— ${equip.make} ${equip.model}` : ''}
-                          {assignment.role ? ` (${assignment.role})` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right text-xs">
-                          <span>Since {assignment.start_date}</span>
-                          {assignment.end_date && (
-                            <span className="ml-2 text-muted-foreground">to {assignment.end_date}</span>
-                          )}
-                        </div>
-                        <Badge className={
-                          assignment.status === 'active'
-                            ? 'bg-[var(--pass-bg)] text-[var(--pass)] hover:bg-[var(--pass-bg)]'
-                            : 'bg-muted text-muted-foreground hover:bg-muted'
-                        }>
-                          {assignment.status}
-                        </Badge>
-                        {assignment.status === 'active' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-muted-foreground hover:text-[var(--fail)]"
-                            onClick={() => deleteAssignment.mutate(assignment.id)}
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground/50" />
-              <p className="mt-3 text-sm font-medium text-muted-foreground">No equipment assigned</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Assign equipment to track inspections and certifications for this project
-              </p>
-            </div>
-          )}
+        {/* ═══════ Safety ═══════ */}
+        <TabsContent value="safety">
+          <SafetyTab projectId={project.id} />
         </TabsContent>
 
-        {/* Documents Tab */}
+        {/* ═══════ Team ═══════ */}
+        <TabsContent value="team">
+          <TeamTab projectId={project.id} />
+        </TabsContent>
+
+        {/* ═══════ Documents ═══════ */}
         <TabsContent value="documents" className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Documents</h2>
             <Button
               className="bg-primary hover:bg-[var(--machine-dark)]"
-              onClick={() => navigate(ROUTES.DOCUMENT_NEW)}
+              onClick={() => shell.openCanvas({ component: 'DocumentCreatePage', props: {}, label: 'New Document' })}
             >
               <Plus className="mr-2 h-4 w-4" />
               New Document
@@ -1129,14 +647,14 @@ export function ProjectDetailPage() {
                 <Card
                   key={doc.id}
                   className="cursor-pointer transition-shadow hover:shadow-md"
-                  onClick={() => navigate(ROUTES.DOCUMENT_EDIT(doc.id))}
+                  onClick={() => shell.openCanvas({ component: 'DocumentEditPage', props: { documentId: doc.id }, label: 'Edit Document' })}
                 >
                   <CardContent className="flex items-center gap-3 py-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                       <FileText className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[var(--concrete-600)]">{doc.title}</p>
+                      <p className="truncate text-sm font-medium">{doc.title}</p>
                       <p className="text-xs text-muted-foreground">{doc.document_type.toUpperCase()}</p>
                     </div>
                     <Badge
@@ -1164,98 +682,22 @@ export function ProjectDetailPage() {
           )}
         </TabsContent>
 
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4">
+        {/* ═══════ Activity ═══════ */}
+        <TabsContent value="activity">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Project Settings</CardTitle>
-              <CardDescription>Update project details and status</CardDescription>
+              <CardTitle className="text-base">Project Activity</CardTitle>
+              <CardDescription>
+                Everything that has happened on this project — inspections, incidents, daily logs, work items, and more.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Project Name</Label>
-                  <Input
-                    value={editForm?.name ?? project.name}
-                    onChange={(e) => handleEditChange('name', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={editForm?.status ?? project.status}
-                    onValueChange={(v) => handleEditChange('status', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="on_hold">On Hold</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Input
-                  value={editForm?.address ?? project.address}
-                  onChange={(e) => handleEditChange('address', e.target.value)}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Client Name</Label>
-                  <Input
-                    value={editForm?.client_name ?? project.client_name}
-                    onChange={(e) => handleEditChange('client_name', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Project Type</Label>
-                  <Select
-                    value={editForm?.project_type ?? project.project_type}
-                    onValueChange={(v) => handleEditChange('project_type', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROJECT_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={editForm?.description ?? project.description}
-                  onChange={(e) => handleEditChange('description', e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex justify-end">
-                <Button
-                  className="bg-primary hover:bg-[var(--machine-dark)]"
-                  disabled={!editForm || updateProject.isPending}
-                  onClick={handleSaveSettings}
-                >
-                  {updateProject.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Save Changes
-                </Button>
-              </div>
+            <CardContent>
+              <ActivityStream
+                data={activityQuery.data}
+                isLoading={activityQuery.isLoading}
+                error={activityQuery.error}
+                emptyMessage="No activity recorded yet. Events will appear here as the project is worked on."
+              />
             </CardContent>
           </Card>
         </TabsContent>

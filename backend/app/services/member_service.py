@@ -56,6 +56,14 @@ class MemberService(BaseService):
             """,
             {"company_id": company_id, "props": props},
         )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=member_id,
+            entity_type="Member",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created owner member for company {company_id}",
+        )
         return Member(**result["member"])
 
     def get_members(self, company_id: str) -> list[Member]:
@@ -135,6 +143,14 @@ class MemberService(BaseService):
         )
         if result is None:
             raise MemberNotFoundError(member_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=member_id,
+            entity_type="Member",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated member {member_id}",
+        )
         return Member(**result["member"])
 
     def remove_member(self, company_id: str, member_id: str) -> None:

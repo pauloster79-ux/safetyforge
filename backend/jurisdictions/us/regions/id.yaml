@@ -1,0 +1,47 @@
+code: ID
+name: Idaho
+regulatory_body: Federal OSHA (Region X)
+state_plan: false
+primary_legislation: Idaho Code Title 72 (Workers' Compensation)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: ID-001
+    state: ID
+    requirement_name: Workers' Compensation Insurance
+    description: All Idaho employers with one or more employees must carry workers' compensation insurance or qualify for self-insurance.
+    federal_equivalent: null
+    state_standard: "Idaho Code 72-301"
+    additional_details: Coverage must be obtained through the Idaho State Insurance Fund, a private insurer, or an approved self-insurance program. Failure to carry coverage is a misdemeanor.
+    applies_to: all
+    severity: mandatory
+
+  - id: ID-002
+    state: ID
+    requirement_name: Public Works Contractor Licensing
+    description: Contractors performing public works construction in Idaho must hold a valid Idaho public works contractor license.
+    federal_equivalent: null
+    state_standard: "Idaho Code 54-1902"
+    additional_details: License requires proof of financial responsibility, workers' compensation coverage, and compliance with prevailing wage requirements on public projects.
+    applies_to: construction
+    severity: mandatory
+
+  - id: ID-003
+    state: ID
+    requirement_name: Electrical Licensing and Safety
+    description: All persons performing electrical work in Idaho must hold an appropriate license issued by the Idaho Division of Building Safety.
+    federal_equivalent: null
+    state_standard: "Idaho Code 54-1001 through 54-1024"
+    additional_details: Licenses are categorized as journeyman, master, or limited electrical installer. Continuing education is required for renewal.
+    applies_to: construction
+    severity: mandatory
+
+  - id: ID-004
+    state: ID
+    requirement_name: Plumbing and HVAC Licensing
+    description: Plumbing and HVAC contractors and journeymen must be licensed by the Idaho Division of Building Safety to perform work in the state.
+    federal_equivalent: null
+    state_standard: "Idaho Code 54-2601 through 54-2622"
+    additional_details: Separate licenses are required for plumbing and HVAC work. Apprentices must work under a licensed journeyman.
+    applies_to: construction
+    severity: mandatory

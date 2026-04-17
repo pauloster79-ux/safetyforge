@@ -1,0 +1,47 @@
+code: MN
+name: Minnesota
+regulatory_body: Minnesota OSHA (MNOSHA)
+state_plan: true
+primary_legislation: Minnesota Occupational Safety and Health Act (Minn. Stat. 182)
+construction_regulation: Minnesota Rules Chapter 5207
+
+requirements:
+  - id: MN-001
+    state: MN
+    requirement_name: Workplace Accident and Injury Reduction (AWAIR) Program
+    description: Employers with more than a specified experience modification rate or certain NAICS codes must develop a written AWAIR program to promote safe and healthful working conditions.
+    federal_equivalent: null
+    state_standard: "Minn. Stat. 182.653 Subd. 8"
+    additional_details: Must include goals, analysis of hazards, assignment of responsibilities, communication methods, investigation procedures, and enforcement of safe work practices.
+    applies_to: all
+    severity: mandatory
+
+  - id: MN-002
+    state: MN
+    requirement_name: Employee Right-to-Know (ERTK)
+    description: Employers must provide training and information to employees about hazardous substances and harmful physical agents in the workplace. More comprehensive than the federal Hazard Communication standard.
+    federal_equivalent: "29 CFR 1910.1200 (Hazard Communication)"
+    state_standard: "Minn. Rules 5206.0100-5206.1000"
+    additional_details: Covers harmful physical agents (noise, radiation, heat) in addition to chemical hazards. Requires labeling, MSDS availability, and annual training.
+    applies_to: all
+    severity: mandatory
+
+  - id: MN-003
+    state: MN
+    requirement_name: Construction Competent Person Requirements
+    description: Construction employers must designate competent persons for excavation, scaffolding, and fall protection activities with documented training and authority to take corrective action.
+    federal_equivalent: "29 CFR 1926 Subpart P, L, M"
+    state_standard: "Minn. Rules 5207.0100"
+    additional_details: MNOSHA enforces state-adopted construction standards that mirror and in some cases exceed federal OSHA construction requirements.
+    applies_to: construction
+    severity: mandatory
+
+  - id: MN-004
+    state: MN
+    requirement_name: Workers' Compensation Coverage
+    description: Nearly all Minnesota employers must carry workers' compensation insurance or be approved for self-insurance. No minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "Minn. Stat. 176.181"
+    additional_details: Administered by the Minnesota Department of Labor and Industry. Penalties for non-compliance include stop-work orders and fines.
+    applies_to: all
+    severity: mandatory

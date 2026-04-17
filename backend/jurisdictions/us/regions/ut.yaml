@@ -1,0 +1,57 @@
+code: UT
+name: Utah
+regulatory_body: UOSH (Utah Occupational Safety and Health)
+state_plan: true
+primary_legislation: Utah Occupational Safety and Health Act (UCA 34A-6)
+construction_regulation: UOSH Utah Administrative Code R614
+
+requirements:
+  - id: UT-001
+    state: UT
+    requirement_name: UOSH State Plan Enforcement
+    description: Utah operates its own OSHA-approved state plan through UOSH, covering both private and public sector employers.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "UCA 34A-6-101 et seq."
+    additional_details: UOSH adopts federal OSHA standards by reference and enforces them with state-level inspections and penalties. Public sector employees are covered under the state plan.
+    applies_to: all
+    severity: mandatory
+
+  - id: UT-002
+    state: UT
+    requirement_name: Construction Safety Training
+    description: Workers on construction sites must complete an OSHA 10-Hour construction safety course within the first 15 days of employment.
+    federal_equivalent: null
+    state_standard: "UCA 34A-6-304"
+    additional_details: General contractors must verify all workers have completed the required training. Training must be renewed every five years. Employers bear the cost of training.
+    applies_to: construction
+    severity: mandatory
+
+  - id: UT-003
+    state: UT
+    requirement_name: Workplace Safety Committee or Safety Program
+    description: Employers in hazardous industries must establish a workplace safety committee or implement a formal safety program.
+    federal_equivalent: null
+    state_standard: "Utah Admin Code R614-1-6"
+    additional_details: Committees must include both employer and employee representatives. Meetings must be held regularly with documented minutes and hazard identification reviews.
+    applies_to: all
+    severity: mandatory
+
+  - id: UT-004
+    state: UT
+    requirement_name: Workers Compensation Insurance
+    description: All Utah employers must secure workers compensation insurance for their employees with limited exceptions.
+    federal_equivalent: null
+    state_standard: "UCA 34A-2-201"
+    additional_details: Sole proprietors and partners may elect exemption. Employers may self-insure with approval from the Labor Commission. Non-compliance is a criminal offense.
+    applies_to: all
+    severity: mandatory
+
+  - id: UT-005
+    state: UT
+    requirement_name: Trench Safety Stand-Down Compliance
+    description: UOSH conducts annual trench safety stand-down events and enforces strict trenching and excavation standards for construction.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "Utah Admin Code R614-3"
+    additional_details: Trenches five feet or deeper require protective systems. UOSH issues targeted enforcement actions during construction season focusing on excavation hazards.
+    applies_to: construction
+    severity: mandatory

@@ -1,0 +1,57 @@
+code: VA
+name: Virginia
+regulatory_body: VOSH (Virginia Occupational Safety and Health)
+state_plan: true
+primary_legislation: Virginia Occupational Safety and Health Law (VA Code 40.1-49.3 et seq.)
+construction_regulation: VOSH 16 VAC 25-175 (Construction Industry Standards)
+
+requirements:
+  - id: VA-001
+    state: VA
+    requirement_name: VOSH State Plan Enforcement
+    description: Virginia operates its own OSHA-approved state plan through VOSH, covering both private and public sector employers.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "VA Code 40.1-49.3 et seq."
+    additional_details: VOSH enforces standards that are at least as effective as federal OSHA. The program is administered by the Virginia Department of Labor and Industry.
+    applies_to: all
+    severity: mandatory
+
+  - id: VA-002
+    state: VA
+    requirement_name: Heat Illness Prevention Standard
+    description: Virginia adopted a permanent heat illness prevention standard requiring employers to protect workers from heat-related hazards.
+    federal_equivalent: null
+    state_standard: "16 VAC 25-210"
+    additional_details: Requires heat illness prevention plan when heat index reaches or exceeds 80 degrees F. Must include water, rest breaks, acclimatization procedures, and emergency response.
+    applies_to: all
+    severity: mandatory
+
+  - id: VA-003
+    state: VA
+    requirement_name: Infectious Disease Prevention (VOSH)
+    description: Virginia adopted a permanent standard for workplace safety related to infectious diseases including airborne pathogens.
+    federal_equivalent: null
+    state_standard: "16 VAC 25-220"
+    additional_details: Applies to employers with workers at elevated risk of exposure. Requires exposure assessment, written infection prevention plan, training, and PPE provisions.
+    applies_to: all
+    severity: mandatory
+
+  - id: VA-004
+    state: VA
+    requirement_name: Tree Trimming Operations Safety
+    description: VOSH enforces specific safety standards for tree trimming and removal operations in construction and general industry.
+    federal_equivalent: null
+    state_standard: "16 VAC 25-73"
+    additional_details: Requires training for workers performing tree trimming, use of personal protective equipment, safe work practices near energized power lines, and proper rigging procedures.
+    applies_to: construction
+    severity: mandatory
+
+  - id: VA-005
+    state: VA
+    requirement_name: Workers Compensation Insurance
+    description: Virginia employers with two or more employees must carry workers compensation insurance.
+    federal_equivalent: null
+    state_standard: "VA Code 65.2-101 et seq."
+    additional_details: All construction employers are covered regardless of number of employees. Employers may self-insure with approval from the Virginia Workers Compensation Commission.
+    applies_to: all
+    severity: mandatory

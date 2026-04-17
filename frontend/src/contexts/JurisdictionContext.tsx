@@ -181,8 +181,8 @@ export function JurisdictionProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<JurisdictionConfig>(US_DEFAULT);
 
   useEffect(() => {
-    const code = (company as Record<string, unknown>)?.jurisdiction_code as string | undefined;
-    const region = (company as Record<string, unknown>)?.jurisdiction_region as string | undefined;
+    const code = (company as unknown as Record<string, unknown>)?.jurisdiction_code as string | undefined;
+    const region = (company as unknown as Record<string, unknown>)?.jurisdiction_region as string | undefined;
 
     if (!code || code === 'US') {
       setConfig(US_DEFAULT);
@@ -198,7 +198,7 @@ export function JurisdictionProvider({ children }: { children: ReactNode }) {
       })
       .then((data) => setConfig(mapApiResponse(data)))
       .catch(() => setConfig(US_DEFAULT));
-  }, [(company as Record<string, unknown>)?.jurisdiction_code, (company as Record<string, unknown>)?.jurisdiction_region]);
+  }, [(company as unknown as Record<string, unknown>)?.jurisdiction_code, (company as unknown as Record<string, unknown>)?.jurisdiction_region]);
 
   return (
     <JurisdictionCtx.Provider value={config}>

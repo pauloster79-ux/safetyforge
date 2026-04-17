@@ -1,0 +1,57 @@
+code: AK
+name: Alaska
+regulatory_body: Alaska Occupational Safety and Health (AKOSH)
+state_plan: true
+primary_legislation: Alaska Statutes Title 18 Chapter 60
+construction_regulation: Alaska Administrative Code 8 AAC 61
+
+requirements:
+  - id: AK-001
+    state: AK
+    requirement_name: Alaska Occupational Safety and Health Act Compliance
+    description: Alaska operates its own OSHA-approved state plan covering both private and public sector employees with standards at least as effective as federal OSHA.
+    federal_equivalent: "29 CFR 1910 / 1926"
+    state_standard: "AS 18.60.010 et seq."
+    additional_details: AKOSH adopts most federal OSHA standards by reference and conducts independent inspections and enforcement.
+    applies_to: all
+    severity: mandatory
+
+  - id: AK-002
+    state: AK
+    requirement_name: Cold Stress and Extreme Weather Protection
+    description: Employers must protect workers from cold stress hazards including hypothermia and frostbite during outdoor work in extreme cold conditions.
+    federal_equivalent: null
+    state_standard: "8 AAC 61.010 (General Duty)"
+    additional_details: Requires warm-up shelters, buddy systems, work-rest schedules based on wind chill, and cold stress training for outdoor workers.
+    applies_to: all
+    severity: mandatory
+
+  - id: AK-003
+    state: AK
+    requirement_name: Right-to-Know and Hazard Communication
+    description: Alaska's hazard communication requirements extend federal HazCom standards with additional employer obligations for chemical exposure information.
+    federal_equivalent: "29 CFR 1910.1200"
+    state_standard: "8 AAC 61.1100"
+    additional_details: Employers must maintain safety data sheets accessible in the workplace and provide training in languages understood by employees.
+    applies_to: all
+    severity: mandatory
+
+  - id: AK-004
+    state: AK
+    requirement_name: Public Sector Employee Coverage
+    description: Alaska's state plan extends full OSHA protections to state and local government employees, who are not covered under federal OSHA.
+    federal_equivalent: null
+    state_standard: "AS 18.60.075"
+    additional_details: All state, municipal, and borough employees have the same safety protections as private sector workers.
+    applies_to: all
+    severity: mandatory
+
+  - id: AK-005
+    state: AK
+    requirement_name: Remote Worksite Emergency Planning
+    description: Employers operating at remote construction and industrial sites must maintain emergency action plans that account for limited access to medical facilities.
+    federal_equivalent: "29 CFR 1926.50"
+    state_standard: "8 AAC 61.320"
+    additional_details: Must include provisions for emergency evacuation by air or water, on-site first aid capabilities, and communication equipment for remote locations.
+    applies_to: construction
+    severity: mandatory

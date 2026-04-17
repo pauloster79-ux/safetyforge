@@ -3,10 +3,11 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from neo4j import Driver
 
-from app.dependencies import get_current_user, get_neo4j_driver
+from app.config import Settings, get_settings
+from app.dependencies import DEMO_USERS, get_current_user, get_neo4j_driver
 from app.models.company import CompanyCreate, TradeType
 from app.services.company_service import CompanyService
 from app.services.member_service import MemberService
@@ -71,4 +72,38 @@ async def verify_token(
         },
         "company": company.model_dump(mode="json"),
         "is_new_user": is_new_user,
+    }
+
+
+@router.get("/demo-users")
+async def list_demo_users(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    """List available demo users for the frontend dev switcher.
+
+    Returns a list of demo tokens mapped to their seeded golden-user identity.
+    Only returns data in development/test environments. In production this
+    endpoint returns 404 to avoid leaking the demo registry.
+
+    Returns:
+        Dict with a `users` list, each entry containing `token`, `uid`,
+        `email`, and a human-friendly `name`/`label`.
+    """
+    if settings.environment not in ("development", "test"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Demo users are only available in development/test.",
+        )
+
+    return {
+        "users": [
+            {
+                "token": f"demo-token-{alias}",
+                "alias": alias,
+                "uid": info["uid"],
+                "email": info["email"],
+                "name": info["name"],
+            }
+            for alias, info in DEMO_USERS.items()
+        ],
     }

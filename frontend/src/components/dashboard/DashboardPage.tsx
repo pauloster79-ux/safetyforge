@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   FileText,
   Plus,
@@ -22,7 +23,7 @@ import { ROUTES, DOCUMENT_TYPES } from '@/lib/constants';
 import { format } from 'date-fns';
 
 export function DashboardPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   useAuth();
   const { data: recentDocs, isLoading: docsLoading } = useRecentDocuments(5);
   const { data: stats } = useDocumentStats();

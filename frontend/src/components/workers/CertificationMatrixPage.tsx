@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Loader2,
@@ -56,7 +57,7 @@ function CellIcon({ status }: { status: string }) {
 }
 
 export function CertificationMatrixPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { data: matrix, isLoading: matrixLoading } = useCertificationMatrix();
   const { data: workers } = useWorkers();
   const [roleFilter, setRoleFilter] = useState<string>('All');

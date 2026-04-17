@@ -1,0 +1,47 @@
+code: NH
+name: New Hampshire
+regulatory_body: Federal OSHA (no state plan)
+state_plan: false
+primary_legislation: New Hampshire RSA Chapter 281-A (Workers' Compensation)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: NH-001
+    state: NH
+    requirement_name: Workers' Compensation Coverage
+    description: All New Hampshire employers must carry workers' compensation insurance or be approved for self-insurance. No minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "RSA 281-A:5"
+    additional_details: Administered by the New Hampshire Department of Labor. Sole proprietors and partners may elect coverage. Penalties for non-compliance include fines and stop-work orders.
+    applies_to: all
+    severity: mandatory
+
+  - id: NH-002
+    state: NH
+    requirement_name: Toxic Substances in the Workplace Right-to-Know
+    description: Employers must inform employees about toxic or hazardous substances in the workplace and provide safety data sheets and proper labeling.
+    federal_equivalent: "29 CFR 1910.1200 (Hazard Communication)"
+    state_standard: "RSA 277-A"
+    additional_details: New Hampshire's Right-to-Know law requires employers to maintain a list of toxic substances used in the workplace and make safety data sheets available to employees upon request.
+    applies_to: all
+    severity: mandatory
+
+  - id: NH-003
+    state: NH
+    requirement_name: Youth Employment Safety Restrictions
+    description: New Hampshire restricts the types of hazardous work that may be performed by minors, including construction activities involving power tools, excavation, and roofing.
+    federal_equivalent: "29 CFR 570 (Child Labor)"
+    state_standard: "RSA 276-A:4"
+    additional_details: Minors under 16 are prohibited from most construction activities. Minors aged 16-17 face restrictions on hours and types of hazardous equipment operation.
+    applies_to: all
+    severity: mandatory
+
+  - id: NH-004
+    state: NH
+    requirement_name: Employer Injury Reporting
+    description: Employers must file a first report of injury with the New Hampshire Department of Labor within five days of a workplace injury resulting in lost time.
+    federal_equivalent: "29 CFR 1904 (OSHA Recordkeeping)"
+    state_standard: "RSA 281-A:53"
+    additional_details: Failure to report within the required timeframe may result in penalties. Fatalities and hospitalizations also require separate federal OSHA notification.
+    applies_to: all
+    severity: mandatory

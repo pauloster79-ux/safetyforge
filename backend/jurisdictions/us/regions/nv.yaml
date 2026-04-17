@@ -1,0 +1,57 @@
+code: NV
+name: Nevada
+regulatory_body: Nevada OSHA (Division of Industrial Relations, SCATS)
+state_plan: true
+primary_legislation: Nevada Revised Statutes Chapter 618 (Occupational Safety and Health)
+construction_regulation: NAC 618 (Nevada Administrative Code)
+
+requirements:
+  - id: NV-001
+    state: NV
+    requirement_name: Written Safety Program
+    description: Employers must develop and maintain a written safety program that addresses workplace hazards, employee training, and incident investigation procedures.
+    federal_equivalent: null
+    state_standard: "NRS 618.383"
+    additional_details: Program must be available for inspection by Nevada OSHA. Must include hazard communication, emergency procedures, and documentation of training provided to employees.
+    applies_to: all
+    severity: mandatory
+
+  - id: NV-002
+    state: NV
+    requirement_name: Heat Illness Prevention
+    description: Employers must protect workers from heat-related illness by providing water, rest, shade, and acclimatization procedures for outdoor and high-heat indoor work.
+    federal_equivalent: null
+    state_standard: "NAC 618.790-618.796"
+    additional_details: Nevada's heat illness prevention requirements are more specific than federal guidance. Employers must monitor weather conditions and implement emergency response procedures.
+    applies_to: all
+    severity: mandatory
+
+  - id: NV-003
+    state: NV
+    requirement_name: Construction Trench Safety
+    description: All trenching and excavation work must comply with Nevada-adopted standards requiring protective systems, competent person oversight, and atmospheric testing for trenches deeper than four feet.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "NAC 618.854-618.878"
+    additional_details: Nevada OSHA enforces trench safety with state-specific inspection emphasis. Employers must have a competent person on-site for all excavation work.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NV-004
+    state: NV
+    requirement_name: Workers' Compensation Coverage
+    description: All Nevada employers must maintain workers' compensation insurance coverage regardless of the number of employees.
+    federal_equivalent: null
+    state_standard: "NRS 616B.627"
+    additional_details: Administered through private insurers or the employer's self-insurance program. No employee count exemption exists.
+    applies_to: all
+    severity: mandatory
+
+  - id: NV-005
+    state: NV
+    requirement_name: Construction Contractor Licensing
+    description: Contractors must obtain a license from the Nevada State Contractors Board before performing any construction work exceeding specified dollar thresholds.
+    federal_equivalent: null
+    state_standard: "NRS 624.200"
+    additional_details: Licensing requires demonstration of financial responsibility, experience, and knowledge of applicable building and safety codes. License classifications determine the scope of work permitted.
+    applies_to: construction
+    severity: mandatory

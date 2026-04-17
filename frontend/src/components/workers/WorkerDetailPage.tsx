@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Loader2,
@@ -47,7 +48,7 @@ function StatusBadge({ status }: { status: Worker['status'] }) {
     inactive: { label: 'Inactive', className: 'bg-muted text-muted-foreground hover:bg-muted' },
     terminated: { label: 'Terminated', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -92,7 +93,7 @@ const ROLE_RECOMMENDED_CERTS: Record<string, string[]> = {
 };
 
 export function WorkerDetailPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { workerId } = useParams<{ workerId: string }>();
   const { data: worker, isLoading } = useWorker(workerId);
   const addCertification = useAddCertification();
@@ -133,7 +134,7 @@ export function WorkerDetailPage() {
 
   // Missing recommended certs
   const recommended = ROLE_RECOMMENDED_CERTS[worker.role] ?? [];
-  const hasCertTypes = new Set(worker.certifications.map(c => c.certification_type));
+  const hasCertTypes = new Set((worker.certifications || []).map(c => c.certification_type));
   const missingRecommended = recommended.filter(certType => !hasCertTypes.has(certType));
 
   const handleOpenCertDialog = (prefillType?: string) => {
@@ -284,9 +285,9 @@ export function WorkerDetailPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {worker.certifications.length > 0 ? (
+          {(worker.certifications || []).length > 0 ? (
             <div className="space-y-3">
-              {worker.certifications
+              {(worker.certifications || [])
                 .sort((a, b) => {
                   const order = { expired: 0, expiring_soon: 1, valid: 2 };
                   return order[a.status] - order[b.status];

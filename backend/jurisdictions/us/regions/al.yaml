@@ -1,0 +1,47 @@
+code: AL
+name: Alabama
+regulatory_body: Alabama Department of Labor
+state_plan: false
+primary_legislation: Code of Alabama Title 25
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: AL-001
+    state: AL
+    requirement_name: Workers' Compensation Insurance
+    description: Employers with five or more employees must carry workers' compensation insurance covering occupational injuries and illnesses.
+    federal_equivalent: null
+    state_standard: "Code of Alabama 25-5-1 et seq."
+    additional_details: Covers medical expenses, disability benefits, and death benefits. Failure to carry insurance is a criminal misdemeanor.
+    applies_to: all
+    severity: mandatory
+
+  - id: AL-002
+    state: AL
+    requirement_name: Child Labor Law Compliance
+    description: Employers must comply with Alabama child labor laws restricting hours and types of work for minors in hazardous occupations.
+    federal_equivalent: "29 CFR 570 (Child Labor)"
+    state_standard: "Code of Alabama 25-8-1 et seq."
+    additional_details: Minors under 18 prohibited from operating certain machinery and working in hazardous construction environments.
+    applies_to: all
+    severity: mandatory
+
+  - id: AL-003
+    state: AL
+    requirement_name: Mining Safety and Health Requirements
+    description: Alabama has state-specific mining safety requirements administered by the Alabama Surface Mining Commission.
+    federal_equivalent: "30 CFR (MSHA)"
+    state_standard: "Code of Alabama 9-16-70 et seq."
+    additional_details: Surface mining operations must obtain permits and comply with reclamation and safety plans.
+    applies_to: construction
+    severity: mandatory
+
+  - id: AL-004
+    state: AL
+    requirement_name: Asbestos Abatement Licensing
+    description: Contractors performing asbestos removal must be licensed by the Alabama Department of Environmental Management.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "ADEM Admin Code 335-3-11"
+    additional_details: Requires accredited training, project notification, proper disposal, and air monitoring during abatement activities.
+    applies_to: construction
+    severity: mandatory

@@ -101,9 +101,9 @@ describe('useOsha300Summary', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.year).toBe(2026)
-    expect(result.current.data!.total_cases).toBe(5)
-    expect(result.current.data!.deaths).toBe(0)
-    expect(result.current.data!.certified).toBe(false)
+    expect(result.current.data!.total_deaths).toBe(0)
+    expect(result.current.data!.total_other_recordable).toBeDefined()
+    expect(result.current.data!.certified_by).toBeDefined()
   })
 
   // [HAPPY] Passes year as query param

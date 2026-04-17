@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HardHat, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,7 +41,8 @@ export function CompanyOnboarding() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const selectedJurisdiction = JURISDICTIONS.find(j => j.code === jurisdictionCode) || JURISDICTIONS[0];
+  // Jurisdiction lookup available for future use
+  void JURISDICTIONS.find(j => j.code === jurisdictionCode);
 
   const { clearNewUserFlag } = useAuth();
   const navigate = useNavigate();
@@ -108,7 +109,7 @@ export function CompanyOnboarding() {
             className="mt-4 text-[20px] font-bold"
             style={{ color: 'var(--concrete-900)', fontFamily: 'IBM Plex Sans, sans-serif' }}
           >
-            Safety<span style={{ color: 'var(--machine)' }}>Forge</span>
+            Kerf
           </h1>
           <p
             className="mt-1 text-[13px]"

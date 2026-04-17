@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Loader2,
@@ -62,7 +63,7 @@ const GENERATION_MESSAGES = [
 ];
 
 export function DocumentCreatePage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const [searchParams] = useSearchParams();
   const preselectedType = searchParams.get('type');
 

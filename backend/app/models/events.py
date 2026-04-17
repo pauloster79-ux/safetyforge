@@ -26,6 +26,19 @@ class EventType(str, Enum):
     WORKER_REMOVED = "worker.removed_from_project"
     CORRECTIVE_ACTION_OVERDUE = "corrective_action.overdue"
     DOCUMENT_GENERATED = "document.generated"
+    DAILY_LOG_SUBMITTED = "daily_log.submitted"
+    DAILY_LOG_CREATED = "daily_log.created"
+    TIME_ENTRY_RECORDED = "time_entry.recorded"
+    QUALITY_OBSERVATION_REPORTED = "quality_observation.reported"
+    VARIATION_CREATED = "variation.created"
+    VARIATION_DETECTED = "variation.detected"
+    WORK_ITEM_CREATED = "work_item.created"
+    WORK_ITEM_UPDATED = "work_item.updated"
+    INVOICE_CREATED = "invoice.created"
+    PAYMENT_RECORDED = "payment.recorded"
+    PROPOSAL_GENERATED = "proposal.generated"
+    PROJECT_STATUS_CHANGED = "project.status_changed"
+    PROJECT_ACTUALS_READY = "project.actuals_ready"
 
 
 class EventActor(BaseModel):

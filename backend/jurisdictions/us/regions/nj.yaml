@@ -1,0 +1,57 @@
+code: NJ
+name: New Jersey
+regulatory_body: Federal OSHA (no state plan for private sector)
+state_plan: false
+primary_legislation: New Jersey Worker and Community Right to Know Act (N.J.S.A. 34:5A)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: NJ-001
+    state: NJ
+    requirement_name: Worker and Community Right to Know Act
+    description: Employers must survey the workplace for hazardous substances, label all containers, provide safety data sheets, and conduct annual employee training. More comprehensive than the federal Hazard Communication standard.
+    federal_equivalent: "29 CFR 1910.1200 (Hazard Communication)"
+    state_standard: "N.J.S.A. 34:5A-1 et seq."
+    additional_details: Requires annual environmental surveys filed with the Department of Health. Covers environmental hazards in addition to workplace exposure. Community right-to-know provisions require public disclosure.
+    applies_to: all
+    severity: mandatory
+
+  - id: NJ-002
+    state: NJ
+    requirement_name: Workers' Compensation Coverage
+    description: All New Jersey employers must carry workers' compensation insurance or be approved for self-insurance, with no minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "N.J.S.A. 34:15-71"
+    additional_details: Administered by the New Jersey Division of Workers' Compensation. Failure to carry insurance is a criminal offense subject to fines and imprisonment.
+    applies_to: all
+    severity: mandatory
+
+  - id: NJ-003
+    state: NJ
+    requirement_name: Public Employees Occupational Safety and Health (PEOSH)
+    description: New Jersey operates a state plan exclusively for public sector employees, enforcing OSHA-equivalent standards through the PEOSH program.
+    federal_equivalent: "29 CFR 1910/1926 (General Industry/Construction)"
+    state_standard: "N.J.S.A. 34:6A-25 et seq."
+    additional_details: PEOSH covers state, county, and municipal employees. Health standards enforced by the Department of Health; safety standards by the Department of Labor.
+    applies_to: all
+    severity: mandatory
+
+  - id: NJ-004
+    state: NJ
+    requirement_name: Construction Contractor Registration
+    description: All contractors performing construction work in New Jersey must register with the Department of Labor and Workforce Development.
+    federal_equivalent: null
+    state_standard: "N.J.S.A. 34:11-56.48 et seq."
+    additional_details: Registration requires proof of workers' compensation and general liability insurance. Unregistered contractors face stop-work orders, fines, and potential criminal penalties.
+    applies_to: construction
+    severity: mandatory
+
+  - id: NJ-005
+    state: NJ
+    requirement_name: Prevailing Wage on Public Works
+    description: Contractors and subcontractors on public works construction projects must pay workers no less than the prevailing wage rate as determined by the Department of Labor.
+    federal_equivalent: "Davis-Bacon Act (40 U.S.C. 3141-3148)"
+    state_standard: "N.J.S.A. 34:11-56.25 et seq."
+    additional_details: Applies to all public body construction contracts. Certified payroll records must be submitted. Violations carry debarment, penalties, and potential criminal charges.
+    applies_to: construction
+    severity: mandatory

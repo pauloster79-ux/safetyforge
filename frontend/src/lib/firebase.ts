@@ -1,46 +1,27 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  sendPasswordResetEmail,
-  sendEmailVerification,
-  type User,
-  type Auth,
-  onAuthStateChanged,
-} from 'firebase/auth';
+/**
+ * Firebase stub module.
+ *
+ * Firebase has been replaced by Clerk for authentication.
+ * These stubs satisfy any residual imports without pulling in the
+ * firebase/app or firebase/auth packages.
+ */
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'not-configured',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'not-configured',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'not-configured',
-};
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-const isConfigured =
-  firebaseConfig.apiKey !== 'not-configured' &&
-  firebaseConfig.apiKey !== '' &&
-  firebaseConfig.apiKey !== undefined;
+type User = any;
+type Auth = any;
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let googleProvider: GoogleAuthProvider | null = null;
+const auth: Auth | null = null;
+const googleProvider: any | null = null;
+const isConfigured = false;
 
-if (isConfigured) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
-  } catch (e) {
-    console.warn('Firebase initialization failed:', e);
-  }
-} else {
-  console.warn(
-    'Firebase is not configured. Set VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, and VITE_FIREBASE_PROJECT_ID in .env'
-  );
-}
+const signInWithPopup: any = () => Promise.reject(new Error('Firebase is deprecated — use Clerk'));
+const signInWithEmailAndPassword: any = () => Promise.reject(new Error('Firebase is deprecated — use Clerk'));
+const createUserWithEmailAndPassword: any = () => Promise.reject(new Error('Firebase is deprecated — use Clerk'));
+const firebaseSignOut: any = () => Promise.reject(new Error('Firebase is deprecated — use Clerk'));
+const sendPasswordResetEmail: any = () => Promise.reject(new Error('Firebase is deprecated — use Clerk'));
+const sendEmailVerification: any = () => Promise.reject(new Error('Firebase is deprecated — use Clerk'));
+const onAuthStateChanged: any = () => () => {};
 
 export {
   auth,

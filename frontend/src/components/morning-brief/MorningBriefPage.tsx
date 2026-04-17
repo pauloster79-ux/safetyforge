@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   Loader2,
@@ -65,9 +66,10 @@ const ALERT_SEVERITY_CONFIG: Record<MorningBriefAlert['severity'], { icon: typeo
   },
 };
 
-export function MorningBriefPage() {
-  const navigate = useNavigate();
-  const { projectId } = useParams<{ projectId: string }>();
+export function MorningBriefPage({ projectId: propProjectId }: { projectId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string }>();
+  const projectId = propProjectId || params.projectId;
   const { data: project } = useProject(projectId);
   const { data: brief, isLoading } = useMorningBrief(projectId);
 
@@ -97,7 +99,7 @@ export function MorningBriefPage() {
   }
 
   // Sort alerts: critical first, then warning, then info
-  const sortedAlerts = [...brief.alerts].sort((a, b) => {
+  const sortedAlerts = [...(brief.alerts || [])].sort((a, b) => {
     const order: Record<string, number> = { critical: 0, warning: 1, info: 2 };
     return (order[a.severity] ?? 3) - (order[b.severity] ?? 3);
   });
@@ -179,9 +181,9 @@ export function MorningBriefPage() {
               </div>
             </div>
           </div>
-          {brief.weather.alerts.length > 0 && (
+          {(brief.weather.alerts || []).length > 0 && (
             <div className="mt-4 space-y-2">
-              {brief.weather.alerts.map((alert, i) => (
+              {(brief.weather.alerts || []).map((alert, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-md bg-[var(--warn-bg)] px-3 py-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--warn)]" />
                   <p className="text-sm font-medium text-[var(--warn)]">{alert}</p>

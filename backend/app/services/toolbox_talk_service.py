@@ -65,7 +65,11 @@ class ToolboxTalkService(BaseService):
         attendees_json = data.pop("_attendees_json", "[]")
         data["attendees"] = json.loads(attendees_json) if attendees_json else []
         custom_points_json = data.pop("_custom_points_json", "[]")
-        data["custom_points"] = json.loads(custom_points_json) if custom_points_json else []
+        custom_points_val = json.loads(custom_points_json) if custom_points_json else []
+        if isinstance(custom_points_val, list):
+            data["custom_points"] = "\n".join(str(p) for p in custom_points_val)
+        else:
+            data["custom_points"] = str(custom_points_val)
         data["company_id"] = record["company_id"]
         data["project_id"] = record["project_id"]
         return ToolboxTalk(**data)
@@ -124,6 +128,17 @@ class ToolboxTalkService(BaseService):
             """,
             {"company_id": company_id, "project_id": project_id, "props": props},
         )
+
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=talk_id,
+            entity_type="ToolboxTalk",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Scheduled toolbox talk: {data.topic}",
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)
 
     def get(
@@ -278,6 +293,17 @@ class ToolboxTalkService(BaseService):
         )
         if result is None:
             raise ToolboxTalkNotFoundError(talk_id)
+
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=talk_id,
+            entity_type="ToolboxTalk",
+            company_id=company_id,
+            actor=actor,
+            summary="Updated toolbox talk",
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)
 
     def delete(
@@ -310,6 +336,16 @@ class ToolboxTalkService(BaseService):
         )
         if result is None:
             raise ToolboxTalkNotFoundError(talk_id)
+
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=talk_id,
+            entity_type="ToolboxTalk",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary="Deleted toolbox talk",
+            related_entity_ids=[project_id],
+        )
 
     def add_attendee(
         self,
@@ -377,6 +413,17 @@ class ToolboxTalkService(BaseService):
                 "now": now.isoformat(),
             },
         )
+
+        self._emit_audit(
+            event_type="relationship.added",
+            entity_id=talk_id,
+            entity_type="ToolboxTalk",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Attendee signed: {attendee_data.worker_name}",
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)
 
     def complete_talk(
@@ -425,6 +472,19 @@ class ToolboxTalkService(BaseService):
         )
         if result is None:
             raise ToolboxTalkNotFoundError(talk_id)
+
+        self._emit_audit(
+            event_type="state.transitioned",
+            entity_id=talk_id,
+            entity_type="ToolboxTalk",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary=f"Toolbox talk completed, presented by {presented_by}",
+            prev_state=ToolboxTalkStatus.SCHEDULED.value,
+            new_state=ToolboxTalkStatus.COMPLETED.value,
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)
 
     def set_generated_content(
@@ -479,4 +539,15 @@ class ToolboxTalkService(BaseService):
         )
         if result is None:
             raise ToolboxTalkNotFoundError(talk_id)
+
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=talk_id,
+            entity_type="ToolboxTalk",
+            company_id=company_id,
+            actor=Actor.human(user_id) if user_id else Actor.human("system"),
+            summary="AI-generated content added to toolbox talk",
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)

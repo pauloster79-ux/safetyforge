@@ -1,0 +1,47 @@
+code: TN
+name: Tennessee
+regulatory_body: TOSHA (Tennessee Occupational Safety and Health Administration)
+state_plan: true
+primary_legislation: Tennessee Occupational Safety and Health Act (TCA 50-3)
+construction_regulation: TOSHA Rules Chapter 0800-01-03
+
+requirements:
+  - id: TN-001
+    state: TN
+    requirement_name: TOSHA State Plan Enforcement
+    description: Tennessee operates its own OSHA-approved state plan through TOSHA, covering both private and public sector employers.
+    federal_equivalent: "29 CFR 1910 (General Industry)"
+    state_standard: "TCA 50-3-101 et seq."
+    additional_details: TOSHA adopts and enforces standards that are at least as effective as federal OSHA standards. Public sector employees are also covered.
+    applies_to: all
+    severity: mandatory
+
+  - id: TN-002
+    state: TN
+    requirement_name: Voluntary STAR Program
+    description: TOSHA operates a Voluntary Protection Program (STAR) recognizing employers with exemplary safety programs.
+    federal_equivalent: "OSHA VPP"
+    state_standard: "TOSHA Directive STD 04-001"
+    additional_details: Employers must demonstrate injury rates below industry average and maintain comprehensive safety and health management systems.
+    applies_to: all
+    severity: mandatory
+
+  - id: TN-003
+    state: TN
+    requirement_name: Construction Trenching and Excavation
+    description: TOSHA enforces specific trenching and excavation standards for construction aligned with federal requirements plus state-specific enforcement emphasis.
+    federal_equivalent: "29 CFR 1926 Subpart P"
+    state_standard: "TOSHA Rule 0800-01-03-.05"
+    additional_details: Excavations deeper than 5 feet require protective systems. TOSHA conducts targeted construction inspections focusing on trenching hazards.
+    applies_to: construction
+    severity: mandatory
+
+  - id: TN-004
+    state: TN
+    requirement_name: Workers Compensation Coverage
+    description: Employers with five or more employees must carry workers compensation insurance.
+    federal_equivalent: null
+    state_standard: "TCA 50-6-102"
+    additional_details: Construction employers must provide coverage regardless of number of employees. Coal mining employers also must provide coverage regardless of employee count.
+    applies_to: all
+    severity: mandatory

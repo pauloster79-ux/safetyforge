@@ -1,0 +1,47 @@
+code: SD
+name: South Dakota
+regulatory_body: Federal OSHA (no state plan) / South Dakota Department of Labor and Regulation
+state_plan: false
+primary_legislation: Federal Occupational Safety and Health Act (29 USC 651)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: SD-001
+    state: SD
+    requirement_name: Workers' Compensation Coverage
+    description: All South Dakota employers with one or more employees must carry workers' compensation insurance. There is no small employer exemption.
+    federal_equivalent: null
+    state_standard: "SDCL 62-1-1 et seq."
+    additional_details: Employers may obtain coverage through private carriers or self-insurance approved by the Department of Labor and Regulation. Agricultural employers with fewer than specified employees may qualify for limited exemptions.
+    applies_to: all
+    severity: mandatory
+
+  - id: SD-002
+    state: SD
+    requirement_name: Electrical Installation and Inspection
+    description: South Dakota requires that all electrical installations comply with the National Electrical Code (NEC) as adopted by the state. Electrical work must be performed by licensed electricians.
+    federal_equivalent: null
+    state_standard: "SDCL 36-16-1 et seq."
+    additional_details: The South Dakota Electrical Commission licenses electricians and inspects electrical installations. All wiring installations must be inspected before being energized. Licensed electricians must complete continuing education for renewal.
+    applies_to: construction
+    severity: mandatory
+
+  - id: SD-003
+    state: SD
+    requirement_name: Plumbing and Mechanical Work Licensing
+    description: South Dakota requires licensing for plumbing contractors and journeyman plumbers through the South Dakota Plumbing Commission.
+    federal_equivalent: null
+    state_standard: "SDCL 36-25-1 et seq."
+    additional_details: All plumbing work must be performed by licensed plumbers and inspected for code compliance. The Plumbing Commission administers examinations, issues licenses, and enforces plumbing codes statewide.
+    applies_to: construction
+    severity: mandatory
+
+  - id: SD-004
+    state: SD
+    requirement_name: Underground Facilities Damage Prevention (SD811)
+    description: Excavators must notify the South Dakota One Call notification center at least 48 business hours before excavation. Failure to notify is a Class 2 misdemeanor.
+    federal_equivalent: null
+    state_standard: "SDCL 49-7A-1 et seq."
+    additional_details: Facility operators must mark underground lines within the notification period. Excavators must use reasonable care within the tolerance zone. Violations resulting in facility damage may result in criminal penalties and civil liability.
+    applies_to: construction
+    severity: mandatory

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   Plus,
   Users,
@@ -32,7 +33,7 @@ function WorkerStatusBadge({ status }: { status: Worker['status'] }) {
     inactive: { label: 'Inactive', className: 'bg-muted text-muted-foreground hover:bg-muted' },
     terminated: { label: 'Terminated', className: 'bg-[var(--fail-bg)] text-[var(--fail)] hover:bg-[var(--fail-bg)]' },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || { label: status, className: 'bg-muted text-muted-foreground hover:bg-muted' };
   return <Badge className={className}>{label}</Badge>;
 }
 
@@ -76,7 +77,7 @@ function CertHealthIndicator({ worker }: { worker: Worker }) {
 }
 
 export function WorkerListPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const [roleFilter, setRoleFilter] = useState<string>('All Roles');
   const [tradeFilter, setTradeFilter] = useState<string>('All Trades');
   const [statusFilter, setStatusFilter] = useState<string>('All Status');

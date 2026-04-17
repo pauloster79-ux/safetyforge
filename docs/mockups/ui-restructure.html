@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf UI Restructure — Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: #f4f5f3;
+    --foreground: #0d0e0c;
+    --card: #ffffff;
+    --card-foreground: #0d0e0c;
+    --primary: #F5B800;
+    --primary-foreground: #0d0e0c;
+    --muted: #e6e8e3;
+    --muted-foreground: #71766b;
+    --border: #e6e8e3;
+    --machine: #F5B800;
+    --machine-dark: #D9A200;
+    --machine-wash: rgba(245,184,0,0.1);
+    --pass: #2d8a4e;
+    --pass-bg: rgba(45,138,78,0.1);
+    --fail: #c53030;
+    --fail-bg: rgba(197,48,48,0.1);
+    --warn: #b8860b;
+    --warn-bg: rgba(184,134,11,0.08);
+    --info: #2563eb;
+    --info-bg: rgba(37,99,235,0.08);
+    --radius: 0.1875rem;
+    --radius-card: calc(0.1875rem * 1.4);
+    --radius-btn: calc(0.1875rem * 0.6);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Icon Rail ── */
+  .rail {
+    width: 48px;
+    min-width: 48px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+    gap: 1px;
+    z-index: 10;
+  }
+  .rail-logo {
+    width: 32px;
+    height: 32px;
+    background: var(--machine);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+  }
+  .rail-logo svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; fill: none; }
+  .rail-item {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background .15s;
+    position: relative;
+  }
+  .rail-item:hover { background: var(--muted); }
+  .rail-item.active {
+    background: var(--machine-wash);
+  }
+  .rail-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--machine);
+    border-radius: 0 1px 1px 0;
+  }
+  .rail-item svg {
+    width: 18px;
+    height: 18px;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.8;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .rail-item.active svg { stroke: var(--machine-dark); }
+  .rail-item .tooltip {
+    display: none;
+    position: absolute;
+    left: 52px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--foreground);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .rail-item:hover .tooltip { display: block; }
+
+  /* ── Canvas ── */
+  .canvas { flex: 1; overflow-y: auto; padding: 24px 32px; }
+
+  /* ── Project Header ── */
+  .project-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .project-header-left { flex: 1; }
+  .project-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .project-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--muted-foreground);
+  }
+  .project-meta svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.8;
+    fill: none;
+    vertical-align: -2px;
+    margin-right: 3px;
+  }
+  .project-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-card);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .badge-green { background: var(--pass-bg); color: var(--pass); }
+  .badge-blue { background: var(--info-bg); color: var(--info); }
+  .badge-yellow { background: var(--warn-bg); color: var(--warn); }
+  .badge-red { background: var(--fail-bg); color: var(--fail); }
+  .badge-gray { background: var(--muted); color: var(--muted-foreground); }
+
+  /* ── Compliance Ring ── */
+  .compliance-ring {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .compliance-ring svg { transform: rotate(-90deg); }
+  .compliance-ring .value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .15s;
+    background: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { color: var(--foreground); }
+  .tab.active { color: var(--foreground); border-bottom-color: var(--machine); font-weight: 600; }
+  .tab .count {
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: var(--radius-card);
+    font-weight: 500;
+  }
+  .tab.active .count { background: var(--machine-wash); color: var(--machine-dark); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(13,14,12,0.04);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--foreground);
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(13,14,12,0.04);
+    padding: 16px;
+    text-align: center;
+  }
+  .kpi .num { font-size: 26px; font-weight: 700; color: var(--foreground); }
+  .kpi .label { font-size: 12px; color: var(--muted-foreground); margin-top: 2px; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--muted); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 7px 14px;
+    border-radius: var(--radius-btn);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    line-height: 1.3;
+  }
+  .btn:hover { opacity: .88; }
+  .btn-primary { background: var(--machine); color: var(--foreground); }
+  .btn-primary:hover { background: var(--machine-dark); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+  .btn-outline:hover { background: var(--muted); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-group { display: flex; gap: 8px; }
+
+  /* ── Dropdown ── */
+  .dropdown-wrap { position: relative; display: inline-block; margin-bottom: 16px; }
+  .dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  .dropdown-btn svg {
+    width: 14px; height: 14px;
+    stroke: var(--muted-foreground);
+    stroke-width: 2; fill: none;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 4px 12px rgba(13,14,12,0.08);
+    display: none;
+    min-width: 240px;
+    z-index: 20;
+    overflow: hidden;
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dropdown-option:hover { background: var(--muted); }
+  .dropdown-option.active { background: var(--machine-wash); font-weight: 600; }
+  .dropdown-option .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Summary Bar ── */
+  .summary-bar {
+    display: flex;
+    gap: 24px;
+    padding: 12px 16px;
+    background: var(--muted);
+    border-radius: var(--radius-card);
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .summary-bar .item span { color: var(--muted-foreground); font-weight: 400; margin-right: 4px; }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    height: 6px;
+    background: var(--muted);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 8px 0 4px;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    background: var(--machine);
+    border-radius: var(--radius);
+  }
+
+  /* ── Detail Grid ── */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--muted);
+  }
+  .detail-row .label { color: var(--muted-foreground); }
+
+  /* ── Team Grid ── */
+  .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* ── Tab Panels ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Payment Cards ── */
+  .payment-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .payment-card {
+    padding: 16px;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    text-align: center;
+    background: var(--card);
+  }
+  .payment-card .amount { font-size: 22px; font-weight: 700; }
+  .payment-card .label { font-size: 12px; color: var(--muted-foreground); margin-top: 2px; }
+
+  /* ── Contract Value ── */
+  .contract-value { font-size: 26px; font-weight: 700; margin: 8px 0; }
+
+  /* ── Proposal Card ── */
+  .proposal-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--pass-bg);
+    border-radius: var(--radius-card);
+    border: 1px solid rgba(45,138,78,0.15);
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .proposal-card .icon {
+    width: 28px; height: 28px;
+    background: var(--pass);
+    border-radius: var(--radius-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .proposal-card .icon svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 2.5; fill: none; }
+
+  /* ── Empty State ── */
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted-foreground); }
+  .empty-state svg { width: 40px; height: 40px; stroke: var(--muted-foreground); opacity: .5; margin-bottom: 10px; }
+  .empty-state p { font-size: 13px; margin-top: 4px; }
+
+  /* ── Checklist ── */
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--muted);
+  }
+  .checklist-item:last-child { border-bottom: none; }
+  .check-icon {
+    width: 18px; height: 18px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .check-icon.done { background: var(--pass-bg); }
+  .check-icon.done svg { stroke: var(--pass); }
+  .check-icon.pending { background: var(--muted); }
+  .check-icon.pending svg { stroke: var(--muted-foreground); }
+  .check-icon svg { width: 12px; height: 12px; stroke-width: 2.5; fill: none; }
+
+  /* ── Inline Key-Value ── */
+  .kv-row { display: flex; gap: 8px; font-size: 13px; padding: 4px 0; }
+  .kv-row .kv-label { color: var(--muted-foreground); min-width: 120px; }
+</style>
+</head>
+<body>
+
+<!-- Icon Rail -->
+<nav class="rail">
+  <!-- Logo -->
+  <div class="rail-logo">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+
+  <!-- Nav Items -->
+  <div class="rail-item" data-nav="chat">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span class="tooltip">Chat</span>
+  </div>
+  <div class="rail-item active" data-nav="projects">
+    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    <span class="tooltip">Projects</span>
+  </div>
+  <div class="rail-item" data-nav="schedule">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span class="tooltip">Schedule</span>
+  </div>
+  <div class="rail-item" data-nav="dailylogs">
+    <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+    <span class="tooltip">Daily Logs</span>
+  </div>
+  <div class="rail-item" data-nav="workers">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span class="tooltip">Workers</span>
+  </div>
+  <div class="rail-item" data-nav="equipment">
+    <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    <span class="tooltip">Equipment</span>
+  </div>
+  <div class="rail-item" data-nav="safety">
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+    <span class="tooltip">Safety</span>
+  </div>
+  <div class="rail-item" data-nav="documents">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span class="tooltip">Documents</span>
+  </div>
+  <div class="rail-item" data-nav="reports">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span class="tooltip">Reports</span>
+  </div>
+  <div class="rail-item" data-nav="settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span class="tooltip">Settings</span>
+  </div>
+</nav>
+
+<!-- Canvas -->
+<main class="canvas">
+  <!-- Project Header -->
+  <div class="project-header">
+    <div class="project-header-left">
+      <h1>
+        Hillside Custom Residence &mdash; Lot 14
+        <span class="badge badge-green">Active</span>
+      </h1>
+      <div class="project-meta">
+        <span>
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          1247 Hillside Dr, Boulder CO 80302
+        </span>
+        <span>Meridian Custom Homes</span>
+      </div>
+    </div>
+    <div class="project-header-right">
+      <div class="compliance-ring">
+        <svg width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--muted)" stroke-width="3.5"/>
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--machine)" stroke-width="3.5"
+            stroke-dasharray="125.66" stroke-dashoffset="35.18" stroke-linecap="round"/>
+        </svg>
+        <div class="value">72</div>
+      </div>
+      <div class="btn-group" style="flex-direction: column;">
+        <button class="btn btn-primary btn-sm">Record Time</button>
+        <button class="btn btn-outline btn-sm">Add Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Tabs -->
+  <div class="tabs" id="mainTabs">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="contract">Contract</div>
+    <div class="tab" data-tab="work">Work</div>
+    <div class="tab" data-tab="dailylogs">Daily Logs <span class="count">8</span></div>
+    <div class="tab" data-tab="safety">Safety</div>
+    <div class="tab" data-tab="team">Team <span class="count">12</span></div>
+    <div class="tab" data-tab="documents">Documents <span class="count">6</span></div>
+  </div>
+
+  <!-- ═══════ OVERVIEW ═══════ -->
+  <div class="tab-panel active" id="panel-overview">
+    <div class="kpi-grid">
+      <div class="kpi"><div class="num">12</div><div class="label">Workers</div></div>
+      <div class="kpi"><div class="num">5</div><div class="label">Inspections</div></div>
+      <div class="kpi"><div class="num" style="color:var(--fail)">1</div><div class="label">Incident</div></div>
+      <div class="kpi"><div class="num">8</div><div class="label">Daily Logs</div></div>
+    </div>
+    <div class="detail-grid">
+      <div class="card">
+        <h3>Project Details</h3>
+        <div class="detail-row"><span class="label">Type</span><span>Custom Residential</span></div>
+        <div class="detail-row"><span class="label">Start Date</span><span>Jan 15, 2026</span></div>
+        <div class="detail-row"><span class="label">Est. Completion</span><span>Aug 30, 2026</span></div>
+        <div class="detail-row"><span class="label">Jurisdiction</span><span>Boulder County, CO</span></div>
+        <div class="detail-row"><span class="label">GC License</span><span>#CO-GC-2024-8841</span></div>
+      </div>
+      <div class="card">
+        <h3>Compliance Summary</h3>
+        <div class="checklist-item">
+          <div class="check-icon done"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span>Fall protection plan filed</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon done"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span>OSHA 300 log current</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon pending"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/></svg></div>
+          <span style="color:var(--warn)">Scaffold inspection overdue (2 days)</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon done"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span>Hazard communication plan</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <h3>Recent Activity</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Event</th><th>By</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Apr 12</td><td>Daily log submitted</td><td>M. Torres</td><td><span class="badge badge-green">Complete</span></td></tr>
+          <tr><td>Apr 11</td><td>Framing inspection</td><td>County Inspector</td><td><span class="badge badge-green">Passed</span></td></tr>
+          <tr><td>Apr 10</td><td>Near-miss reported</td><td>J. Rivera</td><td><span class="badge badge-yellow">Under Review</span></td></tr>
+          <tr><td>Apr 9</td><td>Toolbox talk delivered</td><td>M. Torres</td><td><span class="badge badge-green">Complete</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════ CONTRACT ═══════ -->
+  <div class="tab-panel" id="panel-contract">
+    <div class="dropdown-wrap">
+      <div class="dropdown-btn" id="contractDropdown" onclick="toggleDropdown()">
+        <span id="contractLabel">Active Contract</span>
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="dropdown-menu" id="contractMenu">
+        <div class="dropdown-option" data-state="lead" onclick="switchContract('lead')">
+          <span class="dot" style="background:var(--info)"></span>Lead / Proposal
+        </div>
+        <div class="dropdown-option active" data-state="active" onclick="switchContract('active')">
+          <span class="dot" style="background:var(--pass)"></span>Active Contract
+        </div>
+        <div class="dropdown-option" data-state="closeout" onclick="switchContract('closeout')">
+          <span class="dot" style="background:var(--muted-foreground)"></span>Close-out / Warranty
+        </div>
+      </div>
+    </div>
+
+    <!-- Lead State -->
+    <div class="contract-state" id="state-lead" style="display:none">
+      <div class="card">
+        <h3>Lead Information</h3>
+        <div class="kv-row"><span class="kv-label">Source</span><span>Referral &mdash; Smith residence</span></div>
+        <div class="kv-row"><span class="kv-label">First Contact</span><span>Nov 3, 2025</span></div>
+        <div class="kv-row"><span class="kv-label">Estimated Value</span><span>$420,000 &ndash; $480,000</span></div>
+        <div class="kv-row"><span class="kv-label">Decision Maker</span><span>Sarah & James Chen</span></div>
+        <div class="kv-row"><span class="kv-label">Status</span><span class="badge badge-blue">Proposal Sent</span></div>
+      </div>
+      <div class="card">
+        <h3>Proposals</h3>
+        <table>
+          <thead><tr><th>Version</th><th>Sent</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>v1 &mdash; Base scope</td><td>Nov 20, 2025</td><td>$435,000</td><td><span class="badge badge-red">Declined</span></td></tr>
+            <tr><td>v2 &mdash; Revised scope</td><td>Dec 8, 2025</td><td>$462,000</td><td><span class="badge badge-green">Accepted</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary">New Quote</button>
+        <button class="btn btn-outline">Convert to Contract</button>
+      </div>
+    </div>
+
+    <!-- Active State -->
+    <div class="contract-state" id="state-active">
+      <div class="proposal-card">
+        <div class="icon"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div>
+          <strong>Contract executed</strong> &mdash; Signed Dec 22, 2025 by both parties.
+          <span style="color:var(--muted-foreground)">Proposal v2 accepted.</span>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="card">
+          <h3>Contract Summary</h3>
+          <div class="contract-value">$462,000</div>
+          <div class="kv-row"><span class="kv-label">Type</span><span>Fixed Price + Allowances</span></div>
+          <div class="kv-row"><span class="kv-label">Signed</span><span>Dec 22, 2025</span></div>
+          <div class="kv-row"><span class="kv-label">Substantial Completion</span><span>Aug 30, 2026</span></div>
+          <div class="kv-row"><span class="kv-label">Retainage</span><span>10%</span></div>
+          <div class="kv-row"><span class="kv-label">Payment Terms</span><span>Net 30, milestone-based</span></div>
+        </div>
+        <div class="card">
+          <h3>Change Orders</h3>
+          <table>
+            <thead><tr><th>CO#</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>CO-001</td><td>Upgraded windows</td><td>+$8,200</td><td><span class="badge badge-green">Approved</span></td></tr>
+              <tr><td>CO-002</td><td>Add covered patio</td><td>+$14,500</td><td><span class="badge badge-yellow">Pending</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Payment Schedule</h3>
+        <div class="payment-cards">
+          <div class="payment-card" style="background:var(--pass-bg)">
+            <div class="amount" style="color:var(--pass)">$184,800</div>
+            <div class="label">Invoiced</div>
+          </div>
+          <div class="payment-card" style="background:var(--machine-wash)">
+            <div class="amount" style="color:var(--machine-dark)">$138,600</div>
+            <div class="label">Paid</div>
+          </div>
+          <div class="payment-card" style="background:var(--fail-bg)">
+            <div class="amount" style="color:var(--fail)">$46,200</div>
+            <div class="label">Retainage Held</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--muted-foreground)">
+          Billing progress
+          <div class="progress-bar"><div class="fill" style="width:40%"></div></div>
+          <span style="font-weight:600;color:var(--foreground)">40%</span> of contract value invoiced
+        </div>
+      </div>
+      <div class="summary-bar">
+        <div class="item"><span>Original:</span> $462,000</div>
+        <div class="item"><span>Approved COs:</span> +$8,200</div>
+        <div class="item"><span>Pending COs:</span> +$14,500</div>
+        <div class="item"><span>Revised Total:</span> <strong>$470,200</strong></div>
+      </div>
+    </div>
+
+    <!-- Closeout State -->
+    <div class="contract-state" id="state-closeout" style="display:none">
+      <div class="card">
+        <h3>Close-out Checklist</h3>
+        <div class="checklist-item">
+          <div class="check-icon done"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span>Final inspection passed</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon done"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span>Punch list complete (14/14 items)</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon pending"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/></svg></div>
+          <span>Certificate of Occupancy</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon pending"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/></svg></div>
+          <span>Retainage release</span>
+        </div>
+        <div class="checklist-item">
+          <div class="check-icon pending"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/></svg></div>
+          <span>Owner manuals &amp; warranty docs delivered</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Warranty Period</h3>
+        <div class="kv-row"><span class="kv-label">General</span><span>1 year from substantial completion</span></div>
+        <div class="kv-row"><span class="kv-label">Structural</span><span>10 years</span></div>
+        <div class="kv-row"><span class="kv-label">Roofing</span><span>20-year manufacturer warranty</span></div>
+        <div class="kv-row"><span class="kv-label">Claims Filed</span><span>0</span></div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary">Release Retainage</button>
+        <button class="btn btn-outline">Generate Final Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ WORK ═══════ -->
+  <div class="tab-panel" id="panel-work">
+    <div class="card">
+      <h3>Active Scope Items</h3>
+      <table>
+        <thead><tr><th>Phase</th><th>Description</th><th>Progress</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Foundation</td><td>Concrete footings &amp; slab</td>
+            <td><div class="progress-bar" style="width:120px"><div class="fill" style="width:100%"></div></div></td>
+            <td><span class="badge badge-green">Complete</span></td>
+          </tr>
+          <tr>
+            <td>Framing</td><td>Structural framing &amp; sheathing</td>
+            <td><div class="progress-bar" style="width:120px"><div class="fill" style="width:85%"></div></div></td>
+            <td><span class="badge badge-green">On Track</span></td>
+          </tr>
+          <tr>
+            <td>Rough MEP</td><td>Mechanical, electrical, plumbing</td>
+            <td><div class="progress-bar" style="width:120px"><div class="fill" style="width:30%"></div></div></td>
+            <td><span class="badge badge-yellow">Starting</span></td>
+          </tr>
+          <tr>
+            <td>Exterior</td><td>Siding, roofing, windows</td>
+            <td><div class="progress-bar" style="width:120px"><div class="fill" style="width:0%"></div></div></td>
+            <td><span class="badge badge-gray">Not Started</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Upcoming Inspections</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Inspector</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Apr 18</td><td>Rough electrical</td><td>County &mdash; TBD</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
+          <tr><td>Apr 25</td><td>Rough plumbing</td><td>County &mdash; TBD</td><td><span class="badge badge-gray">Pending</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════ DAILY LOGS ═══════ -->
+  <div class="tab-panel" id="panel-dailylogs">
+    <div class="card">
+      <h3>Recent Logs</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Superintendent</th><th>Weather</th><th>Workers</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Apr 12</td><td>M. Torres</td><td>Clear, 58F</td><td>9</td><td>Framing north wall complete. Scaffolding moved to east side.</td></tr>
+          <tr><td>Apr 11</td><td>M. Torres</td><td>Overcast, 52F</td><td>11</td><td>County framing inspection passed. Started roof trusses.</td></tr>
+          <tr><td>Apr 10</td><td>M. Torres</td><td>Rain AM, Clear PM</td><td>6</td><td>Rain delay until 11am. Interior framing only.</td></tr>
+          <tr><td>Apr 9</td><td>M. Torres</td><td>Clear, 62F</td><td>10</td><td>Toolbox talk: ladder safety. Continued second floor framing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════ SAFETY ═══════ -->
+  <div class="tab-panel" id="panel-safety">
+    <div class="kpi-grid">
+      <div class="kpi"><div class="num" style="color:var(--pass)">47</div><div class="label">Days Since Incident</div></div>
+      <div class="kpi"><div class="num">5</div><div class="label">Inspections YTD</div></div>
+      <div class="kpi"><div class="num" style="color:var(--fail)">1</div><div class="label">Open Findings</div></div>
+      <div class="kpi"><div class="num">4</div><div class="label">Toolbox Talks</div></div>
+    </div>
+    <div class="detail-grid">
+      <div class="card">
+        <h3>Open Findings</h3>
+        <table>
+          <thead><tr><th>Finding</th><th>Severity</th><th>Due</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Scaffold inspection overdue &mdash; east elevation</td>
+              <td><span class="badge badge-red">High</span></td>
+              <td style="color:var(--fail);font-weight:600">Apr 14 (overdue)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Recent Incidents</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Apr 10</td>
+              <td><span class="badge badge-yellow">Near Miss</span></td>
+              <td>Unsecured material fell from second floor</td>
+              <td><span class="badge badge-yellow">Under Review</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ TEAM ═══════ -->
+  <div class="tab-panel" id="panel-team">
+    <div class="team-grid">
+      <div class="card">
+        <h3>Project Team</h3>
+        <table>
+          <thead><tr><th>Name</th><th>Role</th><th>Company</th></tr></thead>
+          <tbody>
+            <tr><td>Mike Torres</td><td>Superintendent</td><td>Meridian Custom Homes</td></tr>
+            <tr><td>Sarah Chen</td><td>Owner</td><td>&mdash;</td></tr>
+            <tr><td>Dave Wilson</td><td>Architect</td><td>Wilson Design Studio</td></tr>
+            <tr><td>Lisa Park</td><td>Structural Engineer</td><td>Peak Engineering</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Active Subcontractors</h3>
+        <table>
+          <thead><tr><th>Trade</th><th>Company</th><th>Workers</th><th>Compliance</th></tr></thead>
+          <tbody>
+            <tr><td>Framing</td><td>Rocky Mtn Framing</td><td>6</td><td><span class="badge badge-green">Current</span></td></tr>
+            <tr><td>Electrical</td><td>Spark Electric Co</td><td>3</td><td><span class="badge badge-green">Current</span></td></tr>
+            <tr><td>Plumbing</td><td>Front Range Plumbing</td><td>2</td><td><span class="badge badge-yellow">Expiring</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ DOCUMENTS ═══════ -->
+  <div class="tab-panel" id="panel-documents">
+    <div class="card">
+      <h3>Project Documents</h3>
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Updated</th><th>By</th></tr></thead>
+        <tbody>
+          <tr><td>Contract_v2_Signed.pdf</td><td>Contract</td><td>Dec 22, 2025</td><td>M. Torres</td></tr>
+          <tr><td>Hillside_Plans_Rev3.pdf</td><td>Plans</td><td>Jan 10, 2026</td><td>D. Wilson</td></tr>
+          <tr><td>Fall_Protection_Plan.pdf</td><td>Safety</td><td>Jan 18, 2026</td><td>M. Torres</td></tr>
+          <tr><td>OSHA_300_Log_2026.xlsx</td><td>Compliance</td><td>Apr 1, 2026</td><td>System</td></tr>
+          <tr><td>CO-001_Windows_Approved.pdf</td><td>Change Order</td><td>Mar 5, 2026</td><td>S. Chen</td></tr>
+          <tr><td>Soil_Report_Geotechnical.pdf</td><td>Engineering</td><td>Nov 15, 2025</td><td>Peak Eng.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+// Tab switching
+document.getElementById('mainTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+});
+
+// Contract dropdown
+function toggleDropdown() {
+  document.getElementById('contractMenu').classList.toggle('open');
+}
+function switchContract(state) {
+  document.querySelectorAll('.contract-state').forEach(s => s.style.display = 'none');
+  document.getElementById('state-' + state).style.display = 'block';
+  document.querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('active'));
+  document.querySelector(`.dropdown-option[data-state="${state}"]`).classList.add('active');
+  document.getElementById('contractLabel').textContent =
+    document.querySelector(`.dropdown-option[data-state="${state}"]`).textContent.trim();
+  document.getElementById('contractMenu').classList.remove('open');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) {
+    document.getElementById('contractMenu').classList.remove('open');
+  }
+});
+
+// Rail navigation (visual only)
+document.querySelectorAll('.rail-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.rail-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

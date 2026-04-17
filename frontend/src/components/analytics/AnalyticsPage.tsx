@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   Building2,
   ClipboardCheck,
@@ -53,7 +54,7 @@ function ComplianceRingLarge({ score }: { score: number }) {
 }
 
 export function AnalyticsPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { data: metrics, isLoading } = useAnalyticsDashboard();
   const emrEstimate = useEmrEstimate();
 
@@ -354,11 +355,11 @@ export function AnalyticsPage() {
                 </div>
               </div>
 
-              {emrResult.recommendations.length > 0 && (
+              {(emrResult.recommendations || []).length > 0 && (
                 <div className="rounded-lg border border-primary bg-white p-4">
                   <p className="font-medium text-[var(--concrete-600)]">Recommendations to Lower Your EMR</p>
                   <ul className="mt-2 space-y-2">
-                    {emrResult.recommendations.map((rec, i) => (
+                    {(emrResult.recommendations || []).map((rec, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                         <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                         {rec}

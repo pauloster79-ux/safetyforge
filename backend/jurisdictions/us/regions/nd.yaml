@@ -1,0 +1,47 @@
+code: ND
+name: North Dakota
+regulatory_body: Federal OSHA (no state plan) / North Dakota Workforce Safety & Insurance (WSI)
+state_plan: false
+primary_legislation: Federal Occupational Safety and Health Act (29 USC 651)
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: ND-001
+    state: ND
+    requirement_name: Workforce Safety & Insurance (Workers' Compensation)
+    description: North Dakota operates an exclusive state-fund workers' compensation system through Workforce Safety & Insurance. All employers must participate in the state fund; private insurance is not permitted.
+    federal_equivalent: null
+    state_standard: "NDCC 65-01 et seq."
+    additional_details: North Dakota is one of four states with a monopolistic state fund. Employers cannot purchase private workers' compensation insurance. WSI provides medical and wage-loss benefits for work-related injuries.
+    applies_to: all
+    severity: mandatory
+
+  - id: ND-002
+    state: ND
+    requirement_name: Safety Programs for High-Hazard Employers
+    description: Employers in industries classified as high-hazard by WSI must develop and implement a written workplace safety program to qualify for premium discounts and avoid surcharges.
+    federal_equivalent: null
+    state_standard: "NDCC 65-03-1; NDAC 92-05"
+    additional_details: Safety programs must include management commitment, hazard analysis, hazard prevention and control, safety training, and program evaluation. WSI conducts audits of safety programs.
+    applies_to: all
+    severity: mandatory
+
+  - id: ND-003
+    state: ND
+    requirement_name: Contractor Licensing Requirements
+    description: Contractors performing construction work in North Dakota must hold a valid license issued by the Secretary of State and meet bonding requirements.
+    federal_equivalent: null
+    state_standard: "NDCC 43-07 et seq."
+    additional_details: Licenses are classified by type of work and monetary limit. Electrical, plumbing, and mechanical contractors have additional licensing requirements through their respective boards.
+    applies_to: construction
+    severity: mandatory
+
+  - id: ND-004
+    state: ND
+    requirement_name: Drug-Free Workplace Requirements
+    description: North Dakota employers participating in the WSI premium discount program must maintain a drug-free workplace policy including pre-employment and post-accident drug testing.
+    federal_equivalent: null
+    state_standard: "NDCC 65-01-11; NDAC 92-01-02-28"
+    additional_details: Employers who implement a qualifying drug-free workplace program receive a 5% premium discount on workers' compensation premiums. The program must include written policy, employee education, supervisor training, and testing protocols.
+    applies_to: all
+    severity: mandatory

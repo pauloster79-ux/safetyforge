@@ -1,4 +1,8 @@
-"""Incident record CRUD service with annual summary calculation against Neo4j.
+"""Incident log CRUD service with annual summary calculation against Neo4j.
+
+Previously named OshaLogService; the underlying graph node is now
+IncidentLogEntry (formerly OshaLogEntry) and the relationship from Company
+is HAS_INCIDENT_LOG (formerly HAS_OSHA_ENTRY).
 
 Supports jurisdiction-aware incident rate calculations:
   - US OSHA:  TRIR = (cases * 200,000) / hours
@@ -30,11 +34,15 @@ _DEFAULT_INCIDENT_RATE_MULTIPLIER = 200_000
 
 
 class OshaLogService(BaseService):
-    """Manages incident record entries and summaries in Neo4j.
+    """Manages incident log entries and summaries in Neo4j.
 
     Graph model:
-        (Company)-[:HAS_OSHA_ENTRY]->(OshaLogEntry)
+        (Company)-[:HAS_INCIDENT_LOG]->(IncidentLogEntry)
         (Company)-[:HAS_OSHA_SUMMARY]->(OshaSummary)
+
+    Node label IncidentLogEntry was previously OshaLogEntry.
+    Relationship HAS_INCIDENT_LOG was previously HAS_OSHA_ENTRY.
+    ID prefix is now 'ile_' (was 'osha_').
 
     Supports jurisdiction-aware incident rate calculations via the
     incident_rate_multiplier parameter. Defaults to US OSHA (200,000).
@@ -81,7 +89,7 @@ class OshaLogService(BaseService):
         """
         result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             WHERE e.year = $year
             RETURN max(e.case_number) AS max_case
             """,
@@ -94,9 +102,11 @@ class OshaLogService(BaseService):
     def create_entry(
         self, company_id: str, data: OshaLogEntryCreate, user_id: str
     ) -> OshaLogEntry:
-        """Create a new OSHA 300 Log entry.
+        """Create a new incident log entry.
 
         Auto-assigns the next sequential case number for the injury year.
+        Uses the IncidentLogEntry node label and HAS_INCIDENT_LOG relationship.
+        ID prefix is 'ile_'.
 
         Args:
             company_id: The owning company ID.
@@ -104,7 +114,7 @@ class OshaLogService(BaseService):
             user_id: Firebase UID of the creating user.
 
         Returns:
-            The created OshaLogEntry with all fields populated.
+            The created OshaLogEntry (IncidentLogEntry) with all fields populated.
 
         Raises:
             CompanyNotFoundError: If the company does not exist.
@@ -112,7 +122,7 @@ class OshaLogService(BaseService):
         self._verify_company_exists(company_id)
 
         actor = Actor.human(user_id)
-        entry_id = self._generate_id("osha")
+        entry_id = self._generate_id("ile")
         year = data.date_of_injury.year
         case_number = self._get_next_case_number(company_id, year)
 
@@ -137,18 +147,26 @@ class OshaLogService(BaseService):
         result = self._write_tx_single(
             """
             MATCH (c:Company {id: $company_id})
-            CREATE (e:OshaLogEntry $props)
-            CREATE (c)-[:HAS_OSHA_ENTRY]->(e)
+            CREATE (e:IncidentLogEntry $props)
+            CREATE (c)-[:HAS_INCIDENT_LOG]->(e)
             RETURN e {.*, company_id: c.id} AS entry
             """,
             {"company_id": company_id, "props": props},
         )
         if result is None:
             raise CompanyNotFoundError(company_id)
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=entry_id,
+            entity_type="IncidentLogEntry",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created incident log entry for {data.employee_name}",
+        )
         return OshaLogEntry(**result["entry"])
 
     def get_entry(self, company_id: str, entry_id: str) -> OshaLogEntry:
-        """Fetch a single OSHA log entry.
+        """Fetch a single incident log entry.
 
         Args:
             company_id: The owning company ID.
@@ -162,7 +180,7 @@ class OshaLogService(BaseService):
         """
         result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry {id: $entry_id})
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry {id: $entry_id})
             RETURN e {.*, company_id: c.id} AS entry
             """,
             {"company_id": company_id, "entry_id": entry_id},
@@ -178,7 +196,7 @@ class OshaLogService(BaseService):
         limit: int = 50,
         offset: int = 0,
     ) -> dict:
-        """List OSHA log entries for a company with optional year filter.
+        """List incident log entries for a company with optional year filter.
 
         Args:
             company_id: The owning company ID.
@@ -205,7 +223,7 @@ class OshaLogService(BaseService):
 
         count_result = self._read_tx_single(
             f"""
-            MATCH (c:Company {{id: $company_id}})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {{id: $company_id}})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             {where_clause}
             RETURN count(e) AS total
             """,
@@ -215,7 +233,7 @@ class OshaLogService(BaseService):
 
         results = self._read_tx(
             f"""
-            MATCH (c:Company {{id: $company_id}})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {{id: $company_id}})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             {where_clause}
             RETURN e {{.*, company_id: c.id}} AS entry
             ORDER BY e.year ASC, e.case_number ASC
@@ -234,7 +252,7 @@ class OshaLogService(BaseService):
         data: OshaLogEntryUpdate,
         user_id: str,
     ) -> OshaLogEntry:
-        """Update an existing OSHA log entry.
+        """Update an existing incident log entry.
 
         Args:
             company_id: The owning company ID.
@@ -269,7 +287,7 @@ class OshaLogService(BaseService):
 
         result = self._write_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry {id: $entry_id})
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry {id: $entry_id})
             SET e += $props
             RETURN e {.*, company_id: c.id} AS entry
             """,
@@ -277,10 +295,18 @@ class OshaLogService(BaseService):
         )
         if result is None:
             raise OshaLogEntryNotFoundError(entry_id)
+        self._emit_audit(
+            event_type="entity.updated",
+            entity_id=entry_id,
+            entity_type="IncidentLogEntry",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Updated incident log entry {entry_id}",
+        )
         return OshaLogEntry(**result["entry"])
 
     def delete_entry(self, company_id: str, entry_id: str) -> None:
-        """Permanently delete an OSHA log entry.
+        """Permanently delete an incident log entry.
 
         Args:
             company_id: The owning company ID.
@@ -291,7 +317,7 @@ class OshaLogService(BaseService):
         """
         result = self._write_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry {id: $entry_id})
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry {id: $entry_id})
             WITH e, e.id AS eid
             DETACH DELETE e
             RETURN eid AS id
@@ -302,10 +328,10 @@ class OshaLogService(BaseService):
             raise OshaLogEntryNotFoundError(entry_id)
 
     def get_300a_summary(self, company_id: str, year: int) -> Osha300Summary:
-        """Calculate the OSHA 300A Annual Summary from log entries.
+        """Calculate the OSHA 300A Annual Summary from incident log entries.
 
-        Aggregates all entries for the given year and computes totals,
-        injury type counts, and incidence rates (TRIR, DART).
+        Aggregates all IncidentLogEntry nodes for the given year and computes
+        totals, injury type counts, and incidence rates (TRIR, DART).
 
         Args:
             company_id: The owning company ID.
@@ -325,7 +351,7 @@ class OshaLogService(BaseService):
         # Aggregate entries for the year
         agg_result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             WHERE e.year = $year
             RETURN
                 count(e) AS total_entries,
@@ -470,7 +496,7 @@ class OshaLogService(BaseService):
         return self.get_300a_summary(company_id, year)
 
     def get_years_with_entries(self, company_id: str) -> list[int]:
-        """Return a sorted list of years that have OSHA log entries.
+        """Return a sorted list of years that have incident log entries.
 
         Args:
             company_id: The owning company ID.
@@ -480,7 +506,7 @@ class OshaLogService(BaseService):
         """
         results = self._read_tx(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             RETURN DISTINCT e.year AS year
             ORDER BY year DESC
             """,

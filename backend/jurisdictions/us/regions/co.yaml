@@ -1,0 +1,57 @@
+code: CO
+name: Colorado
+regulatory_body: Colorado Department of Labor and Employment (CDLE)
+state_plan: false
+primary_legislation: Colorado Revised Statutes Title 8
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: CO-001
+    state: CO
+    requirement_name: Workers' Compensation Insurance
+    description: All employers in Colorado must carry workers' compensation insurance with no minimum employee threshold.
+    federal_equivalent: null
+    state_standard: "CRS 8-40-101 et seq."
+    additional_details: Covers medical benefits, temporary and permanent disability, and vocational rehabilitation. Failure to insure is a criminal offense.
+    applies_to: all
+    severity: mandatory
+
+  - id: CO-002
+    state: CO
+    requirement_name: Public Project Prevailing Wage
+    description: Contractors on state-funded construction projects must pay prevailing wages as determined by the Colorado Department of Labor.
+    federal_equivalent: "40 USC 3141 (Davis-Bacon Act)"
+    state_standard: "CRS 8-17-101 et seq."
+    additional_details: Applies to projects funded in whole or part by state funds. Wage rates are published annually by CDLE.
+    applies_to: construction
+    severity: mandatory
+
+  - id: CO-003
+    state: CO
+    requirement_name: Workplace Safety Whistleblower Protection
+    description: Colorado provides whistleblower protections for employees who report workplace safety violations or refuse unsafe work.
+    federal_equivalent: "29 CFR 1977 (Section 11(c))"
+    state_standard: "CRS 24-114-102"
+    additional_details: Employers cannot retaliate against employees who file safety complaints, participate in inspections, or refuse work that poses imminent danger.
+    applies_to: all
+    severity: mandatory
+
+  - id: CO-004
+    state: CO
+    requirement_name: Underground Facility Damage Prevention
+    description: Contractors must notify the Utility Notification Center of Colorado before any excavation to locate underground utilities.
+    federal_equivalent: null
+    state_standard: "CRS 9-1.5-101 et seq."
+    additional_details: Requires 48-hour advance notification. Failure to notify can result in liability for damages and penalties up to $5,000 per violation.
+    applies_to: construction
+    severity: mandatory
+
+  - id: CO-005
+    state: CO
+    requirement_name: Oil and Gas Worker Safety Standards
+    description: Colorado has additional safety requirements for workers in the oil and gas industry administered by the Colorado Oil and Gas Conservation Commission.
+    federal_equivalent: null
+    state_standard: "2 CCR 404-1 Rule 600 Series"
+    additional_details: Includes flowline safety, well control requirements, and emissions monitoring that affect construction workers on energy sites.
+    applies_to: construction
+    severity: mandatory

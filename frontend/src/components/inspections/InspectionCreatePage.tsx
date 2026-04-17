@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,7 +27,6 @@ import { useCreateInspection, useInspectionTemplate } from '@/hooks/useInspectio
 import {
   ROUTES,
   INSPECTION_TYPES,
-  DAILY_SITE_INSPECTION_TEMPLATE,
 } from '@/lib/constants';
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder';
 import { cn } from '@/lib/utils';
@@ -50,9 +50,10 @@ interface ChecklistItemState {
   photo_url: string | null;
 }
 
-export function InspectionCreatePage() {
-  const navigate = useNavigate();
-  const { projectId } = useParams<{ projectId: string }>();
+export function InspectionCreatePage({ projectId: propProjectId }: { projectId?: string } = {}) {
+  const navigate = useCanvasNavigate();
+  const params = useParams<{ projectId: string }>();
+  const projectId = propProjectId || params.projectId;
   const { data: project } = useProject(projectId);
   const createInspection = useCreateInspection(projectId || '');
 
@@ -77,20 +78,25 @@ export function InspectionCreatePage() {
   const [overallNotes, setOverallNotes] = useState('');
   const [correctiveActions, setCorrectiveActions] = useState('');
 
-  const { data: template } = useInspectionTemplate(selectedType);
+  const { data: template, isLoading: isTemplateLoading } = useInspectionTemplate(selectedType);
+
+  // Populate checklist items when template data arrives
+  useEffect(() => {
+    if (template && (template.items || []).length > 0) {
+      setItems(
+        (template.items || []).map((item) => ({
+          ...item,
+          status: 'pending' as const,
+          notes: '',
+          photo_url: null,
+        }))
+      );
+    }
+  }, [template]);
 
   const handleSelectType = (typeId: string) => {
     setSelectedType(typeId);
-    // Load template items
-    const tmpl = template || DAILY_SITE_INSPECTION_TEMPLATE;
-    setItems(
-      tmpl.items.map((item) => ({
-        ...item,
-        status: 'pending' as const,
-        notes: '',
-        photo_url: null,
-      }))
-    );
+    setItems([]);
     setStep('header');
   };
 
@@ -327,6 +333,15 @@ export function InspectionCreatePage() {
 
   // Step 3: Checklist
   if (step === 'checklist') {
+    if (isTemplateLoading || items.length === 0) {
+      return (
+        <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading checklist...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="mx-auto max-w-lg pb-24">
         <div className="mb-4 flex items-center gap-3">

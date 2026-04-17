@@ -1,35 +1,728 @@
 // ============================================================================
-// Kerf Construction Ontology — Neo4j Schema DDL
+// Kerf Construction Ontology — Neo4j Schema DDL v3.0
 // ============================================================================
-// Schema v2.3 — Aligned with CONSTRUCTION_ONTOLOGY.md v2.3
-// Added Quality domain nodes (NCR, Observation, ITP, MaterialTest)
-// Renamed PunchList/PunchItem to DeficiencyList/DeficiencyItem
-//
+// Generated from ontology design phases 1-5.
 // This file is idempotent — safe to run multiple times.
-// All statements use IF NOT EXISTS to avoid errors on re-run.
+// All statements use IF NOT EXISTS.
 //
-// Conventions:
-//   - Tenant isolation is graph-native via (:Company)-[:HAS_*]->() edges
-//   - Regulatory nodes are shared across tenants
-//   - Node identity is via own .id property (unique constraint)
-//   - FK _id properties are replaced by graph relationships
+// Structure:
+//   - Two structural layers: Project → WorkItem
+//   - WorkPackage is optional grouping
+//   - Tenant isolation via (:Company) traversal root
+//   - Regulatory nodes shared across tenants
+//   - Vector indexes on Message and DocumentChunk
+//   - Provenance fields on all mutable tenant-scoped entities (application-level)
 // ============================================================================
 
 
 // ============================================================================
-// DOMAIN 1: REGULATORY (shared across all tenants)
+// WORK MODEL
 // ============================================================================
-// Static knowledge base seeded per jurisdiction. Uses jurisdiction-neutral
-// labels: Regulation (not Standard), ComplianceProgram (not SafetyProgram),
-// RegulatoryGroup (not Subpart).
+
+// -- Project --
+CREATE CONSTRAINT constraint_project_id IF NOT EXISTS
+  FOR (n:Project) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_project_id_exists IF NOT EXISTS
+  FOR (n:Project) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_project_state IF NOT EXISTS
+  FOR (n:Project) ON (n.state);
+CREATE INDEX index_project_status IF NOT EXISTS
+  FOR (n:Project) ON (n.status);
+CREATE INDEX index_project_type IF NOT EXISTS
+  FOR (n:Project) ON (n.type);
+CREATE INDEX index_project_contract_type IF NOT EXISTS
+  FOR (n:Project) ON (n.contract_type);
+CREATE INDEX index_project_jurisdiction IF NOT EXISTS
+  FOR (n:Project) ON (n.jurisdiction_code);
+
+// -- WorkItem --
+CREATE CONSTRAINT constraint_work_item_id IF NOT EXISTS
+  FOR (n:WorkItem) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_work_item_id_exists IF NOT EXISTS
+  FOR (n:WorkItem) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_work_item_state IF NOT EXISTS
+  FOR (n:WorkItem) ON (n.state);
+CREATE INDEX index_work_item_planned_start IF NOT EXISTS
+  FOR (n:WorkItem) ON (n.planned_start);
+CREATE INDEX index_work_item_planned_end IF NOT EXISTS
+  FOR (n:WorkItem) ON (n.planned_end);
+
+// -- WorkPackage --
+CREATE CONSTRAINT constraint_work_package_id IF NOT EXISTS
+  FOR (n:WorkPackage) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_work_package_id_exists IF NOT EXISTS
+  FOR (n:WorkPackage) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_work_package_status IF NOT EXISTS
+  FOR (n:WorkPackage) ON (n.status);
+
+// -- WorkCategory --
+CREATE CONSTRAINT constraint_work_category_id IF NOT EXISTS
+  FOR (n:WorkCategory) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_work_category_id_exists IF NOT EXISTS
+  FOR (n:WorkCategory) REQUIRE n.id IS NOT NULL;
+
+// -- Item (global shared catalogue) --
+CREATE CONSTRAINT constraint_item_id IF NOT EXISTS
+  FOR (n:Item) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_item_id_exists IF NOT EXISTS
+  FOR (n:Item) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_item_name IF NOT EXISTS
+  FOR (n:Item) ON (n.name);
+CREATE INDEX index_item_category IF NOT EXISTS
+  FOR (n:Item) ON (n.category);
+
+// -- Labour -- (NEW: Domain 16)
+CREATE CONSTRAINT constraint_labour_id IF NOT EXISTS
+  FOR (n:Labour) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_labour_id_exists IF NOT EXISTS
+  FOR (n:Labour) REQUIRE n.id IS NOT NULL;
+
+// -- Milestone --
+CREATE CONSTRAINT constraint_milestone_id IF NOT EXISTS
+  FOR (n:Milestone) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_milestone_id_exists IF NOT EXISTS
+  FOR (n:Milestone) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_milestone_planned_date IF NOT EXISTS
+  FOR (n:Milestone) ON (n.planned_date);
+
+
+// ============================================================================
+// COMMERCIAL
+// ============================================================================
+
+// -- Contract --
+CREATE CONSTRAINT constraint_contract_id IF NOT EXISTS
+  FOR (n:Contract) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_contract_id_exists IF NOT EXISTS
+  FOR (n:Contract) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_contract_status IF NOT EXISTS
+  FOR (n:Contract) ON (n.status);
+
+// -- PaymentMilestone --
+CREATE CONSTRAINT payment_milestone_id IF NOT EXISTS
+  FOR (pm:PaymentMilestone) REQUIRE pm.id IS UNIQUE;
+CREATE INDEX payment_milestone_status IF NOT EXISTS
+  FOR (pm:PaymentMilestone) ON (pm.status);
+CREATE INDEX payment_milestone_sort IF NOT EXISTS
+  FOR (pm:PaymentMilestone) ON (pm.sort_order);
+
+// -- Condition --
+CREATE CONSTRAINT condition_id IF NOT EXISTS
+  FOR (cond:Condition) REQUIRE cond.id IS UNIQUE;
+CREATE INDEX condition_category IF NOT EXISTS
+  FOR (cond:Condition) ON (cond.category);
+
+
+// ============================================================================
+// QUOTING (NEW: Domain 17)
+// ============================================================================
+
+// -- Assumption --
+CREATE CONSTRAINT constraint_assumption_id IF NOT EXISTS
+  FOR (n:Assumption) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_assumption_id_exists IF NOT EXISTS
+  FOR (n:Assumption) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_assumption_category IF NOT EXISTS
+  FOR (n:Assumption) ON (n.category);
+CREATE INDEX index_assumption_status IF NOT EXISTS
+  FOR (n:Assumption) ON (n.status);
+CREATE INDEX index_assumption_is_template IF NOT EXISTS
+  FOR (n:Assumption) ON (n.is_template);
+CREATE INDEX index_assumption_trade_type IF NOT EXISTS
+  FOR (n:Assumption) ON (n.trade_type);
+
+// -- Exclusion --
+CREATE CONSTRAINT constraint_exclusion_id IF NOT EXISTS
+  FOR (n:Exclusion) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_exclusion_id_exists IF NOT EXISTS
+  FOR (n:Exclusion) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_exclusion_category IF NOT EXISTS
+  FOR (n:Exclusion) ON (n.category);
+CREATE INDEX index_exclusion_is_template IF NOT EXISTS
+  FOR (n:Exclusion) ON (n.is_template);
+CREATE INDEX index_exclusion_trade_type IF NOT EXISTS
+  FOR (n:Exclusion) ON (n.trade_type);
+
+// -- ResourceRate --
+CREATE CONSTRAINT constraint_resource_rate_id IF NOT EXISTS
+  FOR (n:ResourceRate) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_resource_rate_id_exists IF NOT EXISTS
+  FOR (n:ResourceRate) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_resource_rate_type IF NOT EXISTS
+  FOR (n:ResourceRate) ON (n.resource_type);
+CREATE INDEX index_resource_rate_source IF NOT EXISTS
+  FOR (n:ResourceRate) ON (n.source);
+CREATE INDEX index_resource_rate_active IF NOT EXISTS
+  FOR (n:ResourceRate) ON (n.active);
+
+// -- ProductivityRate --
+CREATE CONSTRAINT constraint_productivity_rate_id IF NOT EXISTS
+  FOR (n:ProductivityRate) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_productivity_rate_id_exists IF NOT EXISTS
+  FOR (n:ProductivityRate) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_productivity_rate_source IF NOT EXISTS
+  FOR (n:ProductivityRate) ON (n.source);
+CREATE INDEX index_productivity_rate_active IF NOT EXISTS
+  FOR (n:ProductivityRate) ON (n.active);
+
+
+// ============================================================================
+// FINANCIAL
+// ============================================================================
+
+// -- TimeEntry --
+CREATE CONSTRAINT constraint_time_entry_id IF NOT EXISTS
+  FOR (n:TimeEntry) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_time_entry_id_exists IF NOT EXISTS
+  FOR (n:TimeEntry) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_time_entry_clock_in IF NOT EXISTS
+  FOR (n:TimeEntry) ON (n.clock_in);
+CREATE INDEX index_time_entry_status IF NOT EXISTS
+  FOR (n:TimeEntry) ON (n.status);
+
+// -- Variation --
+CREATE CONSTRAINT constraint_variation_id IF NOT EXISTS
+  FOR (n:Variation) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_variation_id_exists IF NOT EXISTS
+  FOR (n:Variation) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_variation_status IF NOT EXISTS
+  FOR (n:Variation) ON (n.status);
+
+// -- Invoice --
+CREATE CONSTRAINT constraint_invoice_id IF NOT EXISTS
+  FOR (n:Invoice) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_invoice_id_exists IF NOT EXISTS
+  FOR (n:Invoice) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_invoice_direction IF NOT EXISTS
+  FOR (n:Invoice) ON (n.direction);
+CREATE INDEX index_invoice_status IF NOT EXISTS
+  FOR (n:Invoice) ON (n.status);
+CREATE INDEX index_invoice_number IF NOT EXISTS
+  FOR (n:Invoice) ON (n.number);
+CREATE INDEX index_invoice_due_date IF NOT EXISTS
+  FOR (n:Invoice) ON (n.due_date);
+
+// -- InvoiceLine --
+CREATE CONSTRAINT constraint_invoice_line_id IF NOT EXISTS
+  FOR (n:InvoiceLine) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_invoice_line_id_exists IF NOT EXISTS
+  FOR (n:InvoiceLine) REQUIRE n.id IS NOT NULL;
+
+// -- Payment --
+CREATE CONSTRAINT constraint_payment_id IF NOT EXISTS
+  FOR (n:Payment) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_payment_id_exists IF NOT EXISTS
+  FOR (n:Payment) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_payment_received_date IF NOT EXISTS
+  FOR (n:Payment) ON (n.received_date);
+
+// -- PaymentApplication --
+CREATE CONSTRAINT constraint_payment_application_id IF NOT EXISTS
+  FOR (n:PaymentApplication) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_payment_application_id_exists IF NOT EXISTS
+  FOR (n:PaymentApplication) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_payment_application_status IF NOT EXISTS
+  FOR (n:PaymentApplication) ON (n.status);
+
+
+// ============================================================================
+// ORGANISATIONAL
+// ============================================================================
+
+// -- Company --
+CREATE CONSTRAINT constraint_company_id IF NOT EXISTS
+  FOR (n:Company) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_company_id_exists IF NOT EXISTS
+  FOR (n:Company) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_company_jurisdiction IF NOT EXISTS
+  FOR (n:Company) ON (n.jurisdiction_code);
+
+// -- Member --
+CREATE CONSTRAINT constraint_member_id IF NOT EXISTS
+  FOR (n:Member) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_member_id_exists IF NOT EXISTS
+  FOR (n:Member) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_member_uid IF NOT EXISTS
+  FOR (n:Member) ON (n.uid);
+CREATE INDEX index_member_email IF NOT EXISTS
+  FOR (n:Member) ON (n.email);
+CREATE INDEX index_member_access_role IF NOT EXISTS
+  FOR (n:Member) ON (n.access_role);
+
+// -- Contact --
+CREATE CONSTRAINT constraint_contact_id IF NOT EXISTS
+  FOR (n:Contact) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_contact_id_exists IF NOT EXISTS
+  FOR (n:Contact) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_contact_email IF NOT EXISTS
+  FOR (n:Contact) ON (n.email);
+
+
+// ============================================================================
+// WORKFORCE
+// ============================================================================
+
+// -- Worker --
+CREATE CONSTRAINT constraint_worker_id IF NOT EXISTS
+  FOR (n:Worker) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_worker_id_exists IF NOT EXISTS
+  FOR (n:Worker) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_worker_status IF NOT EXISTS
+  FOR (n:Worker) ON (n.status);
+CREATE INDEX index_worker_email IF NOT EXISTS
+  FOR (n:Worker) ON (n.email);
+
+// -- Certification --
+CREATE CONSTRAINT constraint_certification_id IF NOT EXISTS
+  FOR (n:Certification) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_certification_id_exists IF NOT EXISTS
+  FOR (n:Certification) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_certification_status IF NOT EXISTS
+  FOR (n:Certification) ON (n.status);
+CREATE INDEX index_certification_expiry IF NOT EXISTS
+  FOR (n:Certification) ON (n.expiry_date);
+
+// -- Crew --
+CREATE CONSTRAINT constraint_crew_id IF NOT EXISTS
+  FOR (n:Crew) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_crew_id_exists IF NOT EXISTS
+  FOR (n:Crew) REQUIRE n.id IS NOT NULL;
+
+
+// ============================================================================
+// SAFETY
+// ============================================================================
+
+// -- Inspection --
+CREATE CONSTRAINT constraint_inspection_id IF NOT EXISTS
+  FOR (n:Inspection) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_inspection_id_exists IF NOT EXISTS
+  FOR (n:Inspection) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_inspection_category IF NOT EXISTS
+  FOR (n:Inspection) ON (n.category);
+CREATE INDEX index_inspection_date IF NOT EXISTS
+  FOR (n:Inspection) ON (n.inspection_date);
+CREATE INDEX index_inspection_status IF NOT EXISTS
+  FOR (n:Inspection) ON (n.overall_status);
+
+// -- InspectionItem --
+CREATE CONSTRAINT constraint_inspection_item_id IF NOT EXISTS
+  FOR (n:InspectionItem) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_inspection_item_id_exists IF NOT EXISTS
+  FOR (n:InspectionItem) REQUIRE n.id IS NOT NULL;
+
+// -- Incident --
+CREATE CONSTRAINT constraint_incident_id IF NOT EXISTS
+  FOR (n:Incident) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_incident_id_exists IF NOT EXISTS
+  FOR (n:Incident) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_incident_date IF NOT EXISTS
+  FOR (n:Incident) ON (n.incident_date);
+CREATE INDEX index_incident_severity IF NOT EXISTS
+  FOR (n:Incident) ON (n.severity);
+CREATE INDEX index_incident_status IF NOT EXISTS
+  FOR (n:Incident) ON (n.status);
+
+// -- HazardReport --
+CREATE CONSTRAINT constraint_hazard_report_id IF NOT EXISTS
+  FOR (n:HazardReport) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_hazard_report_id_exists IF NOT EXISTS
+  FOR (n:HazardReport) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_hazard_report_status IF NOT EXISTS
+  FOR (n:HazardReport) ON (n.status);
+
+// -- HazardObservation --
+CREATE CONSTRAINT constraint_hazard_observation_id IF NOT EXISTS
+  FOR (n:HazardObservation) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_hazard_observation_id_exists IF NOT EXISTS
+  FOR (n:HazardObservation) REQUIRE n.id IS NOT NULL;
+
+// -- CorrectiveAction --
+CREATE CONSTRAINT constraint_corrective_action_id IF NOT EXISTS
+  FOR (n:CorrectiveAction) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_corrective_action_id_exists IF NOT EXISTS
+  FOR (n:CorrectiveAction) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_corrective_action_status IF NOT EXISTS
+  FOR (n:CorrectiveAction) ON (n.status);
+CREATE INDEX index_corrective_action_due_date IF NOT EXISTS
+  FOR (n:CorrectiveAction) ON (n.due_date);
+
+// -- ToolboxTalk --
+CREATE CONSTRAINT constraint_toolbox_talk_id IF NOT EXISTS
+  FOR (n:ToolboxTalk) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_toolbox_talk_id_exists IF NOT EXISTS
+  FOR (n:ToolboxTalk) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_toolbox_talk_status IF NOT EXISTS
+  FOR (n:ToolboxTalk) ON (n.status);
+
+// -- ExposureRecord --
+CREATE CONSTRAINT constraint_exposure_record_id IF NOT EXISTS
+  FOR (n:ExposureRecord) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_exposure_record_id_exists IF NOT EXISTS
+  FOR (n:ExposureRecord) REQUIRE n.id IS NOT NULL;
+
+// -- MorningBrief --
+CREATE CONSTRAINT constraint_morning_brief_id IF NOT EXISTS
+  FOR (n:MorningBrief) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_morning_brief_id_exists IF NOT EXISTS
+  FOR (n:MorningBrief) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_morning_brief_date IF NOT EXISTS
+  FOR (n:MorningBrief) ON (n.date);
+
+// -- IncidentLogEntry --
+CREATE CONSTRAINT constraint_incident_log_entry_id IF NOT EXISTS
+  FOR (n:IncidentLogEntry) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_incident_log_entry_id_exists IF NOT EXISTS
+  FOR (n:IncidentLogEntry) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_incident_log_entry_date IF NOT EXISTS
+  FOR (n:IncidentLogEntry) ON (n.entry_date);
+CREATE INDEX index_incident_log_entry_year IF NOT EXISTS
+  FOR (n:IncidentLogEntry) ON (n.year);
+
+
+// ============================================================================
+// QUALITY
+// ============================================================================
+
+// -- DeficiencyList --
+CREATE CONSTRAINT constraint_deficiency_list_id IF NOT EXISTS
+  FOR (n:DeficiencyList) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_deficiency_list_id_exists IF NOT EXISTS
+  FOR (n:DeficiencyList) REQUIRE n.id IS NOT NULL;
+
+// -- DeficiencyItem --
+CREATE CONSTRAINT constraint_deficiency_item_id IF NOT EXISTS
+  FOR (n:DeficiencyItem) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_deficiency_item_id_exists IF NOT EXISTS
+  FOR (n:DeficiencyItem) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_deficiency_item_status IF NOT EXISTS
+  FOR (n:DeficiencyItem) ON (n.status);
+
+
+// ============================================================================
+// DAILY OPERATIONS
+// ============================================================================
+
+// -- DailyLog --
+CREATE CONSTRAINT constraint_daily_log_id IF NOT EXISTS
+  FOR (n:DailyLog) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_daily_log_id_exists IF NOT EXISTS
+  FOR (n:DailyLog) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_daily_log_date IF NOT EXISTS
+  FOR (n:DailyLog) ON (n.log_date);
+CREATE INDEX index_daily_log_status IF NOT EXISTS
+  FOR (n:DailyLog) ON (n.status);
+
+// -- MaterialDelivery --
+CREATE CONSTRAINT constraint_material_delivery_id IF NOT EXISTS
+  FOR (n:MaterialDelivery) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_material_delivery_id_exists IF NOT EXISTS
+  FOR (n:MaterialDelivery) REQUIRE n.id IS NOT NULL;
+
+// -- DelayRecord --
+CREATE CONSTRAINT constraint_delay_record_id IF NOT EXISTS
+  FOR (n:DelayRecord) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_delay_record_id_exists IF NOT EXISTS
+  FOR (n:DelayRecord) REQUIRE n.id IS NOT NULL;
+
+// -- VisitorRecord --
+CREATE CONSTRAINT constraint_visitor_record_id IF NOT EXISTS
+  FOR (n:VisitorRecord) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_visitor_record_id_exists IF NOT EXISTS
+  FOR (n:VisitorRecord) REQUIRE n.id IS NOT NULL;
+
+
+// ============================================================================
+// PROJECT COORDINATION
+// ============================================================================
+
+// -- ProjectQuery --
+CREATE CONSTRAINT constraint_project_query_id IF NOT EXISTS
+  FOR (n:ProjectQuery) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_project_query_id_exists IF NOT EXISTS
+  FOR (n:ProjectQuery) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_project_query_status IF NOT EXISTS
+  FOR (n:ProjectQuery) ON (n.status);
+CREATE INDEX index_project_query_due_date IF NOT EXISTS
+  FOR (n:ProjectQuery) ON (n.due_date);
+
+// -- QueryResponse --
+CREATE CONSTRAINT constraint_query_response_id IF NOT EXISTS
+  FOR (n:QueryResponse) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_query_response_id_exists IF NOT EXISTS
+  FOR (n:QueryResponse) REQUIRE n.id IS NOT NULL;
+
+// -- ReviewSubmission --
+CREATE CONSTRAINT constraint_review_submission_id IF NOT EXISTS
+  FOR (n:ReviewSubmission) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_review_submission_id_exists IF NOT EXISTS
+  FOR (n:ReviewSubmission) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_review_submission_status IF NOT EXISTS
+  FOR (n:ReviewSubmission) ON (n.status);
+
+// -- Warranty --
+CREATE CONSTRAINT constraint_warranty_id IF NOT EXISTS
+  FOR (n:Warranty) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_warranty_id_exists IF NOT EXISTS
+  FOR (n:Warranty) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_warranty_end_date IF NOT EXISTS
+  FOR (n:Warranty) ON (n.end_date);
+
+
+// ============================================================================
+// SUBCONTRACTOR MANAGEMENT
+// ============================================================================
+
+// -- GcRelationship --
+CREATE CONSTRAINT constraint_gc_relationship_id IF NOT EXISTS
+  FOR (n:GcRelationship) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_gc_relationship_id_exists IF NOT EXISTS
+  FOR (n:GcRelationship) REQUIRE n.id IS NOT NULL;
+
+// -- InsuranceCertificate --
+CREATE CONSTRAINT constraint_insurance_certificate_id IF NOT EXISTS
+  FOR (n:InsuranceCertificate) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_insurance_certificate_id_exists IF NOT EXISTS
+  FOR (n:InsuranceCertificate) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_insurance_certificate_status IF NOT EXISTS
+  FOR (n:InsuranceCertificate) ON (n.status);
+CREATE INDEX index_insurance_certificate_expiry IF NOT EXISTS
+  FOR (n:InsuranceCertificate) ON (n.expiration_date);
+
+// -- PrequalPackage --
+CREATE CONSTRAINT constraint_prequal_package_id IF NOT EXISTS
+  FOR (n:PrequalPackage) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_prequal_package_id_exists IF NOT EXISTS
+  FOR (n:PrequalPackage) REQUIRE n.id IS NOT NULL;
+
+// -- PaymentRelease --
+CREATE CONSTRAINT constraint_payment_release_id IF NOT EXISTS
+  FOR (n:PaymentRelease) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_payment_release_id_exists IF NOT EXISTS
+  FOR (n:PaymentRelease) REQUIRE n.id IS NOT NULL;
+
+
+// ============================================================================
+// CONVERSATION & MEMORY
+// ============================================================================
+
+// -- Conversation --
+CREATE CONSTRAINT constraint_conversation_id IF NOT EXISTS
+  FOR (n:Conversation) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_conversation_id_exists IF NOT EXISTS
+  FOR (n:Conversation) REQUIRE n.id IS NOT NULL;
+
+// -- Message --
+// Per-turn provenance is stored as properties on the Message node
+// (actor_type, agent_id, agent_version, model_id, input_tokens,
+//  output_tokens, cost_cents, latency_ms, confidence). These are
+// required on assistant messages and validated structurally (see
+// validation-tests.cypher). scope_project_id is the Phase 3 scope tag
+// and may be null for general-scope messages.
+CREATE CONSTRAINT constraint_message_id IF NOT EXISTS
+  FOR (n:Message) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_message_id_exists IF NOT EXISTS
+  FOR (n:Message) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_message_timestamp IF NOT EXISTS
+  FOR (n:Message) ON (n.timestamp);
+CREATE INDEX index_message_scope IF NOT EXISTS
+  FOR (n:Message) ON (n.scope_project_id);
+CREATE INDEX index_message_role IF NOT EXISTS
+  FOR (n:Message) ON (n.role);
+CREATE INDEX index_message_actor_type IF NOT EXISTS
+  FOR (n:Message) ON (n.actor_type);
+
+// -- Decision --
+CREATE CONSTRAINT constraint_decision_id IF NOT EXISTS
+  FOR (n:Decision) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_decision_id_exists IF NOT EXISTS
+  FOR (n:Decision) REQUIRE n.id IS NOT NULL;
+
+// -- Insight --
+CREATE CONSTRAINT constraint_insight_id IF NOT EXISTS
+  FOR (n:Insight) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_insight_id_exists IF NOT EXISTS
+  FOR (n:Insight) REQUIRE n.id IS NOT NULL;
+// Task-spec alias (unique ID) — Neo4j treats these as no-ops if already covered
+CREATE CONSTRAINT insight_id IF NOT EXISTS
+  FOR (ins:Insight) REQUIRE ins.id IS UNIQUE;
+CREATE INDEX insight_scope IF NOT EXISTS
+  FOR (ins:Insight) ON (ins.scope, ins.scope_value);
+CREATE INDEX insight_confidence IF NOT EXISTS
+  FOR (ins:Insight) ON (ins.confidence);
+
+// -- MaterialCatalogEntry (Layer 3 source cascade) --
+CREATE CONSTRAINT material_catalog_id IF NOT EXISTS
+  FOR (mce:MaterialCatalogEntry) REQUIRE mce.id IS UNIQUE;
+CREATE INDEX material_catalog_desc IF NOT EXISTS
+  FOR (mce:MaterialCatalogEntry) ON (mce.description);
+CREATE INDEX material_catalog_location IF NOT EXISTS
+  FOR (mce:MaterialCatalogEntry) ON (mce.location);
+
+// -- IndustryProductivityBaseline (Layer 3 source cascade, shared across tenants) --
+CREATE CONSTRAINT industry_baseline_id IF NOT EXISTS
+  FOR (ipb:IndustryProductivityBaseline) REQUIRE ipb.id IS UNIQUE;
+CREATE INDEX industry_baseline_trade IF NOT EXISTS
+  FOR (ipb:IndustryProductivityBaseline) ON (ipb.trade);
+
+
+// ============================================================================
+// DOCUMENTS & INTELLIGENCE
+// ============================================================================
+
+// -- Document --
+CREATE CONSTRAINT constraint_document_id IF NOT EXISTS
+  FOR (n:Document) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_document_id_exists IF NOT EXISTS
+  FOR (n:Document) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_document_type IF NOT EXISTS
+  FOR (n:Document) ON (n.type);
+CREATE INDEX index_document_status IF NOT EXISTS
+  FOR (n:Document) ON (n.status);
+
+// -- DocumentChunk --
+CREATE CONSTRAINT constraint_document_chunk_id IF NOT EXISTS
+  FOR (n:DocumentChunk) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_document_chunk_id_exists IF NOT EXISTS
+  FOR (n:DocumentChunk) REQUIRE n.id IS NOT NULL;
+
+
+// ============================================================================
+// EQUIPMENT & SPATIAL
+// ============================================================================
+
+// -- Equipment --
+CREATE CONSTRAINT constraint_equipment_id IF NOT EXISTS
+  FOR (n:Equipment) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_equipment_id_exists IF NOT EXISTS
+  FOR (n:Equipment) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_equipment_status IF NOT EXISTS
+  FOR (n:Equipment) ON (n.status);
+CREATE INDEX index_equipment_serial IF NOT EXISTS
+  FOR (n:Equipment) ON (n.serial_number);
+
+// -- EquipmentInspectionLog --
+CREATE CONSTRAINT constraint_equipment_inspection_log_id IF NOT EXISTS
+  FOR (n:EquipmentInspectionLog) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_equipment_inspection_log_id_exists IF NOT EXISTS
+  FOR (n:EquipmentInspectionLog) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_equipment_inspection_log_date IF NOT EXISTS
+  FOR (n:EquipmentInspectionLog) ON (n.inspection_date);
+
+// -- Location --
+CREATE CONSTRAINT constraint_location_id IF NOT EXISTS
+  FOR (n:Location) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_location_id_exists IF NOT EXISTS
+  FOR (n:Location) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_location_type IF NOT EXISTS
+  FOR (n:Location) ON (n.location_type);
+
+// -- SafetyZone --
+CREATE CONSTRAINT constraint_safety_zone_id IF NOT EXISTS
+  FOR (n:SafetyZone) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_safety_zone_id_exists IF NOT EXISTS
+  FOR (n:SafetyZone) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_safety_zone_type IF NOT EXISTS
+  FOR (n:SafetyZone) ON (n.zone_type);
+
+
+// ============================================================================
+// ACCESS & PERMISSIONS
+// ============================================================================
+
+// -- AccessGrant --
+CREATE CONSTRAINT constraint_access_grant_id IF NOT EXISTS
+  FOR (n:AccessGrant) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_access_grant_id_exists IF NOT EXISTS
+  FOR (n:AccessGrant) REQUIRE n.id IS NOT NULL;
+
+
+// ============================================================================
+// AGENTIC
+// ============================================================================
+
+// -- AgentIdentity --
+CREATE CONSTRAINT constraint_agent_identity_id IF NOT EXISTS
+  FOR (n:AgentIdentity) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_agent_identity_id_exists IF NOT EXISTS
+  FOR (n:AgentIdentity) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_agent_identity_type IF NOT EXISTS
+  FOR (n:AgentIdentity) ON (n.agent_type);
+CREATE INDEX index_agent_identity_status IF NOT EXISTS
+  FOR (n:AgentIdentity) ON (n.status);
+
+// -- ComplianceAlert --
+CREATE CONSTRAINT constraint_compliance_alert_id IF NOT EXISTS
+  FOR (n:ComplianceAlert) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_compliance_alert_id_exists IF NOT EXISTS
+  FOR (n:ComplianceAlert) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_compliance_alert_severity IF NOT EXISTS
+  FOR (n:ComplianceAlert) ON (n.severity);
+CREATE INDEX index_compliance_alert_created_at IF NOT EXISTS
+  FOR (n:ComplianceAlert) ON (n.created_at);
+
+// -- BriefingSummary --
+CREATE CONSTRAINT constraint_briefing_summary_id IF NOT EXISTS
+  FOR (n:BriefingSummary) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_briefing_summary_id_exists IF NOT EXISTS
+  FOR (n:BriefingSummary) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_briefing_summary_date IF NOT EXISTS
+  FOR (n:BriefingSummary) ON (n.date);
+
+
+// ============================================================================
+// AUDIT & PROVENANCE (Phase 0)
+// ============================================================================
+// AuditEvent captures every mutation and state transition on tenant-scoped
+// entities. Events are append-only graph nodes linked to the affected entity
+// via (Entity)-[:EMITTED]->(AuditEvent). See docs/design/phase-0-foundations.md.
+
+// -- AuditEvent --
+CREATE CONSTRAINT constraint_audit_event_id IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_audit_event_id_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.id IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_type_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.event_type IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_entity_id_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.entity_id IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_entity_type_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.entity_type IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_occurred_at_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.occurred_at IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_company_id_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.company_id IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_actor_type_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.actor_type IS NOT NULL;
+CREATE CONSTRAINT constraint_audit_event_actor_id_exists IF NOT EXISTS
+  FOR (n:AuditEvent) REQUIRE n.actor_id IS NOT NULL;
+
+// Primary query path: events for a specific entity, newest first
+CREATE INDEX index_audit_event_entity IF NOT EXISTS
+  FOR (n:AuditEvent) ON (n.entity_id, n.occurred_at);
+// Company-wide timeline
+CREATE INDEX index_audit_event_company IF NOT EXISTS
+  FOR (n:AuditEvent) ON (n.company_id, n.occurred_at);
+// Filter by event type
+CREATE INDEX index_audit_event_type IF NOT EXISTS
+  FOR (n:AuditEvent) ON (n.event_type);
+// "Everything actor X did"
+CREATE INDEX index_audit_event_actor IF NOT EXISTS
+  FOR (n:AuditEvent) ON (n.actor_id, n.occurred_at);
+// Filter by entity type (e.g. all WorkItem events)
+CREATE INDEX index_audit_event_entity_type IF NOT EXISTS
+  FOR (n:AuditEvent) ON (n.entity_type);
+
+
+// ============================================================================
+// REGULATORY (shared across tenants)
+// ============================================================================
 
 // -- Jurisdiction --
 CREATE CONSTRAINT constraint_jurisdiction_code IF NOT EXISTS
   FOR (n:Jurisdiction) REQUIRE n.code IS UNIQUE;
 CREATE CONSTRAINT constraint_jurisdiction_code_exists IF NOT EXISTS
   FOR (n:Jurisdiction) REQUIRE n.code IS NOT NULL;
-CREATE CONSTRAINT constraint_jurisdiction_name_exists IF NOT EXISTS
-  FOR (n:Jurisdiction) REQUIRE n.name IS NOT NULL;
 
 // -- Region --
 CREATE CONSTRAINT constraint_region_code IF NOT EXISTS
@@ -44,8 +737,6 @@ CREATE CONSTRAINT constraint_regulatory_group_id IF NOT EXISTS
   FOR (n:RegulatoryGroup) REQUIRE n.id IS UNIQUE;
 CREATE CONSTRAINT constraint_regulatory_group_id_exists IF NOT EXISTS
   FOR (n:RegulatoryGroup) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_regulatory_group_jurisdiction IF NOT EXISTS
-  FOR (n:RegulatoryGroup) ON (n.jurisdiction_code);
 
 // -- Regulation --
 CREATE CONSTRAINT constraint_regulation_reference IF NOT EXISTS
@@ -54,16 +745,10 @@ CREATE CONSTRAINT constraint_regulation_reference_exists IF NOT EXISTS
   FOR (n:Regulation) REQUIRE n.reference IS NOT NULL;
 CREATE INDEX index_regulation_jurisdiction IF NOT EXISTS
   FOR (n:Regulation) ON (n.jurisdiction_code);
-CREATE INDEX index_regulation_group IF NOT EXISTS
-  FOR (n:Regulation) ON (n.group_id);
-
-// -- ComplianceProgram --
-CREATE INDEX index_compliance_program_name IF NOT EXISTS
-  FOR (n:ComplianceProgram) ON (n.name);
-CREATE INDEX index_compliance_program_jurisdiction IF NOT EXISTS
-  FOR (n:ComplianceProgram) ON (n.jurisdiction_code);
-CREATE CONSTRAINT constraint_compliance_program_name_exists IF NOT EXISTS
-  FOR (n:ComplianceProgram) REQUIRE n.name IS NOT NULL;
+CREATE INDEX index_regulation_valid_from IF NOT EXISTS
+  FOR (n:Regulation) ON (n.valid_from);
+CREATE INDEX index_regulation_valid_until IF NOT EXISTS
+  FOR (n:Regulation) ON (n.valid_until);
 
 // -- CertificationType --
 CREATE CONSTRAINT constraint_certification_type_id IF NOT EXISTS
@@ -108,8 +793,6 @@ CREATE CONSTRAINT constraint_document_type_id IF NOT EXISTS
   FOR (n:DocumentType) REQUIRE n.id IS UNIQUE;
 CREATE CONSTRAINT constraint_document_type_id_exists IF NOT EXISTS
   FOR (n:DocumentType) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_document_type_jurisdiction IF NOT EXISTS
-  FOR (n:DocumentType) ON (n.jurisdiction_code);
 
 // -- InspectionType --
 CREATE CONSTRAINT constraint_inspection_type_id IF NOT EXISTS
@@ -130,350 +813,50 @@ CREATE CONSTRAINT constraint_violation_type_code IF NOT EXISTS
   FOR (n:ViolationType) REQUIRE n.code IS UNIQUE;
 CREATE CONSTRAINT constraint_violation_type_code_exists IF NOT EXISTS
   FOR (n:ViolationType) REQUIRE n.code IS NOT NULL;
-CREATE INDEX index_violation_type_jurisdiction IF NOT EXISTS
-  FOR (n:ViolationType) ON (n.jurisdiction_code);
 
 // -- IncidentClassification --
 CREATE CONSTRAINT constraint_incident_classification_id IF NOT EXISTS
   FOR (n:IncidentClassification) REQUIRE n.id IS UNIQUE;
 CREATE CONSTRAINT constraint_incident_classification_id_exists IF NOT EXISTS
   FOR (n:IncidentClassification) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_incident_classification_jurisdiction IF NOT EXISTS
-  FOR (n:IncidentClassification) ON (n.jurisdiction_code);
 
 // -- RecordForm --
 CREATE CONSTRAINT constraint_record_form_id IF NOT EXISTS
   FOR (n:RecordForm) REQUIRE n.form_id IS UNIQUE;
 CREATE CONSTRAINT constraint_record_form_id_exists IF NOT EXISTS
   FOR (n:RecordForm) REQUIRE n.form_id IS NOT NULL;
-CREATE INDEX index_record_form_jurisdiction IF NOT EXISTS
-  FOR (n:RecordForm) ON (n.jurisdiction_code);
 
 // -- RegulatoryVersion --
 CREATE CONSTRAINT constraint_regulatory_version_id IF NOT EXISTS
   FOR (n:RegulatoryVersion) REQUIRE n.version_id IS UNIQUE;
 CREATE CONSTRAINT constraint_regulatory_version_id_exists IF NOT EXISTS
   FOR (n:RegulatoryVersion) REQUIRE n.version_id IS NOT NULL;
-CREATE INDEX index_regulatory_version_jurisdiction IF NOT EXISTS
-  FOR (n:RegulatoryVersion) ON (n.jurisdiction_code);
+
+// -- ComplianceProgram --
+CREATE INDEX index_compliance_program_name IF NOT EXISTS
+  FOR (n:ComplianceProgram) ON (n.name);
+CREATE INDEX index_compliance_program_jurisdiction IF NOT EXISTS
+  FOR (n:ComplianceProgram) ON (n.jurisdiction_code);
 
 
 // ============================================================================
-// DOMAIN 2: ORGANISATIONAL (tenant-scoped)
+// VECTOR INDEXES (Neo4j 5.11+)
 // ============================================================================
 
-// -- Company --
-CREATE CONSTRAINT constraint_company_id IF NOT EXISTS
-  FOR (n:Company) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_company_id_exists IF NOT EXISTS
-  FOR (n:Company) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_company_jurisdiction IF NOT EXISTS
-  FOR (n:Company) ON (n.jurisdiction_code);
+CREATE VECTOR INDEX message_embeddings IF NOT EXISTS
+FOR (m:Message) ON (m.embedding)
+OPTIONS {
+  indexConfig: {
+    `vector.dimensions`: 1536,
+    `vector.similarity_function`: 'cosine'
+  }
+};
 
-// -- Member --
-CREATE CONSTRAINT constraint_member_id IF NOT EXISTS
-  FOR (n:Member) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_member_id_exists IF NOT EXISTS
-  FOR (n:Member) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_member_uid IF NOT EXISTS
-  FOR (n:Member) ON (n.uid);
-CREATE INDEX index_member_email IF NOT EXISTS
-  FOR (n:Member) ON (n.email);
-
-// -- Project --
-CREATE CONSTRAINT constraint_project_id IF NOT EXISTS
-  FOR (n:Project) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_project_id_exists IF NOT EXISTS
-  FOR (n:Project) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_project_status IF NOT EXISTS
-  FOR (n:Project) ON (n.status);
-
-
-// ============================================================================
-// DOMAIN 3: HUMAN RESOURCES (tenant-scoped)
-// ============================================================================
-
-// -- Worker --
-CREATE CONSTRAINT constraint_worker_id IF NOT EXISTS
-  FOR (n:Worker) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_worker_id_exists IF NOT EXISTS
-  FOR (n:Worker) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_worker_status IF NOT EXISTS
-  FOR (n:Worker) ON (n.status);
-CREATE INDEX index_worker_email IF NOT EXISTS
-  FOR (n:Worker) ON (n.email);
-
-// -- Certification (instance, not type) --
-CREATE CONSTRAINT constraint_certification_id IF NOT EXISTS
-  FOR (n:Certification) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_certification_id_exists IF NOT EXISTS
-  FOR (n:Certification) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_certification_status IF NOT EXISTS
-  FOR (n:Certification) ON (n.status);
-CREATE INDEX index_certification_expiry IF NOT EXISTS
-  FOR (n:Certification) ON (n.expiry_date);
-
-
-// ============================================================================
-// DOMAIN 4: EQUIPMENT (tenant-scoped)
-// ============================================================================
-
-// -- Equipment --
-CREATE CONSTRAINT constraint_equipment_id IF NOT EXISTS
-  FOR (n:Equipment) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_equipment_id_exists IF NOT EXISTS
-  FOR (n:Equipment) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_equipment_status IF NOT EXISTS
-  FOR (n:Equipment) ON (n.status);
-CREATE INDEX index_equipment_serial IF NOT EXISTS
-  FOR (n:Equipment) ON (n.serial_number);
-
-// -- EquipmentInspectionLog --
-CREATE CONSTRAINT constraint_equipment_inspection_log_id IF NOT EXISTS
-  FOR (n:EquipmentInspectionLog) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_equipment_inspection_log_id_exists IF NOT EXISTS
-  FOR (n:EquipmentInspectionLog) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_equipment_inspection_log_date IF NOT EXISTS
-  FOR (n:EquipmentInspectionLog) ON (n.inspection_date);
-
-
-// ============================================================================
-// DOMAIN 5: SAFETY (tenant-scoped)
-// ============================================================================
-
-// -- Inspection --
-CREATE CONSTRAINT constraint_inspection_id IF NOT EXISTS
-  FOR (n:Inspection) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_inspection_id_exists IF NOT EXISTS
-  FOR (n:Inspection) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_inspection_date IF NOT EXISTS
-  FOR (n:Inspection) ON (n.inspection_date);
-CREATE INDEX index_inspection_status IF NOT EXISTS
-  FOR (n:Inspection) ON (n.overall_status);
-
-// -- InspectionItem --
-CREATE CONSTRAINT constraint_inspection_item_id IF NOT EXISTS
-  FOR (n:InspectionItem) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_inspection_item_id_exists IF NOT EXISTS
-  FOR (n:InspectionItem) REQUIRE n.id IS NOT NULL;
-
-// -- Incident --
-CREATE CONSTRAINT constraint_incident_id IF NOT EXISTS
-  FOR (n:Incident) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_incident_id_exists IF NOT EXISTS
-  FOR (n:Incident) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_incident_date IF NOT EXISTS
-  FOR (n:Incident) ON (n.incident_date);
-CREATE INDEX index_incident_severity IF NOT EXISTS
-  FOR (n:Incident) ON (n.severity);
-CREATE INDEX index_incident_status IF NOT EXISTS
-  FOR (n:Incident) ON (n.status);
-
-// -- HazardReport --
-CREATE CONSTRAINT constraint_hazard_report_id IF NOT EXISTS
-  FOR (n:HazardReport) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_hazard_report_id_exists IF NOT EXISTS
-  FOR (n:HazardReport) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_hazard_report_status IF NOT EXISTS
-  FOR (n:HazardReport) ON (n.status);
-
-// -- IdentifiedHazard --
-CREATE CONSTRAINT constraint_identified_hazard_id IF NOT EXISTS
-  FOR (n:IdentifiedHazard) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_identified_hazard_id_exists IF NOT EXISTS
-  FOR (n:IdentifiedHazard) REQUIRE n.id IS NOT NULL;
-
-// -- ToolboxTalk --
-CREATE CONSTRAINT constraint_toolbox_talk_id IF NOT EXISTS
-  FOR (n:ToolboxTalk) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_toolbox_talk_id_exists IF NOT EXISTS
-  FOR (n:ToolboxTalk) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_toolbox_talk_status IF NOT EXISTS
-  FOR (n:ToolboxTalk) ON (n.status);
-
-// -- CorrectiveAction --
-CREATE CONSTRAINT constraint_corrective_action_id IF NOT EXISTS
-  FOR (n:CorrectiveAction) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_corrective_action_id_exists IF NOT EXISTS
-  FOR (n:CorrectiveAction) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_corrective_action_status IF NOT EXISTS
-  FOR (n:CorrectiveAction) ON (n.status);
-
-// -- ExposureRecord --
-CREATE CONSTRAINT constraint_exposure_record_id IF NOT EXISTS
-  FOR (n:ExposureRecord) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_exposure_record_id_exists IF NOT EXISTS
-  FOR (n:ExposureRecord) REQUIRE n.id IS NOT NULL;
-
-// -- MorningBrief --
-CREATE CONSTRAINT constraint_morning_brief_id IF NOT EXISTS
-  FOR (n:MorningBrief) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_morning_brief_id_exists IF NOT EXISTS
-  FOR (n:MorningBrief) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_morning_brief_date IF NOT EXISTS
-  FOR (n:MorningBrief) ON (n.date);
-
-// -- MockInspectionResult --
-CREATE CONSTRAINT constraint_mock_inspection_result_id IF NOT EXISTS
-  FOR (n:MockInspectionResult) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_mock_inspection_result_id_exists IF NOT EXISTS
-  FOR (n:MockInspectionResult) REQUIRE n.id IS NOT NULL;
-
-
-// ============================================================================
-// DOMAIN 6: SPATIAL / LOCATION (tenant-scoped)
-// ============================================================================
-
-// -- Location --
-CREATE CONSTRAINT constraint_location_id IF NOT EXISTS
-  FOR (n:Location) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_location_id_exists IF NOT EXISTS
-  FOR (n:Location) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_location_type IF NOT EXISTS
-  FOR (n:Location) ON (n.location_type);
-CREATE INDEX index_location_qr IF NOT EXISTS
-  FOR (n:Location) ON (n.qr_code_id);
-
-// -- SafetyZone --
-CREATE CONSTRAINT constraint_safety_zone_id IF NOT EXISTS
-  FOR (n:SafetyZone) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_safety_zone_id_exists IF NOT EXISTS
-  FOR (n:SafetyZone) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_safety_zone_type IF NOT EXISTS
-  FOR (n:SafetyZone) ON (n.zone_type);
-
-
-// ============================================================================
-// DOMAIN 7: DOCUMENTS (tenant-scoped)
-// ============================================================================
-
-// -- Document --
-CREATE CONSTRAINT constraint_document_id IF NOT EXISTS
-  FOR (n:Document) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_document_id_exists IF NOT EXISTS
-  FOR (n:Document) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_document_type IF NOT EXISTS
-  FOR (n:Document) ON (n.document_type);
-CREATE INDEX index_document_status IF NOT EXISTS
-  FOR (n:Document) ON (n.status);
-
-// -- OshaLogEntry --
-CREATE CONSTRAINT constraint_osha_log_entry_id IF NOT EXISTS
-  FOR (n:OshaLogEntry) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_osha_log_entry_id_exists IF NOT EXISTS
-  FOR (n:OshaLogEntry) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_osha_log_entry_year IF NOT EXISTS
-  FOR (n:OshaLogEntry) ON (n.year);
-CREATE INDEX index_osha_log_entry_case IF NOT EXISTS
-  FOR (n:OshaLogEntry) ON (n.case_number);
-
-// -- EnvironmentalProgram --
-CREATE CONSTRAINT constraint_environmental_program_id IF NOT EXISTS
-  FOR (n:EnvironmentalProgram) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_environmental_program_id_exists IF NOT EXISTS
-  FOR (n:EnvironmentalProgram) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_environmental_program_status IF NOT EXISTS
-  FOR (n:EnvironmentalProgram) ON (n.status);
-
-
-// ============================================================================
-// DOMAIN 8: DAILY OPERATIONS (tenant-scoped)
-// ============================================================================
-
-// -- DailyLog --
-CREATE CONSTRAINT constraint_daily_log_id IF NOT EXISTS
-  FOR (n:DailyLog) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_daily_log_id_exists IF NOT EXISTS
-  FOR (n:DailyLog) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_daily_log_date IF NOT EXISTS
-  FOR (n:DailyLog) ON (n.log_date);
-CREATE INDEX index_daily_log_status IF NOT EXISTS
-  FOR (n:DailyLog) ON (n.status);
-
-// -- MaterialDelivery --
-CREATE CONSTRAINT constraint_material_delivery_id IF NOT EXISTS
-  FOR (n:MaterialDelivery) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_material_delivery_id_exists IF NOT EXISTS
-  FOR (n:MaterialDelivery) REQUIRE n.id IS NOT NULL;
-
-// -- DelayRecord --
-CREATE CONSTRAINT constraint_delay_record_id IF NOT EXISTS
-  FOR (n:DelayRecord) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_delay_record_id_exists IF NOT EXISTS
-  FOR (n:DelayRecord) REQUIRE n.id IS NOT NULL;
-
-// -- VisitorRecord --
-CREATE CONSTRAINT constraint_visitor_record_id IF NOT EXISTS
-  FOR (n:VisitorRecord) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_visitor_record_id_exists IF NOT EXISTS
-  FOR (n:VisitorRecord) REQUIRE n.id IS NOT NULL;
-
-// -- VoiceSession --
-CREATE CONSTRAINT constraint_voice_session_id IF NOT EXISTS
-  FOR (n:VoiceSession) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_voice_session_id_exists IF NOT EXISTS
-  FOR (n:VoiceSession) REQUIRE n.id IS NOT NULL;
-
-
-// ============================================================================
-// DOMAIN 9: SUB MANAGEMENT (tenant-scoped)
-// ============================================================================
-
-// -- GcRelationship --
-// Note: Materialised as (Company)-[:GC_OVER]->(Company) edges in the graph.
-// The GcRelationship node is kept for audit/permission metadata.
-CREATE CONSTRAINT constraint_gc_relationship_id IF NOT EXISTS
-  FOR (n:GcRelationship) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_gc_relationship_id_exists IF NOT EXISTS
-  FOR (n:GcRelationship) REQUIRE n.id IS NOT NULL;
-
-// -- InsuranceCertificate --
-CREATE CONSTRAINT constraint_insurance_certificate_id IF NOT EXISTS
-  FOR (n:InsuranceCertificate) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_insurance_certificate_id_exists IF NOT EXISTS
-  FOR (n:InsuranceCertificate) REQUIRE n.id IS NOT NULL;
-CREATE INDEX index_insurance_certificate_status IF NOT EXISTS
-  FOR (n:InsuranceCertificate) ON (n.status);
-CREATE INDEX index_insurance_certificate_expiry IF NOT EXISTS
-  FOR (n:InsuranceCertificate) ON (n.expiration_date);
-
-// -- PrequalPackage --
-CREATE CONSTRAINT constraint_prequal_package_id IF NOT EXISTS
-  FOR (n:PrequalPackage) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_prequal_package_id_exists IF NOT EXISTS
-  FOR (n:PrequalPackage) REQUIRE n.id IS NOT NULL;
-
-// -- LienWaiver --
-CREATE CONSTRAINT constraint_lien_waiver_id IF NOT EXISTS
-  FOR (n:LienWaiver) REQUIRE n.id IS UNIQUE;
-CREATE CONSTRAINT constraint_lien_waiver_id_exists IF NOT EXISTS
-  FOR (n:LienWaiver) REQUIRE n.id IS NOT NULL;
-
-
-// ============================================================================
-// AGENTIC: AGENT IDENTITY (P0 — cannot retrofit)
-// ============================================================================
-// Agent identities are first-class graph citizens with cost control fields.
-// Permission = traversability: (AgentIdentity)-[:BELONGS_TO]->(Company)
-
-// -- AgentIdentity --
-CREATE CONSTRAINT constraint_agent_identity_id IF NOT EXISTS
-  FOR (n:AgentIdentity) REQUIRE n.agent_id IS UNIQUE;
-CREATE CONSTRAINT constraint_agent_identity_id_exists IF NOT EXISTS
-  FOR (n:AgentIdentity) REQUIRE n.agent_id IS NOT NULL;
-CREATE INDEX index_agent_identity_type IF NOT EXISTS
-  FOR (n:AgentIdentity) ON (n.agent_type);
-CREATE INDEX index_agent_identity_status IF NOT EXISTS
-  FOR (n:AgentIdentity) ON (n.status);
-
-
-// ============================================================================
-// DOMAINS 10-15: RESERVED (design only — build when validated)
-// ============================================================================
-// Domain 10: Time & Workforce
-// Domain 11: Quality
-// Domain 12: Schedule
-// Domain 13: Financial
-// Domain 14: Project Coordination
-// Domain 15: Procurement
-// Constraints for these domains will be added when code is built.
+CREATE VECTOR INDEX chunk_embeddings IF NOT EXISTS
+FOR (c:DocumentChunk) ON (c.embedding)
+OPTIONS {
+  indexConfig: {
+    `vector.dimensions`: 1024,
+    `vector.similarity_function`: 'cosine'
+  }
+};

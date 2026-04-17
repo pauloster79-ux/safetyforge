@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { Search, Plus, Loader2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +41,7 @@ function ProjectToolboxTalks({
   statusFilter: string;
 }) {
   const { data: talks, isLoading } = useToolboxTalks(projectId);
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
 
   const filtered = useMemo(() => {
     if (!talks) return [];
@@ -103,14 +104,15 @@ function ProjectToolboxTalks({
 }
 
 export function ToolboxTalkListPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { data: projects, isLoading: projectsLoading } = useProjects();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
 
-  const handleStatusFilter = (value: string) => {
+  const handleStatusFilter = (value: string | null) => {
+    if (value === null) return;
     setStatusFilter(value.startsWith('All') ? '' : value);
   };
 

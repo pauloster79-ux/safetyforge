@@ -165,6 +165,17 @@ class IncidentService(BaseService):
             """,
             {"company_id": company_id, "project_id": project_id, "props": props},
         )
+
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=inc_id,
+            entity_type="Incident",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Reported {data.severity.value} incident at {data.location}",
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)
 
     def get(
@@ -317,6 +328,31 @@ class IncidentService(BaseService):
         )
         if result is None:
             raise IncidentNotFoundError(incident_id)
+
+        # Detect status transitions
+        prev_status = data.model_dump(exclude_none=True).get("status")
+        if prev_status and "status" in update_props:
+            self._emit_audit(
+                event_type="state.transitioned",
+                entity_id=incident_id,
+                entity_type="Incident",
+                company_id=company_id,
+                actor=actor,
+                summary=f"Incident status changed to {update_props['status']}",
+                new_state=update_props["status"],
+                related_entity_ids=[project_id],
+            )
+        else:
+            self._emit_audit(
+                event_type="entity.updated",
+                entity_id=incident_id,
+                entity_type="Incident",
+                company_id=company_id,
+                actor=actor,
+                summary="Updated incident report",
+                related_entity_ids=[project_id],
+            )
+
         return self._to_model(result)
 
     def delete(
@@ -348,6 +384,16 @@ class IncidentService(BaseService):
         )
         if result is None:
             raise IncidentNotFoundError(incident_id)
+
+        self._emit_audit(
+            event_type="entity.archived",
+            entity_id=incident_id,
+            entity_type="Incident",
+            company_id=company_id,
+            actor=Actor.human("system"),
+            summary="Deleted incident report",
+            related_entity_ids=[project_id],
+        )
 
     def generate_investigation(
         self,
@@ -452,4 +498,17 @@ Return ONLY valid JSON."""
                 "props": update_props,
             },
         )
+
+        self._emit_audit(
+            event_type="state.transitioned",
+            entity_id=incident_id,
+            entity_type="Incident",
+            company_id=company_id,
+            actor=actor,
+            summary="AI-generated root cause analysis added",
+            prev_state="reported",
+            new_state=IncidentStatus.INVESTIGATING.value,
+            related_entity_ids=[project_id],
+        )
+
         return self._to_model(result)

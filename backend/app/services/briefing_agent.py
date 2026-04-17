@@ -1,7 +1,7 @@
 """Briefing Agent — generates morning safety briefs using LLM.
 
 Subscribes to events: inspection.completed, incident.reported,
-certification.expiring, equipment.inspection_due.
+certification.expiring, equipment.inspection_due, daily_log.submitted.
 
 Uses MCP tools: generate_morning_brief, get_project_summary, get_changes_since.
 Uses LLMService to generate natural language summary from structured data.
@@ -52,6 +52,8 @@ class BriefingAgent(BaseService):
         "read:inspections",
     )
 
+    AGENT_VERSION = "1.0.0"
+
     def __init__(
         self,
         driver: Driver,
@@ -76,7 +78,7 @@ class BriefingAgent(BaseService):
         self.company_id = company_id
 
     def _actor(self) -> Actor:
-        """Build the Actor for this agent.
+        """Build the base Actor for this agent (used for read-only tool calls).
 
         Returns:
             An Actor instance representing this agent.
@@ -85,6 +87,25 @@ class BriefingAgent(BaseService):
             agent_id=self.agent_id,
             company_id=self.company_id,
             scopes=self.AGENT_SCOPES,
+            agent_version=self.AGENT_VERSION,
+        )
+
+    def _actor_with_llm_result(self, llm_result: LLMResult) -> Actor:
+        """Build an Actor enriched with LLM provenance from a completed call.
+
+        Args:
+            llm_result: The LLMResult from a completed LLM invocation.
+
+        Returns:
+            An Actor with model_id and cost_cents populated.
+        """
+        return Actor.agent(
+            agent_id=self.agent_id,
+            company_id=self.company_id,
+            scopes=self.AGENT_SCOPES,
+            agent_version=self.AGENT_VERSION,
+            model_id=llm_result.model_id,
+            cost_cents=max(1, int(llm_result.cost_cents)),
         )
 
     # ------------------------------------------------------------------
@@ -147,8 +168,11 @@ class BriefingAgent(BaseService):
         # Step 3: Generate LLM summary
         llm_result = self._generate_llm_summary(structured_data, project_name, today)
 
-        # Step 4: Build and persist the briefing
+        # Step 4: Build and persist the briefing with full provenance
+        actor = self._actor_with_llm_result(llm_result)
+
         briefing = BriefingSummary(
+            id=briefing_id,
             briefing_id=briefing_id,
             project_id=project_id,
             project_name=project_name,
@@ -162,7 +186,7 @@ class BriefingAgent(BaseService):
             agent_id=self.agent_id,
         )
 
-        self._persist_briefing(briefing)
+        self._persist_briefing(briefing, actor)
         return briefing
 
     # ------------------------------------------------------------------
@@ -186,6 +210,7 @@ class BriefingAgent(BaseService):
             EventType.INCIDENT_REPORTED,
             EventType.CERTIFICATION_EXPIRING,
             EventType.EQUIPMENT_INSPECTION_DUE,
+            EventType.DAILY_LOG_SUBMITTED,
         }
 
         if event.event_type not in relevant_types:
@@ -235,17 +260,18 @@ class BriefingAgent(BaseService):
     # Persistence
     # ------------------------------------------------------------------
 
-    def _persist_briefing(self, briefing: BriefingSummary) -> None:
-        """Store a BriefingSummary node in Neo4j.
+    def _persist_briefing(self, briefing: BriefingSummary, actor: Actor) -> None:
+        """Store a BriefingSummary node in Neo4j with full agent provenance.
 
         Args:
             briefing: The briefing to persist.
+            actor: The agent Actor with model_id/cost_cents populated.
         """
         self._write_tx_single(
             """
             MATCH (c:Company {id: $company_id})
             CREATE (b:BriefingSummary {
-                briefing_id: $briefing_id,
+                id: $briefing_id,
                 project_id: $project_id,
                 project_name: $project_name,
                 company_id: $company_id,
@@ -256,10 +282,12 @@ class BriefingAgent(BaseService):
                 cost_cents: $cost_cents,
                 model_id: $model_id,
                 agent_id: $agent_id,
+                agent_version: $agent_version,
+                actor_type: $actor_type,
                 created_at: $created_at
             })
             CREATE (c)-[:HAS_BRIEFING]->(b)
-            RETURN b.briefing_id AS briefing_id
+            RETURN b.id AS briefing_id
             """,
             {
                 "company_id": briefing.company_id,
@@ -273,8 +301,10 @@ class BriefingAgent(BaseService):
                 ),
                 "llm_summary": briefing.llm_summary,
                 "cost_cents": briefing.cost_cents,
-                "model_id": briefing.model_id,
+                "model_id": actor.model_id,
                 "agent_id": briefing.agent_id,
+                "agent_version": actor.agent_version,
+                "actor_type": actor.type,
                 "created_at": briefing.created_at,
             },
         )

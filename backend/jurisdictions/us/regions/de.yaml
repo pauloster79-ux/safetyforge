@@ -1,0 +1,47 @@
+code: DE
+name: Delaware
+regulatory_body: Delaware Department of Labor - Division of Industrial Affairs
+state_plan: false
+primary_legislation: Delaware Code Title 19
+construction_regulation: Federal OSHA 29 CFR 1926
+
+requirements:
+  - id: DE-001
+    state: DE
+    requirement_name: Workers' Compensation Insurance
+    description: All employers in Delaware must carry workers' compensation insurance, including coverage for occupational diseases.
+    federal_equivalent: null
+    state_standard: "19 Del. Code 2301 et seq."
+    additional_details: Delaware requires employers to secure coverage through authorized insurance carriers or approved self-insurance. No minimum employee count threshold.
+    applies_to: all
+    severity: mandatory
+
+  - id: DE-002
+    state: DE
+    requirement_name: Contractor Registration
+    description: All contractors performing construction work in Delaware must register with the Division of Revenue and hold appropriate business licenses.
+    federal_equivalent: null
+    state_standard: "24 Del. Code 5301 et seq."
+    additional_details: Includes requirements for proof of insurance, workers' compensation coverage, and compliance with state tax obligations.
+    applies_to: construction
+    severity: mandatory
+
+  - id: DE-003
+    state: DE
+    requirement_name: Asbestos Licensing and Training
+    description: Delaware requires licensing for asbestos abatement contractors and accredited training for workers handling asbestos-containing materials.
+    federal_equivalent: "29 CFR 1926.1101"
+    state_standard: "7 Del. Admin Code 1104"
+    additional_details: Projects must be notified to DNREC. Air monitoring, proper containment, and waste disposal procedures are required during abatement.
+    applies_to: construction
+    severity: mandatory
+
+  - id: DE-004
+    state: DE
+    requirement_name: Underground Utility Damage Prevention
+    description: Excavators must contact Delaware One Call at least two business days before digging to have underground utilities marked.
+    federal_equivalent: null
+    state_standard: "26 Del. Code 801 et seq."
+    additional_details: Failure to notify can result in liability for all repair costs and penalties. Hand digging is required within the tolerance zone of marked utilities.
+    applies_to: construction
+    severity: mandatory

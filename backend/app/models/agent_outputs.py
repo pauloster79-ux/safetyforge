@@ -39,7 +39,8 @@ class ComplianceAlert(BaseModel):
     (Company)-[:HAS_COMPLIANCE_ALERT]->(ComplianceAlert)
 
     Attributes:
-        alert_id: Unique alert identifier.
+        id: Unique alert identifier (primary ID in new ontology).
+        alert_id: Deprecated alias for id — kept for backward compatibility.
         alert_type: Category of compliance issue.
         severity: Risk severity level.
         entity_id: ID of the entity that triggered the alert.
@@ -54,7 +55,8 @@ class ComplianceAlert(BaseModel):
         created_at: When the alert was created.
     """
 
-    alert_id: str
+    id: str = Field(..., description="Primary identifier (new ontology)")
+    alert_id: str = Field(default="", description="Deprecated alias for id")
     alert_type: AlertType
     severity: AlertSeverity
     entity_id: str
@@ -70,12 +72,20 @@ class ComplianceAlert(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
+    def model_post_init(self, __context: object) -> None:
+        """Sync alert_id with id for backward compatibility."""
+        if not self.alert_id:
+            object.__setattr__(self, "alert_id", self.id)
+        elif not self.id:
+            object.__setattr__(self, "id", self.alert_id)
+
 
 class BriefingSummary(BaseModel):
     """A structured morning brief produced by the Briefing Agent.
 
     Attributes:
-        briefing_id: Unique briefing identifier.
+        id: Unique briefing identifier (primary ID in new ontology).
+        briefing_id: Deprecated alias for id — kept for backward compatibility.
         project_id: The project this brief covers.
         project_name: Human-readable project name.
         company_id: Tenant scope.
@@ -91,7 +101,8 @@ class BriefingSummary(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    briefing_id: str
+    id: str = Field(..., description="Primary identifier (new ontology)")
+    briefing_id: str = Field(default="", description="Deprecated alias for id")
     project_id: str
     project_name: str = ""
     company_id: str
@@ -105,3 +116,10 @@ class BriefingSummary(BaseModel):
     created_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+
+    def model_post_init(self, __context: object) -> None:
+        """Sync briefing_id with id for backward compatibility."""
+        if not self.briefing_id:
+            object.__setattr__(self, "briefing_id", self.id)
+        elif not self.id:
+            object.__setattr__(self, "id", self.briefing_id)

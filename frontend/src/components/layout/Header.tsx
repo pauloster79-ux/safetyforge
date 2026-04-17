@@ -27,10 +27,10 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { data: projects } = useProjects();
   const navigate = useNavigate();
 
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 'User';
   const initials = displayName
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
@@ -106,7 +106,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             className="flex items-center gap-2 rounded-[3px] px-1.5 py-1.5 hover:bg-muted"
           >
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.photoURL || undefined} />
+              <AvatarImage src={user?.imageUrl || undefined} />
               <AvatarFallback className="bg-[var(--concrete-100)] text-[var(--concrete-500)] font-mono text-[10px] font-semibold">
                 {initials}
               </AvatarFallback>
@@ -118,7 +118,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1.5">
               <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <p className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate(ROUTES.SETTINGS)}>

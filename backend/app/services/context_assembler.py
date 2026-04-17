@@ -269,7 +269,7 @@ class ContextAssemblerService(BaseService):
 
             CALL {
                 WITH c
-                OPTIONAL MATCH (c)-[:HAS_WORKER]->(w:Worker)-[:HOLDS_CERT]->(cert:Certification)
+                OPTIONAL MATCH (c)-[:EMPLOYS]->(w:Worker)-[:HOLDS_CERT]->(cert:Certification)
                 WHERE w.deleted = false AND cert.expiry_date IS NOT NULL
                 WITH
                     sum(CASE WHEN cert.expiry_date < $today THEN 1 ELSE 0 END) AS expired,
@@ -353,7 +353,7 @@ class ContextAssemblerService(BaseService):
 
             CALL {
                 WITH c
-                OPTIONAL MATCH (c)-[:HAS_WORKER]->(w:Worker)
+                OPTIONAL MATCH (c)-[:EMPLOYS]->(w:Worker)
                 WHERE w.deleted = false
                 RETURN count(w) AS total_workers,
                        sum(CASE WHEN w.status = 'active' THEN 1 ELSE 0 END) AS active_workers
@@ -361,7 +361,7 @@ class ContextAssemblerService(BaseService):
 
             CALL {
                 WITH c
-                OPTIONAL MATCH (c)-[:HAS_WORKER]->(w:Worker)-[:HOLDS_CERT]->(cert:Certification)
+                OPTIONAL MATCH (c)-[:EMPLOYS]->(w:Worker)-[:HOLDS_CERT]->(cert:Certification)
                 WHERE w.deleted = false AND cert.expiry_date IS NOT NULL
                 WITH
                     sum(CASE WHEN cert.expiry_date < $today THEN 1 ELSE 0 END) AS expired_certs,
@@ -426,7 +426,8 @@ class ContextAssemblerService(BaseService):
         """
         result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:Inspection)
+            WHERE r.category = 'simulated'
             RETURN r.overall_score AS score, r.grade AS grade, r.created_at AS created_at
             ORDER BY r.created_at DESC
             LIMIT 1
@@ -493,7 +494,7 @@ class ContextAssemblerService(BaseService):
         """
         results = self._read_tx(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_WORKER]->(w:Worker)
+            MATCH (c:Company {id: $company_id})-[:EMPLOYS]->(w:Worker)
             WHERE w.deleted = false
             OPTIONAL MATCH (w)-[:HOLDS_CERT]->(cert:Certification)
             WITH w, collect(
@@ -612,7 +613,7 @@ class ContextAssemblerService(BaseService):
         # Get years with entries
         year_results = self._read_tx(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             RETURN DISTINCT e.year AS year
             ORDER BY year DESC
             """,
@@ -623,7 +624,7 @@ class ContextAssemblerService(BaseService):
         # Count current year entries
         count_result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+            MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
             WHERE e.year = $year
             RETURN count(e) AS cnt
             """,
@@ -649,7 +650,7 @@ class ContextAssemblerService(BaseService):
         for yr in year_list:
             agg = self._read_tx_single(
                 """
-                MATCH (c:Company {id: $company_id})-[:HAS_OSHA_ENTRY]->(e:OshaLogEntry)
+                MATCH (c:Company {id: $company_id})-[:HAS_INCIDENT_LOG]->(e:IncidentLogEntry)
                 WHERE e.year = $year
                 RETURN count(e) AS total,
                        sum(CASE WHEN e.classification = 'death' THEN 1 ELSE 0 END) +

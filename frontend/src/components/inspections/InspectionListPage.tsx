@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCanvasNavigate } from '@/hooks/useCanvasNavigate';
 import { Search, Plus, Loader2, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,7 @@ function ProjectInspections({
   statusFilter: string;
 }) {
   const { data: inspections, isLoading } = useInspections(projectId);
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
 
   const filtered = useMemo(() => {
     if (!inspections) return [];
@@ -108,7 +109,7 @@ function ProjectInspections({
 }
 
 export function InspectionListPage() {
-  const navigate = useNavigate();
+  const navigate = useCanvasNavigate();
   const { data: projects, isLoading: projectsLoading } = useProjects();
 
   const [search, setSearch] = useState('');
@@ -116,11 +117,13 @@ export function InspectionListPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
 
-  const handleTypeFilter = (value: string) => {
+  const handleTypeFilter = (value: string | null) => {
+    if (value === null) return;
     setTypeFilter(value.startsWith('All') ? '' : value);
   };
 
-  const handleStatusFilter = (value: string) => {
+  const handleStatusFilter = (value: string | null) => {
+    if (value === null) return;
     setStatusFilter(value.startsWith('All') ? '' : value);
   };
 

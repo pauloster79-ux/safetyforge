@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf Build Plan — Platform Expansion v2.0</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --accent: #e67e22;
+    --accent-light: #fdf2e9;
+    --border: #e5e7eb;
+    --code-bg: #f8f9fa;
+    --table-header: #1a1a2e;
+    --table-header-fg: #ffffff;
+    --section-bg: #f9fafb;
+    --green: #27ae60;
+    --amber: #f39c12;
+    --red: #e74c3c;
+    --blue: #3498db;
+    --purple: #8e44ad;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--fg);
+  }
+  .subtitle {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid var(--accent);
+    color: var(--fg);
+  }
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 32px;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    color: var(--fg);
+  }
+  p { margin-bottom: 12px; }
+  strong { font-weight: 600; }
+  ul, ol { margin-bottom: 12px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.9rem;
+  }
+  thead th {
+    background: var(--table-header);
+    color: var(--table-header-fg);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+  }
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:hover { background: var(--accent-light); }
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+  }
+  .callout {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .callout strong { color: var(--accent); }
+  .phase-header {
+    background: var(--fg);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-top: 40px;
+    margin-bottom: 20px;
+  }
+  .phase-header h2 {
+    color: white;
+    border: none;
+    margin: 0;
+    padding: 0;
+    font-size: 1.3rem;
+  }
+  .phase-header .meta {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+  .task {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .task h4 {
+    margin-top: 0;
+    color: var(--accent);
+  }
+  .task .effort {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-amber { background: #fff3cd; color: #856404; }
+  .badge-blue { background: #cce5ff; color: #004085; }
+  .badge-purple { background: #e8d5f5; color: #4a1a6b; }
+  .timeline {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 0;
+    margin: 24px 0;
+  }
+  .timeline-row {
+    display: contents;
+  }
+  .timeline-row > div {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding: 4px 0; }
+  .checklist li::before { content: "✅ "; }
+  .new-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .tbd-badge {
+    display: inline-block;
+    background: #6b7280;
+    color: white;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  @media (max-width: 640px) {
+    body { padding: 20px 16px; }
+    h1 { font-size: 1.5rem; }
+    table { font-size: 0.8rem; }
+    pre { font-size: 0.78rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Kerf Build Plan — Platform Expansion</h1>
+<p class="subtitle">Version 2.0 — 2026-04-10</p>
+
+<hr>
+
+<h2>Overview</h2>
+
+<p>This document is the execution plan for expanding Kerf from a safety compliance platform into a <strong>graph-intelligent construction business platform</strong>. It assumes the Phase 1 safety foundation (Sprints 0-10 in <code>BUILD_PLAN.md</code>) is complete or near-complete, and builds on the existing knowledge graph, inspection engine, worker/equipment/project entities, conversational interface, and voice architecture.</p>
+
+<div class="callout">
+<strong>Conversational-first:</strong> Every feature in this expansion is accessed primarily through Kerf's conversational interface (chat and voice). Forms and dashboards exist for review and bulk operations, but the contractor's primary interaction with every feature is conversational. Voice is not "where applicable" — it is the interaction model for every feature.
+</div>
+
+<h3>Expansion Priority Order</h3>
+<table>
+<thead><tr><th>#</th><th>Feature</th><th>Rationale</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Daily Logs</td><td>Highest data overlap with safety, makes the app the contractor's daily driver</td></tr>
+<tr><td>2</td><td>Quality Inspections / Punch Lists</td><td>Reuses the existing inspection engine with different templates</td></tr>
+<tr><td>3</td><td>Time Tracking</td><td>Extends existing worker/project data, foundation for job costing</td></tr>
+<tr><td>4</td><td>Expanded Sub Management</td><td>Extends existing GC portal</td></tr>
+<tr><td>5</td><td>RFIs / Submittals</td><td>New coordination workflows</td></tr>
+<tr><td>6</td><td>Basic Scheduling</td><td>Weekly lookahead connected to safety data</td></tr>
+<tr><td>7</td><td>Conversational Estimating + Job Costing <span class="new-badge">NEW</span></td><td>Unified estimate/task/cost model</td></tr>
+<tr><td>8</td><td>Document Intelligence <span class="new-badge">NEW</span></td><td>AI extraction from uploaded plans, specs, contracts</td></tr>
+<tr><td>9</td><td>Intelligent Change Orders <span class="new-badge">NEW</span></td><td>Auto-detection from daily logs</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Strategic Context</h2>
+
+<h3>Why This Order</h3>
+
+<p><strong>Daily Logs are the Trojan horse.</strong> The contractor is already in the app for safety; daily logs make it the first thing they open every morning. 40-50% of daily log fields are already captured by safety workflows. This is the lowest-effort, highest-stickiness expansion.</p>
+
+<p><strong>Quality Inspections reuse the same engine.</strong> The inspection workflow (observe &rarr; photograph &rarr; assign corrective action &rarr; track &rarr; close) is technically identical for safety and quality. This is a template expansion, not a new product.</p>
+
+<p><strong>Time Tracking has the strongest ROI case.</strong> 38% of contractors still use paper timesheets. Time theft costs ~$52K/year per 50-person crew. And no competitor connects time data to safety data (fatigue analysis).</p>
+
+<p><strong>Sub Management extends what exists.</strong> The GC portal, prequalification automation, and compliance visibility are built. The biggest gap — COI tracking — is the highest-pain item (7/10 COIs are non-compliant).</p>
+
+<p><strong>RFIs and Scheduling are platform stickiness plays.</strong> They complete the "one tool" promise but are less urgent than the field-operations features above.</p>
+
+<h3>Market Opportunity Per Feature</h3>
+<table>
+<thead><tr><th>Feature</th><th>Addressable Market</th><th>Competitors</th><th>Our Advantage</th></tr></thead>
+<tbody>
+<tr><td>Daily Logs</td><td>~$1.5-4B</td><td>Raken ($15-49/user)</td><td>40-50% auto-populated from safety data</td></tr>
+<tr><td>Quality / Punch Lists</td><td>~$1.2-1.3B &rarr; $2.5B by 2033</td><td>Fieldwire ($39-94/user)</td><td>Same inspection engine, no second app</td></tr>
+<tr><td>Time Tracking</td><td>~$540M-1.1B</td><td>ClockShark ($9-11/user)</td><td>Safety+time correlation (fatigue)</td></tr>
+<tr><td>Sub Management</td><td>~$3.2B &rarr; $8.1B by 2033</td><td>ISNetworld ($875+/yr)</td><td>Safety data moat, GC-paid model</td></tr>
+<tr><td>RFIs</td><td>Part of $10.6B PM market</td><td>Procore ($$$)</td><td>Integrated with safety + daily logs</td></tr>
+<tr><td>Scheduling</td><td>38% of $10.6B PM market</td><td>Outbuild ($999/mo)</td><td>Cert expiry + equipment connection</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<!-- PHASE 1 -->
+<div class="phase-header">
+<h2>Phase 1: Daily Logs</h2>
+<div class="meta">Weeks 13-15 &bull; ~68 hours &bull; 2-3 weeks</div>
+</div>
+
+<p><strong>Goal:</strong> The contractor's morning safety walk produces a complete daily log with 50% of fields auto-populated from existing data. Replaces the most legally important document a contractor produces.</p>
+
+<h3>Dependencies</h3>
+<ul class="checklist">
+<li>Project entity (Sprint 2)</li>
+<li>Inspection engine with photos/GPS (Sprint 2)</li>
+<li>Worker tracking (Sprint 4)</li>
+<li>Equipment tracking (Sprint 7/8)</li>
+<li>Toolbox talks (Sprint 3)</li>
+</ul>
+
+<h3>Data Model</h3>
+<pre><code>(:Company)-[:OWNS_PROJECT]-&gt;(:Project)-[:HAS_DAILY_LOG]-&gt;(:DailyLog {id: log_id})</code></pre>
+
+<h3>Tasks</h3>
+
+<div class="task">
+<h4>P1-T1: DailyLog backend model and service <span class="effort">16 hours</span></h4>
+<p>Create DailyLog Pydantic model, Neo4j-backed service with CRUD operations, and auto-population logic that pulls from today's inspections, toolbox talks, incidents, hazard reports, equipment assignments, and worker assignments.</p>
+<p><strong>Files:</strong> <code>backend/app/models/daily_log.py</code>, <code>backend/app/services/daily_log_service.py</code></p>
+</div>
+
+<div class="task">
+<h4>P1-T2: DailyLog API endpoints <span class="effort">10 hours</span></h4>
+<p>CRUD routes for daily logs. <code>POST</code> creates a draft with auto-population. <code>PATCH</code> updates manual fields. <code>POST .../submit</code> finalises.</p>
+<p><strong>Routes:</strong></p>
+<ul>
+<li><code>GET /me/projects/{project_id}/daily-logs</code> — list by date range</li>
+<li><code>POST /me/projects/{project_id}/daily-logs</code> — create draft (auto-populates)</li>
+<li><code>GET /me/projects/{project_id}/daily-logs/{log_id}</code> — fetch</li>
+<li><code>PATCH /me/projects/{project_id}/daily-logs/{log_id}</code> — update manual fields</li>
+<li><code>POST /me/projects/{project_id}/daily-logs/{log_id}/submit</code> — finalise</li>
+<li><code>GET /me/daily-logs/missing</code> — projects without today's log</li>
+</ul>
+</div>
+
+<div class="task">
+<h4>P1-T3: DailyLog voice input integration <span class="effort">8 hours</span></h4>
+<p>Extend the voice parsing service to extract daily log data from the contractor's narration. After the safety inspection is parsed from voice, remaining content (work performed, materials, delays) is extracted as daily log fields.</p>
+</div>
+
+<div class="task">
+<h4>P1-T4: DailyLog frontend — list and detail views <span class="effort">20 hours</span></h4>
+<p>Daily log list page (by project, by date), detail/edit view with auto-populated fields shown as read-only and manual fields as editable. Clear visual distinction between "auto-captured" and "you need to add this."</p>
+</div>
+
+<div class="task">
+<h4>P1-T5: DailyLog PDF export <span class="effort">8 hours</span></h4>
+<p>Generate a professional PDF daily log report. Format follows AIA G703/industry standard layout. Includes all auto-populated and manual fields, attached photos, and linked inspection/incident/hazard references.</p>
+</div>
+
+<div class="task">
+<h4>P1-T6: Dashboard integration <span class="effort">6 hours</span></h4>
+<p>Add "Daily Log Status" panel to the main dashboard showing which projects have/haven't submitted today's log. Missing logs surface as amber alerts.</p>
+</div>
+
+<hr>
+
+<!-- PHASE 2 -->
+<div class="phase-header">
+<h2>Phase 2: Quality Inspections &amp; Punch Lists</h2>
+<div class="meta">Weeks 16-18 &bull; ~74 hours &bull; 2-3 weeks</div>
+</div>
+
+<p><strong>Goal:</strong> The same inspection engine that handles safety inspections also handles quality inspections and punch lists. One walk, two reports. No second app.</p>
+
+<div class="task">
+<h4>P2-T1: Quality inspection templates <span class="effort">12 hours</span></h4>
+<p>Quality-specific checklist templates for common construction activities: concrete placement, framing, MEP rough-in, waterproofing, roofing, drywall, painting/finishes. Templates reference building codes (IBC/IRC) instead of OSHA standards.</p>
+</div>
+
+<div class="task">
+<h4>P2-T2: Quality inspection backend <span class="effort">8 hours</span></h4>
+<p>Extend the existing inspection service to support quality-category inspections. Same CRUD operations, same corrective action workflow, different template set.</p>
+</div>
+
+<div class="task">
+<h4>P2-T3: Punch list workflow <span class="effort">14 hours</span></h4>
+<p>Closeout-specific inspection type: <code>identified &rarr; assigned &rarr; corrected &rarr; verified &rarr; closed</code>. Punch items can be created from quality inspections or standalone walkthroughs.</p>
+</div>
+
+<div class="task">
+<h4>P2-T4: Quality inspection frontend <span class="effort">12 hours</span></h4>
+<p>Same layout as safety inspections with quality-specific templates. Tab or toggle to switch between safety and quality views.</p>
+</div>
+
+<div class="task">
+<h4>P2-T5: Punch list frontend <span class="effort">16 hours</span></h4>
+<p>List of deficiency items with photo, location, assignee, status, and due date. Progress bar showing items by status. Bulk update capabilities.</p>
+</div>
+
+<div class="task">
+<h4>P2-T6: Quality metrics on dashboard <span class="effort">8 hours</span></h4>
+<p>Quality deficiency rates, punch list aging, and FTQ (first-time quality) score.</p>
+</div>
+
+<div class="task">
+<h4>P2-T7: Daily log integration <span class="effort">4 hours</span></h4>
+<p>Quality observations from the morning walk auto-populate into the daily log alongside safety observations. One walk produces safety + quality + daily log.</p>
+</div>
+
+<hr>
+
+<!-- PHASE 3 -->
+<div class="phase-header">
+<h2>Phase 3: Time Tracking</h2>
+<div class="meta">Weeks 19-22 &bull; ~114 hours &bull; 3-4 weeks</div>
+</div>
+
+<p><strong>Goal:</strong> GPS-verified clock-in/clock-out with cost code allocation, crew-based entry, and payroll export. Connected to safety data for fatigue analysis. Foundation for auto-derived job costing in Phase 7.</p>
+
+<div class="task">
+<h4>P3-T1: Time entry data model <span class="effort">10 hours</span></h4>
+<p>TimeEntry model supporting individual and crew-based clock-in/out. GPS-verified. Cost code allocation. Split entries for workers moving between cost codes within a day.</p>
+</div>
+
+<div class="task">
+<h4>P3-T2: Time tracking backend service <span class="effort">20 hours</span></h4>
+<p>Auto-calculate regular vs overtime, break deduction rules, GPS verification against project geofence, duplicate detection.</p>
+</div>
+
+<div class="task">
+<h4>P3-T3: Cost code management <span class="effort">6 hours</span></h4>
+<p>Company-configurable cost codes. Common construction defaults provided. Cost codes assigned per project.</p>
+</div>
+
+<div class="task">
+<h4>P3-T4: GPS geofencing service <span class="effort">10 hours</span></h4>
+<p>Define project geofences (polygon or radius). Validate clock-in/clock-out location. Flag out-of-range entries for review.</p>
+</div>
+
+<div class="task">
+<h4>P3-T5: Safety-time correlation engine <span class="effort">12 hours</span></h4>
+<p>The unique differentiator. Flag 10+ hour workers (fatigue risk). Correlate hours with incident rates. Verify certified workers on tasks. Calculate OSHA incident rates using actual hours.</p>
+</div>
+
+<div class="task">
+<h4>P3-T6: Time tracking frontend — worker clock-in <span class="effort">16 hours</span></h4>
+<p>One-tap clock-in/out on mobile. GPS indicator. Switch cost codes without clocking out. Spanish-first interface for field workers.</p>
+</div>
+
+<div class="task">
+<h4>P3-T7: Time tracking frontend — crew entry <span class="effort">12 hours</span></h4>
+<p>Foreman can enter time for entire crew. Select workers from project roster, set common time and cost code, adjust individuals as needed.</p>
+</div>
+
+<div class="task">
+<h4>P3-T8: Timesheet management frontend <span class="effort">16 hours</span></h4>
+<p>Weekly timesheet view. Per-worker, per-project, per-cost-code breakdown. Approve/reject workflow. Export to CSV for payroll.</p>
+</div>
+
+<div class="task">
+<h4>P3-T9: Dashboard integration <span class="effort">8 hours</span></h4>
+<p>Total hours this week, labour cost by project, overtime alerts, fatigue risk flags, timesheet submission status.</p>
+</div>
+
+<div class="task">
+<h4>P3-T10: Daily log integration <span class="effort">4 hours</span></h4>
+<p>Auto-populate daily log manpower section from time tracking data.</p>
+</div>
+
+<hr>
+
+<!-- PHASE 4 -->
+<div class="phase-header">
+<h2>Phase 4: Expanded Sub Management</h2>
+<div class="meta">Weeks 23-25 &bull; ~72 hours &bull; 2-3 weeks</div>
+</div>
+
+<p><strong>Goal:</strong> Automated COI tracking, insurance expiry alerts, sub performance scoring, and lien waiver management.</p>
+
+<div class="task">
+<h4>P4-T1: COI tracking and AI parsing <span class="effort">16 hours</span></h4>
+<p>Upload insurance certificates. AI/OCR extracts carrier, policy number, coverage limits, additional insured status, effective/expiry dates. Validate against GC requirements.</p>
+</div>
+
+<div class="task">
+<h4>P4-T2: Insurance expiry monitoring <span class="effort">10 hours</span></h4>
+<p>Automated alerts at 30/14/7 days before expiry. Email to sub. Escalation to GC if not renewed.</p>
+</div>
+
+<div class="task">
+<h4>P4-T3: Sub performance scoring <span class="effort">12 hours</span></h4>
+<p>Score from existing data: inspection pass rates, incident frequency, toolbox talk completion, corrective action closure time, training currency.</p>
+</div>
+
+<div class="task">
+<h4>P4-T4: Lien waiver management <span class="effort">10 hours</span></h4>
+<p>Track conditional/unconditional lien waivers per payment application. Generate waiver forms.</p>
+</div>
+
+<div class="task">
+<h4>P4-T5: Sub management frontend <span class="effort">24 hours</span></h4>
+<p>Enhanced sub compliance dashboard. Per-sub cards with insurance status, safety score, training currency, inspection activity, lien waiver status.</p>
+</div>
+
+<hr>
+
+<!-- PHASE 5 -->
+<div class="phase-header">
+<h2>Phase 5: RFIs &amp; Submittals</h2>
+<div class="meta">Weeks 26-29 &bull; ~84 hours &bull; 3-4 weeks</div>
+</div>
+
+<p><strong>Goal:</strong> Structured RFI and submittal logs with assignment, tracking, audit trail, and PDF export.</p>
+
+<div class="task">
+<h4>P5-T1: RFI data model and service <span class="effort">16 hours</span></h4>
+<p>Auto-numbering, assignment, status workflow (draft &rarr; submitted &rarr; responded &rarr; closed), ball-in-court tracking, due dates, file attachments.</p>
+</div>
+
+<div class="task">
+<h4>P5-T2: Submittal data model and service <span class="effort">14 hours</span></h4>
+<p>Multi-step review workflow. Spec section linking. File attachments.</p>
+</div>
+
+<div class="task">
+<h4>P5-T3: Change order tracking <span class="effort">10 hours</span></h4>
+<p>Change order log linked to RFIs and project. Cost and schedule impact description.</p>
+</div>
+
+<div class="task">
+<h4>P5-T4: Email notifications <span class="effort">8 hours</span></h4>
+<p>Auto-notify on creation, remind on approaching due dates, escalate on overdue.</p>
+</div>
+
+<div class="task">
+<h4>P5-T5: RFI/Submittal frontend <span class="effort">30 hours</span></h4>
+<p>RFI log, submittal log, change order log. Dashboard widgets for overdue counts and response time metrics.</p>
+</div>
+
+<div class="task">
+<h4>P5-T6: PDF export for RFIs <span class="effort">6 hours</span></h4>
+<p>Industry-standard RFI forms as PDF with full thread history.</p>
+</div>
+
+<hr>
+
+<!-- PHASE 6 -->
+<div class="phase-header">
+<h2>Phase 6: Basic Scheduling</h2>
+<div class="meta">Weeks 30-32 &bull; ~70 hours &bull; 2-3 weeks</div>
+</div>
+
+<p><strong>Goal:</strong> A weekly lookahead — a 2-4 week rolling task board that contractors manage from their phone. Connected to safety data.</p>
+
+<div class="task">
+<h4>P6-T1: Schedule task data model <span class="effort">10 hours</span></h4>
+<p>Task entity with name, project, trade/crew assignment, planned dates, status, dependencies (simple finish-to-start).</p>
+</div>
+
+<div class="task">
+<h4>P6-T2: Safety-schedule conflict detection <span class="effort">14 hours</span></h4>
+<p>The differentiator. Check cert validity through task dates, equipment maintenance due, open corrective actions, recent incidents in work area.</p>
+</div>
+
+<div class="task">
+<h4>P6-T3: Schedule API <span class="effort">10 hours</span></h4>
+<p>Full schedule, 2-4 week lookahead, task CRUD, conflict detection, cross-project today view.</p>
+</div>
+
+<div class="task">
+<h4>P6-T4: Schedule frontend — lookahead board <span class="effort">24 hours</span></h4>
+<p>Mobile-first weekly lookahead. Column per day, cards per task, drag-and-drop reschedule, conflict indicators, swipe to complete.</p>
+</div>
+
+<div class="task">
+<h4>P6-T5: Schedule-daily log integration <span class="effort">6 hours</span></h4>
+<p>Planned vs actual. Auto-generate variance notes where planned tasks were not completed.</p>
+</div>
+
+<div class="task">
+<h4>P6-T6: Morning brief integration <span class="effort">6 hours</span></h4>
+<p>Today's scheduled tasks, flagged conflicts, and key milestones approaching.</p>
+</div>
+
+<hr>
+
+<!-- SUMMARY -->
+<h2>Summary Timeline</h2>
+
+<h3>Operations Platform (Phases 1-6)</h3>
+
+<table>
+<thead><tr><th>Phase</th><th>Feature</th><th>Weeks</th><th>Effort</th><th>Cumulative</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-green">1</span></td><td>Daily Logs</td><td>13-15</td><td>~68 hrs</td><td>68 hrs</td></tr>
+<tr><td><span class="badge badge-green">2</span></td><td>Quality / Punch Lists</td><td>16-18</td><td>~74 hrs</td><td>142 hrs</td></tr>
+<tr><td><span class="badge badge-green">3</span></td><td>Time Tracking</td><td>19-22</td><td>~114 hrs</td><td>256 hrs</td></tr>
+<tr><td><span class="badge badge-green">4</span></td><td>Sub Management (expanded)</td><td>23-25</td><td>~72 hrs</td><td>328 hrs</td></tr>
+<tr><td><span class="badge badge-green">5</span></td><td>RFIs / Submittals</td><td>26-29</td><td>~84 hrs</td><td>412 hrs</td></tr>
+<tr><td><span class="badge badge-green">6</span></td><td>Basic Scheduling</td><td>30-32</td><td>~70 hrs</td><td>482 hrs</td></tr>
+</tbody>
+</table>
+
+<h3>Intelligent Business Platform (Phases 7-9) <span class="tbd-badge">TO BE SPECIFIED</span></h3>
+
+<table>
+<thead><tr><th>Phase</th><th>Feature</th><th>Effort</th><th>Dependencies</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-purple">7</span></td><td>Conversational Estimating + Job Costing</td><td>TBD</td><td>Phases 1-3 (historical data)</td></tr>
+<tr><td><span class="badge badge-purple">8</span></td><td>Document Intelligence</td><td>TBD</td><td>Phase 7 (estimates to cross-reference)</td></tr>
+<tr><td><span class="badge badge-purple">9</span></td><td>Intelligent Change Orders + QuickBooks</td><td>TBD</td><td>Phases 1, 3, 7 (daily logs, time, estimates)</td></tr>
+</tbody>
+</table>
+
+<p>Phases 7-9 will be fully specified once Phases 1-6 are substantially complete and the conversational interface architecture is validated.</p>
+
+<div class="callout">
+<strong>Total Phase 1-6 effort: ~482 hours over 20 weeks (Weeks 13-32)</strong>
+</div>
+
+<h3>At End of Week 32</h3>
+<ul class="checklist">
+<li>Safety compliance (inspections, incidents, toolbox talks, hazard reports, OSHA logs, mock inspections, environmental, prequalification, state compliance)</li>
+<li>Daily logs (auto-populated from safety data)</li>
+<li>Quality inspections and punch lists</li>
+<li>Time tracking with GPS verification and cost codes</li>
+<li>Expanded sub management (COI tracking, performance scoring, lien waivers)</li>
+<li>RFIs, submittals, and change orders</li>
+<li>Basic scheduling (weekly lookahead with safety-schedule conflict detection)</li>
+<li>Conversational interface for all features (chat + voice)</li>
+<li>Conversation memory (all interactions recorded and linked in the graph)</li>
+</ul>
+
+<hr>
+
+<!-- CROSS-CUTTING -->
+<h2>Cross-Cutting Concerns</h2>
+
+<h3>Conversational-First, Voice Everywhere</h3>
+<p>Every feature is accessed through the conversational interface (chat and voice). The contractor creates daily logs, reviews quality observations, checks schedules, creates estimates, asks questions about job costs, and manages their projects by talking to Kerf. Dashboard and form views exist for review and bulk operations, but conversation is always the primary path.</p>
+
+<h3>Conversation Recording</h3>
+<p>Every interaction with Kerf — chat or voice — must be recorded and linked in the knowledge graph:</p>
+<ul>
+<li>Full transcript stored in object storage (90-day retention)</li>
+<li>Vector embedding stored as a property on the Conversation node in Neo4j</li>
+<li>Extracted decisions stored as Decision nodes with description, reasoning, and links to affected entities</li>
+<li>Extracted insights stored as Insight nodes with content, confidence, and applicability tags</li>
+<li>All entities referenced during the conversation linked via graph relationships</li>
+<li><strong>Cross-cutting requirement:</strong> must be built alongside Phase 1 or earlier</li>
+</ul>
+
+<h3>Document Upload Pipeline</h3>
+<p>Uploaded documents (plans, specs, contracts, COIs, permits) must be processed and connected to the graph:</p>
+<ul>
+<li>Raw files stored in object storage (permanent retention)</li>
+<li>AI extraction produces structured data as graph entities</li>
+<li>Text content chunked and embedded as DocumentChunk nodes with vector properties</li>
+<li>All extracted data linked to the project and related entities</li>
+<li><strong>Prerequisite for Phase 7</strong> but document upload capability should be available from Phase 1</li>
+</ul>
+
+<h3>Data Integration Points</h3>
+<ul>
+<li>Daily logs auto-populate from safety + time + equipment data</li>
+<li>Quality inspections use the same engine as safety inspections</li>
+<li>Time tracking connects to worker records and project assignments</li>
+<li>Schedule connects to certifications, equipment, and incidents</li>
+<li>Sub management uses safety data for performance scoring</li>
+<li>Morning brief incorporates schedule, time, quality, and sub data</li>
+<li>Estimates become tasks become cost tracking lines (unified lifecycle)</li>
+<li>Job costing derives from time entries + daily logs (no manual data entry)</li>
+<li>Change orders assemble evidence from daily logs + photos + time entries</li>
+</ul>
+
+<h3>Mobile-First Design</h3>
+<p>Every expansion feature must work on mobile first. The contractor is on a jobsite, not at a desk. Time tracking clock-in, daily log review, punch list walkthrough, schedule lookahead — all must be designed for a phone in direct sunlight with dirty gloves.</p>
+
+<h3>Testing Strategy</h3>
+<ul>
+<li><strong>Backend:</strong> pytest with Neo4j test instance, same pattern as Phase 1</li>
+<li><strong>Frontend:</strong> Vitest + Testing Library, same pattern as Phase 1</li>
+<li><strong>E2E:</strong> Playwright journeys for each new workflow</li>
+<li><strong>Integration:</strong> IS-X scenarios for cross-feature data flow (daily log auto-population, safety-schedule conflicts, fatigue analysis)</li>
+</ul>
+
+<hr>
+
+<p style="color: #6b7280; font-style: italic; margin-top: 40px;">This plan is a living document. Effort estimates are based on the existing codebase patterns and assume one developer. Actual timelines may vary. The priority order is firm — daily logs before quality before time tracking — but individual tasks within each phase may be reordered based on discovery during implementation.</p>
+
+</body>
+</html>

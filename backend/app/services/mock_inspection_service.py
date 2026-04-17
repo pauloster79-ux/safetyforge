@@ -255,8 +255,12 @@ Return ONLY the narrative text, no JSON or formatting."""
 class MockInspectionService(BaseService):
     """Orchestrates mock OSHA inspections across all company data.
 
-    Graph model:
-        (Company)-[:HAS_MOCK_INSPECTION]->(MockInspectionResult)
+    Graph model (new ontology):
+        MockInspectionResult is now stored as an Inspection node with
+        category: "simulated". Relationship from Company is
+        (Company)-[:OWNS_PROJECT] ... or directly via project.
+        For company-level storage: (Company)-[:HAS_MOCK_INSPECTION]->(Inspection)
+        where Inspection.category = "simulated".
         findings stored as _findings_json, areas_checked as _areas_checked_json.
 
     Args:
@@ -1167,6 +1171,7 @@ class MockInspectionService(BaseService):
         props: dict[str, Any] = {
             "id": result_id,
             "project_id": project_id,
+            "category": "simulated",
             "inspection_date": now.isoformat(),
             "overall_score": score,
             "grade": grade,
@@ -1187,10 +1192,11 @@ class MockInspectionService(BaseService):
             "created_by": user_id,
         }
 
+        # Store as Inspection node with category="simulated" per new ontology
         self._write_tx(
             """
             MATCH (c:Company {id: $company_id})
-            CREATE (r:MockInspectionResult $props)
+            CREATE (r:Inspection $props)
             CREATE (c)-[:HAS_MOCK_INSPECTION]->(r)
             """,
             {"company_id": company_id, "props": props},
@@ -1219,7 +1225,8 @@ class MockInspectionService(BaseService):
         """
         result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult {id: $result_id})
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:Inspection {id: $result_id})
+            WHERE r.category = 'simulated'
             RETURN r {.*} AS result, c.id AS company_id
             """,
             {"company_id": company_id, "result_id": result_id},
@@ -1246,7 +1253,8 @@ class MockInspectionService(BaseService):
         """
         count_result = self._read_tx_single(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:Inspection)
+            WHERE r.category = 'simulated'
             RETURN count(r) AS total
             """,
             {"company_id": company_id},
@@ -1255,7 +1263,8 @@ class MockInspectionService(BaseService):
 
         results = self._read_tx(
             """
-            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:MockInspectionResult)
+            MATCH (c:Company {id: $company_id})-[:HAS_MOCK_INSPECTION]->(r:Inspection)
+            WHERE r.category = 'simulated'
             RETURN r.id AS id, r.inspection_date AS inspection_date,
                    r.overall_score AS overall_score, r.grade AS grade,
                    r.total_findings AS total_findings,
