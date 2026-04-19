@@ -1,0 +1,12 @@
+jurisdiction: ie
+source: NRM 2 (IE — used by convention per SCSI)
+source_reference: "RICS NRM 2 as applied in Ireland via Society of Chartered Surveyors Ireland (SCSI) convention"
+licensing_note: "Structural content referenced as factual taxonomy. Irish practice uses NRM 2 by convention; ARM4 is still used for some civil/heritage work (not merged here). Kerf references NRM 2 codes and titles only."
+version: "2012-edition"
+last_updated: "2026-04-17"
+inherits_from: uk
+deltas:
+  notes: "Tree structure is identical to UK NRM 2. Irish-specific items are regulatory (activity_refs point to S.I. 291/2013, Building Regulations TGD A-M, ETCI I.S. 10101, TGD Part B / IS 3218) and label overrides (36.2.1 'Irish Water / Uisce Éireann connection', 36.2.3 'ESB connection'). ARM4 support, if ever needed, would live in a separate file ie/work_categories_arm4.yaml — not merged into the NRM 2 tree."
+  label_overrides:
+    "36.2.1": "Irish Water / Uisce Éireann connection"
+    "36.2.3": "ESB connection"

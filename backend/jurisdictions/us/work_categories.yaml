@@ -1,0 +1,1092 @@
+jurisdiction: us
+source: MasterFormat 2020
+source_reference: "CSI MasterFormat® 2020 Edition"
+licensing_note: "Structural content (codes + hierarchy). Title text is reproduced as factual taxonomy reference; commercial licence via CSI to be considered as customer base grows."
+version: "2020-edition"
+last_updated: "2026-04-17"
+canada_note: "MasterFormat is co-published by CSI (US) and CSC (Canada); the division/section codes and titles are identical in both jurisdictions. Canadian-specific variation is limited to: (a) metric dimensioning in specification prose rather than the taxonomy itself, and (b) Division 01 references to Canadian standards (CSA, NBC, provincial building codes) rather than US equivalents (ANSI, IBC). For the canonical category tree, the US and CA YAML files share identical codes and titles; jurisdiction divergence appears only when regulatory activity_refs are wired in a later phase."
+categories:
+  - code: "00"
+    name: "Procurement and Contracting Requirements"
+    level: 1
+    children:
+      - code: "00 10 00"
+        name: "Solicitation"
+        level: 2
+        children:
+          - { code: "00 11 00", name: "Advertisements and Invitations", level: 3, activity_refs: [] }
+          - { code: "00 21 00", name: "Instructions", level: 3, activity_refs: [] }
+          - { code: "00 31 00", name: "Available Project Information", level: 3, activity_refs: [] }
+      - code: "00 40 00"
+        name: "Procurement Forms and Supplements"
+        level: 2
+        children:
+          - { code: "00 41 00", name: "Bid Forms", level: 3, activity_refs: [] }
+          - { code: "00 43 00", name: "Procurement Form Supplements", level: 3, activity_refs: [] }
+          - { code: "00 45 00", name: "Representations and Certifications", level: 3, activity_refs: [] }
+      - code: "00 50 00"
+        name: "Contracting Forms and Supplements"
+        level: 2
+        children:
+          - { code: "00 52 00", name: "Agreement Forms", level: 3, activity_refs: [] }
+          - { code: "00 54 00", name: "Agreement Form Supplements", level: 3, activity_refs: [] }
+          - { code: "00 55 00", name: "Notice to Proceed", level: 3, activity_refs: [] }
+      - code: "00 60 00"
+        name: "Project Forms"
+        level: 2
+        children:
+          - { code: "00 61 00", name: "Bond Forms", level: 3, activity_refs: [] }
+          - { code: "00 62 00", name: "Certificates and Other Forms", level: 3, activity_refs: [] }
+          - { code: "00 63 00", name: "Clarification and Modification Forms", level: 3, activity_refs: [] }
+          - { code: "00 65 00", name: "Closeout Forms", level: 3, activity_refs: [] }
+      - code: "00 70 00"
+        name: "Conditions of the Contract"
+        level: 2
+        children:
+          - { code: "00 72 00", name: "General Conditions", level: 3, activity_refs: [] }
+          - { code: "00 73 00", name: "Supplementary Conditions", level: 3, activity_refs: [] }
+      - code: "00 90 00"
+        name: "Revisions, Clarifications, and Modifications"
+        level: 2
+        children:
+          - { code: "00 91 00", name: "Precontract Revisions", level: 3, activity_refs: [] }
+          - { code: "00 93 00", name: "Record Clarifications and Proposals", level: 3, activity_refs: [] }
+          - { code: "00 94 00", name: "Record Modifications", level: 3, activity_refs: [] }
+
+  - code: "01"
+    name: "General Requirements"
+    level: 1
+    children:
+      - code: "01 10 00"
+        name: "Summary"
+        level: 2
+        children:
+          - { code: "01 11 00", name: "Summary of Work", level: 3, activity_refs: [] }
+          - { code: "01 14 00", name: "Work Restrictions", level: 3, activity_refs: [] }
+          - { code: "01 18 00", name: "Project Utility Sources", level: 3, activity_refs: [] }
+      - code: "01 20 00"
+        name: "Price and Payment Procedures"
+        level: 2
+        children:
+          - { code: "01 21 00", name: "Allowances", level: 3, activity_refs: [] }
+          - { code: "01 22 00", name: "Unit Prices", level: 3, activity_refs: [] }
+          - { code: "01 23 00", name: "Alternates", level: 3, activity_refs: [] }
+          - { code: "01 26 00", name: "Contract Modification Procedures", level: 3, activity_refs: [] }
+          - { code: "01 29 00", name: "Payment Procedures", level: 3, activity_refs: [] }
+      - code: "01 30 00"
+        name: "Administrative Requirements"
+        level: 2
+        children:
+          - { code: "01 31 00", name: "Project Management and Coordination", level: 3, activity_refs: [] }
+          - { code: "01 32 00", name: "Construction Progress Documentation", level: 3, activity_refs: [] }
+          - { code: "01 33 00", name: "Submittal Procedures", level: 3, activity_refs: [] }
+          - { code: "01 35 00", name: "Special Procedures", level: 3, activity_refs: [] }
+      - code: "01 40 00"
+        name: "Quality Requirements"
+        level: 2
+        children:
+          - { code: "01 41 00", name: "Regulatory Requirements", level: 3, activity_refs: [] }
+          - { code: "01 42 00", name: "References", level: 3, activity_refs: [] }
+          - { code: "01 43 00", name: "Quality Assurance", level: 3, activity_refs: [] }
+          - { code: "01 45 00", name: "Quality Control", level: 3, activity_refs: [] }
+      - code: "01 50 00"
+        name: "Temporary Facilities and Controls"
+        level: 2
+        children:
+          - { code: "01 51 00", name: "Temporary Utilities", level: 3, activity_refs: [] }
+          - { code: "01 52 00", name: "Construction Facilities", level: 3, activity_refs: [] }
+          - { code: "01 54 00", name: "Construction Aids", level: 3, activity_refs: [] }
+          - { code: "01 55 00", name: "Vehicular Access and Parking", level: 3, activity_refs: [] }
+          - { code: "01 56 00", name: "Temporary Barriers and Enclosures", level: 3, activity_refs: [] }
+          - { code: "01 57 00", name: "Temporary Controls", level: 3, activity_refs: [] }
+          - { code: "01 58 00", name: "Project Identification", level: 3, activity_refs: [] }
+      - code: "01 60 00"
+        name: "Product Requirements"
+        level: 2
+        children:
+          - { code: "01 61 00", name: "Common Product Requirements", level: 3, activity_refs: [] }
+          - { code: "01 62 00", name: "Product Options", level: 3, activity_refs: [] }
+          - { code: "01 65 00", name: "Product Delivery Requirements", level: 3, activity_refs: [] }
+          - { code: "01 66 00", name: "Product Storage and Handling Requirements", level: 3, activity_refs: [] }
+      - code: "01 70 00"
+        name: "Execution and Closeout Requirements"
+        level: 2
+        children:
+          - { code: "01 71 00", name: "Examination and Preparation", level: 3, activity_refs: [] }
+          - { code: "01 73 00", name: "Execution", level: 3, activity_refs: [] }
+          - { code: "01 74 00", name: "Cleaning and Waste Management", level: 3, activity_refs: [] }
+          - { code: "01 75 00", name: "Starting and Adjusting", level: 3, activity_refs: [] }
+          - { code: "01 76 00", name: "Protecting Installed Construction", level: 3, activity_refs: [] }
+          - { code: "01 77 00", name: "Closeout Procedures", level: 3, activity_refs: [] }
+          - { code: "01 78 00", name: "Closeout Submittals", level: 3, activity_refs: [] }
+          - { code: "01 79 00", name: "Demonstration and Training", level: 3, activity_refs: [] }
+      - code: "01 80 00"
+        name: "Performance Requirements"
+        level: 2
+        children:
+          - { code: "01 81 00", name: "Facility Performance Requirements", level: 3, activity_refs: [] }
+          - { code: "01 86 00", name: "Facility Substructure Performance Requirements", level: 3, activity_refs: [] }
+      - code: "01 90 00"
+        name: "Life Cycle Activities"
+        level: 2
+        children:
+          - { code: "01 91 00", name: "Commissioning", level: 3, activity_refs: [] }
+          - { code: "01 93 00", name: "Facility Maintenance", level: 3, activity_refs: [] }
+
+  - code: "02"
+    name: "Existing Conditions"
+    level: 1
+    children:
+      - code: "02 20 00"
+        name: "Assessment"
+        level: 2
+        children:
+          - { code: "02 21 00", name: "Surveys", level: 3, activity_refs: [] }
+          - { code: "02 22 00", name: "Existing Conditions Assessment", level: 3, activity_refs: [] }
+          - { code: "02 25 00", name: "Existing Material Assessment", level: 3, activity_refs: [] }
+          - { code: "02 26 00", name: "Hazardous Material Assessment", level: 3, activity_refs: [] }
+      - code: "02 30 00"
+        name: "Subsurface Investigation"
+        level: 2
+        children:
+          - { code: "02 31 00", name: "Geophysical Investigations", level: 3, activity_refs: [] }
+          - { code: "02 32 00", name: "Geotechnical Investigations", level: 3, activity_refs: [] }
+      - code: "02 40 00"
+        name: "Demolition and Structure Moving"
+        level: 2
+        children:
+          - { code: "02 41 00", name: "Demolition", level: 3, activity_refs: [] }
+          - { code: "02 42 00", name: "Removal and Salvage of Construction Materials", level: 3, activity_refs: [] }
+          - { code: "02 43 00", name: "Structure Moving", level: 3, activity_refs: [] }
+      - code: "02 50 00"
+        name: "Site Remediation"
+        level: 2
+        children:
+          - { code: "02 51 00", name: "Physical Decontamination", level: 3, activity_refs: [] }
+          - { code: "02 52 00", name: "Chemical Decontamination", level: 3, activity_refs: [] }
+          - { code: "02 53 00", name: "Thermal Decontamination", level: 3, activity_refs: [] }
+          - { code: "02 54 00", name: "Biological Decontamination", level: 3, activity_refs: [] }
+          - { code: "02 55 00", name: "Remediation Soil Stabilization", level: 3, activity_refs: [] }
+          - { code: "02 56 00", name: "Site Containment", level: 3, activity_refs: [] }
+          - { code: "02 57 00", name: "Sinkhole Remediation", level: 3, activity_refs: [] }
+          - { code: "02 58 00", name: "Snow Control", level: 3, activity_refs: [] }
+      - code: "02 60 00"
+        name: "Contaminated Site Material Removal"
+        level: 2
+        children:
+          - { code: "02 61 00", name: "Removal and Disposal of Contaminated Soils", level: 3, activity_refs: [] }
+          - { code: "02 62 00", name: "Hazardous Waste Drum Handling", level: 3, activity_refs: [] }
+          - { code: "02 65 00", name: "Underground Storage Tank Removal", level: 3, activity_refs: [] }
+      - code: "02 70 00"
+        name: "Water Remediation"
+        level: 2
+        children:
+          - { code: "02 71 00", name: "Groundwater Treatment", level: 3, activity_refs: [] }
+          - { code: "02 72 00", name: "Water Decontamination", level: 3, activity_refs: [] }
+      - code: "02 80 00"
+        name: "Facility Remediation"
+        level: 2
+        children:
+          - { code: "02 81 00", name: "Transportation and Disposal of Hazardous Materials", level: 3, activity_refs: [] }
+          - { code: "02 82 00", name: "Asbestos Remediation", level: 3, activity_refs: [] }
+          - { code: "02 83 00", name: "Lead Remediation", level: 3, activity_refs: [] }
+          - { code: "02 84 00", name: "Polychlorinate Biphenyl Remediation", level: 3, activity_refs: [] }
+          - { code: "02 85 00", name: "Mold Remediation", level: 3, activity_refs: [] }
+          - { code: "02 86 00", name: "Hazardous Waste Recovery Processes", level: 3, activity_refs: [] }
+          - { code: "02 87 00", name: "Biohazard Remediation", level: 3, activity_refs: [] }
+
+  - code: "03"
+    name: "Concrete"
+    level: 1
+    children:
+      - code: "03 05 00"
+        name: "Common Work Results for Concrete"
+        level: 2
+        children:
+          - { code: "03 05 05", name: "Selective Demolition for Concrete", level: 3, activity_refs: [] }
+          - { code: "03 05 13", name: "Basic Concrete Materials", level: 3, activity_refs: [] }
+      - code: "03 10 00"
+        name: "Concrete Forming and Accessories"
+        level: 2
+        children:
+          - { code: "03 11 00", name: "Concrete Forming", level: 3, activity_refs: [] }
+          - { code: "03 15 00", name: "Concrete Accessories", level: 3, activity_refs: [] }
+      - code: "03 20 00"
+        name: "Concrete Reinforcing"
+        level: 2
+        children:
+          - { code: "03 21 00", name: "Reinforcing Steel", level: 3, activity_refs: [] }
+          - { code: "03 22 00", name: "Welded Wire Fabric Reinforcing", level: 3, activity_refs: [] }
+          - { code: "03 23 00", name: "Stressing Tendons", level: 3, activity_refs: [] }
+          - { code: "03 24 00", name: "Fibrous Reinforcing", level: 3, activity_refs: [] }
+      - code: "03 30 00"
+        name: "Cast-in-Place Concrete"
+        level: 2
+        children:
+          - { code: "03 31 00", name: "Structural Concrete", level: 3, activity_refs: [] }
+          - { code: "03 33 00", name: "Architectural Concrete", level: 3, activity_refs: [] }
+          - { code: "03 34 00", name: "Low Density Concrete", level: 3, activity_refs: [] }
+          - { code: "03 35 00", name: "Concrete Finishing", level: 3, activity_refs: [] }
+          - { code: "03 37 00", name: "Specialty Placed Concrete", level: 3, activity_refs: [] }
+          - { code: "03 39 00", name: "Concrete Curing", level: 3, activity_refs: [] }
+      - code: "03 40 00"
+        name: "Precast Concrete"
+        level: 2
+        children:
+          - { code: "03 41 00", name: "Precast Structural Concrete", level: 3, activity_refs: [] }
+          - { code: "03 45 00", name: "Precast Architectural Concrete", level: 3, activity_refs: [] }
+          - { code: "03 47 00", name: "Site-Cast Concrete", level: 3, activity_refs: [] }
+          - { code: "03 48 00", name: "Precast Concrete Specialties", level: 3, activity_refs: [] }
+      - code: "03 50 00"
+        name: "Cast Decks and Underlayment"
+        level: 2
+        children:
+          - { code: "03 51 00", name: "Cast Roof Decks", level: 3, activity_refs: [] }
+          - { code: "03 52 00", name: "Lightweight Concrete Roof Insulation", level: 3, activity_refs: [] }
+          - { code: "03 53 00", name: "Concrete Topping", level: 3, activity_refs: [] }
+          - { code: "03 54 00", name: "Cast Underlayment", level: 3, activity_refs: [] }
+      - code: "03 60 00"
+        name: "Grouting"
+        level: 2
+        children:
+          - { code: "03 61 00", name: "Cementitious Grouting", level: 3, activity_refs: [] }
+          - { code: "03 62 00", name: "Non-Shrink Grouting", level: 3, activity_refs: [] }
+          - { code: "03 63 00", name: "Epoxy Grouting", level: 3, activity_refs: [] }
+      - code: "03 80 00"
+        name: "Concrete Cutting and Boring"
+        level: 2
+        children:
+          - { code: "03 81 00", name: "Concrete Cutting", level: 3, activity_refs: [] }
+          - { code: "03 82 00", name: "Concrete Boring", level: 3, activity_refs: [] }
+
+  - code: "04"
+    name: "Masonry"
+    level: 1
+    children:
+      - code: "04 05 00"
+        name: "Common Work Results for Masonry"
+        level: 2
+        children:
+          - { code: "04 05 13", name: "Masonry Mortaring", level: 3, activity_refs: [] }
+          - { code: "04 05 16", name: "Masonry Grouting", level: 3, activity_refs: [] }
+          - { code: "04 05 19", name: "Masonry Anchorage and Reinforcing", level: 3, activity_refs: [] }
+          - { code: "04 05 23", name: "Masonry Accessories", level: 3, activity_refs: [] }
+      - code: "04 20 00"
+        name: "Unit Masonry"
+        level: 2
+        children:
+          - { code: "04 21 00", name: "Clay Unit Masonry", level: 3, activity_refs: [] }
+          - { code: "04 22 00", name: "Concrete Unit Masonry", level: 3, activity_refs: [] }
+          - { code: "04 23 00", name: "Glass Unit Masonry", level: 3, activity_refs: [] }
+          - { code: "04 24 00", name: "Adobe Unit Masonry", level: 3, activity_refs: [] }
+          - { code: "04 25 00", name: "Unit Masonry Panels", level: 3, activity_refs: [] }
+          - { code: "04 27 00", name: "Multiple-Wythe Unit Masonry", level: 3, activity_refs: [] }
+          - { code: "04 28 00", name: "Concrete Form Masonry Units", level: 3, activity_refs: [] }
+      - code: "04 40 00"
+        name: "Stone Assemblies"
+        level: 2
+        children:
+          - { code: "04 41 00", name: "Dry-Placed Stone", level: 3, activity_refs: [] }
+          - { code: "04 42 00", name: "Exterior Stone Cladding", level: 3, activity_refs: [] }
+          - { code: "04 43 00", name: "Stone Masonry", level: 3, activity_refs: [] }
+      - code: "04 70 00"
+        name: "Manufactured Masonry"
+        level: 2
+        children:
+          - { code: "04 71 00", name: "Manufactured Brick Masonry", level: 3, activity_refs: [] }
+          - { code: "04 72 00", name: "Cast Stone Masonry", level: 3, activity_refs: [] }
+          - { code: "04 73 00", name: "Manufactured Stone Masonry", level: 3, activity_refs: [] }
+
+  - code: "05"
+    name: "Metals"
+    level: 1
+    children:
+      - code: "05 05 00"
+        name: "Common Work Results for Metals"
+        level: 2
+        children:
+          - { code: "05 05 13", name: "Shop-Applied Coatings for Metal", level: 3, activity_refs: [] }
+          - { code: "05 05 19", name: "Post-Installed Concrete Anchors", level: 3, activity_refs: [] }
+          - { code: "05 05 23", name: "Metal Fastenings", level: 3, activity_refs: [] }
+      - code: "05 10 00"
+        name: "Structural Metal Framing"
+        level: 2
+        children:
+          - { code: "05 12 00", name: "Structural Steel Framing", level: 3, activity_refs: [] }
+          - { code: "05 13 00", name: "Structural Stainless-Steel Framing", level: 3, activity_refs: [] }
+          - { code: "05 14 00", name: "Structural Aluminum Framing", level: 3, activity_refs: [] }
+      - code: "05 20 00"
+        name: "Metal Joists"
+        level: 2
+        children:
+          - { code: "05 21 00", name: "Steel Joist Framing", level: 3, activity_refs: [] }
+          - { code: "05 25 00", name: "Aluminum Joist Framing", level: 3, activity_refs: [] }
+      - code: "05 30 00"
+        name: "Metal Decking"
+        level: 2
+        children:
+          - { code: "05 31 00", name: "Steel Decking", level: 3, activity_refs: [] }
+          - { code: "05 33 00", name: "Aluminum Decking", level: 3, activity_refs: [] }
+          - { code: "05 34 00", name: "Acoustical Metal Decking", level: 3, activity_refs: [] }
+          - { code: "05 36 00", name: "Composite Metal Decking", level: 3, activity_refs: [] }
+      - code: "05 40 00"
+        name: "Cold-Formed Metal Framing"
+        level: 2
+        children:
+          - { code: "05 41 00", name: "Structural Metal Stud Framing", level: 3, activity_refs: [] }
+          - { code: "05 42 00", name: "Cold-Formed Metal Joist Framing", level: 3, activity_refs: [] }
+          - { code: "05 44 00", name: "Cold-Formed Metal Trusses", level: 3, activity_refs: [] }
+      - code: "05 50 00"
+        name: "Metal Fabrications"
+        level: 2
+        children:
+          - { code: "05 51 00", name: "Metal Stairs", level: 3, activity_refs: [] }
+          - { code: "05 52 00", name: "Metal Railings", level: 3, activity_refs: [] }
+          - { code: "05 53 00", name: "Metal Gratings", level: 3, activity_refs: [] }
+          - { code: "05 55 00", name: "Metal Stair Treads and Nosings", level: 3, activity_refs: [] }
+          - { code: "05 58 00", name: "Formed Metal Fabrications", level: 3, activity_refs: [] }
+      - code: "05 70 00"
+        name: "Decorative Metal"
+        level: 2
+        children:
+          - { code: "05 71 00", name: "Decorative Metal Stairs", level: 3, activity_refs: [] }
+          - { code: "05 73 00", name: "Decorative Metal Railings", level: 3, activity_refs: [] }
+          - { code: "05 75 00", name: "Decorative Formed Metal", level: 3, activity_refs: [] }
+
+  - code: "06"
+    name: "Wood, Plastics, and Composites"
+    level: 1
+    children:
+      - code: "06 10 00"
+        name: "Rough Carpentry"
+        level: 2
+        children:
+          - { code: "06 11 00", name: "Wood Framing", level: 3, activity_refs: [] }
+          - { code: "06 12 00", name: "Structural Panels", level: 3, activity_refs: [] }
+          - { code: "06 13 00", name: "Heavy Timber", level: 3, activity_refs: [] }
+          - { code: "06 14 00", name: "Treated Wood Foundations", level: 3, activity_refs: [] }
+          - { code: "06 15 00", name: "Wood Decking", level: 3, activity_refs: [] }
+          - { code: "06 16 00", name: "Sheathing", level: 3, activity_refs: [] }
+          - { code: "06 17 00", name: "Shop-Fabricated Structural Wood", level: 3, activity_refs: [] }
+          - { code: "06 18 00", name: "Glued-Laminated Construction", level: 3, activity_refs: [] }
+      - code: "06 20 00"
+        name: "Finish Carpentry"
+        level: 2
+        children:
+          - { code: "06 22 00", name: "Millwork", level: 3, activity_refs: [] }
+          - { code: "06 25 00", name: "Prefinished Paneling", level: 3, activity_refs: [] }
+          - { code: "06 26 00", name: "Board Paneling", level: 3, activity_refs: [] }
+      - code: "06 40 00"
+        name: "Architectural Woodwork"
+        level: 2
+        children:
+          - { code: "06 41 00", name: "Architectural Wood Casework", level: 3, activity_refs: [] }
+          - { code: "06 42 00", name: "Wood Paneling", level: 3, activity_refs: [] }
+          - { code: "06 43 00", name: "Wood Stairs and Railings", level: 3, activity_refs: [] }
+          - { code: "06 44 00", name: "Ornamental Woodwork", level: 3, activity_refs: [] }
+          - { code: "06 46 00", name: "Wood Trim", level: 3, activity_refs: [] }
+          - { code: "06 48 00", name: "Wood Frames", level: 3, activity_refs: [] }
+          - { code: "06 49 00", name: "Wood Screens and Shutters", level: 3, activity_refs: [] }
+
+  - code: "07"
+    name: "Thermal and Moisture Protection"
+    level: 1
+    children:
+      - code: "07 10 00"
+        name: "Dampproofing and Waterproofing"
+        level: 2
+        children:
+          - { code: "07 11 00", name: "Dampproofing", level: 3, activity_refs: [] }
+          - { code: "07 12 00", name: "Built-Up Bituminous Waterproofing", level: 3, activity_refs: [] }
+          - { code: "07 13 00", name: "Sheet Waterproofing", level: 3, activity_refs: [] }
+          - { code: "07 14 00", name: "Fluid-Applied Waterproofing", level: 3, activity_refs: [] }
+          - { code: "07 15 00", name: "Sheet Metal Waterproofing", level: 3, activity_refs: [] }
+          - { code: "07 16 00", name: "Cementitious and Reactive Waterproofing", level: 3, activity_refs: [] }
+          - { code: "07 17 00", name: "Bentonite Waterproofing", level: 3, activity_refs: [] }
+          - { code: "07 18 00", name: "Traffic Coatings", level: 3, activity_refs: [] }
+          - { code: "07 19 00", name: "Water Repellents", level: 3, activity_refs: [] }
+      - code: "07 20 00"
+        name: "Thermal Protection"
+        level: 2
+        children:
+          - { code: "07 21 00", name: "Thermal Insulation", level: 3, activity_refs: [] }
+          - { code: "07 22 00", name: "Roof and Deck Insulation", level: 3, activity_refs: [] }
+          - { code: "07 24 00", name: "Exterior Insulation and Finish Systems", level: 3, activity_refs: [] }
+          - { code: "07 25 00", name: "Weather Barriers", level: 3, activity_refs: [] }
+          - { code: "07 26 00", name: "Vapor Retarders", level: 3, activity_refs: [] }
+          - { code: "07 27 00", name: "Air Barriers", level: 3, activity_refs: [] }
+      - code: "07 30 00"
+        name: "Steep Slope Roofing"
+        level: 2
+        children:
+          - { code: "07 31 00", name: "Shingles and Shakes", level: 3, activity_refs: [] }
+          - { code: "07 32 00", name: "Roof Tiles", level: 3, activity_refs: [] }
+          - { code: "07 33 00", name: "Natural Roof Coverings", level: 3, activity_refs: [] }
+      - code: "07 40 00"
+        name: "Roofing and Siding Panels"
+        level: 2
+        children:
+          - { code: "07 41 00", name: "Roof Panels", level: 3, activity_refs: [] }
+          - { code: "07 42 00", name: "Wall Panels", level: 3, activity_refs: [] }
+          - { code: "07 44 00", name: "Faced Panels", level: 3, activity_refs: [] }
+          - { code: "07 46 00", name: "Siding", level: 3, activity_refs: [] }
+      - code: "07 50 00"
+        name: "Membrane Roofing"
+        level: 2
+        children:
+          - { code: "07 51 00", name: "Built-Up Bituminous Roofing", level: 3, activity_refs: [] }
+          - { code: "07 52 00", name: "Modified Bituminous Membrane Roofing", level: 3, activity_refs: [] }
+          - { code: "07 53 00", name: "Elastomeric Membrane Roofing", level: 3, activity_refs: [] }
+          - { code: "07 54 00", name: "Thermoplastic Membrane Roofing", level: 3, activity_refs: [] }
+          - { code: "07 55 00", name: "Protected Membrane Roofing", level: 3, activity_refs: [] }
+          - { code: "07 56 00", name: "Fluid-Applied Roofing", level: 3, activity_refs: [] }
+          - { code: "07 57 00", name: "Coated Foamed Roofing", level: 3, activity_refs: [] }
+          - { code: "07 58 00", name: "Roll Roofing", level: 3, activity_refs: [] }
+      - code: "07 60 00"
+        name: "Flashing and Sheet Metal"
+        level: 2
+        children:
+          - { code: "07 61 00", name: "Sheet Metal Roofing", level: 3, activity_refs: [] }
+          - { code: "07 62 00", name: "Sheet Metal Flashing and Trim", level: 3, activity_refs: [] }
+          - { code: "07 63 00", name: "Sheet Metal Roofing Specialties", level: 3, activity_refs: [] }
+          - { code: "07 65 00", name: "Flexible Flashing", level: 3, activity_refs: [] }
+          - { code: "07 71 00", name: "Roof Specialties", level: 3, activity_refs: [] }
+          - { code: "07 72 00", name: "Roof Accessories", level: 3, activity_refs: [] }
+      - code: "07 80 00"
+        name: "Fire and Smoke Protection"
+        level: 2
+        children:
+          - { code: "07 81 00", name: "Applied Fireproofing", level: 3, activity_refs: [] }
+          - { code: "07 82 00", name: "Board Fireproofing", level: 3, activity_refs: [] }
+          - { code: "07 84 00", name: "Firestopping", level: 3, activity_refs: [] }
+          - { code: "07 86 00", name: "Smoke Seals", level: 3, activity_refs: [] }
+          - { code: "07 87 00", name: "Smoke Containment Barriers", level: 3, activity_refs: [] }
+      - code: "07 90 00"
+        name: "Joint Protection"
+        level: 2
+        children:
+          - { code: "07 91 00", name: "Preformed Joint Seals", level: 3, activity_refs: [] }
+          - { code: "07 92 00", name: "Joint Sealants", level: 3, activity_refs: [] }
+          - { code: "07 95 00", name: "Expansion Control", level: 3, activity_refs: [] }
+
+  - code: "08"
+    name: "Openings"
+    level: 1
+    children:
+      - code: "08 10 00"
+        name: "Doors and Frames"
+        level: 2
+        children:
+          - { code: "08 11 00", name: "Metal Doors and Frames", level: 3, activity_refs: [] }
+          - { code: "08 12 00", name: "Metal Frames", level: 3, activity_refs: [] }
+          - { code: "08 13 00", name: "Metal Doors", level: 3, activity_refs: [] }
+          - { code: "08 14 00", name: "Wood Doors", level: 3, activity_refs: [] }
+          - { code: "08 15 00", name: "Plastic Doors", level: 3, activity_refs: [] }
+          - { code: "08 16 00", name: "Composite Doors", level: 3, activity_refs: [] }
+          - { code: "08 17 00", name: "Integrated Door Opening Assemblies", level: 3, activity_refs: [] }
+      - code: "08 30 00"
+        name: "Specialty Doors and Frames"
+        level: 2
+        children:
+          - { code: "08 31 00", name: "Access Doors and Panels", level: 3, activity_refs: [] }
+          - { code: "08 32 00", name: "Sliding Glass Doors", level: 3, activity_refs: [] }
+          - { code: "08 33 00", name: "Coiling Doors and Grilles", level: 3, activity_refs: [] }
+          - { code: "08 34 00", name: "Special Function Doors", level: 3, activity_refs: [] }
+          - { code: "08 35 00", name: "Folding Doors and Grilles", level: 3, activity_refs: [] }
+          - { code: "08 36 00", name: "Panel Doors", level: 3, activity_refs: [] }
+          - { code: "08 38 00", name: "Traffic Doors", level: 3, activity_refs: [] }
+      - code: "08 40 00"
+        name: "Entrances, Storefronts, and Curtain Walls"
+        level: 2
+        children:
+          - { code: "08 41 00", name: "Entrances and Storefronts", level: 3, activity_refs: [] }
+          - { code: "08 42 00", name: "Entrances", level: 3, activity_refs: [] }
+          - { code: "08 43 00", name: "Storefronts", level: 3, activity_refs: [] }
+          - { code: "08 44 00", name: "Curtain Wall and Glazed Assemblies", level: 3, activity_refs: [] }
+          - { code: "08 45 00", name: "Translucent Wall and Roof Assemblies", level: 3, activity_refs: [] }
+      - code: "08 50 00"
+        name: "Windows"
+        level: 2
+        children:
+          - { code: "08 51 00", name: "Metal Windows", level: 3, activity_refs: [] }
+          - { code: "08 52 00", name: "Wood Windows", level: 3, activity_refs: [] }
+          - { code: "08 53 00", name: "Plastic Windows", level: 3, activity_refs: [] }
+          - { code: "08 54 00", name: "Composite Windows", level: 3, activity_refs: [] }
+          - { code: "08 56 00", name: "Special Function Windows", level: 3, activity_refs: [] }
+      - code: "08 60 00"
+        name: "Roof Windows and Skylights"
+        level: 2
+        children:
+          - { code: "08 61 00", name: "Roof Windows", level: 3, activity_refs: [] }
+          - { code: "08 62 00", name: "Unit Skylights", level: 3, activity_refs: [] }
+          - { code: "08 63 00", name: "Metal-Framed Skylights", level: 3, activity_refs: [] }
+          - { code: "08 64 00", name: "Plastic-Framed Skylights", level: 3, activity_refs: [] }
+      - code: "08 70 00"
+        name: "Hardware"
+        level: 2
+        children:
+          - { code: "08 71 00", name: "Door Hardware", level: 3, activity_refs: [] }
+          - { code: "08 74 00", name: "Access Control Hardware", level: 3, activity_refs: [] }
+          - { code: "08 75 00", name: "Window Hardware", level: 3, activity_refs: [] }
+          - { code: "08 78 00", name: "Special Function Hardware", level: 3, activity_refs: [] }
+          - { code: "08 79 00", name: "Hardware Accessories", level: 3, activity_refs: [] }
+      - code: "08 80 00"
+        name: "Glazing"
+        level: 2
+        children:
+          - { code: "08 81 00", name: "Glass Glazing", level: 3, activity_refs: [] }
+          - { code: "08 83 00", name: "Mirrors", level: 3, activity_refs: [] }
+          - { code: "08 84 00", name: "Plastic Glazing", level: 3, activity_refs: [] }
+          - { code: "08 85 00", name: "Glazing Accessories", level: 3, activity_refs: [] }
+          - { code: "08 87 00", name: "Glazing Surface Films", level: 3, activity_refs: [] }
+          - { code: "08 88 00", name: "Special Function Glazing", level: 3, activity_refs: [] }
+      - code: "08 90 00"
+        name: "Louvers and Vents"
+        level: 2
+        children:
+          - { code: "08 91 00", name: "Louvers", level: 3, activity_refs: [] }
+          - { code: "08 92 00", name: "Louvered Equipment Enclosures", level: 3, activity_refs: [] }
+          - { code: "08 95 00", name: "Vents", level: 3, activity_refs: [] }
+
+  - code: "09"
+    name: "Finishes"
+    level: 1
+    children:
+      - code: "09 20 00"
+        name: "Plaster and Gypsum Board"
+        level: 2
+        children:
+          - { code: "09 21 00", name: "Plaster and Gypsum Board Assemblies", level: 3, activity_refs: [] }
+          - { code: "09 22 00", name: "Supports for Plaster and Gypsum Board", level: 3, activity_refs: [] }
+          - { code: "09 23 00", name: "Gypsum Plastering", level: 3, activity_refs: [] }
+          - { code: "09 24 00", name: "Portland Cement Plastering", level: 3, activity_refs: [] }
+          - { code: "09 25 00", name: "Other Plastering", level: 3, activity_refs: [] }
+          - { code: "09 26 00", name: "Veneer Plastering", level: 3, activity_refs: [] }
+          - { code: "09 27 00", name: "Plaster Fabrications", level: 3, activity_refs: [] }
+          - { code: "09 28 00", name: "Backing Boards and Underlayments", level: 3, activity_refs: [] }
+          - { code: "09 29 00", name: "Gypsum Board", level: 3, activity_refs: [] }
+      - code: "09 30 00"
+        name: "Tiling"
+        level: 2
+        children:
+          - { code: "09 31 00", name: "Thin-Set Tiling", level: 3, activity_refs: [] }
+          - { code: "09 32 00", name: "Mortar-Bed Tiling", level: 3, activity_refs: [] }
+          - { code: "09 33 00", name: "Conductive Tiling", level: 3, activity_refs: [] }
+          - { code: "09 34 00", name: "Waterproofing-Membrane Tiling", level: 3, activity_refs: [] }
+          - { code: "09 35 00", name: "Chemical-Resistant Tiling", level: 3, activity_refs: [] }
+      - code: "09 50 00"
+        name: "Ceilings"
+        level: 2
+        children:
+          - { code: "09 51 00", name: "Acoustical Ceilings", level: 3, activity_refs: [] }
+          - { code: "09 53 00", name: "Acoustical Ceiling Suspension Assemblies", level: 3, activity_refs: [] }
+          - { code: "09 54 00", name: "Specialty Ceilings", level: 3, activity_refs: [] }
+          - { code: "09 56 00", name: "Textured Ceilings", level: 3, activity_refs: [] }
+          - { code: "09 58 00", name: "Integrated Ceiling Assemblies", level: 3, activity_refs: [] }
+      - code: "09 60 00"
+        name: "Flooring"
+        level: 2
+        children:
+          - { code: "09 61 00", name: "Flooring Treatment", level: 3, activity_refs: [] }
+          - { code: "09 62 00", name: "Specialty Flooring", level: 3, activity_refs: [] }
+          - { code: "09 63 00", name: "Masonry Flooring", level: 3, activity_refs: [] }
+          - { code: "09 64 00", name: "Wood Flooring", level: 3, activity_refs: [] }
+          - { code: "09 65 00", name: "Resilient Flooring", level: 3, activity_refs: [] }
+          - { code: "09 66 00", name: "Terrazzo Flooring", level: 3, activity_refs: [] }
+          - { code: "09 67 00", name: "Fluid-Applied Flooring", level: 3, activity_refs: [] }
+          - { code: "09 68 00", name: "Carpeting", level: 3, activity_refs: [] }
+          - { code: "09 69 00", name: "Access Flooring", level: 3, activity_refs: [] }
+      - code: "09 70 00"
+        name: "Wall Finishes"
+        level: 2
+        children:
+          - { code: "09 72 00", name: "Wall Coverings", level: 3, activity_refs: [] }
+          - { code: "09 73 00", name: "Wall Carpeting", level: 3, activity_refs: [] }
+          - { code: "09 74 00", name: "Flexible Wood Sheets", level: 3, activity_refs: [] }
+          - { code: "09 75 00", name: "Stone Facing", level: 3, activity_refs: [] }
+          - { code: "09 77 00", name: "Special Wall Surfacing", level: 3, activity_refs: [] }
+      - code: "09 80 00"
+        name: "Acoustic Treatment"
+        level: 2
+        children:
+          - { code: "09 81 00", name: "Acoustic Insulation", level: 3, activity_refs: [] }
+          - { code: "09 83 00", name: "Acoustic Finishes", level: 3, activity_refs: [] }
+          - { code: "09 84 00", name: "Acoustic Room Components", level: 3, activity_refs: [] }
+      - code: "09 90 00"
+        name: "Painting and Coating"
+        level: 2
+        children:
+          - { code: "09 91 00", name: "Painting", level: 3, activity_refs: [] }
+          - { code: "09 93 00", name: "Staining and Transparent Finishing", level: 3, activity_refs: [] }
+          - { code: "09 94 00", name: "Decorative Finishing", level: 3, activity_refs: [] }
+          - { code: "09 96 00", name: "High-Performance Coatings", level: 3, activity_refs: [] }
+          - { code: "09 97 00", name: "Special Coatings", level: 3, activity_refs: [] }
+
+  - code: "10"
+    name: "Specialties"
+    level: 1
+    children:
+      - code: "10 10 00"
+        name: "Information Specialties"
+        level: 2
+        children:
+          - { code: "10 11 00", name: "Visual Display Units", level: 3, activity_refs: [] }
+          - { code: "10 14 00", name: "Signage", level: 3, activity_refs: [] }
+          - { code: "10 17 00", name: "Telephone Specialties", level: 3, activity_refs: [] }
+      - code: "10 20 00"
+        name: "Interior Specialties"
+        level: 2
+        children:
+          - { code: "10 21 00", name: "Compartments and Cubicles", level: 3, activity_refs: [] }
+          - { code: "10 22 00", name: "Partitions", level: 3, activity_refs: [] }
+          - { code: "10 26 00", name: "Wall and Door Protection", level: 3, activity_refs: [] }
+          - { code: "10 28 00", name: "Toilet, Bath, and Laundry Accessories", level: 3, activity_refs: [] }
+      - code: "10 40 00"
+        name: "Safety Specialties"
+        level: 2
+        children:
+          - { code: "10 41 00", name: "Emergency Access and Information Cabinets", level: 3, activity_refs: [] }
+          - { code: "10 44 00", name: "Fire Protection Specialties", level: 3, activity_refs: [] }
+      - code: "10 50 00"
+        name: "Storage Specialties"
+        level: 2
+        children:
+          - { code: "10 51 00", name: "Lockers", level: 3, activity_refs: [] }
+          - { code: "10 55 00", name: "Postal Specialties", level: 3, activity_refs: [] }
+          - { code: "10 56 00", name: "Storage Assemblies", level: 3, activity_refs: [] }
+
+  - code: "11"
+    name: "Equipment"
+    level: 1
+    children:
+      - code: "11 20 00"
+        name: "Commercial Equipment"
+        level: 2
+        children:
+          - { code: "11 21 00", name: "Retail and Service Equipment", level: 3, activity_refs: [] }
+          - { code: "11 23 00", name: "Commercial Kitchen Equipment", level: 3, activity_refs: [] }
+          - { code: "11 24 00", name: "Maintenance Equipment", level: 3, activity_refs: [] }
+      - code: "11 30 00"
+        name: "Residential Equipment"
+        level: 2
+        children:
+          - { code: "11 31 00", name: "Residential Appliances", level: 3, activity_refs: [] }
+      - code: "11 40 00"
+        name: "Foodservice Equipment"
+        level: 2
+        children:
+          - { code: "11 41 00", name: "Foodservice Storage Equipment", level: 3, activity_refs: [] }
+          - { code: "11 42 00", name: "Food Preparation Equipment", level: 3, activity_refs: [] }
+          - { code: "11 44 00", name: "Food Cooking Equipment", level: 3, activity_refs: [] }
+      - code: "11 50 00"
+        name: "Educational and Scientific Equipment"
+        level: 2
+        children:
+          - { code: "11 53 00", name: "Laboratory Equipment", level: 3, activity_refs: [] }
+      - code: "11 70 00"
+        name: "Healthcare Equipment"
+        level: 2
+        children:
+          - { code: "11 71 00", name: "Medical Sterilizing Equipment", level: 3, activity_refs: [] }
+          - { code: "11 72 00", name: "Examination and Treatment Equipment", level: 3, activity_refs: [] }
+          - { code: "11 74 00", name: "Dental Equipment", level: 3, activity_refs: [] }
+
+  - code: "12"
+    name: "Furnishings"
+    level: 1
+    children:
+      - code: "12 20 00"
+        name: "Window Treatments"
+        level: 2
+        children:
+          - { code: "12 21 00", name: "Window Blinds", level: 3, activity_refs: [] }
+          - { code: "12 22 00", name: "Curtains and Drapes", level: 3, activity_refs: [] }
+          - { code: "12 24 00", name: "Window Shades", level: 3, activity_refs: [] }
+      - code: "12 30 00"
+        name: "Casework"
+        level: 2
+        children:
+          - { code: "12 31 00", name: "Manufactured Metal Casework", level: 3, activity_refs: [] }
+          - { code: "12 32 00", name: "Manufactured Wood Casework", level: 3, activity_refs: [] }
+          - { code: "12 34 00", name: "Manufactured Plastic Casework", level: 3, activity_refs: [] }
+          - { code: "12 36 00", name: "Countertops", level: 3, activity_refs: [] }
+      - code: "12 50 00"
+        name: "Furniture"
+        level: 2
+        children:
+          - { code: "12 51 00", name: "Office Furniture", level: 3, activity_refs: [] }
+          - { code: "12 52 00", name: "Seating", level: 3, activity_refs: [] }
+
+  - code: "13"
+    name: "Special Construction"
+    level: 1
+    children:
+      - code: "13 10 00"
+        name: "Special Facility Components"
+        level: 2
+        children:
+          - { code: "13 11 00", name: "Swimming Pools", level: 3, activity_refs: [] }
+          - { code: "13 12 00", name: "Fountains", level: 3, activity_refs: [] }
+          - { code: "13 17 00", name: "Tubs and Pools", level: 3, activity_refs: [] }
+      - code: "13 30 00"
+        name: "Special Structures"
+        level: 2
+        children:
+          - { code: "13 31 00", name: "Fabric Structures", level: 3, activity_refs: [] }
+          - { code: "13 34 00", name: "Fabricated Engineered Structures", level: 3, activity_refs: [] }
+          - { code: "13 36 00", name: "Towers", level: 3, activity_refs: [] }
+
+  - code: "14"
+    name: "Conveying Equipment"
+    level: 1
+    children:
+      - code: "14 20 00"
+        name: "Elevators"
+        level: 2
+        children:
+          - { code: "14 21 00", name: "Electric Traction Elevators", level: 3, activity_refs: [] }
+          - { code: "14 24 00", name: "Hydraulic Elevators", level: 3, activity_refs: [] }
+          - { code: "14 26 00", name: "Limited-Use/Limited-Application Elevators", level: 3, activity_refs: [] }
+          - { code: "14 28 00", name: "Elevator Equipment and Controls", level: 3, activity_refs: [] }
+      - code: "14 30 00"
+        name: "Escalators and Moving Walks"
+        level: 2
+        children:
+          - { code: "14 31 00", name: "Escalators", level: 3, activity_refs: [] }
+          - { code: "14 32 00", name: "Moving Walks", level: 3, activity_refs: [] }
+      - code: "14 40 00"
+        name: "Lifts"
+        level: 2
+        children:
+          - { code: "14 41 00", name: "People Lifts", level: 3, activity_refs: [] }
+          - { code: "14 42 00", name: "Wheelchair Lifts", level: 3, activity_refs: [] }
+          - { code: "14 43 00", name: "Platform and Stair Lifts", level: 3, activity_refs: [] }
+
+  - code: "21"
+    name: "Fire Suppression"
+    level: 1
+    children:
+      - code: "21 10 00"
+        name: "Water-Based Fire-Suppression Systems"
+        level: 2
+        children:
+          - { code: "21 11 00", name: "Facility Fire-Suppression Water-Service Piping", level: 3, activity_refs: [] }
+          - { code: "21 12 00", name: "Fire-Suppression Standpipes", level: 3, activity_refs: [] }
+          - { code: "21 13 00", name: "Fire-Suppression Sprinkler Systems", level: 3, activity_refs: [] }
+      - code: "21 20 00"
+        name: "Fire-Extinguishing Systems"
+        level: 2
+        children:
+          - { code: "21 21 00", name: "Carbon-Dioxide Fire-Extinguishing Systems", level: 3, activity_refs: [] }
+          - { code: "21 22 00", name: "Clean-Agent Fire-Extinguishing Systems", level: 3, activity_refs: [] }
+          - { code: "21 23 00", name: "Wet-Chemical Fire-Extinguishing Systems", level: 3, activity_refs: [] }
+          - { code: "21 24 00", name: "Dry-Chemical Fire-Extinguishing Systems", level: 3, activity_refs: [] }
+      - code: "21 30 00"
+        name: "Fire Pumps"
+        level: 2
+        children:
+          - { code: "21 31 00", name: "Centrifugal Fire Pumps", level: 3, activity_refs: [] }
+
+  - code: "22"
+    name: "Plumbing"
+    level: 1
+    children:
+      - code: "22 10 00"
+        name: "Plumbing Piping"
+        level: 2
+        children:
+          - { code: "22 11 00", name: "Facility Water Distribution", level: 3, activity_refs: [] }
+          - { code: "22 12 00", name: "Facility Potable-Water Storage Tanks", level: 3, activity_refs: [] }
+          - { code: "22 13 00", name: "Facility Sanitary Sewerage", level: 3, activity_refs: [] }
+          - { code: "22 14 00", name: "Facility Storm Drainage", level: 3, activity_refs: [] }
+      - code: "22 30 00"
+        name: "Plumbing Equipment"
+        level: 2
+        children:
+          - { code: "22 33 00", name: "Electric Domestic Water Heaters", level: 3, activity_refs: [] }
+          - { code: "22 34 00", name: "Fuel-Fired Domestic Water Heaters", level: 3, activity_refs: [] }
+          - { code: "22 35 00", name: "Domestic Water Heat Exchangers", level: 3, activity_refs: [] }
+      - code: "22 40 00"
+        name: "Plumbing Fixtures"
+        level: 2
+        children:
+          - { code: "22 41 00", name: "Residential Plumbing Fixtures", level: 3, activity_refs: [] }
+          - { code: "22 42 00", name: "Commercial Plumbing Fixtures", level: 3, activity_refs: [] }
+          - { code: "22 43 00", name: "Healthcare Plumbing Fixtures", level: 3, activity_refs: [] }
+          - { code: "22 45 00", name: "Emergency Plumbing Fixtures", level: 3, activity_refs: [] }
+          - { code: "22 47 00", name: "Drinking Fountains and Water Coolers", level: 3, activity_refs: [] }
+
+  - code: "23"
+    name: "Heating, Ventilating, and Air Conditioning (HVAC)"
+    level: 1
+    children:
+      - code: "23 20 00"
+        name: "HVAC Piping and Pumps"
+        level: 2
+        children:
+          - { code: "23 21 00", name: "Hydronic Piping and Pumps", level: 3, activity_refs: [] }
+          - { code: "23 22 00", name: "Steam and Condensate Piping and Pumps", level: 3, activity_refs: [] }
+          - { code: "23 23 00", name: "Refrigerant Piping", level: 3, activity_refs: [] }
+      - code: "23 30 00"
+        name: "HVAC Air Distribution"
+        level: 2
+        children:
+          - { code: "23 31 00", name: "HVAC Ducts and Casings", level: 3, activity_refs: [] }
+          - { code: "23 33 00", name: "Air Duct Accessories", level: 3, activity_refs: [] }
+          - { code: "23 34 00", name: "HVAC Fans", level: 3, activity_refs: [] }
+          - { code: "23 36 00", name: "Air Terminal Units", level: 3, activity_refs: [] }
+          - { code: "23 37 00", name: "Air Outlets and Inlets", level: 3, activity_refs: [] }
+      - code: "23 50 00"
+        name: "Central Heating Equipment"
+        level: 2
+        children:
+          - { code: "23 52 00", name: "Heating Boilers", level: 3, activity_refs: [] }
+          - { code: "23 54 00", name: "Furnaces", level: 3, activity_refs: [] }
+          - { code: "23 56 00", name: "Solar Energy Heating Equipment", level: 3, activity_refs: [] }
+      - code: "23 60 00"
+        name: "Central Cooling Equipment"
+        level: 2
+        children:
+          - { code: "23 61 00", name: "Refrigerant Compressors", level: 3, activity_refs: [] }
+          - { code: "23 62 00", name: "Packaged Compressor and Condenser Units", level: 3, activity_refs: [] }
+          - { code: "23 64 00", name: "Packaged Water Chillers", level: 3, activity_refs: [] }
+          - { code: "23 65 00", name: "Cooling Towers", level: 3, activity_refs: [] }
+      - code: "23 70 00"
+        name: "Central HVAC Equipment"
+        level: 2
+        children:
+          - { code: "23 72 00", name: "Air-to-Air Energy Recovery Equipment", level: 3, activity_refs: [] }
+          - { code: "23 73 00", name: "Indoor Central-Station Air-Handling Units", level: 3, activity_refs: [] }
+          - { code: "23 74 00", name: "Packaged Outdoor HVAC Equipment", level: 3, activity_refs: [] }
+      - code: "23 80 00"
+        name: "Decentralized HVAC Equipment"
+        level: 2
+        children:
+          - { code: "23 81 00", name: "Decentralized Unitary HVAC Equipment", level: 3, activity_refs: [] }
+          - { code: "23 82 00", name: "Convection Heating and Cooling Units", level: 3, activity_refs: [] }
+          - { code: "23 83 00", name: "Radiant Heating Units", level: 3, activity_refs: [] }
+
+  - code: "26"
+    name: "Electrical"
+    level: 1
+    children:
+      - code: "26 05 00"
+        name: "Common Work Results for Electrical"
+        level: 2
+        children:
+          - { code: "26 05 13", name: "Medium-Voltage Cables", level: 3, activity_refs: [] }
+          - { code: "26 05 19", name: "Low-Voltage Electrical Power Conductors and Cables", level: 3, activity_refs: [] }
+          - { code: "26 05 26", name: "Grounding and Bonding for Electrical Systems", level: 3, activity_refs: [] }
+          - { code: "26 05 29", name: "Hangers and Supports for Electrical Systems", level: 3, activity_refs: [] }
+          - { code: "26 05 33", name: "Raceway and Boxes for Electrical Systems", level: 3, activity_refs: [] }
+          - { code: "26 05 36", name: "Cable Trays for Electrical Systems", level: 3, activity_refs: [] }
+      - code: "26 10 00"
+        name: "Medium-Voltage Electrical Distribution"
+        level: 2
+        children:
+          - { code: "26 11 00", name: "Substations", level: 3, activity_refs: [] }
+          - { code: "26 12 00", name: "Medium-Voltage Transformers", level: 3, activity_refs: [] }
+          - { code: "26 13 00", name: "Medium-Voltage Switchgear", level: 3, activity_refs: [] }
+      - code: "26 20 00"
+        name: "Low-Voltage Electrical Distribution"
+        level: 2
+        children:
+          - { code: "26 22 00", name: "Low-Voltage Transformers", level: 3, activity_refs: [] }
+          - { code: "26 23 00", name: "Low-Voltage Switchgear", level: 3, activity_refs: [] }
+          - { code: "26 24 00", name: "Switchboards and Panelboards", level: 3, activity_refs: [] }
+          - { code: "26 27 00", name: "Low-Voltage Distribution Equipment", level: 3, activity_refs: [] }
+          - { code: "26 28 00", name: "Low-Voltage Circuit Protective Devices", level: 3, activity_refs: [] }
+      - code: "26 30 00"
+        name: "Facility Electrical Power Generating and Storing Equipment"
+        level: 2
+        children:
+          - { code: "26 31 00", name: "Photovoltaic Collectors", level: 3, activity_refs: [] }
+          - { code: "26 32 00", name: "Packaged Generator Assemblies", level: 3, activity_refs: [] }
+          - { code: "26 33 00", name: "Battery Equipment", level: 3, activity_refs: [] }
+          - { code: "26 36 00", name: "Transfer Switches", level: 3, activity_refs: [] }
+      - code: "26 40 00"
+        name: "Electrical and Cathodic Protection"
+        level: 2
+        children:
+          - { code: "26 41 00", name: "Facility Lightning Protection", level: 3, activity_refs: [] }
+          - { code: "26 42 00", name: "Cathodic Protection", level: 3, activity_refs: [] }
+      - code: "26 50 00"
+        name: "Lighting"
+        level: 2
+        children:
+          - { code: "26 51 00", name: "Interior Lighting", level: 3, activity_refs: [] }
+          - { code: "26 52 00", name: "Emergency Lighting", level: 3, activity_refs: [] }
+          - { code: "26 53 00", name: "Exit Signs", level: 3, activity_refs: [] }
+          - { code: "26 56 00", name: "Exterior Lighting", level: 3, activity_refs: [] }
+
+  - code: "27"
+    name: "Communications"
+    level: 1
+    children:
+      - code: "27 10 00"
+        name: "Structured Cabling"
+        level: 2
+        children:
+          - { code: "27 11 00", name: "Communications Equipment Room Fittings", level: 3, activity_refs: [] }
+          - { code: "27 13 00", name: "Communications Backbone Cabling", level: 3, activity_refs: [] }
+          - { code: "27 15 00", name: "Communications Horizontal Cabling", level: 3, activity_refs: [] }
+      - code: "27 20 00"
+        name: "Data Communications"
+        level: 2
+        children:
+          - { code: "27 21 00", name: "Data Communications Network Equipment", level: 3, activity_refs: [] }
+          - { code: "27 22 00", name: "Data Communications Hardware", level: 3, activity_refs: [] }
+      - code: "27 40 00"
+        name: "Audio-Video Communications"
+        level: 2
+        children:
+          - { code: "27 41 00", name: "Audio-Video Systems", level: 3, activity_refs: [] }
+      - code: "27 50 00"
+        name: "Distributed Communications and Monitoring Systems"
+        level: 2
+        children:
+          - { code: "27 52 00", name: "Healthcare Communications and Monitoring Systems", level: 3, activity_refs: [] }
+
+  - code: "28"
+    name: "Electronic Safety and Security"
+    level: 1
+    children:
+      - code: "28 10 00"
+        name: "Electronic Access Control and Intrusion Detection"
+        level: 2
+        children:
+          - { code: "28 13 00", name: "Access Control", level: 3, activity_refs: [] }
+          - { code: "28 16 00", name: "Intrusion Detection", level: 3, activity_refs: [] }
+      - code: "28 20 00"
+        name: "Electronic Surveillance"
+        level: 2
+        children:
+          - { code: "28 23 00", name: "Video Surveillance", level: 3, activity_refs: [] }
+      - code: "28 30 00"
+        name: "Electronic Detection and Alarm"
+        level: 2
+        children:
+          - { code: "28 31 00", name: "Fire Detection and Alarm", level: 3, activity_refs: [] }
+          - { code: "28 33 00", name: "Fuel-Gas Detection and Alarm", level: 3, activity_refs: [] }
+          - { code: "28 35 00", name: "Refrigerant Detection and Alarm", level: 3, activity_refs: [] }
+
+  - code: "31"
+    name: "Earthwork"
+    level: 1
+    children:
+      - code: "31 10 00"
+        name: "Site Clearing"
+        level: 2
+        children:
+          - { code: "31 11 00", name: "Clearing and Grubbing", level: 3, activity_refs: [] }
+          - { code: "31 12 00", name: "Selective Clearing", level: 3, activity_refs: [] }
+          - { code: "31 13 00", name: "Selective Tree and Shrub Removal and Trimming", level: 3, activity_refs: [] }
+          - { code: "31 14 00", name: "Earth Stripping and Stockpiling", level: 3, activity_refs: [] }
+      - code: "31 20 00"
+        name: "Earth Moving"
+        level: 2
+        children:
+          - { code: "31 22 00", name: "Grading", level: 3, activity_refs: [] }
+          - { code: "31 23 00", name: "Excavation and Fill", level: 3, activity_refs: [] }
+          - { code: "31 24 00", name: "Embankments", level: 3, activity_refs: [] }
+          - { code: "31 25 00", name: "Erosion and Sedimentation Controls", level: 3, activity_refs: [] }
+      - code: "31 30 00"
+        name: "Earthwork Methods"
+        level: 2
+        children:
+          - { code: "31 31 00", name: "Soil Treatment", level: 3, activity_refs: [] }
+          - { code: "31 32 00", name: "Soil Stabilization", level: 3, activity_refs: [] }
+          - { code: "31 35 00", name: "Slope Protection", level: 3, activity_refs: [] }
+          - { code: "31 36 00", name: "Gabions", level: 3, activity_refs: [] }
+      - code: "31 40 00"
+        name: "Shoring and Underpinning"
+        level: 2
+        children:
+          - { code: "31 41 00", name: "Shoring", level: 3, activity_refs: [] }
+          - { code: "31 48 00", name: "Underpinning", level: 3, activity_refs: [] }
+      - code: "31 50 00"
+        name: "Excavation Support and Protection"
+        level: 2
+        children:
+          - { code: "31 51 00", name: "Anchor Tiebacks", level: 3, activity_refs: [] }
+          - { code: "31 52 00", name: "Cofferdams", level: 3, activity_refs: [] }
+      - code: "31 60 00"
+        name: "Special Foundations and Load-Bearing Elements"
+        level: 2
+        children:
+          - { code: "31 62 00", name: "Driven Piles", level: 3, activity_refs: [] }
+          - { code: "31 63 00", name: "Bored Piles", level: 3, activity_refs: [] }
+          - { code: "31 64 00", name: "Caissons", level: 3, activity_refs: [] }
+
+  - code: "32"
+    name: "Exterior Improvements"
+    level: 1
+    children:
+      - code: "32 10 00"
+        name: "Bases, Ballasts, and Paving"
+        level: 2
+        children:
+          - { code: "32 11 00", name: "Base Courses", level: 3, activity_refs: [] }
+          - { code: "32 12 00", name: "Flexible Paving", level: 3, activity_refs: [] }
+          - { code: "32 13 00", name: "Rigid Paving", level: 3, activity_refs: [] }
+          - { code: "32 14 00", name: "Unit Paving", level: 3, activity_refs: [] }
+          - { code: "32 15 00", name: "Aggregate Surfacing", level: 3, activity_refs: [] }
+          - { code: "32 16 00", name: "Curbs, Gutters, Sidewalks, and Driveways", level: 3, activity_refs: [] }
+          - { code: "32 17 00", name: "Paving Specialties", level: 3, activity_refs: [] }
+      - code: "32 30 00"
+        name: "Site Improvements"
+        level: 2
+        children:
+          - { code: "32 31 00", name: "Fences and Gates", level: 3, activity_refs: [] }
+          - { code: "32 32 00", name: "Retaining Walls", level: 3, activity_refs: [] }
+          - { code: "32 33 00", name: "Site Furnishings", level: 3, activity_refs: [] }
+      - code: "32 80 00"
+        name: "Irrigation"
+        level: 2
+        children:
+          - { code: "32 84 00", name: "Planting Irrigation", level: 3, activity_refs: [] }
+      - code: "32 90 00"
+        name: "Planting"
+        level: 2
+        children:
+          - { code: "32 91 00", name: "Planting Preparation", level: 3, activity_refs: [] }
+          - { code: "32 92 00", name: "Turf and Grasses", level: 3, activity_refs: [] }
+          - { code: "32 93 00", name: "Plants", level: 3, activity_refs: [] }
+
+  - code: "33"
+    name: "Utilities"
+    level: 1
+    children:
+      - code: "33 10 00"
+        name: "Water Utilities"
+        level: 2
+        children:
+          - { code: "33 11 00", name: "Groundwater Sources", level: 3, activity_refs: [] }
+          - { code: "33 12 00", name: "Water Utility Distribution Equipment", level: 3, activity_refs: [] }
+          - { code: "33 14 00", name: "Water Utility Distribution Piping", level: 3, activity_refs: [] }
+      - code: "33 30 00"
+        name: "Sanitary Sewerage Utilities"
+        level: 2
+        children:
+          - { code: "33 31 00", name: "Sanitary Utility Sewerage Piping", level: 3, activity_refs: [] }
+          - { code: "33 32 00", name: "Wastewater Utility Pumping Stations", level: 3, activity_refs: [] }
+      - code: "33 40 00"
+        name: "Storm Drainage Utilities"
+        level: 2
+        children:
+          - { code: "33 41 00", name: "Subdrainage", level: 3, activity_refs: [] }
+          - { code: "33 42 00", name: "Culverts", level: 3, activity_refs: [] }
+          - { code: "33 45 00", name: "Storm Utility Drainage Piping", level: 3, activity_refs: [] }
+      - code: "33 50 00"
+        name: "Fuel Distribution Utilities"
+        level: 2
+        children:
+          - { code: "33 51 00", name: "Natural-Gas Distribution", level: 3, activity_refs: [] }
+          - { code: "33 56 00", name: "Fuel-Storage Tanks", level: 3, activity_refs: [] }
+      - code: "33 70 00"
+        name: "Electrical Utilities"
+        level: 2
+        children:
+          - { code: "33 71 00", name: "Electrical Utility Transmission and Distribution", level: 3, activity_refs: [] }
+          - { code: "33 72 00", name: "Utility Substations", level: 3, activity_refs: [] }
+          - { code: "33 73 00", name: "Utility Transformers", level: 3, activity_refs: [] }

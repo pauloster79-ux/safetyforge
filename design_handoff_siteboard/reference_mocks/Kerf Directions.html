@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Kerf — Four Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#f0eee9;}
+  *{box-sizing:border-box;}
+  .lucide{display:inline-block;vertical-align:middle;}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="directions/icons.jsx"></script>
+<script type="text/babel" src="directions/icons-v2.jsx"></script>
+<script type="text/babel" src="directions/foreman.jsx"></script>
+<script type="text/babel" src="directions/blueprint.jsx"></script>
+<script type="text/babel" src="directions/siteboard.jsx"></script>
+<script type="text/babel" src="directions/fieldmanual.jsx"></script>
+<script type="text/babel" src="directions/foreman-contract.jsx"></script>
+<script type="text/babel" src="directions/siteboard-contract.jsx"></script>
+<script type="text/babel">
+function App() {
+  return (
+    <DesignCanvas>
+      <div style={{padding:'0 60px 32px', maxWidth: 1100}}>
+        <div style={{fontSize: 40, fontWeight: 700, letterSpacing: -1.2, color:'#2a2620', marginBottom: 10}}>Kerf — four directions</div>
+        <div style={{fontSize: 15, lineHeight: 1.55, color:'rgba(60,50,40,0.75)', maxWidth: 760}}>
+          Each tile is the same artifact — morning brief home + tokens strip + a chat/canvas moment — rendered in a distinct visual system. Scroll down to section 05 for a head-to-head Contract tab in two directions. Two-finger swipe or drag to pan; pinch or ctrl+scroll to zoom.
+        </div>
+      </div>
+
+      <DCSection
+        title="01 — Foreman"
+        subtitle="Evolutionary. Current clipboard aesthetic, but fully committed: real type scale, stamped labels, paper texture, yellow as an actual moment. For teams that like what's there and want it polished."
+      >
+        <DCArtboard label="Home — Morning brief" width={1320} height={900}>
+          <ForemanHome />
+        </DCArtboard>
+        <DCArtboard label="System — tokens + components" width={720} height={900}>
+          <ForemanSystem />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection
+        title="02 — Blueprint"
+        subtitle="Calm, architectural, quiet. Ivory + graphite + a single cyan. Drafting-grid substrate, serif display for numbers, generous whitespace. For Sarah reviewing at her desk."
+      >
+        <DCArtboard label="Home — Morning brief" width={1320} height={900}>
+          <BlueprintHome />
+        </DCArtboard>
+        <DCArtboard label="System — tokens + components" width={720} height={900}>
+          <BlueprintSystem />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection
+        title="03 — Site Board"
+        subtitle="Rugged, high-contrast, jobsite-ready. Inverted chrome (dark shell, light card), yellow as dominant accent, big touch targets, depth and shadow. For Marco at 5:30 AM in the truck."
+      >
+        <DCArtboard label="Home — Morning brief" width={1320} height={900}>
+          <SiteBoardHome />
+        </DCArtboard>
+        <DCArtboard label="System — tokens + components" width={720} height={900}>
+          <SiteBoardSystem />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection
+        title="04 — Field Manual"
+        subtitle="Editorial. Warm paper white, huge sans display, hairline rules, a second accent (blood-orange) alongside yellow. Premium, opinionated, confident. The one Sarah brags about at a conference."
+      >
+        <DCArtboard label="Home — Morning brief" width={1320} height={900}>
+          <FieldManualHome />
+        </DCArtboard>
+        <DCArtboard label="System — tokens + components" width={720} height={900}>
+          <FieldManualSystem />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection
+        title="05 — Contract tab, two ways"
+        subtitle="Chat-left + canvas-right. The conversation IS the primary interface — every block on the right has an origin bubble on the left. On mobile those same cards collapse into the chat feed; on tablet/desktop they promote to the right pane. Same quote rendered twice: Foreman (paper, calm) and Site Board (dark, yellow dominant, trailer-ready)."
+      >
+        <DCArtboard label="Foreman — Contract (chat + canvas)" width={1600} height={1100}>
+          <ForemanContract />
+        </DCArtboard>
+        <DCArtboard label="Site Board — Contract (chat + canvas)" width={1600} height={1100}>
+          <SiteBoardContract />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

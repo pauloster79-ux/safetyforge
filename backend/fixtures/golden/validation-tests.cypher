@@ -237,3 +237,138 @@ RETURN m.id AS bad_scope, m.scope_project_id AS scope_project_id,
        co.id AS company_id, "Message scope_project_id does not belong to its Company" AS violation
 LIMIT 10;
 // Expected: 0 rows
+
+
+// ============================================================================
+// CANONICAL WORK CATEGORIES VALIDATION
+// ============================================================================
+
+// V-CAT-01: Every Canonical WorkCategory must have code, jurisdiction_code, and level
+MATCH (c:WorkCategory:Canonical)
+WHERE c.code IS NULL OR c.jurisdiction_code IS NULL OR c.level IS NULL
+RETURN c.id AS violation, "Canonical WorkCategory missing required property (code, jurisdiction_code, or level)" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-CAT-02: Every Extension WorkCategory must have PARENT_CATEGORY pointing to a Canonical
+MATCH (c:WorkCategory:Extension)
+WHERE NOT (c)-[:PARENT_CATEGORY]->(:WorkCategory:Canonical)
+RETURN c.id AS violation, "Extension must have Canonical parent" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-CAT-03: No two Canonicals share the same jurisdiction_code + code
+MATCH (c1:WorkCategory:Canonical), (c2:WorkCategory:Canonical)
+WHERE c1.id < c2.id
+  AND c1.jurisdiction_code = c2.jurisdiction_code
+  AND c1.code = c2.code
+RETURN [c1.id, c2.id] AS violation,
+       c1.jurisdiction_code + " " + c1.code AS duplicated,
+       "Duplicate canonical code within jurisdiction" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-CAT-04: Company-owned (HAS_WORK_CATEGORY) categories must be Extensions, not top-level Canonicals
+MATCH (co:Company)-[:HAS_WORK_CATEGORY]->(cat:WorkCategory)
+WHERE NOT cat:Extension
+RETURN cat.id AS violation, co.id AS company_id,
+       "Company-owned category must be :Extension, not top-level" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-CAT-05: CATEGORISED_AS on WorkItem must target a valid WorkCategory
+MATCH (wi:WorkItem)-[:CATEGORISED_AS]->(cat)
+WHERE NOT cat:WorkCategory
+RETURN wi.id AS violation, "WorkItem CATEGORISED_AS target is not a WorkCategory" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+
+// ============================================================================
+// METHODOLOGY VALIDATION
+// ============================================================================
+
+// V-METH-01: Every Methodology must have an approach map (may be empty but present)
+MATCH (m:Methodology)
+WHERE m.approach IS NULL
+RETURN m.id AS violation, "Methodology missing approach map" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-METH-02: Every non-project Methodology must have a CHILD_OF parent
+MATCH (m:Methodology)
+WHERE m.scope_level IN ["package", "item"]
+  AND NOT (m)-[:CHILD_OF]->(:Methodology)
+RETURN m.id AS violation, m.scope_level AS scope_level,
+       "Non-project methodology missing CHILD_OF parent" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-METH-03: Every Methodology must APPLIES_TO_CATEGORY a Canonical WorkCategory
+MATCH (m:Methodology)
+WHERE NOT (m)-[:APPLIES_TO_CATEGORY]->(:WorkCategory:Canonical)
+RETURN m.id AS violation, "Methodology missing APPLIES_TO_CATEGORY anchor" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-METH-04: CHILD_OF must go up the scope_level chain (item → package → project)
+MATCH (m1:Methodology)-[:CHILD_OF]->(m2:Methodology)
+WHERE NOT (
+  (m1.scope_level = "package" AND m2.scope_level = "project")
+  OR (m1.scope_level = "item" AND m2.scope_level = "package")
+)
+RETURN [m1.id, m2.id] AS violation,
+       m1.scope_level + " -> " + m2.scope_level AS invalid_chain,
+       "Invalid CHILD_OF hierarchy (must be item->package->project)" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-METH-05: Every active Methodology must have valid_from and valid_until sentinel or date
+MATCH (m:Methodology)
+WHERE m.valid_from IS NULL OR m.valid_until IS NULL
+RETURN m.id AS violation, "Methodology missing valid_from/valid_until temporal metadata" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+
+// ============================================================================
+// SOURCE ENFORCEMENT VALIDATION (Labour + Item)
+// ============================================================================
+
+// V-SRC-01: Labour must have rate_source_id pointing to a ResourceRate
+MATCH (l:Labour)
+WHERE l.rate_source_id IS NULL
+RETURN l.id AS violation, "Labour missing rate_source_id (fabricated rate)" AS reason
+LIMIT 10;
+// Expected: 0 rows (once enforcement is live)
+
+// V-SRC-02: Labour rate_source_id must reference an existing active ResourceRate
+MATCH (l:Labour)
+WHERE l.rate_source_id IS NOT NULL
+  AND NOT EXISTS {
+    MATCH (rr:ResourceRate {id: l.rate_source_id})
+    WHERE rr.active = true
+  }
+RETURN l.id AS violation, l.rate_source_id AS missing_rate,
+       "Labour rate_source_id references non-existent or inactive ResourceRate" AS reason
+LIMIT 10;
+// Expected: 0 rows
+
+// V-SRC-03: Item must have either price_source_id OR price_source_type="contractor_stated"
+MATCH (it:Item)
+WHERE it.price_source_id IS NULL
+  AND (it.price_source_type IS NULL OR it.price_source_type <> "contractor_stated")
+RETURN it.id AS violation, "Item missing price_source_id without contractor_stated tag" AS reason
+LIMIT 10;
+// Expected: 0 rows (once enforcement is live)
+
+// V-SRC-04: Item price_source_id when set must reference MaterialCatalogEntry or Purchase-derived source
+MATCH (it:Item)
+WHERE it.price_source_id IS NOT NULL
+  AND NOT EXISTS {
+    MATCH (mce:MaterialCatalogEntry {id: it.price_source_id})
+  }
+RETURN it.id AS violation, it.price_source_id AS missing_catalog,
+       "Item price_source_id references non-existent MaterialCatalogEntry" AS reason
+LIMIT 10;
+// Expected: 0 rows

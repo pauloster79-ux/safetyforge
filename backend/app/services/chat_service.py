@@ -574,7 +574,7 @@ GENERAL_TOOLS: list[dict[str, Any]] = [
     # ── Estimate & Price ────────────────────────────────────────────────
     {
         "name": "create_work_item",
-        "description": "Create a work item on a project — a scope line for quoting. After creation, use create_labour and create_item to add cost breakdown.",
+        "description": "Create a work item on a project — a scope line for quoting. After creation, use create_labour and create_item to add cost breakdown. STRONGLY RECOMMENDED: supply work_category_id from the canonical taxonomy for the contractor's jurisdiction (MasterFormat for US/CA, NRM 2 for UK/IE, NATSPEC for AU/NZ). Categorisation enables rate/productivity lookup, regulatory bridging, and cross-project benchmarks.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -584,6 +584,7 @@ GENERAL_TOOLS: list[dict[str, Any]] = [
                 "unit": {"type": "string", "description": "Unit: EA, LF, SF, CY, LS, etc."},
                 "margin_pct": {"type": "number", "description": "Markup percentage (0-100)"},
                 "work_package_id": {"type": "string", "description": "Optional work package ID"},
+                "work_category_id": {"type": "string", "description": "Canonical WorkCategory ID (e.g. wcat_us_26_24_16) or company-scoped Extension ID. Writes (wi)-[:CATEGORISED_AS]->(cat)."},
             },
             "required": ["project_id", "description"],
         },

@@ -1,0 +1,12 @@
+jurisdiction: ca
+source: MasterFormat 2020 (CSC)
+source_reference: "CSC MasterFormat® 2020 Edition (Canadian co-publication with CSI)"
+licensing_note: "Identical code/title tree to US MasterFormat. Jurisdiction divergence appears only when regulatory activity_refs are wired — Canadian refs point to CSA/NBC/provincial codes, US refs point to ANSI/IBC. For Phase 1, this file inherits the US tree via the loader's 'inherits_from' mechanism."
+version: "2020-edition"
+last_updated: "2026-04-17"
+inherits_from: us
+deltas:
+  # Canadian variations are regulatory (activity_refs) not structural.
+  # The canonical tree is identical; loader copies US categories with jurisdiction=ca.
+  # Per-category activity_refs are overridden in the regulatory wiring phase (Phase 5 of canonical plan).
+  notes: "Metric units in specification prose do not affect the taxonomy. Division 01 Canadian references (CSA, NBC, provincial codes) are applied via activity_refs, not via structural changes."

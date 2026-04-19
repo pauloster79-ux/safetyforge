@@ -127,6 +127,35 @@
   .status-badge { display: inline-block; padding: 1px 6px; border-radius: var(--radius); font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; }
   .status-badge.draft { background: var(--machine-wash); color: var(--machine-dark); }
   .status-badge.confirmed { background: var(--pass-bg); color: var(--pass); }
+
+  /* Category and Methodology rows */
+  .wi-detail .wi-row.context { background: rgba(245,184,0,0.03); }
+  .wi-detail .wi-row .wi-value.with-chevron { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .wi-detail .wi-row .wi-value.with-chevron::after { content: "▼"; font-size: 8px; color: var(--muted); margin-left: auto; }
+  .wi-detail .wi-row .wi-value.with-chevron:hover { color: var(--machine-dark); }
+  .wi-sub-line { grid-column: 2; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); padding: 2px 0 4px; letter-spacing: 0.2px; }
+  .wi-sub-line::before { content: "↳ "; color: var(--concrete-200); }
+  .insight-chip { display: inline-block; padding: 1px 5px; background: rgba(142,68,173,0.1); color: #8e44ad; border-radius: var(--radius); font-family: 'IBM Plex Mono', monospace; font-size: 9px; margin-left: 4px; cursor: pointer; }
+  .insight-chip:hover { background: rgba(142,68,173,0.2); }
+
+  /* Source detail panel */
+  .source-panel { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--machine); border-radius: var(--radius); padding: 14px 16px; max-width: 380px; margin: 8px 0; font-size: 0.82rem; }
+  .source-panel h5 { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+  .source-panel .sp-value { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 15px; margin-bottom: 12px; color: var(--fg); }
+  .source-panel .sp-row { display: grid; grid-template-columns: 88px 1fr; gap: 6px; padding: 3px 0; font-size: 0.78rem; border-bottom: 1px solid var(--concrete-50); }
+  .source-panel .sp-row:last-of-type { border-bottom: none; }
+  .source-panel .sp-row .sp-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
+  .source-panel .sp-row .sp-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg); }
+  .source-panel .sp-row .sp-val.dim { color: var(--concrete-500); }
+  .source-panel .sp-section { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--concrete-100); }
+  .source-panel .sp-section h6 { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .source-panel .sp-list-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 0; color: var(--concrete-600); }
+  .source-panel .sp-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .source-panel .sp-actions .kerf-btn { flex: 1; }
+  .source-panel .cascade-step { padding: 8px 10px; background: var(--concrete-50); border-radius: var(--radius); margin: 4px 0; font-size: 0.78rem; }
+  .source-panel .cascade-step .cs-level { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+  .source-panel .cascade-step .cs-content { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--fg); }
+  .source-panel .cascade-arrow { text-align: center; color: var(--muted); font-size: 14px; margin: 2px 0; }
 </style>
 </head>
 <body>
@@ -138,6 +167,8 @@
   <button class="tab-btn" onclick="showTab('mobile-package')">Mobile: Package</button>
   <button class="tab-btn" onclick="showTab('desktop-builder')">Desktop: Builder</button>
   <button class="tab-btn" onclick="showTab('jake')">Jake: Simple Job</button>
+  <button class="tab-btn" onclick="showTab('active-tracking')">Active: Tracking</button>
+  <button class="tab-btn" onclick="showTab('source-detail')">Source Detail</button>
 </div>
 
 <!-- CONCEPT -->
@@ -146,7 +177,7 @@
   <div class="subtitle">From conversation to structured work · Scales from solo to 100-person crew</div>
 
   <h2>The Core Idea</h2>
-  <p>A WorkItem is the atomic unit of deliverable work. It has a description, optional quantity, labour estimate, material estimate, and a lifecycle state. The user creates them by talking — the agent extracts structured items from natural language and presents them as editable cards for review.</p>
+  <p>A WorkItem is the atomic unit of deliverable work. It has a description, optional quantity, labour entries, item entries (materials, equipment, subs — anything that isn't labour), and a lifecycle state. The user creates them by talking — the agent extracts structured work from natural language and presents them as editable cards for review.</p>
 
   <div class="design-note">
     <strong>The card IS the work item.</strong> It appears in chat as a draft. The user can confirm it (one tap), edit any field (tap the value), or dismiss it. On desktop, the same card appears in the canvas table view. There's no separate "create form" — the conversation IS the form.
@@ -168,31 +199,70 @@
   <p>A WorkPackage is an optional grouping. It emerges naturally — when Sarah says "reception area" the agent creates a package. Or the user can group items later. Solo contractors like Jake never see packages — their items are flat on the project.</p>
 
   <h2>Card Anatomy</h2>
-  <div style="max-width: 340px; margin: 16px 0;">
-    <div class="wi-card draft">
-      <div class="wi-header">
-        <span class="wi-icon">⚡</span>
-        <span class="wi-title">Standard receptacle</span>
-        <span class="wi-cost">$396</span>
-        <span class="wi-status draft-s">Draft</span>
+  <p>Two context rows at the top (Category, Methodology), numeric rows for the substance, source info under each value. The Methodology row only appears when methodology is set or inherited.</p>
+
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0;">
+    <!-- With methodology (Marco/Sarah) -->
+    <div style="width: 360px;">
+      <div class="label" style="margin-bottom: 6px;">With Methodology (Marco / Sarah)</div>
+      <div class="wi-card draft">
+        <div class="wi-header">
+          <span class="wi-icon">⚡</span>
+          <span class="wi-title">Standard receptacle</span>
+          <span class="wi-cost">$396</span>
+          <span class="wi-status draft-s">Draft</span>
+        </div>
+        <div class="wi-detail">
+          <div class="wi-row context"><span class="wi-label">Category</span><span class="wi-value with-chevron">26 24 16 · Panelboards</span></div>
+          <div class="wi-row context"><span class="wi-label">Methodology</span><span class="wi-value with-chevron">Conduit in finished walls · +15% labour</span></div>
+          <div class="wi-sub-line">inherited from Reception package</div>
+          <div class="wi-row"><span class="wi-label">Quantity</span><span class="wi-value editable">6 ea</span></div>
+          <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value editable">$3.40 /ea = $20.40</span></div>
+          <div class="wi-sub-line">City Electric Supply · captured 14 Mar</div>
+          <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.38 hrs/ea × $65 = $375.60</span></div>
+          <div class="wi-sub-line">Your avg across 14 jobs ±0.09 <span class="insight-chip">+15% Insight</span></div>
+          <div class="wi-row"><span class="wi-label">Total</span><span class="wi-value" style="font-weight: 600;">$396.00</span></div>
+        </div>
+        <div class="wi-actions">
+          <button class="kerf-btn primary sm">✓ Confirm</button>
+          <button class="kerf-btn secondary sm">Edit</button>
+          <button class="kerf-btn ghost sm">✕ Remove</button>
+        </div>
       </div>
-      <div class="wi-detail">
-        <div class="wi-row"><span class="wi-label">Quantity</span><span class="wi-value editable">6 ea</span></div>
-        <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$3.40 /ea = $20.40</span></div>
-        <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.38 hrs/ea × $65 = $375.60</span></div>
-        <div class="wi-row"><span class="wi-label">Total</span><span class="wi-value" style="font-weight: 600;">$396.00</span></div>
-        <div class="wi-row"><span class="wi-label">Rate source</span><span class="wi-value" style="color: var(--muted); font-size: 10px;">Your avg across 14 jobs</span></div>
-      </div>
-      <div class="wi-actions">
-        <button class="kerf-btn primary sm">✓ Confirm</button>
-        <button class="kerf-btn secondary sm">Edit</button>
-        <button class="kerf-btn ghost sm">✕ Remove</button>
+    </div>
+
+    <!-- Without methodology (Jake) -->
+    <div style="width: 360px;">
+      <div class="label" style="margin-bottom: 6px;">Without Methodology (Jake)</div>
+      <div class="wi-card draft">
+        <div class="wi-header">
+          <span class="wi-icon">⚡</span>
+          <span class="wi-title">Standard receptacle</span>
+          <span class="wi-cost">$396</span>
+          <span class="wi-status draft-s">Draft</span>
+        </div>
+        <div class="wi-detail">
+          <div class="wi-row context"><span class="wi-label">Category</span><span class="wi-value with-chevron">26 24 16 · Panelboards</span></div>
+          <div class="wi-row"><span class="wi-label">Quantity</span><span class="wi-value editable">6 ea</span></div>
+          <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value editable">$3.40 /ea = $20.40</span></div>
+          <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.38 hrs/ea × $65 = $375.60</span></div>
+          <div class="wi-row"><span class="wi-label">Total</span><span class="wi-value" style="font-weight: 600;">$396.00</span></div>
+          <div class="wi-row"><span class="wi-label">Rate source</span><span class="wi-value" style="color: var(--muted); font-size: 10px;">Your avg across 14 jobs</span></div>
+        </div>
+        <div class="wi-actions">
+          <button class="kerf-btn primary sm">✓ Confirm</button>
+          <button class="kerf-btn secondary sm">Edit</button>
+          <button class="kerf-btn ghost sm">✕ Remove</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="design-note">
-    <strong>Every value with a dashed underline is tappable/clickable to edit.</strong> Tap "6 ea" → inline number input. Tap "$3.40 /ea" → edit the unit price. Tap "0.38 hrs/ea" → edit the labour rate. The card recalculates instantly. This is how the user corrects the agent without typing a chat message.
+    <strong>Every value with a dashed underline is tappable/clickable to edit.</strong> Tap "6 ea" → inline number input. Tap "$3.40 /ea" → edit the unit price. Tap a Category or Methodology row → opens the picker or cascade view. Tap any <code>↳ source line</code> → opens the Source Detail panel (see Source Detail tab).
+  </div>
+  <div class="design-note">
+    <strong>Category is always shown.</strong> It's required classification — every WorkItem belongs somewhere in the canonical taxonomy (MasterFormat for US/CA, NRM 2 for UK/IE, NATSPEC for AU/NZ). <strong>Methodology only appears when something's been set</strong> — either at Project, Package, or this item. Jake's jobs usually don't need explicit methodology; Sarah's commercial work usually does.
   </div>
 </div>
 
@@ -233,8 +303,11 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 24 16 Panelboards</span></div>
+            <div class="wi-row context"><span class="wi-label">Method.</span><span class="wi-value with-chevron">Finished-wall conduit · +15%</span></div>
+            <div class="wi-sub-line">inherited from Reception</div>
             <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">6 ea</span></div>
-            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$3.40 /ea</span></div>
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value editable">$3.40 /ea</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.38 hrs/ea × $65</span></div>
           </div>
           <div class="wi-actions">
@@ -252,8 +325,11 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 05 19 Conductors</span></div>
+            <div class="wi-row context"><span class="wi-label">Method.</span><span class="wi-value with-chevron">Finished-wall conduit · +15%</span></div>
+            <div class="wi-sub-line">inherited from Reception</div>
             <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">2 ea</span></div>
-            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$12.00 /ea</span></div>
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value editable">$12.00 /ea</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.80 hrs/ea × $65</span></div>
           </div>
           <div class="wi-actions">
@@ -271,8 +347,11 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 27 26 Wiring Devices</span></div>
+            <div class="wi-row context"><span class="wi-label">Method.</span><span class="wi-value with-chevron">Slab-on-grade core drill · +80%</span></div>
+            <div class="wi-sub-line">item-level override · was +15%</div>
             <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">1 ea</span></div>
-            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$85.00</span></div>
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value editable">$85.00</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">1.50 hrs × $65</span></div>
           </div>
           <div class="wi-actions">
@@ -302,8 +381,10 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 51 13 Interior Lighting</span></div>
+            <div class="wi-row context"><span class="wi-label">Method.</span><span class="wi-value with-chevron">Drop ceiling access · standard</span></div>
             <div class="wi-row"><span class="wi-label">Qty</span><span class="wi-value editable">8 ea</span></div>
-            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value editable">$142.00 /ea</span></div>
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value editable">$142.00 /ea</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value editable">0.50 hrs/ea × $65</span></div>
           </div>
           <div class="wi-actions">
@@ -358,7 +439,7 @@
               </div>
             </div>
             <div class="wi-row" style="padding: 8px 0;">
-              <span class="wi-label">Mat. cost</span>
+              <span class="wi-label">Items</span>
               <div class="inline-edit">
                 <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$</span>
                 <input value="3.40" style="width: 60px;">
@@ -375,11 +456,23 @@
             </div>
             <div class="wi-row" style="padding: 8px 0;">
               <span class="wi-label">Category</span>
-              <select style="border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; background: white;">
-                <option selected>Electrical — Receptacles</option>
-                <option>Electrical — Circuits</option>
-                <option>Electrical — Lighting</option>
-              </select>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <input type="text" placeholder="Search category..." value="26 24 16 · Panelboards" style="border: 1px solid var(--machine); border-radius: var(--radius); padding: 4px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; width: 100%; background: var(--machine-wash);">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.3px;">MasterFormat 2020 · Electrical Service &amp; Distribution</span>
+              </div>
+            </div>
+            <div class="wi-row" style="padding: 8px 0;">
+              <span class="wi-label">Methodology</span>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; background: var(--concrete-50);">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fg); margin-bottom: 2px;">Finished-wall conduit · +15% labour</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted);">↳ inherited from Reception package</div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <button class="kerf-btn ghost sm" style="font-size: 0.7rem;">View cascade</button>
+                  <button class="kerf-btn ghost sm" style="font-size: 0.7rem;">Override for this item</button>
+                </div>
+              </div>
             </div>
             <div class="wi-row" style="padding: 8px 0;">
               <span class="wi-label">Notes</span>
@@ -392,7 +485,7 @@
                 <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 14px;">$396.00</span>
               </div>
               <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px;">
-                Material $20.40 + Labour $375.60
+                Items $20.40 + Labour $375.60
               </div>
             </div>
           </div>
@@ -580,6 +673,10 @@
   <h1>Desktop: Estimate Builder</h1>
   <div class="subtitle">Chat builds · Canvas shows structured table · Both editable</div>
 
+  <div class="design-note">
+    <strong>Category and Methodology on the grid.</strong> Category appears as a small monospace code inline after each description (<code>26 24 16</code>). Methodology is shown on the <strong>package header row</strong> (applies to all items in the package) and as a purple chip on an item row only when overridden (<code>override +80%</code> on Floor box assembly). This keeps the grid dense but surfaces the context. Click any code or chip to open the source panel.
+  </div>
+
   <div class="desktop-frame">
     <div class="desktop-sidebar">
       <div class="app-header">
@@ -616,18 +713,18 @@
       </div>
       <div style="overflow-y: auto; flex: 1;">
         <div class="item-row header">
-          <span>Description</span><span>Qty</span><span>Unit</span><span>Mat $/ea</span><span>Lab hrs</span><span>$/hr</span><span>Total</span><span></span>
+          <span>Description</span><span>Qty</span><span>Unit</span><span>Items $/ea</span><span>Lab hrs</span><span>$/hr</span><span>Total</span><span></span>
         </div>
 
-        <div class="item-row group"><span>📦 Reception</span><span class="status-badge confirmed" style="font-size: 9px;">Confirmed</span></div>
+        <div class="item-row group"><span>📦 Reception <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 10px;">method: finished-wall conduit · +15% labour</span></span><span class="status-badge confirmed" style="font-size: 9px;">Confirmed</span></div>
         <div class="item-row">
-          <span>Standard receptacle</span><span class="mono-val">8</span><span class="mono-val">ea</span><span class="mono-val">$3.40</span><span class="mono-val">3.04</span><span class="mono-val">$65</span><span class="mono-val" style="font-weight: 600;">$225</span><span class="edit-icon">✎</span>
+          <span>Standard receptacle <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">26 24 16</span></span><span class="mono-val">8</span><span class="mono-val">ea</span><span class="mono-val">$3.40</span><span class="mono-val">3.04</span><span class="mono-val">$65</span><span class="mono-val" style="font-weight: 600;">$225</span><span class="edit-icon">✎</span>
         </div>
         <div class="item-row">
-          <span>Dedicated circuit</span><span class="mono-val">2</span><span class="mono-val">ea</span><span class="mono-val">$12.00</span><span class="mono-val">1.60</span><span class="mono-val">$65</span><span class="mono-val">$128</span><span class="edit-icon">✎</span>
+          <span>Dedicated circuit <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">26 05 19</span></span><span class="mono-val">2</span><span class="mono-val">ea</span><span class="mono-val">$12.00</span><span class="mono-val">1.60</span><span class="mono-val">$65</span><span class="mono-val">$128</span><span class="edit-icon">✎</span>
         </div>
         <div class="item-row">
-          <span>Floor box assembly</span><span class="mono-val">1</span><span class="mono-val">ea</span><span class="mono-val">$85.00</span><span class="mono-val">1.50</span><span class="mono-val">$65</span><span class="mono-val">$183</span><span class="edit-icon">✎</span>
+          <span>Floor box assembly <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">26 27 26</span> <span style="background: rgba(142,68,173,0.1); color: #8e44ad; padding: 1px 5px; border-radius: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600; margin-left: 4px;">override +80%</span></span><span class="mono-val">1</span><span class="mono-val">ea</span><span class="mono-val">$85.00</span><span class="mono-val">1.50</span><span class="mono-val">$65</span><span class="mono-val">$183</span><span class="edit-icon">✎</span>
         </div>
         <div class="item-row">
           <span>LED troffer 2×4</span><span class="mono-val">8</span><span class="mono-val">ea</span><span class="mono-val">$142</span><span class="mono-val">4.00</span><span class="mono-val">$65</span><span class="mono-val">$1,396</span><span class="edit-icon">✎</span>
@@ -707,8 +804,9 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 24 16 Panelboards</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value">8.5 hrs × $75</span></div>
-            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value">Panel + breakers ≈ $1,200</span></div>
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value">Panel + breakers ≈ $1,200</span></div>
             <div class="wi-row"><span class="wi-label">Source</span><span class="wi-value" style="font-size: 10px; color: var(--muted);">Your avg: 12 panel upgrades, $2,640-$3,100</span></div>
           </div>
         </div>
@@ -721,8 +819,9 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 05 19 Conductors</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value">1.5 hrs/circuit × $75</span></div>
-            <div class="wi-row"><span class="wi-label">Material</span><span class="wi-value">Wire + breakers ≈ $90/circuit</span></div>
+            <div class="wi-row"><span class="wi-label">Items</span><span class="wi-value">Wire + breakers ≈ $90/circuit</span></div>
           </div>
         </div>
 
@@ -734,6 +833,7 @@
             <span class="wi-status draft-s">Draft</span>
           </div>
           <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 27 26 Wiring Devices</span></div>
             <div class="wi-row"><span class="wi-label">Labour</span><span class="wi-value">0.45 hrs/ea × $75</span></div>
             <div class="wi-row"><span class="wi-label">Note</span><span class="wi-value" style="font-size: 10px; color: var(--warn);">Island = under-floor conduit, +20% vs wall</span></div>
           </div>
@@ -745,6 +845,9 @@
             <span class="wi-title">Pantry receptacles ×4</span>
             <span class="wi-cost">$420</span>
             <span class="wi-status draft-s">Draft</span>
+          </div>
+          <div class="wi-detail">
+            <div class="wi-row context"><span class="wi-label">Cat.</span><span class="wi-value with-chevron">26 27 26 Wiring Devices</span></div>
           </div>
         </div>
 
@@ -769,8 +872,476 @@
   </div>
 
   <div class="design-note" style="max-width: 375px; margin: 16px auto;">
-    <strong>No work packages. No complexity.</strong> Jake said one sentence and got 4 work items with costs based on his own history. The same data model — just no grouping. If Jake grows to 10 employees and starts doing commercial work, packages emerge naturally. The schema doesn't change.
+    <strong>No work packages. No methodology rows. No complexity.</strong> Jake said one sentence and got 4 work items with costs based on his own history. Category is still shown (every item classifies) but there's no methodology layer because his jobs don't need the extra abstraction. Same data model — just progressive disclosure. If Jake grows to 10 employees and starts doing commercial work, packages and methodology emerge naturally. The schema doesn't change.
   </div>
+</div>
+
+<!-- ACTIVE TRACKING -->
+<div id="active-tracking" class="tab-content">
+  <h1>Active: Tracking a live project</h1>
+  <div class="subtitle">Same WorkItems, different lens · Quote view columns morph into tracking columns when project.state = active</div>
+
+  <div class="design-note">
+    <strong>The spine is stable.</strong> Same WorkItems. Same rows. What changes: columns shift to show estimated vs actual, % complete, and variance; header cards show "where am I now" instead of "what does this cost"; expanded rows show TimeEntries and material receipts; every variance is typed (Builder / Customer / Weather).
+  </div>
+
+  <h2>Kitchen remodel — active project</h2>
+
+  <!-- Header cards: 4-up -->
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; max-width: 1100px;">
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;">
+      <div class="label" style="margin-bottom: 4px;">Contract Value</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 700; margin-bottom: 4px;">$17,555.40</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">Labour $4,940 · Items $9,250</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px;">4 items · 0 packages</div>
+    </div>
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; border-left: 3px solid var(--info);">
+      <div class="label" style="margin-bottom: 4px;">Spent &amp; forecast</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 700; margin-bottom: 4px;">$8,920 <span style="font-size: 12px; font-weight: 400; color: var(--muted);">/ $17,555</span></div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">51% spent · 48% done</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--fg); margin-top: 2px;">Forecast: <strong>$17,895</strong> (+1.9%)</div>
+    </div>
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; border-left: 3px solid var(--warn);">
+      <div class="label" style="margin-bottom: 4px;">Variance</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 700; color: var(--warn); margin-bottom: 4px;">+$340</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">On Electrical · Customer</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px;">Margin impact: −0.3% (13.9%)</div>
+    </div>
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;">
+      <div class="label" style="margin-bottom: 4px;">Change Orders</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 700; color: var(--machine-dark); margin-bottom: 4px;">1 draft</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">CO-001 · Old wiring disposal</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px;">$340 · awaiting client approval</div>
+    </div>
+
+  </div>
+
+  <!-- Scope tracking table -->
+  <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0; max-width: 1100px; overflow: hidden;">
+
+    <!-- Table header -->
+    <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 0.95rem; font-weight: 700;">Scope Tracking</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px;">Method · Kitchen remodel · retain plumbing layout · conventional finishes</div>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <div style="display: flex; background: var(--concrete-50); border-radius: var(--radius); padding: 2px;">
+          <button style="padding: 4px 10px; background: none; border: none; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Quote</button>
+          <button style="padding: 4px 10px; background: var(--card); border: 1px solid var(--border); border-radius: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--fg); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Active</button>
+          <button style="padding: 4px 10px; background: none; border: none; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Closeout</button>
+        </div>
+        <button class="kerf-btn secondary sm">Refresh</button>
+      </div>
+    </div>
+
+    <!-- Column headers -->
+    <div style="display: grid; grid-template-columns: 1fr 40px 40px 140px 140px 90px 120px 100px; gap: 8px; padding: 8px 16px; background: var(--concrete-50); font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border);">
+      <span>Description</span><span>Qty</span><span>Unit</span><span>Labour est → act</span><span>Items est → act</span><span>% Done</span><span>Variance</span><span>State</span>
+    </div>
+
+    <!-- Row 1: Electrical (expanded with details) -->
+    <div style="border-bottom: 1px solid var(--concrete-50);">
+      <div style="display: grid; grid-template-columns: 1fr 40px 40px 140px 140px 90px 120px 100px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 0.78rem;">
+        <span style="font-weight: 600;">
+          <span style="color: var(--muted); margin-right: 4px;">▾</span>
+          Electrical — recircuit for new appliances
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">26 05 19</span>
+        </span>
+        <span class="mono-val">1</span>
+        <span class="mono-val">LS</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$1,190 <span style="color: var(--muted);">→</span> <strong style="color: var(--pass);">$765</strong></span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$420 <span style="color: var(--muted);">→</span> <strong style="color: var(--pass);">$420</strong></span>
+        <span>
+          <div style="background: var(--concrete-100); height: 6px; border-radius: 2px; overflow: hidden;">
+            <div style="background: var(--pass); height: 100%; width: 64%;"></div>
+          </div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">64%</span>
+        </span>
+        <span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--warn); font-weight: 600;">+$340</span>
+          <span style="display: inline-block; padding: 1px 5px; background: var(--warn-bg); color: var(--warn); border-radius: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600; margin-left: 4px; text-transform: uppercase;">Customer</span>
+        </span>
+        <span><span class="status-badge" style="background: rgba(142,68,173,0.1); color: #8e44ad;">In Progress</span></span>
+      </div>
+
+      <!-- Expanded detail -->
+      <div style="padding: 8px 16px 16px; background: var(--concrete-50);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+          <!-- Labour with time entries -->
+          <div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Labour</div>
+            <div style="background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;">
+              <div style="padding: 8px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 0.82rem; font-weight: 600;">Rough and trim electrical</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">$85/hr · 14 hrs est</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px;">↳ Rate source: Your avg across 38 past projects</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 1px;">↳ Productivity: avg 14 hrs on similar kitchen recircs (n=7)</div>
+              </div>
+              <div style="background: var(--concrete-50); padding: 8px 12px; border-top: 1px solid var(--border);">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Actuals logged (9 hrs)</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 2px 0; color: var(--concrete-600);">
+                  <span>15 Apr · Marco</span><span>4.5 hrs</span><span>$382.50</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 2px 0; color: var(--concrete-600);">
+                  <span>16 Apr · Marco + Luis</span><span>4.5 hrs</span><span>$382.50</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 4px 0 2px; border-top: 1px dashed var(--concrete-100); margin-top: 4px; font-weight: 600;">
+                  <span>Logged</span><span>9.0 hrs</span><span style="color: var(--pass);">$765.00</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 2px 0; color: var(--muted);">
+                  <span>Remaining est.</span><span>5.0 hrs</span><span>$425.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items with receipts -->
+          <div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Items</div>
+            <div style="background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;">
+              <div style="padding: 8px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 0.82rem; font-weight: 600;">Wire, devices, fixtures</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">1 LS · $420.00 est</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px;">↳ City Electric Supply · captured 14 Mar</div>
+              </div>
+              <div style="background: var(--concrete-50); padding: 8px 12px; border-top: 1px solid var(--border);">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Receipts</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 2px 0; color: var(--concrete-600);">
+                  <span>14 Apr · PO #39041 · City Electric</span><span>$420.00</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 4px 0 2px; border-top: 1px dashed var(--concrete-100); margin-top: 4px; font-weight: 600;">
+                  <span>Received</span><span style="color: var(--pass);">$420.00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending variance -->
+            <div style="background: var(--warn-bg); border: 1px solid var(--warn); border-radius: var(--radius); padding: 8px 12px; margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px;">Pending Customer Variance</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--warn);">+$340</span>
+              </div>
+              <div style="font-size: 0.78rem; margin-top: 3px; color: var(--fg);">Client asked us to haul old knob-and-tube wiring off-site rather than stockpile.</div>
+              <div style="display: flex; gap: 6px; margin-top: 6px;">
+                <button class="kerf-btn primary sm">Generate Change Order</button>
+                <button class="kerf-btn ghost sm">Dismiss</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Countertop (collapsed) -->
+    <div style="display: grid; grid-template-columns: 1fr 40px 40px 140px 140px 90px 120px 100px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 0.78rem; border-bottom: 1px solid var(--concrete-50); cursor: pointer;">
+      <span style="font-weight: 600;">
+        <span style="color: var(--muted); margin-right: 4px;">▸</span>
+        Quartz countertop — 42 LF including island
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">09 30 00</span>
+      </span>
+      <span class="mono-val">42</span>
+      <span class="mono-val">LF</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$750 <span style="color: var(--muted);">→</span> <strong>$750</strong></span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$3,570 <span style="color: var(--muted);">→</span> <strong>$3,570</strong></span>
+      <span>
+        <div style="background: var(--concrete-100); height: 6px; border-radius: 2px; overflow: hidden;">
+          <div style="background: var(--info); height: 100%; width: 50%;"></div>
+        </div>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">50%</span>
+      </span>
+      <span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">$0</span></span>
+      <span><span class="status-badge" style="background: rgba(142,68,173,0.1); color: #8e44ad;">In Progress</span></span>
+    </div>
+
+    <!-- Row 3: Cabinets (collapsed, with small overage) -->
+    <div style="display: grid; grid-template-columns: 1fr 40px 40px 140px 140px 90px 120px 100px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 0.78rem; border-bottom: 1px solid var(--concrete-50); cursor: pointer;">
+      <span style="font-weight: 600;">
+        <span style="color: var(--muted); margin-right: 4px;">▸</span>
+        Cabinet installation — 12 upper, 14 lower
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">06 41 00</span>
+      </span>
+      <span class="mono-val">26</span>
+      <span class="mono-val">EA</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$2,400 <span style="color: var(--muted);">→</span> <strong style="color: var(--fail);">$1,380</strong></span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$4,810 <span style="color: var(--muted);">→</span> <strong style="color: var(--fail);">$4,920</strong></span>
+      <span>
+        <div style="background: var(--concrete-100); height: 6px; border-radius: 2px; overflow: hidden;">
+          <div style="background: var(--info); height: 100%; width: 50%;"></div>
+        </div>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">50%</span>
+      </span>
+      <span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fail); font-weight: 600;">+$110</span>
+        <span style="display: inline-block; padding: 1px 5px; background: var(--fail-bg); color: var(--fail); border-radius: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600; margin-left: 4px; text-transform: uppercase;">Builder</span>
+      </span>
+      <span><span class="status-badge" style="background: rgba(142,68,173,0.1); color: #8e44ad;">In Progress</span></span>
+    </div>
+
+    <!-- Row 4: Demolition (collapsed, complete) -->
+    <div style="display: grid; grid-template-columns: 1fr 40px 40px 140px 140px 90px 120px 100px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 0.78rem; border-bottom: 1px solid var(--concrete-50); cursor: pointer;">
+      <span style="font-weight: 600;">
+        <span style="color: var(--muted); margin-right: 4px;">▸</span>
+        Kitchen demolition — strip existing
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-left: 6px;">02 41 19</span>
+      </span>
+      <span class="mono-val">1</span>
+      <span class="mono-val">LS</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$600 <span style="color: var(--muted);">→</span> <strong style="color: var(--pass);">$600</strong></span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">$450 <span style="color: var(--muted);">→</span> <strong style="color: var(--pass);">$450</strong></span>
+      <span>
+        <div style="background: var(--concrete-100); height: 6px; border-radius: 2px; overflow: hidden;">
+          <div style="background: var(--pass); height: 100%; width: 100%;"></div>
+        </div>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);">100%</span>
+      </span>
+      <span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);">$0</span></span>
+      <span><span class="status-badge confirmed">Complete</span></span>
+    </div>
+
+    <!-- Footer totals -->
+    <div style="display: grid; grid-template-columns: 1fr 40px 40px 140px 140px 90px 120px 100px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 0.82rem; background: var(--concrete-900); color: var(--concrete-50); font-weight: 600;">
+      <span>Forecast at complete</span>
+      <span></span>
+      <span></span>
+      <span style="font-family: 'IBM Plex Mono', monospace;">$4,940 → $4,965</span>
+      <span style="font-family: 'IBM Plex Mono', monospace;">$9,250 → $9,590</span>
+      <span></span>
+      <span style="font-family: 'IBM Plex Mono', monospace; color: var(--warn);">+$340</span>
+      <span></span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 16px; align-items: center; font-size: 0.85rem; background: var(--machine); color: var(--concrete-900); font-weight: 700;">
+      <span>Contract $17,555  →  Forecast $17,895</span>
+      <span style="font-family: 'IBM Plex Mono', monospace;">Margin: planned 20.0% · forecast 13.9%</span>
+    </div>
+
+  </div>
+
+  <h2 style="margin-top: 32px;">What's happening in this view</h2>
+  <ul style="max-width: 800px; font-size: 0.85rem;">
+    <li style="padding: 4px 0;"><strong>Segmented control</strong> (Quote · Active · Closeout) top-right of scope table — user can manually override the lifecycle view; default tracks <code>project.state</code>.</li>
+    <li style="padding: 4px 0;"><strong>Header cards now answer "where am I?"</strong> Contract is the baseline. Spent &amp; Forecast shows the live trajectory. Variance is the money-leaking flag. Change Orders is the scope-reconciliation queue.</li>
+    <li style="padding: 4px 0;"><strong>Per-row Variance cell</strong> shows the dollar delta plus its <strong>type badge</strong> — Customer (orange) is billable via CO; Builder (red) hits margin; Weather (blue) is EOT/force-majeure.</li>
+    <li style="padding: 4px 0;"><strong>Expanded row</strong> shows TimeEntries rolled up against each Labour row ("Logged: 9.0 hrs · Remaining est: 5.0 hrs") and receipts rolled up against each Item row. The source lines (↳) are still there under the baseline rate/price — tap to drill to the same Source Detail panels shown in that tab.</li>
+    <li style="padding: 4px 0;"><strong>Pending Customer Variance</strong> appears inline where it was detected — with one-click "Generate Change Order" action. This is the CoConstruct-style auto-CO flow we borrowed.</li>
+    <li style="padding: 4px 0;"><strong>Methodology</strong> is shown under the scope-tracking header as a project-level chip ("Method · Kitchen remodel · retain plumbing layout · conventional finishes"). No per-item methodology overrides on this simple job, so no chips on individual rows.</li>
+    <li style="padding: 4px 0;"><strong>Footer has two rows now:</strong> a dark "Forecast at complete" roll-up (est → forecast for Labour, Items, with total variance) and the machine-yellow "Margin: planned 20.0% · forecast 13.9%" — the gut-check number.</li>
+  </ul>
+
+  <div class="design-note">
+    <strong>Why the same table works for three lifecycle stages.</strong> Quote view has columns Margin / Sell. Active view replaces those with <code>est→act</code> cells, % done, and variance. Closeout view (coming in a future preview tab) replaces those with Invoiced / Paid / Outstanding. The row is the stable spine; the columns are the lens. This mirrors the Procore / Autodesk / Buildertrend pattern but uses our own variance typing and source provenance.
+  </div>
+</div>
+
+<!-- SOURCE DETAIL -->
+<div id="source-detail" class="tab-content">
+  <h1>Source Detail — How users see provenance</h1>
+  <div class="subtitle">Tap any source line (↳) on a card · panel opens with the evidence chain · contractor can accept, override, or investigate</div>
+
+  <div class="design-note">
+    <strong>This is Kerf's biggest differentiation.</strong> No competitor we surveyed shows contractors where a number came from. Every rate, price, productivity adjustment, methodology decision, and category classification can be drilled into. The source panel shows the authoritative node in the graph, the evidence chain, confidence signals, and quick actions to override.
+  </div>
+
+  <h2>The interaction</h2>
+  <p>On the card or grid row, every numeric value has a muted source line underneath (prefixed with ↳). Tap / click the source line — a <strong>source panel</strong> opens. On mobile, it's a bottom sheet. On desktop, it's a side panel that slides in from the right (using the existing <code>SourcesPanel</code> component in <code>ContractTab.tsx</code>). Close the panel to return to the card.</p>
+
+  <h2>Five source panels (one per source type)</h2>
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px;">
+
+    <!-- 1. Labour rate source -->
+    <div class="source-panel">
+      <h5>Source · Labour rate</h5>
+      <div class="sp-value">$65 / hour (loaded)</div>
+      <div class="sp-row"><span class="sp-label">Type</span><span class="sp-val">Journeyman electrician</span></div>
+      <div class="sp-row"><span class="sp-label">From node</span><span class="sp-val dim">ResourceRate #rr_abc123</span></div>
+      <div class="sp-row"><span class="sp-label">Stated by</span><span class="sp-val">Sarah Chen · 14 Mar 2026</span></div>
+      <div class="sp-row"><span class="sp-label">Confidence</span><span class="sp-val">Contractor-stated · 1.00</span></div>
+      <div class="sp-row"><span class="sp-label">Breakdown</span><span class="sp-val dim">Base $44 + 36% burden + 15% NPT</span></div>
+      <div class="sp-section">
+        <h6>Usage</h6>
+        <div class="sp-list-row"><span>Used on past projects</span><span>38</span></div>
+        <div class="sp-list-row"><span>Last used</span><span>4th St Medical · 14 Apr</span></div>
+      </div>
+      <div class="sp-actions">
+        <button class="kerf-btn secondary sm">Override for this item</button>
+        <button class="kerf-btn primary sm">Update globally</button>
+      </div>
+    </div>
+
+    <!-- 2. Labour productivity source -->
+    <div class="source-panel">
+      <h5>Source · Labour productivity</h5>
+      <div class="sp-value">0.38 hrs per each</div>
+      <div class="sp-row"><span class="sp-label">Scope</span><span class="sp-val">Standard receptacle, commercial</span></div>
+      <div class="sp-row"><span class="sp-label">From node</span><span class="sp-val dim">ProductivityRate #pr_xyz456</span></div>
+      <div class="sp-row"><span class="sp-label">Derived</span><span class="sp-val">From 14 completed jobs</span></div>
+      <div class="sp-row"><span class="sp-label">Mean</span><span class="sp-val">0.38 ±0.09 (σ)</span></div>
+      <div class="sp-row"><span class="sp-label">Range</span><span class="sp-val">0.29 – 0.52</span></div>
+      <div class="sp-section">
+        <h6>Adjustments applied</h6>
+        <div style="padding: 6px 8px; background: rgba(142,68,173,0.08); border-radius: 3px; font-size: 0.78rem; color: var(--fg);">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;">+15% productivity</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted);">Insight "Finished-wall conduit, renovation"</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted);">Confidence 0.85 · validated 12 times</div>
+        </div>
+      </div>
+      <div class="sp-section">
+        <h6>Past jobs — last 5</h6>
+        <div class="sp-list-row"><span>4th St Medical (in-progress)</span><span>0.35</span></div>
+        <div class="sp-list-row"><span>Peachtree Medical</span><span>0.41</span></div>
+        <div class="sp-list-row"><span>Chen Office Fit-out</span><span>0.36</span></div>
+        <div class="sp-list-row"><span>Buckhead Dental</span><span>0.38</span></div>
+        <div class="sp-list-row"><span>Greenfield Tower</span><span>0.40</span></div>
+      </div>
+      <div class="sp-actions">
+        <button class="kerf-btn secondary sm">Override</button>
+        <button class="kerf-btn primary sm">View all 14</button>
+      </div>
+    </div>
+
+    <!-- 3. Item (material) price source -->
+    <div class="source-panel">
+      <h5>Source · Item price</h5>
+      <div class="sp-value">$3.40 / each</div>
+      <div class="sp-row"><span class="sp-label">Product</span><span class="sp-val">Leviton Decora 15A TR</span></div>
+      <div class="sp-row"><span class="sp-label">Supplier</span><span class="sp-val">City Electric Supply</span></div>
+      <div class="sp-row"><span class="sp-label">From node</span><span class="sp-val dim">MaterialCatalogEntry #mce_789</span></div>
+      <div class="sp-row"><span class="sp-label">Captured</span><span class="sp-val">14 Mar 2026 (34 days)</span></div>
+      <div class="sp-row"><span class="sp-label">PO reference</span><span class="sp-val dim">PO #38472 · $2,040 total</span></div>
+      <div class="sp-row"><span class="sp-label">Status</span><span class="sp-val" style="color: var(--pass);">Fresh · preferred supplier</span></div>
+      <div class="sp-section">
+        <h6>Alternatives</h6>
+        <div class="sp-list-row"><span>Graybar (17 Jan)</span><span>$3.89</span></div>
+        <div class="sp-list-row"><span>Home Depot Pro (10 Mar)</span><span>$4.20</span></div>
+        <div class="sp-list-row"><span>Rexel (2 Feb)</span><span>$3.75</span></div>
+      </div>
+      <div class="sp-actions">
+        <button class="kerf-btn secondary sm">Refresh prices</button>
+        <button class="kerf-btn primary sm">Switch supplier</button>
+      </div>
+    </div>
+
+    <!-- 4. Methodology cascade source -->
+    <div class="source-panel" style="width: 400px;">
+      <h5>Source · Methodology cascade</h5>
+      <div class="sp-value" style="font-size: 14px;">Conduit in finished walls · +15% labour</div>
+
+      <div class="cascade-step">
+        <div class="cs-level">Project</div>
+        <div class="cs-content">Residential renovation · Retain fixture layout</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 3px;">Set by Marco · 14 Mar · cloned from "Johnson Kitchen"</div>
+      </div>
+      <div class="cascade-arrow">↓ inherited by</div>
+      <div class="cascade-step" style="background: var(--machine-wash); border-left: 2px solid var(--machine);">
+        <div class="cs-level">WorkPackage · Reception</div>
+        <div class="cs-content">+ Conduit in finished walls (not ceiling rough-in)</div>
+        <div class="cs-content">+ Drop ceiling access above: no</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 3px;">Source of this item's adjustment</div>
+      </div>
+      <div class="cascade-arrow">↓ inherited by</div>
+      <div class="cascade-step">
+        <div class="cs-level">WorkItem · Standard receptacle</div>
+        <div class="cs-content" style="color: var(--muted);">No item-level overrides</div>
+      </div>
+
+      <div class="sp-section">
+        <h6>Insight applied here</h6>
+        <div style="padding: 6px 8px; background: rgba(142,68,173,0.08); border-radius: 3px; font-size: 0.78rem;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;">+15% productivity</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px;">"Finished-wall conduit, renovation" · validated 12 times · confidence 0.85</div>
+        </div>
+      </div>
+
+      <div class="sp-section">
+        <h6>Similar past projects</h6>
+        <div class="sp-list-row"><span>Johnson Kitchen Remodel</span><span>$2,840</span></div>
+        <div class="sp-list-row"><span>Chen Renovation Phase 1</span><span>$3,120</span></div>
+        <div class="sp-list-row"><span>Peachtree Medical Fit-out</span><span>$4,200</span></div>
+      </div>
+
+      <div class="sp-actions">
+        <button class="kerf-btn secondary sm">Override at item</button>
+        <button class="kerf-btn primary sm">Edit at package</button>
+      </div>
+    </div>
+
+    <!-- 5. Category source -->
+    <div class="source-panel">
+      <h5>Source · Category</h5>
+      <div class="sp-value">26 24 16 · Panelboards</div>
+      <div class="sp-row"><span class="sp-label">Taxonomy</span><span class="sp-val">MasterFormat 2020</span></div>
+      <div class="sp-row"><span class="sp-label">Jurisdiction</span><span class="sp-val">US</span></div>
+      <div class="sp-row"><span class="sp-label">Division</span><span class="sp-val">26 Electrical</span></div>
+      <div class="sp-row"><span class="sp-label">Parent</span><span class="sp-val">26 24 00 Service &amp; Distribution</span></div>
+      <div class="sp-row"><span class="sp-label">Your alias</span><span class="sp-val">"Main Panels"</span></div>
+      <div class="sp-section">
+        <h6>Regulatory links</h6>
+        <div class="sp-list-row"><span>NEC 408 · Switchboards</span><span>→</span></div>
+        <div class="sp-list-row"><span>NEC 240 · Overcurrent Protection</span><span>→</span></div>
+        <div class="sp-list-row"><span>OSHA 29 CFR 1910.269</span><span>→</span></div>
+      </div>
+      <div class="sp-section">
+        <h6>Your usage</h6>
+        <div class="sp-list-row"><span>Items in this category</span><span>38</span></div>
+        <div class="sp-list-row"><span>Avg productivity</span><span>0.38 hrs/ea</span></div>
+      </div>
+      <div class="sp-actions">
+        <button class="kerf-btn secondary sm">Rename alias</button>
+        <button class="kerf-btn primary sm">Change category</button>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 style="margin-top: 32px;">Interaction pattern</h2>
+  <div style="max-width: 720px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 12px;">
+    <h3 style="margin-top: 0;">Entry points</h3>
+    <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
+      <li style="padding: 4px 0;"><strong>↳ source line</strong> under any numeric value on the card → opens that value's source panel</li>
+      <li style="padding: 4px 0;"><strong>Methodology row</strong> on the card → opens the cascade panel</li>
+      <li style="padding: 4px 0;"><strong>Category row</strong> on the card → opens the category picker (search-first); tap the info icon → opens the category source panel</li>
+      <li style="padding: 4px 0;"><strong>Insight chip</strong> (purple) on the labour source line → opens the productivity source panel pre-scrolled to the Insight section</li>
+      <li style="padding: 4px 0;"><strong>Grid row context menu</strong> (desktop) → "View sources" option opens all five panels stacked</li>
+    </ul>
+
+    <h3>Mobile behaviour</h3>
+    <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
+      <li style="padding: 4px 0;">Bottom sheet slides up, 80% screen height. Tap outside or swipe down to dismiss.</li>
+      <li style="padding: 4px 0;">Headers sticky so the value stays visible while scrolling evidence.</li>
+      <li style="padding: 4px 0;">Action buttons fixed at the bottom of the sheet.</li>
+    </ul>
+
+    <h3>Desktop behaviour</h3>
+    <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
+      <li style="padding: 4px 0;">Side panel slides in from the right, ~400px wide. Uses the existing <code>SourcesPanel</code> component shell.</li>
+      <li style="padding: 4px 0;">Panel is dismissible by clicking outside, pressing Esc, or clicking the × in the panel header.</li>
+      <li style="padding: 4px 0;">Multiple panels can stack (e.g., opening productivity while labour rate is already open pushes labour rate to the left or replaces it — design decision TBD).</li>
+    </ul>
+
+    <h3>Data flow</h3>
+    <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
+      <li style="padding: 4px 0;">Each WorkItem's Labour node carries <code>rate_source_id</code>, <code>productivity_source_id</code>, <code>applied_insight_ids</code>.</li>
+      <li style="padding: 4px 0;">Each Item node carries <code>price_source_id</code>, <code>price_source_type</code>.</li>
+      <li style="padding: 4px 0;">Each Methodology carries parent references and an <code>approach</code> map with per-key overrides.</li>
+      <li style="padding: 4px 0;">Each Category is either a Canonical node (shared) or an Extension (company-scoped under a Canonical parent).</li>
+      <li style="padding: 4px 0;">The panel resolves the references in one query and renders the evidence tree.</li>
+    </ul>
+  </div>
+
+  <div class="design-note" style="margin-top: 20px;">
+    <strong>The "Override" button closes the loop.</strong> If the contractor disagrees with the system's choice, they can override at item-level (one-off), at package-level (for this project), or globally (for all future projects). Each override is itself captured with provenance, so the system can learn from the corrections and — over time — the Insight confidence improves without anyone authoring "templates" from scratch.
+  </div>
+
 </div>
 
 <script>

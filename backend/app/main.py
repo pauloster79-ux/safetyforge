@@ -51,6 +51,7 @@ from app.routers import (
     templates,
     voice,
     warranties,
+    work_categories,
     work_items,
 )
 
@@ -202,6 +203,7 @@ app.include_router(agents.router, prefix="/api/v1")
 app.include_router(labour.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1")
 app.include_router(work_items.router, prefix="/api/v1")
+app.include_router(work_categories.router, prefix="/api/v1")
 app.include_router(assumptions.router, prefix="/api/v1")
 app.include_router(estimates.router, prefix="/api/v1")
 app.include_router(exclusions.router, prefix="/api/v1")

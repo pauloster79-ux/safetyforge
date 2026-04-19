@@ -1,0 +1,141 @@
+/**
+ * Site Board — Card
+ *
+ * Replaces frontend/src/components/ui/card.tsx
+ *
+ * Changes vs existing:
+ *   • Opts into hover-lift by default (data-hover-lift="true" — see index.css)
+ *   • Uses --sb-ink-2 surface with a top inset highlight to fake a stamped plate
+ *   • CardHeader has a subtle bottom hairline when card has a body
+ *   • CardTitle uses text-title token (15/1.3/500)
+ *   • Footer uses sb-ink-3 instead of muted/50 for depth consistency
+ */
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+type CardProps = React.ComponentProps<"div"> & {
+  size?: "default" | "sm"
+  /** Disable the hover-lift micro-interaction. Default true. */
+  hoverLift?: boolean
+}
+
+function Card({
+  className,
+  size = "default",
+  hoverLift = true,
+  ...props
+}: CardProps) {
+  return (
+    <div
+      data-slot="card"
+      data-size={size}
+      data-hover-lift={hoverLift ? "true" : "false"}
+      className={cn(
+        "group/card flex flex-col gap-4 overflow-hidden",
+        "bg-card text-card-foreground",
+        "border border-[var(--border)] rounded-[var(--radius)]",
+        // Stamped top edge highlight — faint, reads as pressed metal
+        "shadow-[inset_0_1px_0_var(--sb-plate-highlight)]",
+        "py-4 text-sm",
+        "has-data-[slot=card-footer]:pb-0",
+        "has-[>img:first-child]:pt-0",
+        "data-[size=sm]:gap-3 data-[size=sm]:py-3",
+        "data-[size=sm]:has-data-[slot=card-footer]:pb-0",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "group/card-header @container/card-header",
+        "grid auto-rows-min items-start gap-1 px-4",
+        "group-data-[size=sm]/card:px-3",
+        "has-data-[slot=card-action]:grid-cols-[1fr_auto]",
+        "has-data-[slot=card-description]:grid-rows-[auto_auto]",
+        "[.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn(
+        "font-heading text-[15px] leading-[1.3] font-medium",
+        "group-data-[size=sm]/card:text-sm",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-4 group-data-[size=sm]/card:px-3", className)}
+      {...props}
+    />
+  )
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn(
+        "flex items-center border-t border-[var(--sb-hairline)]",
+        "bg-[var(--sb-ink-3)] p-4",
+        "group-data-[size=sm]/card:p-3",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+}

@@ -57,6 +57,7 @@ from app.services.toolbox_talk_service import ToolboxTalkService
 from app.services.voice_service import VoiceService
 from app.services.query_canvas_service import QueryCanvasService
 from app.services.worker_service import WorkerService
+from app.services.work_category_service import WorkCategoryService
 
 logger = logging.getLogger(__name__)
 
@@ -410,6 +411,13 @@ def get_resource_rate_service(
 ) -> ResourceRateService:
     """Provide a ResourceRateService instance."""
     return ResourceRateService(driver)
+
+
+def get_work_category_service(
+    driver: Annotated[Driver, Depends(get_neo4j_driver)],
+) -> WorkCategoryService:
+    """Provide a WorkCategoryService instance."""
+    return WorkCategoryService(driver)
 
 
 def get_productivity_rate_service(

@@ -1502,6 +1502,7 @@ class MCPToolService(BaseService):
         unit: str | None = None,
         margin_pct: float | None = None,
         work_package_id: str | None = None,
+        work_category_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a work item on a project (or within a WorkPackage).
 
@@ -1522,11 +1523,17 @@ class MCPToolService(BaseService):
             unit: Unit of measurement (EA, LF, SF, CY, LS, etc.).
             margin_pct: Markup percentage (0-100).
             work_package_id: Optional work package to group under.
+            work_category_id: Optional canonical or company-extension WorkCategory ID.
+                When supplied, writes (wi)-[:CATEGORISED_AS]->(cat) atomically with
+                creation. Canonical nodes are globally accessible; extensions are
+                validated to belong to the caller's company. See docs/design/
+                canonical-work-categories.md.
 
         Returns:
             Dict with the created work item data, or — if a duplicate is
             detected — the existing work_item_id and a message directing the
-            agent to update_work_item.
+            agent to update_work_item. Includes ``category_id`` when category
+            was supplied and successfully written.
         """
         # Deduplication check: if a non-deleted WorkItem on this project
         # has an overlapping description (case-insensitive substring either
@@ -1576,44 +1583,60 @@ class MCPToolService(BaseService):
             **provenance,
         }
 
+        # Compose Cypher based on which optional relationships are present.
+        package_match = ""
+        package_link = ""
+        category_match = ""
+        category_link = ""
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "project_id": project_id,
+            "props": props,
+        }
+
         if work_package_id:
-            result = self._write_tx_single(
-                """
-                MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
-                WHERE p.deleted = false
-                MATCH (wp:WorkPackage {id: $work_package_id})
-                CREATE (wi:WorkItem $props)
-                CREATE (p)-[:HAS_WORK_ITEM]->(wi)
-                CREATE (wp)-[:CONTAINS]->(wi)
-                RETURN wi.id AS work_item_id, p.id AS project_id, p.name AS project_name,
-                       wi.description AS description, wi.state AS state
-                """,
-                {
-                    "company_id": company_id,
-                    "project_id": project_id,
-                    "work_package_id": work_package_id,
-                    "props": props,
-                },
+            package_match = "MATCH (wp:WorkPackage {id: $work_package_id})\n                "
+            package_link = "CREATE (wp)-[:CONTAINS]->(wi)\n                "
+            params["work_package_id"] = work_package_id
+
+        if work_category_id:
+            # Canonical categories are globally accessible; Extensions must be
+            # owned by this company. The WHERE clause enforces the access scope.
+            category_match = (
+                "MATCH (cat:WorkCategory {id: $work_category_id})\n                "
+                "WHERE cat:Canonical "
+                "OR EXISTS { MATCH (c)-[:HAS_EXTENSION]->(cat) }\n                "
             )
-        else:
-            result = self._write_tx_single(
-                """
-                MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
+            category_link = "CREATE (wi)-[:CATEGORISED_AS]->(cat)\n                "
+            params["work_category_id"] = work_category_id
+
+        cypher = f"""
+                MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
                 WHERE p.deleted = false
-                CREATE (wi:WorkItem $props)
+                {package_match}{category_match}CREATE (wi:WorkItem $props)
                 CREATE (p)-[:HAS_WORK_ITEM]->(wi)
-                RETURN wi.id AS work_item_id, p.id AS project_id, p.name AS project_name,
-                       wi.description AS description, wi.state AS state
-                """,
-                {
-                    "company_id": company_id,
-                    "project_id": project_id,
-                    "props": props,
-                },
-            )
+                {package_link}{category_link}RETURN wi.id AS work_item_id,
+                    p.id AS project_id,
+                    p.name AS project_name,
+                    wi.description AS description,
+                    wi.state AS state,
+                    $work_category_id AS category_id
+            """
+        # When category is not requested, the "category_id" return is $work_category_id which is null
+        # (NULL in Cypher), which is fine for the caller.
+        if "work_category_id" not in params:
+            params["work_category_id"] = None
+
+        result = self._write_tx_single(cypher, params)
 
         if result is None:
-            return {"error": f"Project {project_id} not found"}
+            return {
+                "error": (
+                    f"Project {project_id} not found, or work_category_id "
+                    f"{work_category_id} is not a canonical category and is not "
+                    f"an extension owned by this company."
+                )
+            }
 
         event = self.event_bus.create_event(
             event_type=EventType.WORK_ITEM_CREATED,
@@ -1622,11 +1645,16 @@ class MCPToolService(BaseService):
             company_id=company_id,
             project_id=project_id,
             actor=actor,
-            summary={"description": description, "quantity": quantity, "unit": unit},
+            summary={
+                "description": description,
+                "quantity": quantity,
+                "unit": unit,
+                "category_id": work_category_id,
+            },
         )
         self.event_bus.emit(event)
 
-        return {
+        response = {
             "work_item_id": wi_id,
             "project_id": result["project_id"],
             "project_name": result["project_name"],
@@ -1637,6 +1665,9 @@ class MCPToolService(BaseService):
             "margin_pct": margin_pct,
             "message": "Work item created. Use create_labour and create_item to add cost breakdown.",
         }
+        if work_category_id:
+            response["category_id"] = work_category_id
+        return response
 
     # ------------------------------------------------------------------
     # Tool 20: update_work_item (low-risk write)
@@ -7785,6 +7816,7 @@ class MCPToolService(BaseService):
                 parameters.get("unit"),
                 parameters.get("margin_pct"),
                 parameters.get("work_package_id"),
+                parameters.get("work_category_id"),
             ),
             "update_work_item": lambda: self.update_work_item(
                 actor, company_id, parameters["project_id"],

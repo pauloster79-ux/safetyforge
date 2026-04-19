@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kerf · Implementation Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ══════════════════════════════════════════════════════════
+ * Site Board tokens (dark mode, from frontend/src/index.css)
+ * ══════════════════════════════════════════════════════════ */
+:root {
+  --ink-0: #0d0e0c;
+  --ink-1: #141511;
+  --ink-2: #191b17;
+  --ink-3: #22241f;
+  --ink-4: #2e312b;
+  --fg: #e8e9e6;
+  --fg-muted: #a3a79c;
+  --fg-dim: #71766b;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --plate-hi: rgba(255, 255, 255, 0.04);
+  --machine: #F5B800;
+  --machine-bright: #FFCA18;
+  --machine-dark: #D9A200;
+  --machine-wash: rgba(245, 184, 0, 0.10);
+  --machine-strong: rgba(245, 184, 0, 0.20);
+  --pass: #38a169;
+  --pass-bg: rgba(56, 161, 105, 0.15);
+  --fail: #e53e3e;
+  --fail-bg: rgba(229, 62, 62, 0.15);
+  --warn: #d69e2e;
+  --warn-bg: rgba(214, 158, 46, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink-0);
+  color: var(--fg);
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  min-height: 100vh;
+}
+
+a { color: var(--machine); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  background: var(--ink-3);
+  padding: 1px 5px;
+  border-radius: 2px;
+  color: var(--machine);
+  letter-spacing: 0.02em;
+}
+
+pre {
+  background: var(--ink-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--fg);
+  margin: 14px 0;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* ══════════════════════════════════════════════════════════
+ * Top chrome
+ * ══════════════════════════════════════════════════════════ */
+.top-bar {
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--hairline);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.klogo {
+  width: 28px;
+  height: 28px;
+  background: var(--machine);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-0);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.top-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.top-sep { color: var(--fg-dim); font-family: 'IBM Plex Mono'; font-size: 11px; }
+
+.top-subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.top-meta {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════════════════════════
+ * Tab navigation
+ * ══════════════════════════════════════════════════════════ */
+.tab-nav {
+  background: var(--ink-1);
+  border-bottom: 1px solid var(--hairline);
+  padding: 0 32px;
+  display: flex;
+  gap: 2px;
+  position: sticky;
+  top: 57px;
+  z-index: 99;
+  overflow-x: auto;
+}
+
+.tab-nav .tab {
+  padding: 14px 18px 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.tab-nav .tab:hover {
+  color: var(--fg);
+}
+
+.tab-nav .tab.active {
+  color: var(--machine);
+  border-bottom-color: var(--machine);
+  background: var(--ink-0);
+  font-weight: 600;
+}
+
+.tab-nav .tab .count {
+  margin-left: 8px;
+  background: var(--ink-3);
+  color: var(--fg-muted);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.tab-nav .tab.active .count {
+  background: var(--machine-wash);
+  color: var(--machine);
+}
+
+/* ══════════════════════════════════════════════════════════
+ * Tab panels
+ * ══════════════════════════════════════════════════════════ */
+.tab-panel {
+  display: none;
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.panel-hero {
+  margin-bottom: 32px;
+}
+
+.panel-hero .kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--machine);
+  margin-bottom: 8px;
+}
+
+.panel-hero h1 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+}
+
+.panel-hero p {
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 6px;
+  max-width: 880px;
+}
+
+.panel-hero p strong { color: var(--fg); font-weight: 500; }
+
+/* ══════════════════════════════════════════════════════════
+ * Section cards (reused across tabs)
+ * ══════════════════════════════════════════════════════════ */
+.section {
+  background: var(--ink-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.section.accent { border-color: var(--machine); }
+
+.section-head {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.section-head .num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.section-head .title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.section-head .chip-mini {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  background: var(--machine-wash);
+  color: var(--machine);
+  border: 1px solid var(--machine-wash);
+}
+
+.section-head .chip-mini.pass { background: var(--pass-bg); color: var(--pass); border-color: var(--pass); }
+.section-head .chip-mini.warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.section-head .spacer { flex: 1; }
+
+.section-body { padding: 18px; }
+
+/* ══════════════════════════════════════════════════════════
+ * OVERVIEW TAB
+ * ══════════════════════════════════════════════════════════ */
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.metric-tile {
+  background: var(--ink-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 18px 20px;
+}
+
+.metric-tile.primary {
+  background: var(--machine);
+  color: var(--ink-0);
+  border-color: var(--machine);
+}
+
+.metric-tile .k {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.metric-tile.primary .k { color: var(--ink-0); opacity: 0.75; }
+
+.metric-tile .v {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.metric-tile .v small {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.metric-tile .sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-top: 5px;
+  letter-spacing: 0.04em;
+}
+
+.metric-tile.primary .sub { color: var(--ink-0); opacity: 0.7; }
+
+/* Phase list */
+.phase-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.phase-card {
+  background: var(--ink-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 16px 18px;
+}
+
+.phase-card .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.phase-card .num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--machine);
+  font-weight: 700;
+  background: var(--machine-wash);
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+
+.phase-card .title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.phase-card .meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-left: auto;
+  letter-spacing: 0.04em;
+}
+
+.phase-card .milestone {
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.phase-card .progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.phase-card .progress-row .bar-track {
+  flex: 1;
+  height: 4px;
+  background: var(--ink-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.phase-card .progress-row .bar-fill {
+  height: 100%;
+  background: var(--machine);
+  border-radius: 2px;
+  transition: width 300ms ease;
+}
+
+.phase-card .progress-row .bar-fill.pass { background: var(--pass); }
+
+.phase-card .progress-row .pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Slice grid */
+.slice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.slice-table thead th {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--hairline);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 500;
+  background: var(--ink-1);
+}
+
+.slice-table tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--fg);
+  vertical-align: top;
+}
+
+.slice-table tbody tr:last-child td { border-bottom: none; }
+
+.slice-table tbody tr:hover td {
+  background: color-mix(in oklab, var(--machine) 5%, transparent);
+}
+
+.slice-table .col-id {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--machine);
+  font-weight: 600;
+  width: 56px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.slice-table .col-name {
+  font-weight: 500;
+}
+
+.slice-table .col-phase {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  width: 100px;
+}
+
+.slice-table .col-deps {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.04em;
+}
+
+.slice-table .col-status {
+  width: 130px;
+}
+
+.slice-table .value-short {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Status chip (clickable) */
+.status-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  transition: all 140ms ease;
+}
+
+.status-chip[data-status="not_started"] {
+  background: var(--ink-3);
+  color: var(--fg-muted);
+  border-color: var(--hairline);
+}
+
+.status-chip[data-status="in_progress"] {
+  background: var(--machine-wash);
+  color: var(--machine);
+  border-color: var(--machine);
+}
+
+.status-chip[data-status="in_review"] {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.status-chip[data-status="shipped"] {
+  background: var(--pass-bg);
+  color: var(--pass);
+  border-color: var(--pass);
+}
+
+.status-chip:hover {
+  filter: brightness(1.15);
+}
+
+/* Principle banner */
+.principle-banner {
+  background: var(--machine-wash);
+  border: 1px solid var(--machine);
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.principle-banner .kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--machine);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.principle-banner .body {
+  font-size: 13.5px;
+  color: var(--fg);
+  line-height: 1.55;
+}
+
+.principle-banner .body em {
+  color: var(--machine);
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════
+ * Content (generic) — used in IA Audit, Ledger, Data Model, Lifecycle
+ * ══════════════════════════════════════════════════════════ */
+.content {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 32px;
+}
+
+.content-toc {
+  position: sticky;
+  top: 130px;
+  align-self: start;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--ink-1);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+}
+
+.content-toc .toc-kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--machine);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.content-toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.content-toc ol li {
+  padding: 4px 0;
+}
+
+.content-toc ol li a {
+  color: var(--fg-muted);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  display: block;
+  padding: 4px 0;
+  border-left: 2px solid transparent;
+  padding-left: 10px;
+  transition: color 120ms, border-color 120ms;
+}
+
+.content-toc ol li a:hover,
+.content-toc ol li a.active {
+  color: var(--machine);
+  border-left-color: var(--machine);
+  text-decoration: none;
+}
+
+.content-body {
+  min-width: 0;
+}
+
+.content-body h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 32px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.content-body h2:first-child { margin-top: 0; }
+
+.content-body h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 24px 0 10px;
+}
+
+.content-body h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--machine);
+  margin: 16px 0 8px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.content-body p {
+  font-size: 13.5px;
+  color: var(--fg);
+  line-height: 1.65;
+  margin: 10px 0;
+}
+
+.content-body p strong { color: var(--machine); font-weight: 500; }
+
+.content-body ul, .content-body ol {
+  font-size: 13.5px;
+  color: var(--fg);
+  line-height: 1.65;
+  margin: 10px 0;
+  padding-left: 24px;
+}
+
+.content-body ul li, .content-body ol li { margin: 6px 0; }
+
+.content-body ul li::marker { color: var(--fg-dim); }
+
+.content-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 12.5px;
+}
+
+.content-body table th {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--hairline);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 500;
+  background: var(--ink-1);
+  vertical-align: top;
+}
+
+.content-body table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--fg);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.content-body table tr:last-child td { border-bottom: none; }
+
+.content-body blockquote {
+  margin: 14px 0;
+  padding: 10px 18px;
+  border-left: 3px solid var(--machine);
+  background: var(--machine-wash);
+  font-size: 13.5px;
+  color: var(--fg);
+  line-height: 1.6;
+}
+
+.content-body hr {
+  border: none;
+  border-top: 1px solid var(--hairline);
+  margin: 24px 0;
+}
+
+/* Collapsible detail cards */
+details.slice-detail {
+  background: var(--ink-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+details.slice-detail summary {
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+details.slice-detail summary::-webkit-details-marker { display: none; }
+
+details.slice-detail summary::before {
+  content: "▸";
+  color: var(--fg-dim);
+  font-size: 10px;
+  transition: transform 180ms ease;
+  flex-shrink: 0;
+}
+
+details.slice-detail[open] summary::before {
+  transform: rotate(90deg);
+}
+
+details.slice-detail summary .sid {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--machine);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  min-width: 40px;
+}
+
+details.slice-detail summary .sname {
+  flex: 1;
+  font-weight: 500;
+  font-size: 13.5px;
+}
+
+details.slice-detail summary .sphase {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+details.slice-detail > div {
+  padding: 16px 18px 18px 18px;
+  border-top: 1px solid var(--hairline);
+  background: var(--ink-1);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--fg);
+}
+
+details.slice-detail > div h5 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--machine);
+  font-weight: 600;
+  margin: 14px 0 6px;
+}
+
+details.slice-detail > div h5:first-child { margin-top: 0; }
+
+details.slice-detail > div p { margin: 4px 0; }
+
+details.slice-detail > div ul {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+/* Preview grid (on previews tab) */
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.preview-card {
+  background: var(--ink-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 18px 20px;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.preview-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--machine-wash);
+}
+
+.preview-card .kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--machine);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.preview-card .title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fg);
+  margin-bottom: 8px;
+}
+
+.preview-card .body {
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.preview-card .link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--machine);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid var(--machine-wash);
+  background: var(--machine-wash);
+  border-radius: 3px;
+  margin-right: 8px;
+}
+
+.preview-card .link:hover { background: var(--machine); color: var(--ink-0); text-decoration: none; }
+
+.preview-card .link.alt {
+  background: var(--ink-3);
+  color: var(--fg);
+  border-color: var(--hairline);
+}
+
+/* Callout */
+.callout {
+  padding: 14px 18px;
+  background: var(--machine-wash);
+  border: 1px dashed var(--machine-wash);
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin: 18px 0;
+}
+
+.callout strong { color: var(--machine); font-weight: 500; }
+
+/* Stats strip (inline counters) */
+.stats-strip {
+  display: flex;
+  gap: 18px;
+  padding: 14px 20px;
+  background: var(--ink-1);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.stats-strip .stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stats-strip .stat .k {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.stats-strip .stat .v {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.stats-strip .stat.shipped .v { color: var(--pass); }
+.stats-strip .stat.progress .v { color: var(--machine); }
+.stats-strip .stat.review .v { color: var(--warn); }
+
+/* Deps badge */
+.dep-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--machine);
+  background: var(--machine-wash);
+  border-radius: 2px;
+  margin-right: 4px;
+  font-weight: 500;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.14); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .content { grid-template-columns: 1fr; }
+  .content-toc { position: static; }
+  .hero-metrics { grid-template-columns: repeat(2, 1fr); }
+  .phase-list { grid-template-columns: 1fr; }
+  .tab-panel { padding: 20px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TOP BAR                                                    -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="top-bar">
+  <div class="klogo">K</div>
+  <div class="top-title">Kerf</div>
+  <span class="top-sep">·</span>
+  <div class="top-subtitle">Implementation Plan</div>
+  <div class="top-meta">2026-04-19 · Site Board</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TAB NAV                                                    -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<nav class="tab-nav" id="tabnav">
+  <div class="tab active" data-tab="overview">◉ Overview</div>
+  <div class="tab" data-tab="ia-audit">⚑ IA Audit</div>
+  <div class="tab" data-tab="ledger">⚙ Micro-Details Ledger</div>
+  <div class="tab" data-tab="data-model">▤ Data Model Delta</div>
+  <div class="tab" data-tab="slices">⚒ Vertical Slices <span class="count">51</span></div>
+  <div class="tab" data-tab="lifecycle">◎ Lifecycle Flow</div>
+  <div class="tab" data-tab="previews">⚘ Previews</div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  OVERVIEW TAB                                               -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="panel-overview">
+
+  <div class="panel-hero">
+    <div class="kicker">Implementation Plan</div>
+    <h1>How we build Kerf from here</h1>
+    <p>
+      Everything needed to take the lifecycle design, the Site Board UI, the quoting-detail drill, and the state machine
+      from design into a shipping product. <strong>51 vertical slices across 8 phases.</strong> Each slice delivers a working persona journey.
+      Each slice is preview-linked. Each slice has a fidelity gate.
+    </p>
+    <p>
+      Progress persists in your browser — click any status chip in the slice table below to cycle it
+      (<em>Not started → In progress → In review → Shipped</em>). Refresh-safe.
+    </p>
+  </div>
+
+  <!-- Principle banner -->
+  <div class="principle-banner">
+    <div class="kicker">Principle #15 — governs every slice</div>
+    <div class="body">
+      <em>Advise, highlight, keep logical, do what you're told.</em>
+      The contractor controls state transitions. Kerf advises with context, highlights issues, enforces only logical-necessity preconditions,
+      and does what the operator asks. No auto-transitions on inferred facts. No blockers on "best practice." Nudges only.
+    </div>
+  </div>
+
+  <!-- Hero metrics -->
+  <div class="hero-metrics">
+    <div class="metric-tile primary">
+      <div class="k">Total slices</div>
+      <div class="v">51</div>
+      <div class="sub" id="hero-completion">0 of 51 complete</div>
+    </div>
+    <div class="metric-tile">
+      <div class="k">In progress</div>
+      <div class="v" id="hero-in-progress">0</div>
+      <div class="sub">actively being built</div>
+    </div>
+    <div class="metric-tile">
+      <div class="k">In review</div>
+      <div class="v" id="hero-in-review">0</div>
+      <div class="sub">awaiting fidelity check</div>
+    </div>
+    <div class="metric-tile">
+      <div class="k">Shipped</div>
+      <div class="v" id="hero-shipped">0</div>
+      <div class="sub">persona-tested, merged</div>
+    </div>
+  </div>
+
+  <!-- Phases -->
+  <div class="section">
+    <div class="section-head">
+      <span class="num">01</span>
+      <span class="title">⚑ Phases</span>
+      <span class="chip-mini">8</span>
+    </div>
+    <div class="section-body">
+      <div class="phase-list" id="phase-list">
+        <!-- Phase cards injected by JS using PHASES data -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Slice table -->
+  <div class="section">
+    <div class="section-head">
+      <span class="num">02</span>
+      <span class="title">⚒ Slices</span>
+      <span class="chip-mini">51</span>
+      <span class="spacer"></span>
+      <span style="font-family:'IBM Plex Mono';font-size:10px;letter-spacing:0.04em;color:var(--fg-dim);">tap status chip to cycle</span>
+    </div>
+    <table class="slice-table" id="slice-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Phase</th>
+          <th>Depends</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="slice-tbody">
+        <!-- Rows injected by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Quick links -->
+  <div class="section">
+    <div class="section-head">
+      <span class="num">03</span>
+      <span class="title">⚘ Quick Links</span>
+    </div>
+    <div class="section-body" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+      <a class="preview-card" href="project-screen-lifecycle.html">
+        <div class="kicker">HTML · Static</div>
+        <div class="title">Lifecycle — 6 states</div>
+        <div class="body">Full-fidelity screens: LEAD → QUOTED → ACCEPTED → ACTIVE → PC → CLOSED.</div>
+        <span class="link">Open →</span>
+      </a>
+      <a class="preview-card" href="quoting-detail-mockups.html">
+        <div class="kicker">HTML · Static</div>
+        <div class="title">Quoting detail drill</div>
+        <div class="body">WorkItem inspector · labour lineage · item price history · methodology · provenance.</div>
+        <span class="link">Open →</span>
+      </a>
+      <a class="preview-card" href="project-screen-mockups.html">
+        <div class="kicker">HTML · Static</div>
+        <div class="title">Structural options</div>
+        <div class="body">Option A.1 (QUOTED document) · A.2 (sectioned scroll) · B (tabbed) · C (recommended).</div>
+        <span class="link">Open →</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  IA AUDIT TAB                                               -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-ia-audit">
+
+  <div class="panel-hero">
+    <div class="kicker">Design · IA Audit</div>
+    <h1>Project Screen — Information Architecture</h1>
+    <p>Every capability from <code>PRODUCT_VISION §3</code> mapped to its Project-screen surface. Nothing orphaned. Seven meta-tabs, dashboards inside each, quick-action cards per state with MCP tools + conversational flows.</p>
+  </div>
+
+  <div class="content">
+    <aside class="content-toc">
+      <div class="toc-kicker">In this doc</div>
+      <ol>
+        <li><a href="#ia-principles">1. Principles</a></li>
+        <li><a href="#ia-navigation">2. Navigation shape</a></li>
+        <li><a href="#ia-meta-tabs">3. Seven meta-tabs</a></li>
+        <li><a href="#ia-feature-map">4. Feature map</a></li>
+        <li><a href="#ia-tab-detail">5. Meta-tab dashboards</a></li>
+        <li><a href="#ia-quick-actions">6. Quick-action cards</a></li>
+        <li><a href="#ia-overlays">7. Overlays</a></li>
+        <li><a href="#ia-orphan-check">8. Orphan check</a></li>
+        <li><a href="#ia-decisions">9. Decisions locked</a></li>
+        <li><a href="#ia-home-screen">10. Home screen (follow-on)</a></li>
+      </ol>
+    </aside>
+
+    <div class="content-body">
+      <h2 id="ia-principles">1. Principles</h2>
+      <ol>
+        <li><strong>Operator controls state transitions</strong> (Principle #15). Dashboard surfaces urgent items; tabs and quick-actions never auto-fire.</li>
+        <li><strong>Conversation is primary</strong> (<code>§3.13</code>, <code>§3.15</code>). Every tap has a voice equivalent. Every card is a shortcut for a chat intent.</li>
+        <li><strong>Dashboards all the way down.</strong> Meta-tabs open to their own dashboards, not sub-tabs. Drill happens by clicking entities.</li>
+        <li><strong>Canvas on demand</strong> (<code>§3.15</code>). Open questions render a canvas in a middle pane.</li>
+        <li><strong>Graph-native everything.</strong> Every number traces to the graph.</li>
+      </ol>
+
+      <h2 id="ia-navigation">2. Navigation shape</h2>
+      <pre><code>┌──────────────────────────────────────────────────────────────┐
+│ Header: project · state chip · overlay chips · metric · CTA   │
+├──────────────────────────────────────────────────────────────┤
+│ Meta-tabs: Dashboard │ Work │ Site │ Money │ Contract │ Docs │ People │
+├──────────────────────────────────────────────────────────────┤
+│ Meta-tab body:                                                │
+│   → State-aware dashboard for that meta-tab                   │
+│     → Click entity → drill into full record                   │
+│     → No sub-tabs                                             │
+└──────────────────────────────────────────────────────────────┘
+ Agent panel persistent on left (desktop) / FAB on mobile</code></pre>
+
+      <h2 id="ia-meta-tabs">3. Seven meta-tabs</h2>
+      <table>
+        <thead><tr><th>#</th><th>Meta-tab</th><th>Scope</th><th>Global surface</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Dashboard</strong></td><td>State-aware primary surface. "What matters right now."</td><td>—</td></tr>
+          <tr><td>2</td><td><strong>Work</strong></td><td>Scope, WorkItems, Variations, Schedule, Daily logs, Timeline</td><td>Global Projects / Schedule</td></tr>
+          <tr><td>3</td><td><strong>Site</strong></td><td>Safety, Quality, Crew, Equipment — everything on the jobsite</td><td>Global Inspections, Workers, Equipment</td></tr>
+          <tr><td>4</td><td><strong>Money</strong></td><td>Invoices, payments, cost tracking, margin, variations (financial)</td><td>Global Finance</td></tr>
+          <tr><td>5</td><td><strong>Contract</strong></td><td>Terms, assumptions, exclusions, warranty, retention, documents, disputes</td><td>—</td></tr>
+          <tr><td>6</td><td><strong>Docs</strong></td><td>All uploaded files (plans, specs, photos, permits, COIs, reports)</td><td>Global Docs</td></tr>
+          <tr><td>7</td><td><strong>People</strong></td><td>Client contacts, GC, subs, inspectors — with role chips</td><td>Global Workers, Subs</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ia-feature-map">4. Feature map · every §3 item placed</h2>
+      <p>Every capability from PRODUCT_VISION §3.1 through §3.15 is mapped to a meta-tab + state-surfacing rule. Here's the summary:</p>
+      <table>
+        <thead><tr><th>§</th><th>Capability</th><th>Primary surface</th><th>Reaches main Dashboard when</th></tr></thead>
+        <tbody>
+          <tr><td>3.1</td><td>Find &amp; Qualify Work</td><td>LEAD Dashboard + People</td><td>Cert gaps, capacity conflicts</td></tr>
+          <tr><td>3.2</td><td>Estimate &amp; Price</td><td>QUOTED Dashboard + Work → Scope</td><td>Regulatory gaps, missing quantities</td></tr>
+          <tr><td>3.3</td><td>Propose &amp; Win</td><td>QUOTED → ACCEPTED transitions</td><td>Client action on magic link</td></tr>
+          <tr><td>3.4</td><td>Plan &amp; Mobilise</td><td>Work → Schedule + Site → Crew/Equipment</td><td>Booking conflicts, expiring certs</td></tr>
+          <tr><td>3.5</td><td>Execute &amp; Document</td><td>ACTIVE Dashboard + Site meta-tab</td><td>Open hazards, CAs, deficiencies</td></tr>
+          <tr><td>3.6</td><td>Manage Money</td><td>Money meta-tab + Work → Variations</td><td>Variance, draft variations</td></tr>
+          <tr><td>3.7</td><td>Close Out</td><td>PC Dashboard + Site → Quality</td><td>PC readiness check</td></tr>
+          <tr><td>3.8</td><td>Get Paid</td><td>Money meta-tab</td><td>Outstanding / overdue invoices</td></tr>
+          <tr><td>3.9</td><td>Learn</td><td>CLOSED Dashboard + canvas (ad-hoc)</td><td>Insights harvested</td></tr>
+          <tr><td>3.10</td><td>Safety &amp; Compliance</td><td>Site → Safety</td><td>Expiring certs, failed inspections</td></tr>
+          <tr><td>3.11</td><td>Sub Management</td><td>People meta-tab + Site → Crew</td><td>Sub compliance issues, COI expiry</td></tr>
+          <tr><td>3.12</td><td>The Agent</td><td>Persistent agent panel (every tab)</td><td>Agent-drafted items for approval</td></tr>
+          <tr><td>3.13</td><td>Voice &amp; Mobile</td><td>Agent panel voice + mobile FAB</td><td>One utterance → many writes</td></tr>
+          <tr><td>3.14</td><td>Email as Channel</td><td>Agent panel (compose) + Timeline/Docs (history)</td><td>Inbound reply events</td></tr>
+          <tr><td>3.15</td><td>Conversation &amp; Canvas</td><td>Canvas pane (middle, opens on demand)</td><td>Ad-hoc questions</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ia-tab-detail">5. Meta-tab dashboards · state-aware</h2>
+
+      <h3>Dashboard</h3>
+      <p>The state-aware primary surface. Content reshapes per state; frame is consistent.</p>
+      <ul>
+        <li><strong>LEAD</strong> — next-action card · Peachtree reference · client card · quick-actions</li>
+        <li><strong>QUOTED</strong> — the quote document (7 numbered sections: WorkItems · Assumptions · Exclusions · Payment Schedule · Warranty · Retention · Sources)</li>
+        <li><strong>ACCEPTED</strong> — contract-reference strip · planned-start tiles · "Before we start" checklist · recent activity</li>
+        <li><strong>ACTIVE</strong> — "⚡ Needs your call" panel · progress by WorkItem · today · quick actions</li>
+        <li><strong>PC</strong> — PC date / final value / margin / DLP tiles · close-out status · DLP defects · insights harvested</li>
+        <li><strong>CLOSED</strong> — revive card · final summary · collapsed timeline</li>
+      </ul>
+
+      <h3>Work</h3>
+      <p>Scope · WorkItems · Variations · Schedule · Daily logs · Timeline. Dashboard surfaces state-relevant cuts of each.</p>
+
+      <h3>Site (renamed from Field)</h3>
+      <p>Safety · Quality · Crew · Equipment. Rationale: <strong>one daily site walk produces all four surfaces' data.</strong> Quality belongs with Safety (same engine, same rhythm), not with Work.</p>
+
+      <h3>Money</h3>
+      <p>Invoices · Payments · Cost tracking · Margin · Variations (financial view) · QuickBooks sync · Retention.</p>
+
+      <h3>Contract</h3>
+      <p>ContractVersion history · Assumptions · Exclusions · Warranty · Retention terms · Jurisdiction · Signed documents · <strong>Disputes</strong> (with prominent chip when open).</p>
+
+      <h3>Docs</h3>
+      <p>Plans · Specs · Contracts · Permits · COIs · Photos · Reports · Emails.</p>
+
+      <h3>People</h3>
+      <p>One tab with <strong>role chips</strong> distinguishing Client · GC · Subs · Inspectors · Own crew. When Sarah works AS a sub for Peterson GC, Peterson's compliance requirements (prequal, COI, training) live on the Peterson contact drill inside People.</p>
+
+      <h2 id="ia-quick-actions">6. Quick-action cards · MCP tools + voice equivalents</h2>
+      <p>Every quick-action card is a <strong>chat intent shortcut</strong>. Tapping dispatches a message the agent handles through its normal path. Full mapping in <a href="#" onclick="switchTab('slices'); return false;">Slices</a> and the ledger.</p>
+
+      <h4>Main Dashboard · LEAD</h4>
+      <table>
+        <thead><tr><th>Card</th><th>MCP tool</th><th>Voice equivalent</th></tr></thead>
+        <tbody>
+          <tr><td>Schedule visit</td><td><code>schedule_project_event</code></td><td>"Schedule a site walk for Thursday at 9."</td></tr>
+          <tr><td>Start scope now</td><td><code>start_voice_scope_capture</code></td><td>"Start scope capture."</td></tr>
+          <tr><td>Draft email</td><td><code>draft_client_email</code></td><td>"Draft an email to Gary about scheduling."</td></tr>
+          <tr><td>Mark lost</td><td><code>mark_project_closed</code> (reason: lead_lost)</td><td>"Mark this lead as lost — went with someone else."</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Main Dashboard · ACTIVE (abbreviated)</h4>
+      <table>
+        <thead><tr><th>Card</th><th>MCP tool</th></tr></thead>
+        <tbody>
+          <tr><td>Log time</td><td><code>log_time_entry</code></td></tr>
+          <tr><td>Daily log</td><td><code>capture_daily_log</code></td></tr>
+          <tr><td>Photo</td><td><code>capture_photo</code></td></tr>
+          <tr><td>Draft variation</td><td><code>draft_variation_from_chat</code></td></tr>
+          <tr><td>Send progress invoice</td><td><code>send_invoice</code> (type: interim)</td></tr>
+          <tr><td>Pause project</td><td><code>pause_project</code></td></tr>
+          <tr><td>Declare PC</td><td><code>declare_practical_completion</code></td></tr>
+        </tbody>
+      </table>
+      <p>Full table for every state in the source doc <code>project-screen-ia-audit.md §7</code>.</p>
+
+      <h2 id="ia-overlays">7. Overlays</h2>
+      <table>
+        <thead><tr><th>Overlay</th><th>Where it shows</th><th>Interaction</th></tr></thead>
+        <tbody>
+          <tr><td><strong>PAUSED</strong> (on_hold / suspended)</td><td>Warn-yellow chip on header + body band above meta-tab content</td><td>Click → pause record with reason + timeline + resume timer</td></tr>
+          <tr><td><strong>DLP_OPEN</strong></td><td>Muted chip on header; section in Contract meta-tab</td><td>Click → DLP details + defects register</td></tr>
+          <tr><td><strong>RETENTION_HELD</strong></td><td>Muted chip on header; tile in Money meta-tab</td><td>Click → retention entity + release schedule</td></tr>
+          <tr><td><strong>DISPUTE_OPEN</strong></td><td>Red chip on header; prominent section in Contract; "Needs your call" card</td><td>Click → Dispute entity lifecycle</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ia-orphan-check">8. Orphan check — every §3 covered</h2>
+      <p>All fifteen items from PRODUCT_VISION §3.1–§3.15 are accounted for in the feature map above. <strong>No feature lives only in design-dead-space.</strong></p>
+
+      <h2 id="ia-decisions">9. Decisions locked</h2>
+      <ol>
+        <li>Seven meta-tabs, fixed across states. Dashboard · Work · Site · Money · Contract · Docs · People.</li>
+        <li>Dashboard inside each meta-tab, no sub-tabs.</li>
+        <li>Site meta-tab (renamed from Field) groups Safety + Quality + Crew + Equipment. Rationale: one daily site walk.</li>
+        <li>Disputes live inside Contract meta-tab.</li>
+        <li>Quick-action cards are chat intents. Every card has MCP tool + voice equivalent.</li>
+        <li>Canvas opens in a new middle pane between chat and project. Project minimises right.</li>
+        <li>People meta-tab uses role chips, not split tabs.</li>
+        <li>WorkPackage groupings shown in Work → Scope with expand/collapse.</li>
+        <li>Overlays render as header chips + body bands.</li>
+        <li>Every tap has a voice equivalent — no tap-only paths.</li>
+        <li>A separate Home screen covers cross-project concerns — see §10.</li>
+      </ol>
+
+      <h2 id="ia-home-screen">10. Home screen (follow-on design pass)</h2>
+      <p>Project screen is project-scoped. Kerf also needs a <strong>Home screen</strong> at the app level — the default landing after login.</p>
+      <p>Home surfaces: morning brief (cross-project), active projects summary (card per project), "Needs your call" aggregate, pipeline, cash overview, canvas entry for cross-project questions.</p>
+      <p>Home is NOT a replacement for per-project detail. It summarises and routes. The Project screen is where the work lives. Its own design pass — not in this document.</p>
+
+      <div class="callout">
+        <strong>Source:</strong> <code>docs/design/project-screen-ia-audit.md</code> for the full detail (12+ sections, all MCP tools per state, dependency tables). This tab is the summary view.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  MICRO-DETAILS LEDGER TAB                                   -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-ledger">
+
+  <div class="panel-hero">
+    <div class="kicker">Design · Micro-Details Ledger</div>
+    <h1>Fidelity details that must not get lost</h1>
+    <p>
+      Living document. Every visual and interaction detail from the Site Board previews that gets re-interpreted when a ticket says
+      <em>"build the Project header"</em> and the developer doesn't have the preview in a second window. <strong>31 sections</strong> of rules.
+    </p>
+  </div>
+
+  <div class="content">
+    <aside class="content-toc">
+      <div class="toc-kicker">Sections</div>
+      <ol>
+        <li><a href="#l1">1 Layout shell</a></li>
+        <li><a href="#l2">2 Top header</a></li>
+        <li><a href="#l3">3 Tab bar</a></li>
+        <li><a href="#l4">4 State chips</a></li>
+        <li><a href="#l5">5 Overlay chips</a></li>
+        <li><a href="#l6">6 Metric tiles</a></li>
+        <li><a href="#l7">7 Section cards</a></li>
+        <li><a href="#l8">8 WorkItem table</a></li>
+        <li><a href="#l9">9 Progress bars</a></li>
+        <li><a href="#l10">10 Chat pane</a></li>
+        <li><a href="#l11">11 Inspector panel</a></li>
+        <li><a href="#l12">12 Quick-action cards</a></li>
+        <li><a href="#l13">13 Needs-your-call panel</a></li>
+        <li><a href="#l14">14 Insight cards</a></li>
+        <li><a href="#l15">15 Methodology cascade</a></li>
+        <li><a href="#l16">16 Lineage equation</a></li>
+        <li><a href="#l17">17 Provenance tree</a></li>
+        <li><a href="#l18">18 Source tags</a></li>
+        <li><a href="#l19">19 Confidence meter</a></li>
+        <li><a href="#l20">20 Timeline entries</a></li>
+        <li><a href="#l21">21 Contract-ref strip</a></li>
+        <li><a href="#l26">26 Animations</a></li>
+        <li><a href="#l27">27 Typography</a></li>
+        <li><a href="#l28">28 Colour semantics</a></li>
+      </ol>
+    </aside>
+
+    <div class="content-body">
+
+      <h2 id="l1">1 Layout shell</h2>
+      <ul>
+        <li><strong>Icon rail:</strong> exactly 48px wide, <code>--ink-1</code> background, 1px hairline right border. Logo tile 28×28 at top, machine yellow, white "K". Rail buttons 32×32, 6px gap. Active button has <code>--ink-3</code> bg + machine-yellow icon.</li>
+        <li><strong>Agent panel:</strong> 300–320px desktop width, <code>--ink-1</code> background. Three regions: header, body (flex-1 overflow-y-auto), input. On mobile: floating action button expanding to fullscreen chat.</li>
+        <li><strong>Project canvas:</strong> <code>--ink-0</code> background. Canvas body padding 22px.</li>
+      </ul>
+
+      <h2 id="l2">2 Top header</h2>
+      <ul>
+        <li><strong>Height ≈ 54px</strong> (14px padding top/bottom + content), <code>--ink-2</code> bg, 1px hairline bottom border.</li>
+        <li><strong>Logo tile:</strong> 22×22px, machine yellow, white "K" — same treatment as icon-rail logo but smaller.</li>
+        <li><strong>Project title:</strong> 15px semibold. Left of the project code.</li>
+        <li><strong>Project code:</strong> mono, 11px, 0.06em, machine-yellow text on <code>--machine-wash</code> bg. Reads like a stamped part number.</li>
+        <li><strong>Dot separators</strong> (·) mono 11px <code>--fg-dim</code>.</li>
+        <li><strong>Client name:</strong> mono, 11px uppercase, <code>--fg-muted</code>.</li>
+        <li><strong>State chip:</strong> full-strength per-state styling (§4).</li>
+        <li><strong>Right cluster:</strong> 2-line total (kicker above value, right-aligned) + CTA button.</li>
+      </ul>
+
+      <h2 id="l3">3 Tab bar</h2>
+      <ul>
+        <li><strong>Background</strong> <code>--ink-1</code>. Horizontal padding 22px.</li>
+        <li><strong>Tab padding:</strong> 12px top, 14px horizontal, 11px bottom.</li>
+        <li><strong>Tab typography:</strong> mono, 11px, 0.06em, uppercase, 500.</li>
+        <li><strong>Active tab:</strong> text <code>--machine</code>, background <code>--ink-0</code> (reads as cut into content below), 2px machine-yellow bottom border.</li>
+        <li><strong>Disabled tab:</strong> text <code>--fg-dim</code>, opacity 0.4. Used when state doesn't have that data yet.</li>
+        <li><strong>Count badges:</strong> small inline pill at 10px mono, <code>--ink-3</code> bg on inactive, <code>--machine-wash</code> on active.</li>
+        <li><strong>Do not add icons inside tabs</strong> — the tab name already starts with a glyph.</li>
+      </ul>
+
+      <h2 id="l4">4 State chips · per lifecycle state</h2>
+      <table>
+        <thead><tr><th>State</th><th>Background</th><th>Text</th><th>Border</th><th>Semantic</th></tr></thead>
+        <tbody>
+          <tr><td><code>LEAD</code></td><td><code>--ink-3</code></td><td><code>--fg-muted</code></td><td>hairline</td><td>Neutral; barely a project yet</td></tr>
+          <tr><td><code>QUOTED</code></td><td><code>--machine</code> solid</td><td><code>--ink-0</code></td><td><code>--machine</code></td><td>Loud — a quote is a commitment</td></tr>
+          <tr><td><code>ACCEPTED</code></td><td><code>--machine-wash</code></td><td><code>--machine</code></td><td><code>--machine</code></td><td>Yellow-tinted; signed but not yet moving</td></tr>
+          <tr><td><code>ACTIVE</code></td><td><code>--pass-bg</code></td><td><code>--pass</code></td><td><code>--pass</code></td><td>Green — work underway</td></tr>
+          <tr><td><code>PC</code></td><td><code>--warn-bg</code></td><td><code>--warn</code></td><td><code>--warn</code></td><td>Amber — transitional, not done-done</td></tr>
+          <tr><td><code>CLOSED</code></td><td><code>--ink-4</code></td><td><code>--fg-muted</code></td><td>hairline</td><td>Neutral — archived</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Rule:</strong> never change these colours per context. State transition animation: chip pulses once (scale 1 → 1.08 → 1, ~500ms) after the colour swap.</p>
+
+      <h2 id="l5">5 Overlay chips</h2>
+      <ul>
+        <li><code>PAUSED</code> chip always prefixed <code>⏸</code>, warn-yellow bg/text. <strong>Also renders a body band</strong> above the meta-tab content with reason, paused-at, who, expected resume, cure deadline. Don't collapse this into the chip alone.</li>
+        <li><code>DLP_OPEN</code>, <code>RETENTION_HELD</code> — muted chips.</li>
+        <li><code>DISPUTE_OPEN</code> — loud red. Count also appears on Contract tab.</li>
+      </ul>
+
+      <h2 id="l6">6 Metric tiles</h2>
+      <ul>
+        <li><strong>Grid:</strong> 4 equal columns, 12px gap.</li>
+        <li><strong>Primary tile</strong> (always first): <code>--machine</code> bg, <code>--ink-0</code> text. The "most important metric for this state".</li>
+        <li><strong>Tile anatomy:</strong> kicker (10px mono 0.12em uppercase) · value (22px mono 600) · sub (optional 11px mono).</li>
+        <li><strong>Variance colouring:</strong> sub becomes <code>--fail</code> when over-budget, <code>--pass</code> when favourable.</li>
+      </ul>
+
+      <h2 id="l7">7 Section cards</h2>
+      <ul>
+        <li><code>--ink-2</code> bg, 1px hairline border, 4px radius, 14px margin-bottom.</li>
+        <li><code>accent</code> variant: border <code>--machine</code>. <code>warn</code> variant: border <code>--warn</code>.</li>
+        <li><strong>Section head:</strong> <code>num · title · chip-mini · spacer · action</code>.</li>
+        <li><strong>Glyph vocabulary:</strong> ⚒ Work/Scope · ⬒ Variations · ⚠ Assumptions · ⊘ Exclusions · ⚭ Payment · ❑ Warranty · ▤ Retention · ⚙ Sources/Items · ◉ Dashboard/Today · ◎ Conversation/Timeline · ⚑ Insight · ⚡ Needs-your-call · ⛏ Labour · ✧ Methodology · ⚬ Provenance · ⟲ Revive. Implementers must not omit.</li>
+      </ul>
+
+      <h2 id="l8">8 WorkItem table</h2>
+      <ul>
+        <li><strong>Header row:</strong> mono 10px 0.06em uppercase <code>--fg-muted</code> on <code>--ink-1</code> bg.</li>
+        <li><strong>Sell column</strong> always in <code>--machine</code> colour, 500 weight. Visual anchor for the money decision.</li>
+        <li><strong>Margin column</strong> always in <code>--pass</code>.</li>
+        <li><strong>Sub-chips</strong> on description cells: default (<code>--ink-3</code> + muted) for refs like "← Peachtree"; insight (<code>--machine-wash</code> + machine) for "⚑ +15% insight".</li>
+        <li><strong>Selected row:</strong> <code>--machine-wash</code> bg, 3px machine-yellow left-border, padding-left reduced by 3 — row depth doesn't change.</li>
+      </ul>
+
+      <h2 id="l9">9 Progress bars</h2>
+      <ul>
+        <li>Track 4px tall, <code>--ink-3</code>, 2px radius.</li>
+        <li>Fill default <code>--machine</code>. <strong>At 100% flips to <code>--pass</code></strong> (green) — visual reward for completion.</li>
+        <li>Percentage label mono 10px, never drops the % sign.</li>
+        <li>Min container width 110px.</li>
+      </ul>
+
+      <h2 id="l10">10 Chat pane — the event icon requirement</h2>
+      <p>This is the area specifically flagged as easy to lose.</p>
+
+      <h4>Event markers (distinct from messages)</h4>
+      <ul>
+        <li><strong>Dashed border</strong> (not solid) — <code>1px dashed --hairline</code>.</li>
+        <li><strong>Background <code>--ink-2</code></strong> (same as Kerf bubbles, dashed border separates them as a class).</li>
+        <li><strong>Padding 8×10px.</strong></li>
+        <li><strong>Typography mono 10.5px 0.04em <code>--fg-muted</code></strong> — explicitly smaller than messages.</li>
+        <li><strong>No avatar, no "who" line</strong> — events are system-generated.</li>
+        <li><strong>Always prefixed with <code>◈</code></strong> (diamond glyph). Present on every event.</li>
+        <li><strong>Strong text inside events uses <code>--machine</code></strong> for entity names, sums, keywords.</li>
+      </ul>
+
+      <p><strong>Implementation guard:</strong> events are their own component, not a styled variant of ChatBubble. Build <code>ChatEvent</code> separately so the visual contract can't regress.</p>
+
+      <pre><code>◈ Event · Gary accepted via magic link · 16:22 · signed as Gary Pemberton
+◈ Event · ContractVersion v1 locked · $121,200 · 5% · 30d · AZ
+◈ DLP expired · retention released $6,152</code></pre>
+
+      <h4>Message bubbles</h4>
+      <ul>
+        <li><strong>User:</strong> <code>--machine</code> bg, <code>--ink-0</code> text, 500 weight.</li>
+        <li><strong>Kerf:</strong> <code>--ink-2</code> bg, <code>--fg</code> text, 1px hairline border.</li>
+        <li>Strong text: machine-yellow in Kerf bubbles, dark ink-0 in user bubbles.</li>
+      </ul>
+
+      <h2 id="l11">11 Inspector panel</h2>
+      <ul>
+        <li>Width 440px desktop. Slides in from right with fade. <strong>Main list does NOT unmount</strong> — dims to 0.5 opacity and stays visible.</li>
+        <li>Sticky header, <code>--ink-3</code> bg, bottom hairline.</li>
+      </ul>
+
+      <h2 id="l12">12 Quick-action cards</h2>
+      <ul>
+        <li>Grid 4 columns. Card <code>--ink-2</code> bg + hairline border, 4px radius.</li>
+        <li>Hover: bg → <code>--ink-3</code>, border → <code>--machine-wash</code>. Subtle.</li>
+        <li>Anatomy: icon (<code>--machine</code>, 16–18px) · label (mono 11px 0.06em uppercase 600) · sub (mono 11px muted).</li>
+        <li><strong>Behaviour:</strong> tapping dispatches a chat intent — every card has an MCP tool + voice equivalent.</li>
+      </ul>
+
+      <h2 id="l13">13 "Needs your call" panel</h2>
+      <ul>
+        <li>Section border <code>1px --machine</code> (not hairline — distinguished).</li>
+        <li>Title <code>⚡ Needs your call</code> in <code>--machine</code> colour.</li>
+        <li>Grid 2 columns, 14px gap, 14×16px padding.</li>
+        <li>Each card <code>--ink-3</code> bg + <strong>3px left-border coloured by urgency type</strong>: <code>--machine</code> for action-required, <code>--warn</code> for warning.</li>
+        <li><strong>Bounded to 2–3 cards</strong> — too many dilutes signal.</li>
+      </ul>
+
+      <h2 id="l14">14 Insight cards</h2>
+      <ul>
+        <li>Background <code>--machine-strong</code> (stronger than normal machine-wash — reads as its own object).</li>
+        <li>Border <code>1px --machine</code>. Padding 14px.</li>
+        <li>Top row: kicker (e.g. "⚑ Insight applied · +15% labour") left, confidence + sample (e.g. "Conf 92% · n=3") right, both <code>--machine-bright</code>.</li>
+        <li>Body references evidence projects by name in machine-yellow semibold.</li>
+        <li>Footer 2-column: "First observed" + "Last confirmed".</li>
+      </ul>
+
+      <h2 id="l15">15 Methodology cascade</h2>
+      <ul>
+        <li>Three levels with level-specific left border: Project <code>--machine</code>, Package <code>--fg-muted</code>, Item <code>--fg-dim</code>.</li>
+        <li>Keys in 2-col grid. <strong>Override key</strong>: border <code>--machine</code>, bg <code>--machine-wash</code>, value <code>--machine</code>, key prefixed <code>⚑</code>.</li>
+        <li>Effective map block: <code>--ink-3</code> bg + <code>--machine-wash</code> border. Key · value · origin columns.</li>
+      </ul>
+
+      <h2 id="l16">16 Lineage equation</h2>
+      <ul>
+        <li>Background <code>--ink-3</code>. Mono typography, 12px.</li>
+        <li>Node variants:
+          <ul>
+            <li><strong>Default:</strong> <code>--ink-4</code> bg, <code>--fg</code>, hairline border (e.g. "12 holes", "16.0 hrs")</li>
+            <li><strong>Base:</strong> <code>--pass-bg</code> bg, <code>--pass</code> (known-good rate, e.g. "1.33 hr/hole")</li>
+            <li><strong>Insight:</strong> <code>--machine-wash</code> bg, <code>--machine</code> (the adjustment, e.g. "low-ceiling")</li>
+            <li><strong>Final:</strong> <code>--machine</code> bg solid, <code>--ink-0</code>, 600 weight (the computed answer)</li>
+          </ul>
+        </li>
+        <li>Arrows <code>--fg-dim</code> text. Can be →, ×, =, +15%.</li>
+      </ul>
+
+      <h2 id="l17">17 Provenance tree</h2>
+      <ul>
+        <li>ASCII tree characters <code>├─</code> <code>│</code> <code>└─</code> in <code>--fg-dim</code>.</li>
+        <li>Mono 12px, 1.9 line-height for airy readability.</li>
+        <li>Indent 16px per level.</li>
+        <li>Node values in <code>--machine</code> or <code>--pass</code> by semantic.</li>
+        <li>Inline source tags embedded in the descriptive line.</li>
+      </ul>
+
+      <h2 id="l18">18 Source tags</h2>
+      <table>
+        <thead><tr><th>Variant</th><th>Colour</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>catalog</code></td><td><code>--pass</code> on <code>--pass-bg</code></td><td>Current price from rate table / supplier. High certainty.</td></tr>
+          <tr><td><code>history</code></td><td><code>--machine</code> on <code>--machine-wash</code></td><td>Derived from past jobs. Label includes sample: "Past · 3×".</td></tr>
+          <tr><td><code>insight</code></td><td><code>--machine-bright</code> on <code>--machine-strong</code></td><td>A learned adjustment has fired. Brightest variant.</td></tr>
+          <tr><td><code>stated</code></td><td><code>--warn</code> on <code>--warn-bg</code></td><td>Contractor-stated, not yet an insight. Amber — invites capture.</td></tr>
+          <tr><td><code>default</code></td><td><code>--fg-muted</code> on <code>--ink-3</code></td><td>Neutral / no specific source tracked.</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Never display a number without its source tag</strong> in provenance-surfacing contexts. Load-bearing for trust.</p>
+
+      <h2 id="l19">19 Confidence meter</h2>
+      <ul>
+        <li>Horizontal bar, <code>--ink-3</code> wrapper, 12px padding, 4px radius.</li>
+        <li>Layout: label (min-width 80px) · track (flex-1, 6px, <code>--ink-0</code>) · value (min-width 60px right).</li>
+        <li>Fill bands by confidence level: high ≥85% <code>--pass</code>, med 50–85% <code>--machine</code>, low &lt;50% <code>--warn</code>.</li>
+      </ul>
+
+      <h2 id="l20">20 Timeline entries</h2>
+      <ul>
+        <li>Grid per row 120px (when) + 1fr (what).</li>
+        <li>When: mono 10px 0.06em uppercase <code>--fg-muted</code>.</li>
+        <li>Key entities in prose use <code>--machine</code> 500.</li>
+        <li><strong>Actor suffix at the end of every line</strong>: mono 10px 0.06em uppercase <code>--fg-dim</code>. Examples: <code>Kerf · from chat</code>, <code>Mike · voice</code>, <code>GPS · auto</code>. <strong>Never omit — makes the record audit-worthy.</strong></li>
+      </ul>
+
+      <h2 id="l21">21 Contract-reference strip (ACTIVE state)</h2>
+      <ul>
+        <li>Background <code>--ink-1</code>, hairline border, 4px radius.</li>
+        <li>Flex row, 20px gap, 11.5px font.</li>
+        <li>Starts with kicker <code>▤ Contract v1 locked</code>.</li>
+        <li>Items mono 11px muted with key values bolded in <code>--fg</code>: <code>$121,200 lump sum</code>, <code>Retention 5%</code>, <code>Warranty 12mo</code>, <code>Payment 30d net</code>, <code>Signed Mon 16:22</code>.</li>
+        <li><strong>Don't put this in a tab</strong> — it lives above the metrics row.</li>
+      </ul>
+
+      <h2 id="l26">26 Animations</h2>
+      <ul>
+        <li><strong>State chip pulse on transition:</strong> scale 1 → 1.08 → 1 over ~500ms. Colour change is instant; pulse is the attention beat.</li>
+        <li><strong>Section mount cascade:</strong> fade-in-and-slide-up with ~40ms stagger between siblings.</li>
+        <li><strong>Inspector slide-in from right:</strong> spring ~320ms. Main list dims to 0.5 simultaneously.</li>
+        <li><strong>Row highlight on interaction:</strong> yellow wash (6% machine) on hover, no layout shift.</li>
+        <li><strong>Typing indicator:</strong> 3-dot pulse with stagger, 1.2s cycle. Already in index.css.</li>
+      </ul>
+
+      <h2 id="l27">27 Typography system (canonical)</h2>
+      <table>
+        <thead><tr><th>Token</th><th>Size</th><th>LS</th><th>Wgt</th><th>Transform</th><th>Usage</th></tr></thead>
+        <tbody>
+          <tr><td><code>text-kicker</code></td><td>10px</td><td>0.12em</td><td>600</td><td>upper</td><td>Section labels, tile kickers</td></tr>
+          <tr><td><code>text-label</code></td><td>11px</td><td>0.06em</td><td>500</td><td>upper</td><td>Tab labels, button text</td></tr>
+          <tr><td><code>text-body</code></td><td>12.5px</td><td>—</td><td>400</td><td>—</td><td>Chat bubbles, standard prose</td></tr>
+          <tr><td><code>text-prose</code></td><td>14px</td><td>—</td><td>400</td><td>—</td><td>Intro paragraphs, explanatory text</td></tr>
+          <tr><td><code>text-title</code></td><td>15px</td><td>—</td><td>500</td><td>—</td><td>Section titles, inspector titles</td></tr>
+          <tr><td><code>text-display</code></td><td>20px</td><td>—</td><td>500</td><td>—</td><td>Tile primary values, hero numbers</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Never inline custom sizes</strong> — use tokens.</p>
+
+      <h2 id="l28">28 Colour semantics</h2>
+      <table>
+        <thead><tr><th>Token</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td><code>--machine</code></td><td>Sell prices, primary actions, machine-yellow emphasis, QUOTED state</td></tr>
+          <tr><td><code>--pass</code></td><td>Completed, paid, on-time, margin-positive, high-confidence</td></tr>
+          <tr><td><code>--warn</code></td><td>Paused (PC state), DLP, "needs attention but not broken"</td></tr>
+          <tr><td><code>--fail</code></td><td>Over-budget, dispute open, lost, terminated-for-cause</td></tr>
+          <tr><td><code>--fg-muted</code></td><td>Metadata, kickers, non-interactive labels</td></tr>
+          <tr><td><code>--fg-dim</code></td><td>Subordinate text, tree lines, dimmed indicators</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Do not invent new colour variations.</strong> If a new semantic emerges, extend the token set in <code>index.css</code>, don't inline it.</p>
+
+      <div class="callout">
+        <strong>Source:</strong> <code>docs/design/micro-details-ledger.md</code> for the full detail (31 sections including §22 close-summary tiles, §23 revive card pulse, §24 empty states, §25 state-aware variations checklist, §29 voice/chat equivalence guard, §30 mobile adjustments).
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  DATA MODEL DELTA TAB                                       -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-data-model">
+
+  <div class="panel-hero">
+    <div class="kicker">Implementation · Data Model Delta</div>
+    <h1>What's new or changing in the graph</h1>
+    <p>
+      Scoped to additions only. Canonical work categories + Methodology node shape + Domain 16 Work Structure + Domain 17 Quoting already exist per prior handoffs.
+      <strong>This doc covers:</strong> Project state machine, ContractVersion, Variation, Dispute, Revival, overlay entities, WorkItem state, Quote versioning, DefectItem, source provenance, email tracking, magic links.
+    </p>
+  </div>
+
+  <div class="content">
+    <aside class="content-toc">
+      <div class="toc-kicker">Sections</div>
+      <ol>
+        <li><a href="#d-proj-state">1 Project state machine</a></li>
+        <li><a href="#d-contract">2 ContractVersion</a></li>
+        <li><a href="#d-variation">3 Variation</a></li>
+        <li><a href="#d-dispute">4 Dispute</a></li>
+        <li><a href="#d-revival">5 Revival event</a></li>
+        <li><a href="#d-overlays">6 Overlay entities</a></li>
+        <li><a href="#d-wi-state">7 WorkItem state</a></li>
+        <li><a href="#d-quote">8 Quote versioning</a></li>
+        <li><a href="#d-defect">9 DefectItem</a></li>
+        <li><a href="#d-provenance">10 Source provenance</a></li>
+        <li><a href="#d-email">11 Email tracking</a></li>
+        <li><a href="#d-magic">12 MagicLink</a></li>
+        <li><a href="#d-meth">13 Methodology wiring</a></li>
+        <li><a href="#d-verify">19 Verifications</a></li>
+      </ol>
+    </aside>
+
+    <div class="content-body">
+
+      <h2 id="d-proj-state">1 Project state machine</h2>
+      <p>Existing <code>Project.state</code> has <code>lead | quoted | active | completed | closed | lost</code>. <strong>New enum:</strong> <code>LEAD | QUOTED | ACCEPTED | ACTIVE | PRACTICAL_COMPLETION | CLOSED</code>. New properties: <code>closed_reason</code> (typed), <code>state_at_closure</code>.</p>
+      <p>Existing <code>status</code> field (on_hold / suspended) → removed, replaced by PAUSED overlay entity.</p>
+      <pre><code>CREATE CONSTRAINT constraint_project_state_valid IF NOT EXISTS
+  FOR (p:Project) REQUIRE p.state IN
+    ['LEAD','QUOTED','ACCEPTED','ACTIVE','PRACTICAL_COMPLETION','CLOSED'];
+
+CREATE INDEX index_project_state IF NOT EXISTS FOR (p:Project) ON (p.state);
+CREATE INDEX index_project_closed_reason IF NOT EXISTS FOR (p:Project) ON (p.closed_reason);</code></pre>
+      <p>Migration in the source doc maps legacy states. <strong>Lossy:</strong> existing "completed" projects map to PRACTICAL_COMPLETION; explicit user action needed to CLOSED.</p>
+
+      <h2 id="d-contract">2 ContractVersion</h2>
+      <p>New entity. Immutable snapshot captured at QUOTED → ACCEPTED.</p>
+      <p><strong>Properties:</strong> id · version · project_id · sum_cents · doc_hash (sha256 of accepted doc) · parties · dates · payment_terms · retention_pct · jurisdiction · governing_law · accepted_by · accepted_at · accepted_method.</p>
+      <p><strong>Relationship:</strong> <code>(Project)-[:HAS_CONTRACT_VERSION]-&gt;(ContractVersion)</code>.</p>
+
+      <h2 id="d-variation">3 Variation</h2>
+      <p>New first-class entity with its own lifecycle. Numbered addenda to ContractVersion v1 — amendment-in-place, never new ContractVersions.</p>
+      <p><strong>State enum:</strong> <code>Draft | Issued | Approved | Rejected | Superseded</code>.</p>
+      <p><strong>Key property:</strong> <code>number</code> — sequential per contract, gap-free. Validation query catches gaps/duplicates.</p>
+      <p><strong>Relationships:</strong></p>
+      <ul>
+        <li><code>(ContractVersion)-[:HAS_VARIATION]-&gt;(Variation)</code></li>
+        <li><code>(Variation)-[:HAS_LINE_ITEM]-&gt;(WorkItem)</code> — zero or more, new or modified items</li>
+        <li><code>(Variation)-[:SUPERSEDES]-&gt;(Variation)</code> — when revised (V1.1 supersedes V1)</li>
+        <li><code>(Variation)-[:EVIDENCE_FROM]-&gt;(DailyLog|Photo|TimeEntry|Conversation)</code></li>
+      </ul>
+      <p><strong>Effective contract sum is never stored</strong> — always computed as <code>sum(ContractVersion.sum_cents) + sum(Approved Variations.sum_delta_cents)</code>.</p>
+
+      <h2 id="d-dispute">4 Dispute</h2>
+      <p>New first-class entity with its own lifecycle. Multiple disputes per Project supported.</p>
+      <p><strong>State enum:</strong> <code>Raised | Negotiating | Adjudication | Mediation | Arbitration | Resolved</code>.</p>
+      <p><strong>Relationships:</strong> <code>DISPUTE_OVER</code>, <code>HAS_EVIDENCE</code>, <code>HAS_ADJUDICATOR</code>, <code>RESOLVED_BY</code>.</p>
+      <p>DISPUTE_OPEN overlay is <strong>derived</strong> — true when any linked Dispute is un-resolved.</p>
+
+      <h2 id="d-revival">5 Revival event</h2>
+      <p>New entity capturing state reversal.</p>
+      <p><strong>Properties:</strong> id · revived_at · revived_by · prior_closed_reason · state_before_revival (always "CLOSED") · state_after_revival (any active state) · note.</p>
+      <p><strong>Relationship:</strong> <code>(Project)-[:HAS_REVIVAL]-&gt;(Revival)</code>.</p>
+
+      <h2 id="d-overlays">6 Overlay entities</h2>
+      <p>Overlays are first-class entities, not relationship properties. Enables clean history, audit, re-activation.</p>
+      <ul>
+        <li><strong>PauseRecord</strong> — pause_type (on_hold / suspended) · reason · paused_at/by · expected_resume_at · cure_deadline · resumed_at/by.</li>
+        <li><strong>DefectsLiabilityPeriod</strong> — source (contract_clause / statutory) · dlp_start · duration · end · closed_at.</li>
+        <li><strong>RetentionHolding</strong> — retention_pct · held_in_trust · trust_account_ref · amount_cents · scheduled_releases · released_at.</li>
+      </ul>
+
+      <h2 id="d-wi-state">7 WorkItem state enum addition</h2>
+      <p>New property: <code>state</code> — <code>not_started | in_progress | complete | de_scoped</code>. Existing <code>percent_complete</code> 0–100 stays.</p>
+      <p><strong>PC precondition</strong>: all in-scope WorkItems at <code>complete</code> or <code>de_scoped</code>. Validation query enforces.</p>
+
+      <h2 id="d-quote">8 Quote versioning</h2>
+      <p>New. First-class versionable documents.</p>
+      <p><strong>State enum:</strong> <code>Draft | Sent | Accepted | Rejected | Superseded | Withdrawn</code>.</p>
+      <p><strong>Relationships:</strong> <code>HAS_QUOTE</code> (from Project), <code>SUPERSEDES</code> (quote-to-quote), <code>ACCEPTED_INTO</code> (quote-to-ContractVersion on acceptance).</p>
+
+      <h2 id="d-defect">9 DefectItem</h2>
+      <p>Used for PC punch lists and DLP defects. Category (cosmetic / functional / safety), status (open / resolved / dismissed), origin (punch_list_at_pc / dlp_defect), responsible_party, resolution metadata.</p>
+
+      <h2 id="d-provenance">10 Source provenance on Labour + Item</h2>
+      <p>Extends existing Domain 16/17 nodes.</p>
+      <p><strong>New Labour properties:</strong> <code>productivity_source</code> · <code>rate_source</code> · <code>rate_source_id</code> · <code>productivity_source_id</code> · <code>applied_insight_ids</code> · <code>base_hours</code> · <code>applied_adjustments</code>.</p>
+      <p><strong>New Item properties:</strong> <code>price_source</code> · <code>price_source_id</code> · <code>applied_insight_ids</code>.</p>
+      <p>Indexes on <code>rate_source</code>, <code>productivity_source</code>, <code>price_source</code>.</p>
+
+      <h2 id="d-email">11 Email tracking</h2>
+      <p>Supports §3.14 Email as Client Channel.</p>
+      <ul>
+        <li><code>EmailThread</code> — project_id · subject · initiated_by · provider (gmail / outlook) · provider_thread_id.</li>
+        <li><code>EmailMessage</code> — direction (inbound / outbound) · state · from · to · cc · body · sent_at · received_at · drafted_by_agent · approved_by.</li>
+        <li><strong>Validation:</strong> outbound <code>sent</code> messages must have <code>approved_by</code>.</li>
+      </ul>
+
+      <h2 id="d-magic">12 MagicLink</h2>
+      <p>Client-facing access tokens for quote view, variation approval, PC acknowledgment, invoice view/pay.</p>
+      <ul>
+        <li><strong>Scope enum:</strong> <code>view_quote | accept_quote | approve_variation | acknowledge_pc | view_invoice | pay_invoice</code>.</li>
+        <li><strong>Single-use</strong> for accept/approve/acknowledge; <strong>multi-use</strong> for view.</li>
+        <li>Expired tokens return 410 Gone.</li>
+      </ul>
+
+      <h2 id="d-meth">13 Methodology wiring</h2>
+      <p>Entity shape already speced in <code>docs/design/methodology.md</code>. Schema ready per 2026-04-17 handoff.</p>
+      <p><strong>Still pending:</strong></p>
+      <ul>
+        <li><code>backend/app/services/methodology_service.py</code></li>
+        <li><code>backend/app/routers/methodology.py</code></li>
+        <li><code>backend/app/services/mcp_tools.py</code> extensions (<code>create_methodology</code>, <code>resolve_methodology</code>, <code>update_methodology_approach</code>, <code>retrieve_past_methodologies_for_category</code>)</li>
+      </ul>
+
+      <h2 id="d-verify">19 Verifications needed before build</h2>
+      <ol>
+        <li>Current <code>Project.state</code> enum values — confirm <code>lead | quoted | active | completed | closed | lost</code>.</li>
+        <li>Current <code>Project.status</code> field usage — any production data?</li>
+        <li>Existing <code>Contract</code> entity — exists? shape? rename vs. keep?</li>
+        <li>Existing <code>ChangeOrder</code>/<code>Variation</code> entity — green-field confirm.</li>
+        <li>Existing <code>Quote</code> entity — green-field confirm.</li>
+        <li><code>Labour.rate_source</code> / <code>rate_source_id</code> — naming alignment.</li>
+        <li><code>Item.price_source</code> / <code>price_source_id</code> — naming alignment.</li>
+        <li><code>ProductivityRate</code> / <code>ResourceRate</code> — current properties.</li>
+        <li><code>Insight</code> node — <code>applies_when</code> / <code>approach_match</code> shape.</li>
+        <li><code>MaterialCatalogEntry</code> — confirm existence + current-price property.</li>
+      </ol>
+
+      <div class="callout">
+        <strong>Source:</strong> <code>docs/implementation/data-model-delta.md</code> for full Cypher, migration scripts, validation queries (CI-enforced), and constraints summary.
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  SLICES TAB                                                 -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-slices">
+
+  <div class="panel-hero">
+    <div class="kicker">Implementation · Vertical Slices</div>
+    <h1>51 slices across 8 phases</h1>
+    <p>
+      Each slice delivers a working persona journey end-to-end. Data model + service + API + UI + test. Every slice is preview-linked.
+      Every slice has a fidelity gate before merge. <strong>Preview-driven tickets.</strong>
+    </p>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat"><span class="k">Total</span><span class="v">51</span></div>
+    <div class="stat shipped"><span class="k">Shipped</span><span class="v" id="stats-shipped">0</span></div>
+    <div class="stat progress"><span class="k">In progress</span><span class="v" id="stats-progress">0</span></div>
+    <div class="stat review"><span class="k">In review</span><span class="v" id="stats-review">0</span></div>
+    <div class="stat"><span class="k">Not started</span><span class="v" id="stats-not-started">51</span></div>
+  </div>
+
+  <!-- Slice details (injected by JS) -->
+  <div id="slice-details">
+    <!-- Rendered by JS -->
+  </div>
+
+  <div class="callout">
+    <strong>Fidelity gate per slice:</strong> preview-vs-app visual diff · micro-details-ledger checklist · voice-equivalent phrase test · persona acceptance test · validation queries green. No slice merges without all five.
+  </div>
+
+  <div class="callout">
+    <strong>Source:</strong> <code>docs/implementation/vertical-slices.md</code> for full per-slice detail including MCP tools, preview anchors, and acceptance criteria.
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  LIFECYCLE TAB                                              -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-lifecycle">
+
+  <div class="panel-hero">
+    <div class="kicker">Design · Project Lifecycle Flow</div>
+    <h1>The state machine</h1>
+    <p>
+      Six states. Amendment-in-place variations. First-class Dispute entity. PauseRecord overlays. Revive by state reversal with audit.
+      Every transition operator-controlled per Principle #15.
+    </p>
+  </div>
+
+  <div class="content">
+    <aside class="content-toc">
+      <div class="toc-kicker">Sections</div>
+      <ol>
+        <li><a href="#lc-states">State machine</a></li>
+        <li><a href="#lc-transitions">Transitions</a></li>
+        <li><a href="#lc-pc">PC pivot</a></li>
+        <li><a href="#lc-variations">Variations</a></li>
+        <li><a href="#lc-disputes">Disputes</a></li>
+        <li><a href="#lc-revive">Revive</a></li>
+        <li><a href="#lc-decisions">Decisions</a></li>
+      </ol>
+    </aside>
+
+    <div class="content-body">
+
+      <h2 id="lc-states">State machine</h2>
+      <pre><code>LEAD ──send quote──▶ QUOTED ──Kate accepts──▶ ACCEPTED ──1st time entry──▶ ACTIVE ──Jake declares──▶ PC ──Jake flips──▶ CLOSED
+  │                     │                                                                                  ▲
+  └────── nudge ────────┴──────────────── any state (operator flips) ───────────────────────────────────────┘
+
+Terminal state CLOSED carries typed `closed_reason`:
+  completed | terminated_convenience | terminated_cause | abandoned | lead_lost
+
+`state_at_closure` is captured so pre-close context is preserved.</code></pre>
+
+      <h2 id="lc-transitions">Transitions — triggers and effects</h2>
+      <table>
+        <thead><tr><th>Transition</th><th>Trigger</th><th>Hard preconditions</th><th>Snapshot</th></tr></thead>
+        <tbody>
+          <tr><td>* → LEAD</td><td>Project created</td><td>—</td><td>—</td></tr>
+          <tr><td>LEAD → QUOTED</td><td>Operator hits Send</td><td>Quote has ≥1 priced WI; validity date set</td><td>Quote v1 snapshot</td></tr>
+          <tr><td>QUOTED → ACCEPTED</td><td>Client via magic link / emailed approval; or operator records verbal</td><td>Quote is current (not superseded draft)</td><td>ContractVersion v1 immutable</td></tr>
+          <tr><td>ACCEPTED → ACTIVE</td><td>First time entry logged (operator action)</td><td>—</td><td>—</td></tr>
+          <tr><td>ACTIVE → PC</td><td>Operator declares done</td><td><strong>All in-scope WI complete or de_scoped</strong> — only hard gate</td><td>PracticalCompletion node + punch list</td></tr>
+          <tr><td>PC → CLOSED</td><td>Operator flips</td><td>—</td><td>Closure record with reason/state_at_closure</td></tr>
+          <tr><td>any → CLOSED (early exit)</td><td>Operator flips with reason</td><td>Kerf warns on suspect closures; never blocks</td><td>Closure record with typed reason</td></tr>
+          <tr><td>CLOSED → prior state (revive)</td><td>Operator flips</td><td>—</td><td>Revival event on timeline</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="lc-pc">PC pivot transition</h2>
+      <p>Biggest transition operationally. At PC: risk shifts to owner · insurance shifts · LDs stop · retention half-release where applicable · DLP clock starts · contract sum frozen except outstanding claims.</p>
+      <ul>
+        <li><strong>Trigger:</strong> operator declares done. One hard precondition — all in-scope WIs at <code>complete</code> or <code>de_scoped</code>.</li>
+        <li><strong>Snapshot:</strong> PC date · scope-at-PC (v1 + approved variations) · punch list (from operator capture) · DLP terms where applicable.</li>
+        <li><strong>Nudges (not gates)</strong>: open variations · missing final inspection where permitted · outstanding invoice balance.</li>
+        <li><strong>Client acknowledgment is an event, not a gate.</strong> Kerf sends PC certificate via email + magic-link acknowledge. Absence is a gap in the audit trail, not a blocker.</li>
+      </ul>
+
+      <h2 id="lc-variations">The Variation lifecycle</h2>
+      <pre><code>Draft → Issued → Approved
+           ├→ Rejected
+           └→ Superseded     (when operator revises after client pushback)</code></pre>
+      <ul>
+        <li><strong>Draft:</strong> operator composing. Not visible to client.</li>
+        <li><strong>Issued:</strong> sent via email + magic link. Events inside (not state changes): client viewed, asked question, requested revision.</li>
+        <li><strong>Approved:</strong> client signed. Immutable. Adjusts effective contract sum. Becomes billable.</li>
+        <li><strong>Rejected / Superseded:</strong> immutable terminal / intermediate.</li>
+      </ul>
+      <p>Variations are numbered addenda (V1, V2, V3...) — amendment-in-place, not new ContractVersions. Gap-free sequence. Matches research #3 §1.2.</p>
+      <p><strong>Bundle vs split</strong> is operator's choice at draft time. Kate's three requests → one Variation with three line items (bundle, all-or-nothing approve) or three separate Variations (split, per-item approve/reject).</p>
+
+      <h2 id="lc-disputes">Dispute lifecycle</h2>
+      <pre><code>Raised → Negotiating → [Adjudication | Mediation | Arbitration] → Resolved
+                                                                      │
+                                                                      └→ (possible further escalation)</code></pre>
+      <p>First-class entity. Multiple disputes per Project supported. Does <strong>not</strong> change Project state — Project stays ACTIVE while DISPUTE_OPEN. Work continues unless a party also invokes PAUSED (suspension).</p>
+
+      <h2 id="lc-revive">Revive</h2>
+      <p><strong>State reversal</strong>, operator-controlled. Kerf's nudges calibrated by exit reason:</p>
+      <table>
+        <thead><tr><th>From</th><th>To</th><th>Nudge</th></tr></thead>
+        <tbody>
+          <tr><td><code>CLOSED[lead_lost]</code></td><td>LEAD</td><td>Soft — "you closed this 6 months ago; continue?"</td></tr>
+          <tr><td><code>CLOSED[abandoned]</code></td><td>prior state</td><td>Firmer — "abandoned mid-job; contract validity may have lapsed"</td></tr>
+          <tr><td><code>CLOSED[terminated_*]</code></td><td>prior state</td><td>Loud legal caution — "formally terminated; consider new Project"</td></tr>
+          <tr><td><code>CLOSED[completed]</code></td><td>—</td><td>No revive; new scope = new Project linked to this one</td></tr>
+        </tbody>
+      </table>
+      <p>Revival captures immutable event: <code>revived_at · revived_by · prior_closed_reason · state_before_revival · state_after_revival · note</code>. State history reads cleanly — closure records never deleted, stay as historical facts.</p>
+
+      <h2 id="lc-decisions">13 decisions ledger</h2>
+      <table>
+        <thead><tr><th>#</th><th>Decision</th><th>Chosen</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Lead entity or Lead state?</td><td>Lead is a state of Project</td></tr>
+          <tr><td>2</td><td>Pre-contract states</td><td>LEAD → QUOTED (no QUOTING)</td></tr>
+          <tr><td>3</td><td>Quote revisions</td><td>Versioned (v2 SUPERSEDES v1)</td></tr>
+          <tr><td>4</td><td>State between QUOTED and ACTIVE?</td><td>Yes — ACCEPTED as distinct state</td></tr>
+          <tr><td>5</td><td>ACCEPTED → ACTIVE trigger</td><td>First time entry of any kind</td></tr>
+          <tr><td>6</td><td>Variation modelling</td><td>Numbered addenda, not new ContractVersions</td></tr>
+          <tr><td>7</td><td>PC trigger</td><td>Operator declares; WI 100% only hard gate</td></tr>
+          <tr><td>8</td><td>DLP / post-PC shape</td><td>Ultra-lean; overlays only when required</td></tr>
+          <tr><td>9</td><td>Pause modelling</td><td>One PAUSED overlay with typed dimensions</td></tr>
+          <tr><td>10</td><td>Terminal states</td><td>Single CLOSED with typed <code>closed_reason</code></td></tr>
+          <tr><td>11</td><td>Revive mechanism</td><td>State reversal; nudges calibrated by exit reason</td></tr>
+          <tr><td>12</td><td>Disputes</td><td>First-class Dispute entity with own lifecycle</td></tr>
+          <tr><td>13</td><td>WorkItem state</td><td><code>not_started | in_progress | complete | de_scoped</code></td></tr>
+          <tr><td>+</td><td><strong>Governing principle</strong></td><td>#15 — Advise, highlight, keep logical, do what you're told</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Source:</strong> <code>docs/design/project-lifecycle-flow.md</code> for full detail (14 sections including variation data model, dispute evidence chains, overlay composition rules, PC certificate snapshot spec, Jake walkthrough trace).
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  PREVIEWS TAB                                               -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-previews">
+
+  <div class="panel-hero">
+    <div class="kicker">Preview artifacts</div>
+    <h1>Everything we've visualised</h1>
+    <p>
+      Static HTML mockups + Remotion animations. These are the source-of-truth visuals cited from every vertical-slice ticket.
+      When implementing, open the preview in a second browser window and match pixel-for-pixel.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="num">01</span>
+      <span class="title">⚘ HTML Mockups</span>
+      <span class="chip-mini">4 files</span>
+    </div>
+    <div class="section-body">
+      <div class="preview-grid">
+        <a class="preview-card" href="project-screen-lifecycle.html">
+          <div class="kicker">Lifecycle · Static</div>
+          <div class="title">6 states full-fidelity</div>
+          <div class="body">LEAD → QUOTED → ACCEPTED → ACTIVE → PC → CLOSED. Maple Ridge Ph II data. Full app-frame (1440×820) per state.</div>
+          <span class="link">Open →</span>
+        </a>
+        <a class="preview-card" href="quoting-detail-mockups.html">
+          <div class="kicker">Quoting detail · Static</div>
+          <div class="title">Drill-down screens</div>
+          <div class="body">6 screens: Quote overview → WorkItem inspector → Labour detail → Item detail → Methodology cascade → Provenance tree.</div>
+          <span class="link">Open →</span>
+        </a>
+        <a class="preview-card" href="project-screen-mockups.html">
+          <div class="kicker">Structural · Static</div>
+          <div class="title">A/B/C options</div>
+          <div class="body">Option A.1 (QUOTED reference) · A.2 (sectioned scroll) · B (tabbed) · C (recommended). Side-by-side comparison.</div>
+          <span class="link">Open →</span>
+        </a>
+        <a class="preview-card" href="work-items.html">
+          <div class="kicker">Work items · Static</div>
+          <div class="title">Earlier work-items preview</div>
+          <div class="body">Source Detail tab, Active Tracking tab, Card anatomy with Category + Methodology rows. Items-not-Materials terminology.</div>
+          <span class="link">Open →</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="num">02</span>
+      <span class="title">◎ Remotion Animations</span>
+      <span class="chip-mini">3 compositions</span>
+    </div>
+    <div class="section-body">
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="kicker">Composition · 81s</div>
+          <div class="title">ProjectLifecycleFlow</div>
+          <div class="body">End-to-end state progression with cross-fade transitions, chip pulses on state change, progress bars filling in ACTIVE, V1-draft card slide-in, revive-card pulse at CLOSED.</div>
+          <a class="link" href="http://localhost:3000/ProjectLifecycleFlow" target="_blank">Open in Studio →</a>
+          <a class="link alt" href="../../quoting-prototype/src/scenes/LifecycleFlow.tsx">Source →</a>
+        </div>
+        <div class="preview-card">
+          <div class="kicker">Composition · 48s</div>
+          <div class="title">QuotingDetailFlow</div>
+          <div class="body">Live animated drill: Sarah opens WI 04 → inspector slides in → click labour → lineage equation builds node-by-node → provenance tree reveals → outro card.</div>
+          <a class="link" href="http://localhost:3000/QuotingDetailFlow" target="_blank">Open in Studio →</a>
+          <a class="link alt" href="../../quoting-prototype/src/scenes/QuotingDetailFlow.tsx">Source →</a>
+        </div>
+        <div class="preview-card">
+          <div class="kicker">Composition · 85s</div>
+          <div class="title">JakeQuotingFlow (legacy)</div>
+          <div class="body">Earlier composition from 2026-04-14 session. Light-mode. Still valid as historical reference.</div>
+          <a class="link" href="http://localhost:3000/JakeQuotingFlow" target="_blank">Open in Studio →</a>
+          <a class="link alt" href="../../quoting-prototype/src/scenes/QuotingFlow.tsx">Source →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Running Remotion:</strong> <code>cd quoting-prototype &amp;&amp; npm start</code>. Studio opens at <code>http://localhost:3000</code>.
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  SCRIPTS                                                    -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<script>
+// ══════════════════════════════════════════════════════════
+// Data: phases + slices
+// ══════════════════════════════════════════════════════════
+const PHASES = [
+  { id: 0, label: 'Phase 0', title: 'Foundations', count: 4, milestone: 'Project shell live. Dark Site Board chrome, persistent agent panel, state-machine migration, voice + chat-dispatch infrastructure. Existing data flows through.' },
+  { id: 1, label: 'Phase 1', title: 'Quote creation engine', count: 16, milestone: 'THE SUBSTANCE. Sarah builds a defensible quote: voice scope capture → WorkItems with WorkCategory + methodology → labour + items with full source provenance + lineage + insights + confidence → assumptions + exclusions + terms → QUOTED Dashboard document + proposal PDF. Every number citable.' },
+  { id: 2, label: 'Phase 2', title: 'Client handoff + contract formation', count: 5, milestone: 'Magic-link client view · inbound email → agent drafts response · quote revisions (v2 supersedes v1) · acceptance → ContractVersion v1 immutable snapshot → state flip QUOTED → ACCEPTED.' },
+  { id: 3, label: 'Phase 3', title: 'Execute', count: 8, milestone: 'ACCEPTED pre-start (deposit · permit · materials) · first time entry → ACTIVE · "Needs your call" panel · Variation lifecycle with auto-detection · progress tracking · interim invoicing.' },
+  { id: 4, label: 'Phase 4', title: 'Site operations', count: 6, milestone: 'Site meta-tab lit. One voice walk populates safety + quality + crew + equipment + daily log simultaneously.' },
+  { id: 5, label: 'Phase 5', title: 'Money + Contract surfaces', count: 4, milestone: 'Money meta-tab · Contract meta-tab with assumptions view · Dispute lifecycle · QuickBooks sync.' },
+  { id: 6, label: 'Phase 6', title: 'Close + revive', count: 4, milestone: 'PC declaration · final invoice · CLOSED with typed reason · revive.' },
+  { id: 7, label: 'Phase 7', title: 'Overlays and edges', count: 4, milestone: 'PAUSED typed overlay · DLP · Retention · Dispute UI fully integrated.' },
+];
+
+const SLICES = [
+  // ── Phase 0 · Foundations ──
+  { id: 'F1', phase: 0, name: 'Project shell', deps: [], value: 'Contractor opens any project → sees new dark Site Board shell with header, 7 meta-tabs, persistent agent panel. Existing data renders through.', acceptance: 'Sarah opens Maple Ridge → sees new shell in full dark style. Tab click → content changes. Agent panel persistent.', dataModel: 'None', mcp: 'None (chat exists)', fidelity: 'ledger §1–5 (layout shell, top header, tab bar, state chips, overlays)', preview: 'project-screen-lifecycle.html — all states' },
+  { id: 'F2', phase: 0, name: 'MCP tool infrastructure + chat-intent dispatching', deps: ['F1'], value: 'Quick-action cards work as chat shortcuts. Tap card → agent handles through the standard chat path.', acceptance: 'Tapping Mark Lost = typing "mark this lead as lost". Same execution path. Every card has a voice equivalent.', dataModel: 'None', mcp: 'Infrastructure (dispatch, not new tools)', fidelity: 'ledger §12', preview: 'lifecycle.html — quick-action cards per state' },
+  { id: 'F3', phase: 0, name: 'Voice capture session handling', deps: ['F1'], value: 'Hold-to-speak works end-to-end. Offline queues. Mobile FAB with press-and-hold gesture.', acceptance: 'Sarah holds from truck. Releases. Transcribed text in chat. Agent responds. Offline queues + syncs.', dataModel: 'VoiceSession (verify exists)', mcp: 'start_voice_session, end_voice_session', fidelity: 'ledger §10.6 chat input', preview: 'lifecycle.html — agent panel input' },
+  { id: 'F4', phase: 0, name: 'Project state machine migration', deps: ['F1'], value: 'New state enum in place. closed_reason + state_at_closure. Existing projects migrated. Validation queries green.', acceptance: 'All existing projects display correct state chip. Validation queries pass on migrated data.', dataModel: 'data-model-delta §1 (Project state enum)', mcp: 'Existing state-change tools updated', fidelity: 'ledger §4 state chip colour matrix', preview: 'lifecycle.html — header chips' },
+
+  // ── Phase 1 · Quote creation engine (THE SUBSTANCE) ──
+  { id: 'Q1', phase: 1, name: 'LEAD state Dashboard', deps: ['F1','F2','F4'], value: 'LEAD lands on Next-action card + Peachtree reference + Client card + 4 quick-actions.', acceptance: 'Jake: "Kate called about kitchen on Oak" → Project in LEAD. Peachtree reference renders if similar past project. Schedule visit works.', dataModel: 'None new', mcp: 'schedule_project_event, start_voice_scope_capture, draft_client_email, mark_project_closed', fidelity: 'ledger §6,7,12', preview: 'lifecycle.html — State 1 LEAD' },
+  { id: 'Q2', phase: 1, name: 'Voice scope capture → WorkItem + methodology-key extraction', deps: ['F3','Q1'], value: 'Sarah narrates site walk → agent extracts WorkItems + suggests WorkCategory + captures methodology keys. Live streaming as she talks.', acceptance: 'Voice session narrates "200A panel upgrade, 12 circuits, 6 receptacles" → WorkItems appear as cards in real-time, each with suggested category + methodology keys. Corrections ("no, 2 circuits") update in place.', dataModel: 'WorkItem (Domain 16); Methodology (schema ready, service TBD in Q4)', mcp: 'start_voice_scope_capture, extract_workitems_from_utterance, extract_methodology_keys_from_utterance', fidelity: 'ledger §8 WorkItem table basics', preview: 'lifecycle.html State 2 — resulting WorkItem list' },
+  { id: 'Q3', phase: 1, name: 'Canonical WorkCategory picker (search-first)', deps: ['Q2'], value: 'Per-jurisdiction canonical tree (MasterFormat/NRM/NATSPEC). Search-first: Jake types "panel upgrade" → top hits. Tree-browse as fallback. Company aliases and extensions.', acceptance: 'Typing "panel" surfaces 26 24 16 Panelboards. Aliased names show for the company. Extensions under canonical parents work. CATEGORISED_AS writes with WorkItem creation.', dataModel: 'Canonical categories (~80% built per 2026-04-17 handoff); HAS_ALIAS, HAS_EXTENSION, CATEGORISED_AS, PARENT_CATEGORY', mcp: 'search_canonical_categories, list_for_company, add_alias, add_extension', fidelity: 'ledger §8 sub-chip tags for category refs', preview: 'lifecycle.html State 2 + quoting-detail Screen 1' },
+  { id: 'Q4', phase: 1, name: 'Methodology service + cascade wiring', deps: ['Q2','Q3'], value: 'Methodology nodes create/resolve/cascade. Project → Package → Item. APPLIES_TO_CATEGORY link. Insight matching via approach_match.', acceptance: 'Project-level methodology captured from first utterance. Package methodology inherits. Item override highlighted. Effective map resolves correctly.', dataModel: 'Methodology node shape (schema ready per handoff); service pending', mcp: 'create_methodology, resolve_methodology_cascade, update_methodology_approach, retrieve_past_methodologies_for_category', fidelity: 'ledger §15 cascade (3-level, override pills)', preview: 'quoting-detail Screen 5' },
+  { id: 'Q5', phase: 1, name: 'WorkItem inspector split canvas', deps: ['F1','Q2'], value: 'Click any WorkItem row → inspector slides in from the right with full anatomy. Main list dims to 0.5 but stays visible.', acceptance: 'Click WI 04 → inspector slides in. Click another row → content swaps without re-mount. Close (✕) dismisses inspector, list returns to full opacity.', dataModel: 'None new', mcp: 'get_workitem_detail (extended with provenance)', fidelity: 'ledger §11 inspector slide-in, sticky header, dim-main-list', preview: 'quoting-detail Screen 2' },
+  { id: 'Q6', phase: 1, name: 'Labour breakdown per WorkItem (tasks · hours · rates)', deps: ['Q5'], value: 'Each WorkItem shows its labour tasks with hours, rates, subtotal. Editable. Rates come from journeyman averages / historical data.', acceptance: 'WI 04 shows 3 tasks (core-drill, set box, trim) with hours and $92/hr rate. Editable; recalculates on change.', dataModel: 'Labour entity (Domain 16 existing)', mcp: 'get_labour_for_workitem, update_labour_task, add_labour_task, delete_labour_task', fidelity: 'ledger §11 labour table inside inspector', preview: 'quoting-detail Screen 2 labour section' },
+  { id: 'Q7', phase: 1, name: 'Items breakdown per WorkItem (catalog integration)', deps: ['Q5'], value: 'Each WorkItem shows its items (materials/equipment/fixtures) with catalog lookup + unit prices + totals.', acceptance: 'WI 04 shows Hubbell FBR-2 box + unistrut + cover + wire + misc connectors, each priced from catalog.', dataModel: 'Item entity (Domain 16 existing), MaterialCatalogEntry', mcp: 'get_items_for_workitem, lookup_catalog_entry, add_item_to_workitem', fidelity: 'ledger §11 items table', preview: 'quoting-detail Screen 2 items section' },
+  { id: 'Q8', phase: 1, name: 'Source provenance tagging on labour + items', deps: ['Q6','Q7'], value: 'Every rate, every price carries its source (catalog / history / insight / stated). Renders as coloured tags.', acceptance: 'No number displays without its source tag. Tag colour matches canonical variants. Stated numbers prompt for insight capture.', dataModel: 'data-model-delta §10 (source fields on Labour + Item)', mcp: 'Existing tools return source info; capture_stated_as_insight', fidelity: 'ledger §18 source tags (catalog/history/insight/stated/default)', preview: 'all quoting-detail screens + lifecycle State 2' },
+  { id: 'Q9', phase: 1, name: 'Item price history + alternatives drill', deps: ['Q7','Q8'], value: 'Click an item → price history (POs back in time with trend) + alternatives Kerf has observed with rejection reasons.', acceptance: 'Hubbell FBR-2 shows past POs with prices + trend. Rejected alternatives (Legrand, Wiremold) show with reasons captured from past conversations.', dataModel: 'MaterialCatalogEntry + PurchaseOrderLine history (verify)', mcp: 'get_item_price_history, view_item_alternatives', fidelity: 'ledger §8 tables, §18 source tags on PO rows', preview: 'quoting-detail Screen 4' },
+  { id: 'Q10', phase: 1, name: 'Labour lineage equation rendering', deps: ['Q6','Q8'], value: 'Click a labour line → equation renders: 12 × 1.33 → 16.0 → +15% → 18.4. Each node clickable to drill into source.', acceptance: 'Equation renders with correct node colouring (default/base/insight/final). Arrows animate in. Click base → 3-job sample. Click insight → full insight lifecycle.', dataModel: 'Uses Labour.base_hours + applied_adjustments + applied_insight_ids fields', mcp: 'get_labour_lineage', fidelity: 'ledger §16 lineage equation node variants', preview: 'quoting-detail Screen 3' },
+  { id: 'Q11', phase: 1, name: 'Insight engine (matching · application · confidence · validation)', deps: ['Q4','Q8','Q10'], value: 'Insights match on methodology approach values. Fire when conditions met. Rendered as yellow cards in inspector with evidence + confidence + sample.', acceptance: 'WI 04 with approach.ceiling_height = 8\'6" → low_ceiling insight fires +15% labour. Insight card shows Alder/Chapelwood/Peachtree evidence, 92% confidence, n=3. Contractor confirm/correct adjusts confidence.', dataModel: 'Insight node (Domain 17) + APPLIES_TO_METHODOLOGY_WITH {approach_match}', mcp: 'match_insights_for_workitem, apply_insight, validate_insight_on_contractor_confirm, decay_insight_on_contractor_reject', fidelity: 'ledger §14 insight cards (yellow-strong treatment)', preview: 'quoting-detail Screen 2 insight card' },
+  { id: 'Q12', phase: 1, name: 'Provenance tree drill + confidence meters', deps: ['Q10','Q9','Q11'], value: '"Show me full provenance of $9,800" → agent renders full tree decomposing every labour + item + margin to its source. Confidence meters per dimension.', acceptance: 'Tree renders ASCII-style with all branches carrying source tags. Confidence meters (labour, items, adjustment, overall) with correct colour bands.', dataModel: 'None new (traversal query)', mcp: 'get_full_provenance_tree', fidelity: 'ledger §17 provenance tree + §19 confidence meters', preview: 'quoting-detail Screen 6' },
+  { id: 'Q13', phase: 1, name: 'Assumptions + Exclusions authoring (with variation triggers)', deps: ['Q5'], value: 'Assumptions carry variation-eligible flags. Exclusions are scope boundaries. Editable pre-accept; immutable post-accept; change = variation.', acceptance: 'Assumption "site 5 days/wk" with "weekend = T&M" trigger visible. Exclusion "fire alarm by others." Both editable before acceptance, read-only after.', dataModel: 'Assumption + Exclusion (Domain 17 existing)', mcp: 'create_assumption, create_exclusion, edit_assumption_pre_accept, set_variation_trigger', fidelity: 'ledger §7.2 glyphs (⚠ ⊘)', preview: 'lifecycle.html State 2 sections 02, 03' },
+  { id: 'Q14', phase: 1, name: 'Payment schedule + warranty + retention terms', deps: ['Q13'], value: 'Payment schedule with milestones summing to 100%. Warranty period + scope. Retention % + release rules.', acceptance: '5-milestone schedule enforced to sum to 100%. Warranty 12mo from SC. Retention 5% with release at PC/final. Residential defaults vs commercial presets.', dataModel: 'Terms on Project or ContractTerms entity (verify)', mcp: 'set_payment_schedule, set_warranty, set_retention', fidelity: 'ledger §7.2 glyphs (⚭ ❑ ▤)', preview: 'lifecycle.html State 2 sections 04, 05, 06' },
+  { id: 'Q15', phase: 1, name: 'QUOTED Dashboard — 7-section quote document', deps: ['Q2','Q3','Q4','Q6','Q7','Q8','Q11','Q13','Q14'], value: 'Once scope is captured and priced, Dashboard reshapes to the full quote-document view (7 numbered sections). Single scrollable surface Sarah reviews before sending.', acceptance: 'All 7 sections render: WorkItems · Assumptions · Exclusions · Payment Schedule · Warranty · Retention · Sources. Every number carries source tags. Insight sub-chips on affected rows. Margin green, Sell yellow.', dataModel: 'Uses everything above', mcp: 'render_quoted_dashboard', fidelity: 'ledger §6,7,8,18 · Option A.1 in project-screen-mockups.html · Claude Design original', preview: 'lifecycle.html State 2 + Claude Design screenshot' },
+  { id: 'Q16', phase: 1, name: 'Proposal document generation (PDF)', deps: ['Q15'], value: 'Generate Proposal button renders PDF from current Quote state. Cover · WorkItems · terms · assumptions · exclusions · signatures · magic-link QR.', acceptance: 'Sarah taps Generate Proposal → PDF renders with brand header, WorkItem list, Assumptions/Exclusions, Payment Schedule, Warranty + Retention, magic-link at bottom. Print-friendly.', dataModel: 'Document entity (type: proposal); Quote.doc_hash populated from this', mcp: 'generate_proposal_document', fidelity: 'print styles in index.css + brand elements', preview: 'lifecycle.html State 2 CTA' },
+
+  // ── Phase 2 · Client handoff + contract ──
+  { id: 'H1', phase: 2, name: 'Magic-link infrastructure', deps: ['Q15'], value: 'Token generation, scope validation, single-use enforcement for action scopes, expiry, view tracking, 410 on expired.', acceptance: 'Issue magic link with scope=view_quote. Expires at configured date. Single-use for accept_quote / approve_variation / acknowledge_pc. View tracked: first_viewed_at, view_count.', dataModel: 'data-model-delta §12 MagicLink', mcp: 'issue_magic_link, validate_magic_link, record_magic_link_view, invalidate_magic_link', fidelity: 'NEW client-portal preview needed', preview: 'GAP — design-pass sub-slice first' },
+  { id: 'H2', phase: 2, name: 'Client-facing quote view', deps: ['H1'], value: 'Kate clicks link → sees quote in client-friendly layout with Accept/Decline/Ask-question affordances. Same data as QUOTED Dashboard but lighter chrome.', acceptance: 'Client view loads on mobile + desktop. Accept works with name entry. Decline works with optional reason. Ask-question routes to email flow.', dataModel: 'None new', mcp: 'client_accept_quote, client_decline_quote, client_ask_question', fidelity: 'NEW — client portal design pass required', preview: 'GAP' },
+  { id: 'H3', phase: 2, name: 'Email inbound handling', deps: ['Q16','H2'], value: 'Client replies to Kerf-originated emails → agent reads + links to Project + classifies intent (question / change request / acceptance / objection) + proposes next action.', acceptance: 'Kate emails "can we see this without the pantry?" → event in Sarah\'s chat with ◈ glyph. Agent classifies as change-request, proposes revision draft.', dataModel: 'data-model-delta §11 EmailThread + EmailMessage', mcp: 'poll_email_replies, link_email_to_project, classify_client_intent', fidelity: 'ledger §10.4 event markers (dashed border, ◈ glyph, distinct component)', preview: 'lifecycle.html State 2 + agent panel events' },
+  { id: 'H4', phase: 2, name: 'Quote revision (v2 supersedes v1)', deps: ['Q15','H3'], value: 'Revision creates Quote v2 marked SUPERSEDES v1. Client magic-link shows v2 only; v1 retained for history.', acceptance: 'Sarah issues revision → v2 exists, v1 marked Superseded. Client sees v2 via magic-link. Sarah can view v1 history.', dataModel: 'Quote.SUPERSEDES relationship', mcp: 'draft_quote_revision, issue_quote_revision', fidelity: 'ledger §8.1 sub-chip tags indicating superseded', preview: 'lifecycle.html State 2 revision moment' },
+  { id: 'H5', phase: 2, name: 'Acceptance → ContractVersion v1 → state flip', deps: ['H2','H4'], value: 'Client clicks Accept on magic link → ContractVersion v1 snapshotted immutably (sum, hash, parties, dates, terms, jurisdiction) → Project state flips QUOTED → ACCEPTED. Chip pulses.', acceptance: 'Accept triggers ContractVersion lock. Scope becomes variation-only. Chip colour flips + pulses. Dashboard reshapes to pre-start.', dataModel: 'data-model-delta §2 ContractVersion + Quote.ACCEPTED_INTO', mcp: 'accept_quote_via_magic_link, snapshot_contract_version', fidelity: 'ledger §4 state chip transition animation', preview: 'lifecycle.html transition State 2 → State 3' },
+
+  // ── Phase 3 · Execute ──
+  { id: 'X1', phase: 3, name: 'ACCEPTED pre-start dashboard', deps: ['H5'], value: 'Dashboard shows "Before we start" checklist: deposit invoice · permit · material order · start date · crew. Contract-reference strip at top.', acceptance: 'On ACCEPTED, Dashboard renders checklist with status chips for each item. Contract-ref strip shows locked terms.', dataModel: 'None new', mcp: 'get_accepted_pre_start_state', fidelity: 'ledger §21 contract-ref strip · §6 metric tiles · §22 checklist rows', preview: 'lifecycle.html State 3' },
+  { id: 'X2', phase: 3, name: 'Deposit invoice lifecycle', deps: ['X1'], value: 'Agent drafts deposit invoice from contract terms. Sarah reviews + sends via email. Client pays. Payment recorded. Checklist row flips Paid.', acceptance: 'Deposit drafts automatically on ACCEPTED. Sarah taps send. Kate pays via Stripe link. Payment recorded; checklist row flips Paid chip.', dataModel: 'Invoice entity (verify)', mcp: 'send_invoice (type:deposit), record_invoice_payment, nudge_client_on_invoice', fidelity: 'ledger §7.2 payment glyph', preview: 'lifecycle.html State 3 checklist' },
+  { id: 'X3', phase: 3, name: 'First time entry → ACTIVE', deps: ['H5','X1'], value: 'First time entry of any kind auto-flips state ACCEPTED → ACTIVE. Direct consequence of operator action (not inferred fact — consistent with Principle #15).', acceptance: 'Sarah logs first hour → state chip flips green + pulses. Dashboard reshapes to ACTIVE layout.', dataModel: 'Trigger on TimeEntry creation', mcp: 'log_time_entry', fidelity: 'ledger §4 state chip transition animation', preview: 'lifecycle.html State 3 → State 4' },
+  { id: 'X4', phase: 3, name: 'ACTIVE Dashboard + "Needs your call" panel', deps: ['X3'], value: 'Dashboard reshapes to execution view: Complete% / Spent / Invoiced / Next-milestone tiles + the signature "Needs your call" urgent-items panel.', acceptance: 'ACTIVE Dashboard renders. Empty "Needs your call" initially; items surface as conditions trigger (variance, expiring certs, variation drafts, etc.).', dataModel: 'Aggregation queries', mcp: 'get_active_dashboard', fidelity: 'ledger §13 Needs-your-call panel (machine-yellow border, urgency colour coding, bounded to 2–3 items)', preview: 'lifecycle.html State 4' },
+  { id: 'X5', phase: 3, name: 'Variation entity + lifecycle', deps: ['X4'], value: 'Variation with state machine Draft → Issued → Approved → Rejected/Superseded. Numbered addenda to ContractVersion v1. Client approves via magic link.', acceptance: 'Sarah drafts V1, issues via magic link, client approves. V1 immutable. Effective contract sum recomputes.', dataModel: 'data-model-delta §3 Variation', mcp: 'draft_variation, issue_variation, approve_variation (via magic link), reject_variation, revise_variation', fidelity: 'ledger §13 attention cards · §14 insight card if variation carries one', preview: 'lifecycle.html State 4 V1 Draft card' },
+  { id: 'X6', phase: 3, name: 'Variation auto-detection (from chat + daily log)', deps: ['X5'], value: 'Agent detects variation-worthy scope changes in chat or daily logs → auto-drafts Variation with evidence chain (logs, photos, time entries).', acceptance: 'Sarah says in chat "4 extra slab cores" → V1 drafts automatically with evidence. Surfaces in Needs-your-call panel.', dataModel: 'Uses Variation + EVIDENCE_FROM relationships', mcp: 'detect_variation_from_chat, draft_variation_from_daily_log', fidelity: 'ledger §13 attention cards · auto-detection nudges', preview: 'lifecycle.html State 4 Needs-your-call panel' },
+  { id: 'X7', phase: 3, name: 'Progress tracking + daily-log integration', deps: ['X3','X4'], value: 'WorkItems update % complete from time entries + manual marking. Site walk narration populates daily log + safety + quality + time simultaneously.', acceptance: 'Logging time against WI 02 updates its progress bar. Voice walk populates all four surfaces from one utterance.', dataModel: 'WorkItem.percent_complete + state; DailyLog existing', mcp: 'update_workitem_progress, capture_site_walk (one-to-many extraction)', fidelity: 'ledger §9 progress bars (100% flips to green)', preview: 'lifecycle.html State 4 Progress panel' },
+  { id: 'X8', phase: 3, name: 'Interim (progress) invoicing', deps: ['X4','X2'], value: 'Progress invoices compose from current % complete per WorkItem + approved variations + milestone triggers.', acceptance: 'At M2 Rough 1st inspection pass → agent drafts progress invoice. Sarah approves → sent. Payment recorded.', dataModel: 'Invoice type: interim', mcp: 'draft_interim_invoice, send_invoice, record_payment', fidelity: 'Money meta-tab tile in ACTIVE (gap)', preview: 'lifecycle.html State 4 Money tile' },
+
+  // ── Phase 4 · Site operations ──
+  { id: 'S1', phase: 4, name: 'Site meta-tab shell', deps: ['F1','F4'], value: 'Click Site → meta-tab dashboard with state-aware jobsite summary: today\'s toolbox + open hazards + crew on site + equipment list.', acceptance: 'Marco taps Site → dashboard renders. Click entity → drill into full record (reuse global Inspections/Workers/Equipment UI).', dataModel: 'None new', mcp: 'get_site_dashboard_state_aware', fidelity: 'ledger cross-cutting rules; Site-specific additions in a follow-on ledger pass', preview: 'GAP — design-pass sub-slice needed' },
+  { id: 'S2', phase: 4, name: 'Safety dashboard within Site', deps: ['S1'], value: 'Site → Safety: this project\'s inspections, hazards, CAs, incidents, toolbox talks. Filtered view of global Inspections engine.', acceptance: 'Click Site → Safety → dashboard with open items. Click an inspection → full inspection record (same UI as global).', dataModel: 'None new', mcp: 'Existing Inspection tools, filtered by project_id', fidelity: 'global Inspections component styling; Site Board token discipline', preview: 'GAP' },
+  { id: 'S3', phase: 4, name: 'Quality dashboard within Site', deps: ['S1','S2'], value: 'Same inspection engine as Safety with different templates referencing building codes. Deficiencies lifecycle.', acceptance: 'Quality deficiencies render. Closure lifecycle (identify → assign → correct → verify) works end-to-end.', dataModel: 'None new', mcp: 'Existing filtered by inspection type = quality', fidelity: 'mirrors Safety layout', preview: 'GAP' },
+  { id: 'S4', phase: 4, name: 'Crew dashboard (within Site)', deps: ['S1'], value: 'Site → Crew: workers assigned to this project with cert status, time summary, productivity per worker.', acceptance: 'Sarah sees Mike + crew with cert chips + hours this week. Expiring cert flagged red. Click worker → full record.', dataModel: 'None new', mcp: 'get_crew_for_project, get_worker_cert_status', fidelity: 'crew-specific layout pass', preview: 'GAP' },
+  { id: 'S5', phase: 4, name: 'Equipment dashboard (within Site)', deps: ['S1'], value: 'Site → Equipment: equipment assigned to this project with maintenance + inspection status + scheduled use.', acceptance: 'Forklift shows on-site with next maintenance due. Click equipment → full record.', dataModel: 'None new', mcp: 'get_equipment_for_project', fidelity: 'equipment-specific layout pass', preview: 'GAP' },
+  { id: 'S6', phase: 4, name: 'Daily log dashboard + voice-walk integration', deps: ['F3','S1','S2','S3','X7'], value: 'Work → Daily logs: chronological narrative with voice entries. One voice walk populates safety + quality + time + log simultaneously per §3.13.', acceptance: 'Marco narrates → daily log + safety + quality + time populate. All four surfaces reflect the one utterance.', dataModel: 'DailyLog exists; multi-write extraction logic', mcp: 'capture_daily_log_from_voice (extended to one-to-many)', fidelity: 'ledger §20 timeline entries (actor suffix mandatory)', preview: 'GAP' },
+
+  // ── Phase 5 · Money + Contract surfaces ──
+  { id: 'M1', phase: 5, name: 'Money meta-tab shell', deps: ['F1','F4'], value: 'Money → spent / budget / invoiced / paid tiles. Cost-by-WorkItem with variance flagged red. Retention balance visible.', acceptance: 'Sarah sees spent vs. budget with variance flagged. Per-WorkItem cost breakdown. Retention tile shows held amount.', dataModel: 'Aggregation queries', mcp: 'get_money_dashboard_state_aware', fidelity: 'Money-specific dashboard design pass', preview: 'GAP' },
+  { id: 'M2', phase: 5, name: 'Contract meta-tab shell + assumptions view', deps: ['F1','F4','Q13','H5'], value: 'Contract → ContractVersion summary, assumptions (editable pre-accept, read-only after), exclusions, warranty, retention, variation register, signed documents.', acceptance: 'Pre-accept: Sarah edits an assumption → live quote updates. Post-accept: assumptions read-only; change = variation proposal.', dataModel: 'Uses ContractVersion + Assumption + Exclusion', mcp: 'get_contract_view, edit_assumption_pre_accept', fidelity: 'Contract-specific dashboard design pass', preview: 'GAP' },
+  { id: 'M3', phase: 5, name: 'Dispute entity + lifecycle', deps: ['M2'], value: 'Dispute first-class entity. Raise dispute from Contract tab. Lifecycle Raised → Negotiating → [Adjudication | Mediation | Arbitration] → Resolved.', acceptance: 'Sarah raises dispute from Contract. Evidence chain attaches. State progresses correctly. Resolution outcome captured.', dataModel: 'data-model-delta §4 Dispute', mcp: 'raise_dispute, escalate_dispute, resolve_dispute, attach_evidence_to_dispute', fidelity: 'ledger §5 overlay chips — DISPUTE_OPEN loud red', preview: 'GAP' },
+  { id: 'M4', phase: 5, name: 'QuickBooks sync integration', deps: ['X2','X8'], value: 'Invoices sync bidirectionally with QuickBooks (or Xero/Sage per integration). Payments reconcile.', acceptance: 'Invoice sent in Kerf → appears in QuickBooks. Payment recorded in QB → reflects in Kerf. Sync errors surface as nudges.', dataModel: 'Sync metadata on Invoice', mcp: 'sync_invoice_to_quickbooks, pull_payments_from_quickbooks, handle_sync_error', fidelity: 'sync status chip on Money surfaces', preview: 'GAP' },
+
+  // ── Phase 6 · Close + revive ──
+  { id: 'K1', phase: 6, name: 'PC declaration + WorkItem 100% gate + punch list', deps: ['X7','X5'], value: 'Sarah declares PC. Precondition: all in-scope WorkItems at complete or de_scoped. Punch list captured via voice prompt. PC snapshot taken.', acceptance: '"We\'re done" → if all WI 100% or de_scoped → PC fires with punch list capture + DLP clock (where applicable). If WI at 80% → Kerf lists blockers, offers de-scope-via-variation.', dataModel: 'WorkItem.state gate + PracticalCompletion entity', mcp: 'declare_practical_completion, capture_punch_list', fidelity: 'ledger §22 close-summary tiles', preview: 'lifecycle.html State 5' },
+  { id: 'K2', phase: 6, name: 'Final invoice', deps: ['K1','X8'], value: 'Final invoice auto-drafts at PC (contract + approved variations − paid to date). Sarah approves + sends. Client pays. Recorded.', acceptance: 'On PC, balance pre-drafted. Approves + sends. Stripe pay. Recorded.', dataModel: 'Invoice type: final', mcp: 'draft_final_invoice, send_invoice, record_payment', fidelity: 'PC Dashboard final invoice row', preview: 'lifecycle.html State 5' },
+  { id: 'K3', phase: 6, name: 'CLOSED transition + typed closed_reason', deps: ['K1','K2'], value: 'Sarah closes the project. Typed reason captured (completed / terminated_convenience / terminated_cause / abandoned). Archived.', acceptance: 'Close project → reason prompt → confirm → flip CLOSED. Header styling changes. Warn-not-block on open items (per Principle #15).', dataModel: 'Project.closed_reason + state_at_closure from F4', mcp: 'mark_project_closed', fidelity: 'ledger §23 CLOSED styling', preview: 'lifecycle.html State 6' },
+  { id: 'K4', phase: 6, name: 'Revive mechanism', deps: ['K3'], value: 'Client calls back about closed project → Sarah revives → state reversal. Revival event captured on timeline. Nudge calibrated to original exit reason.', acceptance: 'Tap Revive on closed project → appropriate nudge (soft for lead_lost, firmer for abandoned, loud legal caution for terminated_*). On confirm → state reverses, Revival logged.', dataModel: 'data-model-delta §5 Revival', mcp: 'revive_project', fidelity: 'ledger §23 revive-card pulse', preview: 'lifecycle.html State 6 revive card' },
+
+  // ── Phase 7 · Overlays ──
+  { id: 'O1', phase: 7, name: 'PauseRecord + PAUSED overlay UI', deps: ['F1','F4'], value: 'Sarah pauses project with typed reason + expected resume date. Overlay chip + body band render. Resume flow captures resolution.', acceptance: 'Pause → chip + band visible with reason + dates. Nudge at expected_resume_at → resume flow. Cure deadline tracked for suspension type.', dataModel: 'data-model-delta §6.1 PauseRecord', mcp: 'pause_project, resume_project', fidelity: 'ledger §5 overlay chips + PAUSED body band (explicit, not collapsed into chip alone)', preview: 'project-screen-mockups.html — paused mini-mockup' },
+  { id: 'O2', phase: 7, name: 'DLP overlay', deps: ['K1'], value: 'When contract has DLP (commercial), at PC declaration the DLP_OPEN overlay auto-activates. Nudge at expiry (operator confirms close per Principle #15).', acceptance: 'Commercial project → PC → DLP auto-opens. At expiry → nudge. Operator confirms close.', dataModel: 'data-model-delta §6.2 DefectsLiabilityPeriod', mcp: 'open_dlp, close_dlp_at_expiry', fidelity: 'muted chip + Contract meta-tab DLP section', preview: 'GAP' },
+  { id: 'O3', phase: 7, name: 'Retention overlay', deps: ['H5','O2'], value: 'When retention applies, RETENTION_HELD tracks held amount + trust requirements + release triggers (partial at PC, balance at DLP end).', acceptance: 'Commercial + 5% retention: held amount tracked. Partial release at PC → Money tile updates. Balance release at DLP end.', dataModel: 'data-model-delta §6.3 RetentionHolding', mcp: 'hold_retention, release_retention (partial/final)', fidelity: 'muted chip + Money meta-tab tile', preview: 'GAP' },
+  { id: 'O4', phase: 7, name: 'Dispute UI integration', deps: ['M3'], value: 'Dispute entity gets full header-chip + body-band integration. "Needs your call" surfaces new disputes with escalation cues.', acceptance: 'Dispute raised → red chip on header + count badge on Contract tab. Prominent section in Contract. Closes → chip clears.', dataModel: 'None new (M3 did the entity)', mcp: 'None new', fidelity: 'ledger §5 — DISPUTE_OPEN chip is loud red', preview: 'GAP' },
+];
+
+// ══════════════════════════════════════════════════════════
+// Status management
+// ══════════════════════════════════════════════════════════
+const STATUSES = ['not_started', 'in_progress', 'in_review', 'shipped'];
+const STATUS_LABELS = {
+  not_started: 'Not started',
+  in_progress: 'In progress',
+  in_review: 'In review',
+  shipped: 'Shipped',
+};
+
+const STORAGE_KEY = 'kerf-impl-plan-slice-status';
+
+function getStatuses() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function setStatus(sliceId, status) {
+  const s = getStatuses();
+  s[sliceId] = status;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+}
+
+function cycleStatus(sliceId) {
+  const current = getStatuses()[sliceId] || 'not_started';
+  const idx = STATUSES.indexOf(current);
+  const next = STATUSES[(idx + 1) % STATUSES.length];
+  setStatus(sliceId, next);
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+// Rendering
+// ══════════════════════════════════════════════════════════
+function chipHTML(sliceId) {
+  const status = getStatuses()[sliceId] || 'not_started';
+  return `<span class="status-chip" data-status="${status}" onclick="cycleStatus('${sliceId}')">${STATUS_LABELS[status]}</span>`;
+}
+
+function renderPhaseList() {
+  const statuses = getStatuses();
+  const el = document.getElementById('phase-list');
+  el.innerHTML = PHASES.map(phase => {
+    const phaseSlices = SLICES.filter(s => s.phase === phase.id);
+    const shipped = phaseSlices.filter(s => (statuses[s.id] || 'not_started') === 'shipped').length;
+    const pct = phaseSlices.length ? Math.round((shipped / phaseSlices.length) * 100) : 0;
+    return `
+      <div class="phase-card">
+        <div class="head">
+          <span class="num">${phase.label}</span>
+          <span class="title">${phase.title}</span>
+          <span class="meta">${shipped}/${phaseSlices.length}</span>
+        </div>
+        <div class="milestone">${phase.milestone}</div>
+        <div class="progress-row">
+          <div class="bar-track"><div class="bar-fill ${pct === 100 ? 'pass' : ''}" style="width:${pct}%;"></div></div>
+          <div class="pct">${pct}%</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderSliceTable() {
+  const tbody = document.getElementById('slice-tbody');
+  tbody.innerHTML = SLICES.map(s => {
+    const phaseLabel = PHASES.find(p => p.id === s.phase).label;
+    const depsStr = s.deps.length ? s.deps.map(d => `<span class="dep-badge">${d}</span>`).join('') : '—';
+    return `
+      <tr>
+        <td class="col-id">${s.id}</td>
+        <td class="col-name">${s.name}<div class="value-short">${s.value}</div></td>
+        <td class="col-phase">${phaseLabel}</td>
+        <td class="col-deps">${depsStr}</td>
+        <td class="col-status">${chipHTML(s.id)}</td>
+      </tr>`;
+  }).join('');
+}
+
+function renderSliceDetails() {
+  const el = document.getElementById('slice-details');
+  el.innerHTML = PHASES.map(phase => {
+    const phaseSlices = SLICES.filter(s => s.phase === phase.id);
+    return `
+      <div class="section">
+        <div class="section-head">
+          <span class="num">${String(phase.id).padStart(2, '0')}</span>
+          <span class="title">${phase.label} · ${phase.title}</span>
+          <span class="chip-mini">${phaseSlices.length} slices</span>
+        </div>
+        <div class="section-body">
+          <p style="color:var(--fg-muted);font-size:12.5px;margin:0 0 14px;">${phase.milestone}</p>
+          ${phaseSlices.map(s => `
+            <details class="slice-detail">
+              <summary>
+                <span class="sid">${s.id}</span>
+                <span class="sname">${s.name}</span>
+                ${chipHTML(s.id)}
+                <span class="sphase">${s.deps.length ? 'depends: ' + s.deps.join(', ') : ''}</span>
+              </summary>
+              <div>
+                <h5>Value</h5>
+                <p>${s.value}</p>
+                <h5>Persona acceptance</h5>
+                <p>${s.acceptance}</p>
+                <h5>Data model</h5>
+                <p>${s.dataModel}</p>
+                <h5>MCP tools</h5>
+                <p><code>${s.mcp}</code></p>
+                <h5>Fidelity reference</h5>
+                <p>${s.fidelity}</p>
+                <h5>Preview anchor</h5>
+                <p>${s.preview}</p>
+              </div>
+            </details>
+          `).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderHeroMetrics() {
+  const statuses = getStatuses();
+  const counts = { not_started: 0, in_progress: 0, in_review: 0, shipped: 0 };
+  SLICES.forEach(s => {
+    const status = statuses[s.id] || 'not_started';
+    counts[status]++;
+  });
+  document.getElementById('hero-in-progress').textContent = counts.in_progress;
+  document.getElementById('hero-in-review').textContent = counts.in_review;
+  document.getElementById('hero-shipped').textContent = counts.shipped;
+  document.getElementById('hero-completion').textContent = `${counts.shipped} of ${SLICES.length} complete`;
+
+  // Stats strip
+  const stripMap = { shipped: 'stats-shipped', in_progress: 'stats-progress', in_review: 'stats-review', not_started: 'stats-not-started' };
+  Object.entries(stripMap).forEach(([s, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = counts[s];
+  });
+}
+
+function renderAll() {
+  renderPhaseList();
+  renderSliceTable();
+  renderSliceDetails();
+  renderHeroMetrics();
+}
+
+// ══════════════════════════════════════════════════════════
+// Tab switching (URL-hash persistent)
+// ══════════════════════════════════════════════════════════
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-nav .tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + tabId);
+  });
+  if (window.location.hash !== '#' + tabId) {
+    history.replaceState(null, '', '#' + tabId);
+  }
+  window.scrollTo(0, 0);
+}
+
+document.getElementById('tabnav').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if (tab) switchTab(tab.dataset.tab);
+});
+
+function applyHashTab() {
+  const hash = window.location.hash.replace('#', '');
+  const validTabs = ['overview', 'ia-audit', 'ledger', 'data-model', 'slices', 'lifecycle', 'previews'];
+  if (validTabs.includes(hash)) {
+    switchTab(hash);
+  }
+}
+
+window.addEventListener('hashchange', applyHashTab);
+
+// ══════════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════════
+renderAll();
+applyHashTab();
+</script>
+
+</body>
+</html>

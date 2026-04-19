@@ -1,0 +1,384 @@
+jurisdiction: au
+source: NATSPEC Worksections
+source_reference: "NATSPEC National Classification System and NATSPEC Worksection Abstracts (October 2025)"
+licensing_note: "Worksection numbering and hierarchy referenced as factual taxonomy. NATSPEC is copyright NATSPEC Pty Ltd; only publicly referenced worksection codes and titles are used here. A NATSPEC Pty Ltd licence should be reviewed as the Australian customer base grows."
+version: "2025-10"
+last_updated: "2026-04-17"
+units: metric
+categories:
+  - code: "01"
+    name: "General"
+    level: 1
+    children:
+      - code: "014"
+        name: "Preliminaries"
+        level: 2
+        children:
+          - { code: "0141", name: "Preliminaries", level: 3, activity_refs: [] }
+          - { code: "0143", name: "Preliminaries (principal site requirements)", level: 3, activity_refs: [] }
+      - code: "017"
+        name: "General requirements"
+        level: 2
+        children:
+          - { code: "0171", name: "General requirements", level: 3, activity_refs: [] }
+      - code: "018"
+        name: "Common requirements"
+        level: 2
+        children:
+          - { code: "0181", name: "Adhesives, sealants and fasteners", level: 3, activity_refs: [] }
+          - { code: "0182", name: "Fire-stopping", level: 3, activity_refs: [] }
+          - { code: "0183", name: "Metals and prefinishes", level: 3, activity_refs: [] }
+          - { code: "0184", name: "Termite management", level: 3, activity_refs: [] }
+          - { code: "0185", name: "Timber products, finishes and treatment", level: 3, activity_refs: [] }
+
+  - code: "02"
+    name: "Site and ground works"
+    level: 1
+    children:
+      - code: "020"
+        name: "Demolition"
+        level: 2
+        children:
+          - { code: "0201", name: "Demolition", level: 3, activity_refs: [] }
+          - { code: "0202", name: "Demolition (Interior and alterations)", level: 3, activity_refs: [] }
+      - code: "022"
+        name: "Preparation and groundwork"
+        level: 2
+        children:
+          - { code: "0221", name: "Site preparation", level: 3, activity_refs: [] }
+          - { code: "0222", name: "Earthwork", level: 3, activity_refs: [] }
+          - { code: "0223", name: "Service trenching", level: 3, activity_refs: [] }
+          - { code: "0224", name: "Stormwater - site", level: 3, activity_refs: [] }
+      - code: "024"
+        name: "Landscape structures"
+        level: 2
+        children:
+          - { code: "0241", name: "Landscape - walling and edging", level: 3, activity_refs: [] }
+          - { code: "0242", name: "Landscape - fences and barriers", level: 3, activity_refs: [] }
+      - code: "025"
+        name: "Landscape cultivation"
+        level: 2
+        children:
+          - { code: "0251", name: "Landscape - soils", level: 3, activity_refs: [] }
+          - { code: "0252", name: "Landscape - natural grass surfaces", level: 3, activity_refs: [] }
+          - { code: "0253", name: "Landscape - planting", level: 3, activity_refs: [] }
+          - { code: "0254", name: "Irrigation", level: 3, activity_refs: [] }
+      - code: "027"
+        name: "Pavement"
+        level: 2
+        children:
+          - { code: "0271", name: "Pavement base and subbase", level: 3, activity_refs: [] }
+          - { code: "0272", name: "Asphalt", level: 3, activity_refs: [] }
+          - { code: "0274", name: "Concrete pavement", level: 3, activity_refs: [] }
+          - { code: "0275", name: "Paving - mortar and adhesive bed", level: 3, activity_refs: [] }
+          - { code: "0276", name: "Segmental pavers - sand bed", level: 3, activity_refs: [] }
+
+  - code: "03"
+    name: "Structure"
+    level: 1
+    children:
+      - code: "030"
+        name: "Foundations"
+        level: 2
+        children:
+          - { code: "0301", name: "Piling", level: 3, activity_refs: [] }
+      - code: "031"
+        name: "Concrete"
+        level: 2
+        children:
+          - { code: "0310", name: "Concrete - combined", level: 3, activity_refs: [] }
+          - { code: "0311", name: "Concrete formwork", level: 3, activity_refs: [] }
+          - { code: "0312", name: "Concrete reinforcement", level: 3, activity_refs: [] }
+          - { code: "0314", name: "Concrete in situ", level: 3, activity_refs: [] }
+          - { code: "0315", name: "Concrete finishes", level: 3, activity_refs: [] }
+      - code: "032"
+        name: "Precast concrete"
+        level: 2
+        children:
+          - { code: "0321", name: "Precast concrete", level: 3, activity_refs: [] }
+          - { code: "0322", name: "Tilt-up concrete", level: 3, activity_refs: [] }
+      - code: "033"
+        name: "Masonry"
+        level: 2
+        children:
+          - { code: "0331", name: "Brick and block construction", level: 3, activity_refs: [] }
+          - { code: "0332", name: "Stone masonry", level: 3, activity_refs: [] }
+      - code: "034"
+        name: "Steel"
+        level: 2
+        children:
+          - { code: "0341", name: "Structural steelwork", level: 3, activity_refs: [] }
+          - { code: "0342", name: "Light steel framing", level: 3, activity_refs: [] }
+      - code: "038"
+        name: "Timber"
+        level: 2
+        children:
+          - { code: "0381", name: "Structural timber", level: 3, activity_refs: [] }
+          - { code: "0382", name: "Light timber framing", level: 3, activity_refs: [] }
+          - { code: "0383", name: "Decking, sheet and panel flooring", level: 3, activity_refs: [] }
+
+  - code: "04"
+    name: "Enclosure"
+    level: 1
+    children:
+      - code: "041"
+        name: "Tanking and damp-proofing"
+        level: 2
+        children:
+          - { code: "0411", name: "Waterproofing - external and tanking", level: 3, activity_refs: [] }
+      - code: "042"
+        name: "Roofing"
+        level: 2
+        children:
+          - { code: "0420", name: "Roofing - combined", level: 3, activity_refs: [] }
+          - { code: "0423", name: "Roofing - profiled sheet metal", level: 3, activity_refs: [] }
+          - { code: "0424", name: "Roofing - seamed sheet metal", level: 3, activity_refs: [] }
+          - { code: "0427", name: "Roofing - tiles", level: 3, activity_refs: [] }
+          - { code: "0428", name: "Roofing - insulated panel systems", level: 3, activity_refs: [] }
+      - code: "043"
+        name: "Cladding"
+        level: 2
+        children:
+          - { code: "0430", name: "Cladding - combined", level: 3, activity_refs: [] }
+          - { code: "0432", name: "Curtain walls", level: 3, activity_refs: [] }
+          - { code: "0434", name: "Cladding - flat sheets and panels", level: 3, activity_refs: [] }
+          - { code: "0435", name: "Cladding - planks and weatherboards", level: 3, activity_refs: [] }
+          - { code: "0436", name: "Cladding - profiled and seamed sheet metal", level: 3, activity_refs: [] }
+      - code: "045"
+        name: "Doors and windows"
+        level: 2
+        children:
+          - { code: "0451", name: "Windows and glazed doors", level: 3, activity_refs: [] }
+          - { code: "0453", name: "Doors and access panels", level: 3, activity_refs: [] }
+          - { code: "0454", name: "Overhead doors", level: 3, activity_refs: [] }
+          - { code: "0455", name: "Door hardware", level: 3, activity_refs: [] }
+      - code: "046"
+        name: "Glazing"
+        level: 2
+        children:
+          - { code: "0461", name: "Glazing", level: 3, activity_refs: [] }
+          - { code: "0462", name: "Structural silicone glazing", level: 3, activity_refs: [] }
+      - code: "047"
+        name: "Insulation"
+        level: 2
+        children:
+          - { code: "0471", name: "Thermal insulation and pliable membranes", level: 3, activity_refs: [] }
+          - { code: "0472", name: "Acoustic insulation", level: 3, activity_refs: [] }
+
+  - code: "05"
+    name: "Interior"
+    level: 1
+    children:
+      - code: "051"
+        name: "Linings"
+        level: 2
+        children:
+          - { code: "0511", name: "Lining", level: 3, activity_refs: [] }
+      - code: "052"
+        name: "Partitions"
+        level: 2
+        children:
+          - { code: "0520", name: "Partitions - combined", level: 3, activity_refs: [] }
+          - { code: "0521", name: "Partitions - demountable", level: 3, activity_refs: [] }
+          - { code: "0522", name: "Partitions - framed and lined", level: 3, activity_refs: [] }
+          - { code: "0524", name: "Partitions - glazed", level: 3, activity_refs: [] }
+      - code: "053"
+        name: "Ceilings"
+        level: 2
+        children:
+          - { code: "0530", name: "Suspended ceilings - combined", level: 3, activity_refs: [] }
+          - { code: "0532", name: "Suspended ceilings - flush lined", level: 3, activity_refs: [] }
+          - { code: "0533", name: "Suspended ceilings - ceiling units", level: 3, activity_refs: [] }
+      - code: "055"
+        name: "Fixtures"
+        level: 2
+        children:
+          - { code: "0551", name: "Joinery", level: 3, activity_refs: [] }
+          - { code: "0552", name: "Metalwork - fabricated", level: 3, activity_refs: [] }
+
+  - code: "06"
+    name: "Finish"
+    level: 1
+    children:
+      - code: "061"
+        name: "Rendering and plastering"
+        level: 2
+        children:
+          - { code: "0611", name: "Rendering and plastering", level: 3, activity_refs: [] }
+          - { code: "0612", name: "Cementitious toppings", level: 3, activity_refs: [] }
+      - code: "062"
+        name: "Waterproofing (internal)"
+        level: 2
+        children:
+          - { code: "0621", name: "Waterproofing - wet areas", level: 3, activity_refs: [] }
+      - code: "063"
+        name: "Ceramic tiling"
+        level: 2
+        children:
+          - { code: "0631", name: "Ceramic tiling", level: 3, activity_refs: [] }
+      - code: "064"
+        name: "Wall surfacing"
+        level: 2
+        children:
+          - { code: "0641", name: "Applied wall finishes", level: 3, activity_refs: [] }
+      - code: "065"
+        name: "Floor surfacing"
+        level: 2
+        children:
+          - { code: "0651", name: "Resilient finishes", level: 3, activity_refs: [] }
+          - { code: "0652", name: "Carpets", level: 3, activity_refs: [] }
+          - { code: "0655", name: "Timber flooring", level: 3, activity_refs: [] }
+          - { code: "0656", name: "Floor sanding and finishing", level: 3, activity_refs: [] }
+          - { code: "0657", name: "Resin based seamless flooring", level: 3, activity_refs: [] }
+      - code: "067"
+        name: "Painting"
+        level: 2
+        children:
+          - { code: "0671", name: "Painting", level: 3, activity_refs: [] }
+
+  - code: "07"
+    name: "Mechanical"
+    level: 1
+    children:
+      - code: "070"
+        name: "Mechanical systems"
+        level: 2
+        children:
+          - { code: "0701", name: "Mechanical systems", level: 3, activity_refs: [] }
+      - code: "071"
+        name: "Chillers and heat sources"
+        level: 2
+        children:
+          - { code: "0711", name: "Chillers - combined", level: 3, activity_refs: [] }
+          - { code: "0712", name: "Water heaters - gas-fired", level: 3, activity_refs: [] }
+      - code: "072"
+        name: "Air conditioning units"
+        level: 2
+        children:
+          - { code: "0721", name: "Packaged air conditioning", level: 3, activity_refs: [] }
+          - { code: "0722", name: "Room air conditioners", level: 3, activity_refs: [] }
+      - code: "074"
+        name: "Air distribution"
+        level: 2
+        children:
+          - { code: "0741", name: "Ductwork", level: 3, activity_refs: [] }
+          - { code: "0744", name: "Ductwork insulation", level: 3, activity_refs: [] }
+          - { code: "0746", name: "Air grilles", level: 3, activity_refs: [] }
+      - code: "075"
+        name: "Piping"
+        level: 2
+        children:
+          - { code: "0751", name: "Mechanical piping", level: 3, activity_refs: [] }
+          - { code: "0752", name: "Mechanical piping insulation", level: 3, activity_refs: [] }
+      - code: "077"
+        name: "Controls"
+        level: 2
+        children:
+          - { code: "0771", name: "Automatic controls", level: 3, activity_refs: [] }
+          - { code: "0773", name: "Building management systems", level: 3, activity_refs: [] }
+
+  - code: "08"
+    name: "Hydraulic"
+    level: 1
+    children:
+      - code: "080"
+        name: "Hydraulic systems"
+        level: 2
+        children:
+          - { code: "0801", name: "Hydraulic systems", level: 3, activity_refs: [] }
+      - code: "081"
+        name: "Sanitary fixtures and tapware"
+        level: 2
+        children:
+          - { code: "0811", name: "Sanitary fixtures", level: 3, activity_refs: [] }
+          - { code: "0812", name: "Tapware", level: 3, activity_refs: [] }
+          - { code: "0816", name: "Tanks", level: 3, activity_refs: [] }
+      - code: "082"
+        name: "Water and drainage"
+        level: 2
+        children:
+          - { code: "0821", name: "Stormwater - buildings", level: 3, activity_refs: [] }
+          - { code: "0822", name: "Wastewater", level: 3, activity_refs: [] }
+          - { code: "0823", name: "Cold and heated water", level: 3, activity_refs: [] }
+          - { code: "0824", name: "Fuel gas", level: 3, activity_refs: [] }
+
+  - code: "09"
+    name: "Electrical"
+    level: 1
+    children:
+      - code: "091"
+        name: "Cabling and conduits"
+        level: 2
+        children:
+          - { code: "0911", name: "Cable support and duct systems", level: 3, activity_refs: [] }
+      - code: "092"
+        name: "Low voltage power"
+        level: 2
+        children:
+          - { code: "0921", name: "Low voltage power systems", level: 3, activity_refs: [] }
+      - code: "093"
+        name: "Power generation"
+        level: 2
+        children:
+          - { code: "0931", name: "Power generation - engine driven", level: 3, activity_refs: [] }
+          - { code: "0933", name: "Power generation - photovoltaic", level: 3, activity_refs: [] }
+      - code: "094"
+        name: "Switchboards"
+        level: 2
+        children:
+          - { code: "0941", name: "Switchboards - proprietary", level: 3, activity_refs: [] }
+          - { code: "0943", name: "Switchboards - specialist", level: 3, activity_refs: [] }
+      - code: "095"
+        name: "Lighting"
+        level: 2
+        children:
+          - { code: "0951", name: "Lighting", level: 3, activity_refs: [] }
+      - code: "096"
+        name: "Communications"
+        level: 2
+        children:
+          - { code: "0961", name: "Information and communications technology (ICT) systems", level: 3, activity_refs: [] }
+          - { code: "0962", name: "Television distribution systems", level: 3, activity_refs: [] }
+      - code: "097"
+        name: "Emergency lighting"
+        level: 2
+        children:
+          - { code: "0971", name: "Emergency evacuation lighting", level: 3, activity_refs: [] }
+      - code: "098"
+        name: "Security"
+        level: 2
+        children:
+          - { code: "0981", name: "Electronic security", level: 3, activity_refs: [] }
+
+  - code: "10"
+    name: "Fire"
+    level: 1
+    children:
+      - code: "100"
+        name: "Fire services"
+        level: 2
+        children:
+          - { code: "1001", name: "Fire services systems", level: 3, activity_refs: [] }
+      - code: "103"
+        name: "Water-based fire suppression"
+        level: 2
+        children:
+          - { code: "1031", name: "Hydrants", level: 3, activity_refs: [] }
+          - { code: "1033", name: "Sprinklers", level: 3, activity_refs: [] }
+      - code: "107"
+        name: "Fire detection and warning"
+        level: 2
+        children:
+          - { code: "1072", name: "Fire detection and alarms", level: 3, activity_refs: [] }
+          - { code: "1073", name: "Emergency warning and intercommunication", level: 3, activity_refs: [] }
+
+  - code: "20"
+    name: "Conveying"
+    level: 1
+    children:
+      - code: "201"
+        name: "Conveying equipment"
+        level: 2
+        children:
+          - { code: "2011", name: "Lifts design and install", level: 3, activity_refs: [] }
+          - { code: "2012", name: "Escalators and moving walkways", level: 3, activity_refs: [] }

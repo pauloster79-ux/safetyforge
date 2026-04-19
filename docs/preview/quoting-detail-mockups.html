@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1460" />
+<title>Quoting — Low-level detail (Site Board)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink-0: #0d0e0c; --ink-1: #141511; --ink-2: #191b17;
+  --ink-3: #22241f; --ink-4: #2e312b;
+  --fg: #e8e9e6; --fg-muted: #a3a79c; --fg-dim: #71766b;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --plate-hi: rgba(255, 255, 255, 0.04);
+  --machine: #F5B800; --machine-bright: #FFCA18; --machine-dark: #D9A200;
+  --machine-wash: rgba(245, 184, 0, 0.10);
+  --machine-strong: rgba(245, 184, 0, 0.20);
+  --pass: #38a169; --pass-bg: rgba(56, 161, 105, 0.15);
+  --fail: #e53e3e; --fail-bg: rgba(229, 62, 62, 0.15);
+  --warn: #d69e2e; --warn-bg: rgba(214, 158, 46, 0.10);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 48px 0;
+  background: var(--ink-0); color: var(--fg);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px; line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.doc-intro { max-width: 920px; margin: 0 auto 64px; padding: 0 24px; }
+.doc-intro h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 8px; }
+.doc-intro .kicker {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--machine); margin-bottom: 8px;
+}
+.doc-intro p { color: var(--fg-muted); font-size: 14px; line-height: 1.6; }
+.doc-intro p strong { color: var(--fg); font-weight: 500; }
+
+.section-intro {
+  max-width: 1440px; margin: 96px auto 20px; padding: 0 24px;
+}
+.section-intro .step {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; color: var(--ink-0); background: var(--machine);
+  padding: 4px 10px; border-radius: 3px; display: inline-block; margin-bottom: 8px;
+}
+.section-intro h2 { font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+.section-intro p { color: var(--fg-muted); font-size: 13.5px; max-width: 920px; margin: 0; line-height: 1.55; }
+.section-intro p strong { color: var(--fg); font-weight: 500; }
+.section-intro .moment {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--fg-muted); letter-spacing: 0.04em; margin-top: 8px;
+}
+
+/* Quoting workspace frame — used across screens */
+.workspace {
+  width: 1440px; height: 900px; background: var(--ink-0);
+  border: 1px solid var(--hairline); border-radius: 4px; overflow: hidden;
+  display: flex; margin: 0 auto;
+  box-shadow: 0 24px 64px -24px rgba(0, 0, 0, 0.5);
+}
+
+/* Icon rail */
+.icon-rail {
+  width: 48px; background: var(--ink-1); border-right: 1px solid var(--hairline);
+  display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 6px;
+  flex-shrink: 0;
+}
+.icon-rail .logo {
+  width: 28px; height: 28px; background: var(--machine); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 14px;
+  color: var(--ink-0); margin-bottom: 10px;
+}
+.icon-rail .rb { width: 32px; height: 32px; border-radius: 4px; display: flex;
+  align-items: center; justify-content: center; color: var(--fg-dim); }
+.icon-rail .rb.active { background: var(--ink-3); color: var(--machine); }
+.icon-rail .rb svg { width: 16px; height: 16px; }
+
+/* Main layout: left rail (chat) + right canvas */
+.main { flex: 1; display: flex; overflow: hidden; }
+.chat-pane {
+  width: 300px; background: var(--ink-1); border-right: 1px solid var(--hairline);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.chat-pane .head {
+  padding: 12px 14px; border-bottom: 1px solid var(--hairline);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.chat-pane .head .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+}
+.chat-pane .head .c {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-dim);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.chat-pane .body { flex: 1; padding: 14px; overflow-y: auto; font-size: 12.5px; }
+.chat-pane .ts {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-dim);
+  letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin: 8px 0 10px;
+}
+.chat-pane .msg { margin-bottom: 14px; }
+.chat-pane .msg .who {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-dim);
+  letter-spacing: 0.08em; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+}
+.chat-pane .msg .who .av {
+  width: 16px; height: 16px; background: var(--machine); color: var(--ink-0);
+  border-radius: 3px; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.chat-pane .msg.user .who .av { background: var(--ink-4); color: var(--fg); }
+.chat-pane .msg .bubble { padding: 10px 12px; border-radius: 6px; color: var(--fg); line-height: 1.45; }
+.chat-pane .msg.user .bubble { background: var(--machine); color: var(--ink-0); font-weight: 500; }
+.chat-pane .msg.kerf .bubble { background: var(--ink-2); border: 1px solid var(--hairline); }
+.chat-pane .msg .bubble strong { color: var(--machine); font-weight: 500; }
+.chat-pane .msg.user .bubble strong { color: var(--ink-0); font-weight: 600; }
+.chat-pane .input {
+  border-top: 1px solid var(--hairline); padding: 10px 14px;
+  display: flex; gap: 8px; background: var(--ink-1);
+}
+.chat-pane .input input {
+  flex: 1; background: var(--ink-2); border: 1px solid var(--hairline);
+  border-radius: 4px; padding: 8px 10px; color: var(--fg);
+  font-family: inherit; font-size: 12.5px;
+}
+.chat-pane .input input::placeholder { color: var(--fg-dim); }
+.chat-pane .input .btn {
+  padding: 8px 10px; border-radius: 4px;
+  font-family: 'IBM Plex Mono'; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;
+  background: var(--ink-3); color: var(--fg); border: 1px solid var(--hairline);
+}
+.chat-pane .input .btn.s { background: var(--machine); color: var(--ink-0); border-color: var(--machine); }
+
+/* Canvas */
+.canvas { flex: 1; background: var(--ink-0); display: flex; flex-direction: column; overflow: hidden; }
+
+/* Top header */
+.top-head {
+  padding: 14px 22px; background: var(--ink-2); border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.top-head .klogo {
+  width: 22px; height: 22px; background: var(--machine); border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-0); font-family: 'IBM Plex Mono'; font-weight: 700; font-size: 11px;
+}
+.top-head .pid {
+  font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--machine);
+  letter-spacing: 0.06em; background: var(--machine-wash); padding: 2px 6px;
+  border-radius: 3px; font-weight: 600;
+}
+.top-head .title { font-size: 15px; font-weight: 600; }
+.top-head .sep { color: var(--fg-dim); font-family: 'IBM Plex Mono'; font-size: 11px; }
+.top-head .meta {
+  font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--fg-muted);
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.top-head .chip {
+  padding: 3px 8px; border-radius: 3px; font-family: 'IBM Plex Mono';
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; border: 1px solid var(--hairline);
+}
+.top-head .chip.quoted { background: var(--machine); color: var(--ink-0); border-color: var(--machine); }
+.top-head .chip.neutral { background: var(--ink-3); color: var(--fg-muted); }
+.top-head .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.top-head .tl { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted); letter-spacing: 0.08em; text-transform: uppercase; text-align: right; }
+.top-head .tv { font-family: 'IBM Plex Mono'; font-size: 16px; color: var(--machine); font-weight: 600; text-align: right; line-height: 1.1; }
+.top-head .cta {
+  padding: 10px 16px; background: var(--machine); color: var(--ink-0);
+  border: 1px solid var(--machine); border-radius: 4px;
+  font-family: 'IBM Plex Mono'; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* Tab bar */
+.tab-bar {
+  display: flex; padding: 0 22px; background: var(--ink-1);
+  border-bottom: 1px solid var(--hairline); gap: 2px; flex-shrink: 0;
+}
+.tab-bar .tab {
+  padding: 12px 14px 11px; font-family: 'IBM Plex Mono';
+  font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--fg-muted); border-bottom: 2px solid transparent; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+.tab-bar .tab.active { color: var(--machine); border-bottom-color: var(--machine); background: var(--ink-0); }
+.tab-bar .tab .ct { background: var(--ink-3); color: var(--fg-muted); padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+.tab-bar .tab.active .ct { background: var(--machine-wash); color: var(--machine); }
+
+/* Canvas body */
+.canvas-body { flex: 1; overflow-y: auto; padding: 22px; }
+
+/* Split canvas: main + inspector */
+.split { display: grid; grid-template-columns: 1fr 440px; gap: 18px; height: 100%; }
+.split-main { overflow-y: auto; }
+.split-inspector {
+  background: var(--ink-2); border: 1px solid var(--hairline);
+  border-radius: 4px; overflow-y: auto; padding: 0;
+}
+.inspector-head {
+  padding: 14px 18px; border-bottom: 1px solid var(--hairline); background: var(--ink-3);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  position: sticky; top: 0; z-index: 10;
+}
+.inspector-head .l .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--machine);
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;
+}
+.inspector-head .l .t { font-size: 14px; color: var(--fg); font-weight: 500; }
+.inspector-head .r { color: var(--fg-dim); cursor: pointer; font-family: 'IBM Plex Mono'; font-size: 12px; }
+.inspector-body { padding: 14px 18px; }
+
+/* Section */
+.section {
+  background: var(--ink-2); border: 1px solid var(--hairline);
+  border-radius: 4px; margin-bottom: 14px;
+}
+.section.selected { border-color: var(--machine); box-shadow: 0 0 0 2px var(--machine-wash); }
+.section-head {
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+.section-head .num {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-dim);
+  letter-spacing: 0.08em; font-weight: 600;
+}
+.section-head .title {
+  font-family: 'IBM Plex Mono'; font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg); font-weight: 600;
+}
+.section-head .chip-mini {
+  padding: 2px 6px; border-radius: 3px; font-family: 'IBM Plex Mono';
+  font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 600; background: var(--machine-wash); color: var(--machine); border: 1px solid var(--machine-wash);
+}
+.section-head .chip-mini.pass { background: var(--pass-bg); color: var(--pass); border-color: var(--pass); }
+.section-head .chip-mini.warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.section-head .chip-mini.neutral { background: var(--ink-3); color: var(--fg-muted); border-color: var(--hairline); }
+.section-head .spacer { flex: 1; }
+.section-head .action {
+  padding: 5px 10px; background: var(--ink-3); border: 1px solid var(--hairline);
+  border-radius: 3px; font-family: 'IBM Plex Mono'; font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg); font-weight: 600;
+}
+.section-head .action.primary { background: var(--machine-wash); color: var(--machine); border-color: var(--machine-wash); }
+
+/* WorkItem table */
+.wi-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.wi-table th, .wi-table td {
+  padding: 9px 16px; text-align: left; border-bottom: 1px solid var(--hairline);
+}
+.wi-table th {
+  font-family: 'IBM Plex Mono'; font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted);
+  font-weight: 500; background: var(--ink-1);
+}
+.wi-table td { color: var(--fg); }
+.wi-table td.num { font-family: 'IBM Plex Mono'; text-align: right; }
+.wi-table td.idx { font-family: 'IBM Plex Mono'; color: var(--fg-dim); width: 28px; }
+.wi-table td.sell { color: var(--machine); font-weight: 500; }
+.wi-table td.pass-n { color: var(--pass); font-weight: 500; }
+.wi-table tr:last-child td { border-bottom: none; }
+.wi-table tr.selected td { background: var(--machine-wash); }
+.wi-table tr.selected td:first-child { border-left: 3px solid var(--machine); padding-left: 13px; }
+.wi-table .tag {
+  display: inline-block; margin-left: 6px; padding: 1px 5px; border-radius: 2px;
+  font-family: 'IBM Plex Mono'; font-size: 9px; letter-spacing: 0.06em;
+  background: var(--ink-3); color: var(--fg-muted); font-weight: 500;
+}
+.wi-table .tag.insight { background: var(--machine-wash); color: var(--machine); }
+
+/* Metric tile */
+.metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+.tile { background: var(--ink-2); border: 1px solid var(--hairline); border-radius: 4px; padding: 14px 16px; }
+.tile.primary { background: var(--machine); color: var(--ink-0); border-color: var(--machine); }
+.tile .k { font-family: 'IBM Plex Mono'; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 6px; font-weight: 600; }
+.tile.primary .k { color: var(--ink-0); opacity: 0.75; }
+.tile .v { font-family: 'IBM Plex Mono'; font-size: 22px; font-weight: 600; line-height: 1.05; }
+.tile .v.pass { color: var(--pass); }
+.tile .s { font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--fg-muted); margin-top: 4px; letter-spacing: 0.04em; }
+.tile.primary .s { color: var(--ink-0); opacity: 0.7; }
+
+/* Detail inspector content */
+.kicker-row {
+  font-family: 'IBM Plex Mono'; font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--machine);
+  font-weight: 600; margin-bottom: 8px; margin-top: 16px;
+}
+.kicker-row:first-child { margin-top: 0; }
+
+/* WI detail: big-ticket summary */
+.wi-detail-head {
+  display: grid; grid-template-columns: 1fr 160px 160px; gap: 12px; margin-bottom: 14px;
+}
+.wi-detail-head .wi-title { font-size: 16px; color: var(--fg); line-height: 1.4; margin-bottom: 6px; font-weight: 500; }
+.wi-detail-head .wi-meta {
+  font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--fg-muted);
+  letter-spacing: 0.06em; line-height: 1.6;
+}
+.wi-detail-head .wi-meta strong { color: var(--fg); font-weight: 500; }
+.wi-detail-head .mini-tile {
+  background: var(--ink-3); border: 1px solid var(--hairline);
+  border-radius: 4px; padding: 10px 12px;
+}
+.wi-detail-head .mini-tile .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px;
+}
+.wi-detail-head .mini-tile .v {
+  font-family: 'IBM Plex Mono'; font-size: 16px; color: var(--fg); font-weight: 500;
+}
+.wi-detail-head .mini-tile .v.machine { color: var(--machine); }
+.wi-detail-head .mini-tile .v.pass { color: var(--pass); }
+.wi-detail-head .mini-tile .s { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted); margin-top: 3px; letter-spacing: 0.04em; }
+
+/* Labour table */
+.labour-table, .items-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.labour-table th, .labour-table td,
+.items-table th, .items-table td {
+  padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--hairline);
+}
+.labour-table th, .items-table th {
+  font-family: 'IBM Plex Mono'; font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted);
+  font-weight: 500; background: var(--ink-1);
+}
+.labour-table td, .items-table td { color: var(--fg); }
+.labour-table td.num, .items-table td.num { font-family: 'IBM Plex Mono'; text-align: right; }
+.labour-table tr.selected td { background: var(--machine-wash); }
+.labour-table tr.selected td:first-child { border-left: 3px solid var(--machine); }
+.labour-table tr:last-child td, .items-table tr:last-child td { border-bottom: none; }
+
+/* Source tag */
+.src-tag {
+  display: inline-block; padding: 2px 7px; border-radius: 3px;
+  font-family: 'IBM Plex Mono'; font-size: 9px;
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;
+}
+.src-tag.catalog { background: var(--pass-bg); color: var(--pass); }
+.src-tag.history { background: var(--machine-wash); color: var(--machine); }
+.src-tag.insight { background: var(--machine-strong); color: var(--machine-bright); }
+.src-tag.stated { background: var(--warn-bg); color: var(--warn); }
+.src-tag.default { background: var(--ink-3); color: var(--fg-muted); }
+
+/* Provenance detail rows */
+.prov-row {
+  display: grid; grid-template-columns: 100px 1fr; padding: 8px 0; gap: 14px;
+  font-size: 12px; border-bottom: 1px solid var(--hairline);
+}
+.prov-row:last-child { border-bottom: none; }
+.prov-row .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.08em; text-transform: uppercase; padding-top: 2px;
+}
+.prov-row .v { color: var(--fg); line-height: 1.5; }
+.prov-row .v strong { color: var(--machine); font-weight: 500; }
+
+/* Insight card inside inspector */
+.insight-card {
+  background: var(--machine-strong); border: 1px solid var(--machine);
+  border-radius: 4px; padding: 14px; margin-bottom: 14px;
+}
+.insight-card .top {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+}
+.insight-card .top .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--machine-bright);
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+}
+.insight-card .top .conf {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--machine-bright);
+  letter-spacing: 0.08em;
+}
+.insight-card .body { font-size: 13px; color: var(--fg); line-height: 1.55; margin-bottom: 10px; }
+.insight-card .body strong { color: var(--machine-bright); font-weight: 500; }
+.insight-card .footer {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: 'IBM Plex Mono'; font-size: 10px;
+  color: var(--fg-muted); letter-spacing: 0.04em;
+}
+.insight-card .footer strong { color: var(--fg); font-weight: 500; }
+
+/* Methodology cascade */
+.meth-cascade { padding: 12px 16px; }
+.meth-level {
+  border-left: 2px solid var(--ink-3); padding-left: 14px; margin-bottom: 14px;
+  position: relative;
+}
+.meth-level.project { border-color: var(--machine); }
+.meth-level.package { border-color: var(--fg-muted); }
+.meth-level.item { border-color: var(--fg-dim); }
+.meth-level .level-head {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
+}
+.meth-level .lbl {
+  font-family: 'IBM Plex Mono'; font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+}
+.meth-level.project .lbl { color: var(--machine); }
+.meth-level.package .lbl { color: var(--fg-muted); }
+.meth-level.item .lbl { color: var(--fg-dim); }
+.meth-level .title { font-size: 13px; color: var(--fg); font-weight: 500; }
+.meth-keys {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px;
+}
+.meth-key {
+  background: var(--ink-3); padding: 8px 10px; border-radius: 3px;
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid var(--hairline);
+}
+.meth-key.override { border-color: var(--machine); background: var(--machine-wash); }
+.meth-key .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px;
+  color: var(--fg-muted); letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.meth-key .v { font-family: 'IBM Plex Mono'; color: var(--fg); font-size: 11px; font-weight: 500; }
+.meth-key.override .v { color: var(--machine); }
+
+/* Effective methodology (merged) */
+.eff-meth {
+  background: var(--ink-3); border: 1px solid var(--machine-wash); border-radius: 4px;
+  padding: 12px 14px; margin-top: 8px;
+}
+.eff-meth .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--machine);
+  letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;
+}
+.eff-meth .keys { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.eff-meth .key-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 8px;
+  padding: 5px 0; font-size: 12px; border-bottom: 1px solid var(--hairline);
+  align-items: center;
+}
+.eff-meth .key-row:last-child { border-bottom: none; }
+.eff-meth .key-row .key {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.06em; text-transform: uppercase; min-width: 110px;
+}
+.eff-meth .key-row .val { font-family: 'IBM Plex Mono'; color: var(--fg); font-size: 11px; }
+.eff-meth .key-row .origin {
+  font-family: 'IBM Plex Mono'; font-size: 9px; color: var(--fg-dim);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.eff-meth .key-row.override .val { color: var(--machine); font-weight: 500; }
+
+/* Source picker / lineage visualization */
+.source-lineage {
+  background: var(--ink-3); border-radius: 4px; padding: 14px; margin-bottom: 12px;
+}
+.source-lineage .head {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; margin-bottom: 10px;
+}
+.lineage-chain {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'IBM Plex Mono'; font-size: 11px;
+}
+.lineage-node {
+  background: var(--ink-4); padding: 5px 10px; border-radius: 3px;
+  border: 1px solid var(--hairline);
+  color: var(--fg); letter-spacing: 0.04em;
+}
+.lineage-node.base { background: var(--pass-bg); color: var(--pass); border-color: var(--pass); }
+.lineage-node.insight { background: var(--machine-wash); color: var(--machine); border-color: var(--machine); }
+.lineage-node.final { background: var(--machine); color: var(--ink-0); border-color: var(--machine); font-weight: 600; }
+.lineage-arrow { color: var(--fg-dim); }
+
+/* Evidence list */
+.evidence-list { }
+.evidence-item {
+  display: grid; grid-template-columns: 20px 1fr auto; gap: 10px;
+  padding: 8px 0; font-size: 12px; border-bottom: 1px solid var(--hairline);
+  align-items: center;
+}
+.evidence-item:last-child { border-bottom: none; }
+.evidence-item .icon {
+  color: var(--machine); display: flex; align-items: center;
+}
+.evidence-item .icon svg { width: 14px; height: 14px; }
+.evidence-item .desc { color: var(--fg); line-height: 1.5; }
+.evidence-item .desc .sub {
+  display: block; font-family: 'IBM Plex Mono'; font-size: 10px;
+  color: var(--fg-dim); letter-spacing: 0.04em; margin-top: 2px;
+}
+.evidence-item .when {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* Sparkline for productivity rate history */
+.spark {
+  display: flex; align-items: flex-end; gap: 2px;
+  height: 24px; margin: 4px 0;
+}
+.spark .bar {
+  flex: 1; background: var(--machine); border-radius: 1px;
+  min-height: 2px;
+}
+.spark .bar.baseline { background: var(--ink-4); }
+
+/* Compare row (historical vs current) */
+.compare-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+  padding: 10px 0; font-size: 12px;
+}
+.compare-col {
+  background: var(--ink-3); border-radius: 4px; padding: 10px 12px;
+}
+.compare-col .k {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px;
+}
+.compare-col .v {
+  font-family: 'IBM Plex Mono'; font-size: 16px; color: var(--fg); font-weight: 500;
+}
+.compare-col .v.pass { color: var(--pass); }
+.compare-col .v.machine { color: var(--machine); }
+.compare-col .s { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted); margin-top: 3px; letter-spacing: 0.04em; }
+
+/* Item detail specific */
+.item-head {
+  background: var(--ink-3); padding: 14px; border-radius: 4px; margin-bottom: 14px;
+}
+.item-head .desc { font-size: 14px; color: var(--fg); margin-bottom: 8px; font-weight: 500; }
+.item-head .meta-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+  font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--fg-muted);
+}
+.item-head .meta-row strong { color: var(--fg); font-weight: 500; }
+
+/* Price history grid */
+.price-history { font-size: 12px; }
+.ph-row {
+  display: grid; grid-template-columns: 120px 1fr 90px;
+  padding: 7px 0; border-bottom: 1px solid var(--hairline); gap: 10px;
+  align-items: center;
+}
+.ph-row:last-child { border-bottom: none; }
+.ph-row.current { background: var(--machine-wash); padding-left: 10px; border-radius: 3px; margin: 0 -4px; border-bottom: none; }
+.ph-row .date { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted); letter-spacing: 0.06em; }
+.ph-row .source { color: var(--fg); }
+.ph-row .price { font-family: 'IBM Plex Mono'; text-align: right; color: var(--fg); font-weight: 500; }
+.ph-row.current .price { color: var(--machine); }
+
+/* Trust meter */
+.trust-meter {
+  background: var(--ink-3); border-radius: 4px; padding: 12px;
+  display: flex; align-items: center; gap: 14px; margin-bottom: 12px;
+}
+.trust-meter .label {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--fg-muted);
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;
+  min-width: 80px;
+}
+.trust-meter .bar-track {
+  flex: 1; height: 6px; background: var(--ink-0); border-radius: 3px; overflow: hidden;
+}
+.trust-meter .bar-fill {
+  height: 100%; border-radius: 3px;
+}
+.trust-meter .bar-fill.high { background: var(--pass); }
+.trust-meter .bar-fill.med { background: var(--machine); }
+.trust-meter .bar-fill.low { background: var(--warn); }
+.trust-meter .val {
+  font-family: 'IBM Plex Mono'; font-size: 12px; color: var(--fg);
+  font-weight: 500; min-width: 60px; text-align: right;
+}
+.trust-meter .val.high { color: var(--pass); }
+.trust-meter .val.med { color: var(--machine); }
+.trust-meter .val.low { color: var(--warn); }
+
+/* Pill */
+.pill {
+  display: inline-block; padding: 2px 7px; border-radius: 10px;
+  font-family: 'IBM Plex Mono'; font-size: 9px;
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;
+}
+.pill.active { background: var(--machine-wash); color: var(--machine); border: 1px solid var(--machine); }
+.pill.passive { background: var(--ink-3); color: var(--fg-muted); border: 1px solid var(--hairline); }
+
+/* Callout */
+.callout {
+  max-width: 1440px; margin: 18px auto 0; padding: 12px 20px;
+  background: rgba(245, 184, 0, 0.06); border: 1px dashed var(--machine-wash);
+  border-radius: 4px; font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+}
+.callout strong { color: var(--machine); font-weight: 500; }
+.callout .kicker-inline {
+  font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--machine);
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; margin-right: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  DOC INTRO                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="doc-intro">
+  <div class="kicker">Quoting · Low-level detail · 2026-04-18</div>
+  <h1>How a number comes to be</h1>
+  <p>
+    Kerf's value isn't that it generates a quote. Every estimating tool does that. Kerf's value is
+    <strong>every number is citable.</strong> The contractor can ask "where did $9,800 come from?"
+    and the chain resolves: <em>WorkItem 04 → 12 floor boxes × ($380 labour + $270 items) × 22% margin,
+    with labour adjusted +15% by the low-ceiling insight derived from Alder St, Chapelwood, Peachtree.</em>
+  </p>
+  <p>
+    This document shows the screens that surface that chain. Running example: <strong>Maple Ridge Phase II · WorkItem 04 · Floor boxes</strong> — the number most contractors get wrong.
+    Screens show progressively deeper drills: quote overview → WorkItem inspector → labour line detail → item line detail → methodology cascade → source provenance.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SCREEN 1 — Quote overview with WI selected                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-intro">
+  <span class="step">01 · Quote overview</span>
+  <h2>Sarah scans the quote. WI 04 has an insight flag.</h2>
+  <p>Starting from the QUOTED dashboard (same as the lifecycle Option C view). Every WorkItem shows a source hint — where its numbers came from: <strong>catalog</strong>, <strong>past job</strong>, <strong>insight applied</strong>, <strong>stated</strong>. Sarah's eye lands on item 04: <strong>⚑ +15% insight</strong>. She taps it to understand why.</p>
+  <div class="moment"><strong>Interaction:</strong> Tap row 04 to open the inspector in Screen 2.</div>
+</div>
+
+<div class="workspace">
+  <div class="icon-rail">
+    <div class="logo">K</div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="rb active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></div>
+  </div>
+  <div class="main">
+    <div class="chat-pane">
+      <div class="head"><div class="k">◎ Conversation</div><div class="c">Quote · Maple Ridge</div></div>
+      <div class="body">
+        <div class="ts">— Tue · Apr 22 · 14:05 —</div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:05</div>
+          <div class="bubble">Quote drafted. <strong>7 items, $121,200, 21% avg.</strong> Floor boxes: applied low-ceiling insight +15%. Walk me through anything?</div></div>
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:07</div>
+          <div class="bubble">The floor-box number looks high. Open 04 for me.</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:07</div>
+          <div class="bubble">Opening. Three sources: catalog for the boxes, past job for labour rate, insight for the low-ceiling adjustment. You can tighten anything.</div></div>
+      </div>
+      <div class="input"><input placeholder="Reply — or hold to speak" /><button class="btn">◉ HOLD</button><button class="btn s">SEND</button></div>
+    </div>
+    <div class="canvas">
+      <div class="top-head">
+        <div class="klogo">K</div>
+        <div class="title">Maple Ridge — Phase II</div>
+        <span class="sep">·</span><span class="pid">MRP-2024-118</span>
+        <span class="sep">·</span><span class="meta">Maple Ridge Dev. Corp.</span>
+        <span class="chip neutral">Valid · May 8</span>
+        <span class="chip neutral">Lump Sum</span>
+        <span class="chip quoted">Quoted · Draft A</span>
+        <div class="right">
+          <div><div class="tl">Quote Total</div><div class="tv">$121,200</div></div>
+          <button class="cta">Generate Proposal</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab active">◉ Dashboard <span class="ct">Quote</span></div>
+        <div class="tab">⚒ Scope <span class="ct">7</span></div>
+        <div class="tab">⬒ Variations</div>
+        <div class="tab">◎ Timeline</div>
+        <div class="tab">$ Money</div>
+        <div class="tab">▤ Contract</div>
+        <div class="tab">⚘ Docs</div>
+        <div class="tab">⚐ People <span class="ct">2</span></div>
+      </div>
+      <div class="canvas-body">
+        <div class="metrics-row">
+          <div class="tile primary"><div class="k">Quote Total</div><div class="v">$121,200</div></div>
+          <div class="tile"><div class="k">Labour</div><div class="v">$59,860</div></div>
+          <div class="tile"><div class="k">Items</div><div class="v">$37,740</div></div>
+          <div class="tile"><div class="k">Avg Margin</div><div class="v pass">21%</div></div>
+        </div>
+        <div class="section">
+          <div class="section-head"><span class="num">01</span><span class="title">⚒ Work Items</span><span class="spacer"></span><button class="action">Filter</button><button class="action primary">+ Item</button></div>
+          <table class="wi-table">
+            <thead><tr><th>#</th><th>Description</th><th>Sources</th><th style="text-align:right;">Qty</th><th>Unit</th><th style="text-align:right;">Labour</th><th style="text-align:right;">Items</th><th style="text-align:right;">Margin</th><th style="text-align:right;">Sell</th></tr></thead>
+            <tbody>
+              <tr><td class="idx">01</td><td>Mobilization &amp; site prep</td><td><span class="src-tag catalog">Catalog</span></td><td class="num">1</td><td>LS</td><td class="num">$6,400</td><td class="num">$2,800</td><td class="num pass-n">18%</td><td class="num sell">$11,200</td></tr>
+              <tr><td class="idx">02</td><td>Rough electrical — 1st floor <span class="tag">← Peachtree</span></td><td><span class="src-tag history">Past · 3×</span></td><td class="num">32</td><td>PT</td><td class="num">$18,240</td><td class="num">$5,760</td><td class="num pass-n">22%</td><td class="num sell">$30,500</td></tr>
+              <tr><td class="idx">03</td><td>Panel upgrade — 200A service</td><td><span class="src-tag catalog">Catalog</span></td><td class="num">1</td><td>LS</td><td class="num">$4,100</td><td class="num">$8,900</td><td class="num pass-n">20%</td><td class="num sell">$16,300</td></tr>
+              <tr class="selected"><td class="idx">04</td><td>Floor boxes — receptacle + data <span class="tag insight">⚑ +15% insight</span></td><td><span class="src-tag history">Past</span> <span class="src-tag insight">Insight</span></td><td class="num">12</td><td>EA</td><td class="num">$4,560</td><td class="num">$3,240</td><td class="num pass-n">22%</td><td class="num sell">$9,800</td></tr>
+              <tr><td class="idx">05</td><td>Rough electrical — 2nd floor</td><td><span class="src-tag history">Past · 3×</span></td><td class="num">28</td><td>PT</td><td class="num">$16,060</td><td class="num">$5,050</td><td class="num pass-n">21%</td><td class="num sell">$24,800</td></tr>
+              <tr><td class="idx">06</td><td>Finish — 1st + 2nd</td><td><span class="src-tag stated">Stated</span></td><td class="num">1</td><td>LS</td><td class="num">$7,800</td><td class="num">$7,300</td><td class="num pass-n">24%</td><td class="num sell">$20,400</td></tr>
+              <tr><td class="idx">07</td><td>Testing &amp; commissioning</td><td><span class="src-tag catalog">Catalog</span></td><td class="num">1</td><td>LS</td><td class="num">$2,700</td><td class="num">$4,700</td><td class="num pass-n">18%</td><td class="num sell">$8,200</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="kicker-inline">Detail</span>
+  Source tags are first-class: <strong>Catalog</strong> (priced from company rate table) · <strong>Past · Nx</strong> (derived from N previous similar jobs) · <strong>Insight</strong> (a learned pattern was applied) · <strong>Stated</strong> (contractor-stated rate — ask Kerf to capture as an insight to reuse). Yellow tag with the ⚑ glyph flags any adjustment. Every row shows its provenance before it shows its price.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SCREEN 2 — WorkItem inspector opens                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-intro">
+  <span class="step">02 · WorkItem inspector</span>
+  <h2>WI 04 opens. Labour, items, methodology, sources — all visible.</h2>
+  <p>The inspector slides in on the right, holding the full anatomy of this WorkItem. Summary tiles at top. Labour table (3 tasks). Items table (5 lines). Methodology summary (cascade collapsed). The insight card in yellow is front-of-mind — that's the adjustment Sarah was asking about.</p>
+  <div class="moment"><strong>Scroll the inspector</strong> to see the full anatomy.</div>
+</div>
+
+<div class="workspace">
+  <div class="icon-rail">
+    <div class="logo">K</div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="rb active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></div>
+  </div>
+  <div class="main">
+    <div class="chat-pane">
+      <div class="head"><div class="k">◎ Conversation</div><div class="c">WI 04 · Floor boxes</div></div>
+      <div class="body">
+        <div class="ts">— Tue · Apr 22 · 14:08 —</div>
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:08</div><div class="bubble">Walk me through WI 04.</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:08</div>
+          <div class="bubble"><strong>12 floor boxes</strong>, receptacle + data.<br>
+          <strong>Labour:</strong> 50.4 hrs · $4,560 · derived from your last 3 floor-box installs, then +15% for low ceiling.<br>
+          <strong>Items:</strong> $3,240 · Hubbell box + unistrut + wire.<br>
+          <strong>Margin:</strong> 22%.</div></div>
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:09</div>
+          <div class="bubble">Where's the 15% from?</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:09</div>
+          <div class="bubble">Alder St, Chapelwood, Peachtree — three past projects where you logged the extra hours and told me it was the ceiling height. <strong>Tap the insight card.</strong></div></div>
+      </div>
+      <div class="input"><input placeholder="Reply — or hold to speak" /><button class="btn">◉ HOLD</button><button class="btn s">SEND</button></div>
+    </div>
+    <div class="canvas">
+      <div class="top-head">
+        <div class="klogo">K</div>
+        <div class="title">Maple Ridge — Phase II</div>
+        <span class="sep">·</span><span class="pid">MRP-2024-118</span>
+        <span class="chip quoted">Quoted · Draft A</span>
+        <div class="right">
+          <div><div class="tl">Quote Total</div><div class="tv">$121,200</div></div>
+          <button class="cta">Generate Proposal</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">◉ Dashboard</div>
+        <div class="tab active">⚒ Scope <span class="ct">7</span></div>
+        <div class="tab">⬒ Variations</div>
+        <div class="tab">◎ Timeline</div>
+        <div class="tab">$ Money</div>
+        <div class="tab">▤ Contract</div>
+        <div class="tab">⚘ Docs</div>
+        <div class="tab">⚐ People <span class="ct">2</span></div>
+      </div>
+      <div class="canvas-body">
+        <div class="split">
+          <!-- Main pane: filtered WorkItem list -->
+          <div class="split-main">
+            <div class="section">
+              <div class="section-head"><span class="num">01</span><span class="title">⚒ WorkItems</span><span class="chip-mini">7</span><span class="spacer"></span><button class="action">Filter</button></div>
+              <table class="wi-table">
+                <thead><tr><th>#</th><th>Description</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Labour</th><th style="text-align:right;">Items</th><th style="text-align:right;">Sell</th></tr></thead>
+                <tbody>
+                  <tr><td class="idx">01</td><td>Mobilization &amp; site prep</td><td class="num">1 LS</td><td class="num">$6,400</td><td class="num">$2,800</td><td class="num sell">$11,200</td></tr>
+                  <tr><td class="idx">02</td><td>Rough electrical — 1st floor</td><td class="num">32 PT</td><td class="num">$18,240</td><td class="num">$5,760</td><td class="num sell">$30,500</td></tr>
+                  <tr><td class="idx">03</td><td>Panel upgrade — 200A</td><td class="num">1 LS</td><td class="num">$4,100</td><td class="num">$8,900</td><td class="num sell">$16,300</td></tr>
+                  <tr class="selected"><td class="idx">04</td><td>Floor boxes — receptacle + data <span class="tag insight">⚑</span></td><td class="num">12 EA</td><td class="num">$4,560</td><td class="num">$3,240</td><td class="num sell">$9,800</td></tr>
+                  <tr><td class="idx">05</td><td>Rough electrical — 2nd floor</td><td class="num">28 PT</td><td class="num">$16,060</td><td class="num">$5,050</td><td class="num sell">$24,800</td></tr>
+                  <tr><td class="idx">06</td><td>Finish — 1st + 2nd</td><td class="num">1 LS</td><td class="num">$7,800</td><td class="num">$7,300</td><td class="num sell">$20,400</td></tr>
+                  <tr><td class="idx">07</td><td>Testing &amp; commissioning</td><td class="num">1 LS</td><td class="num">$2,700</td><td class="num">$4,700</td><td class="num sell">$8,200</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Inspector pane -->
+          <div class="split-inspector">
+            <div class="inspector-head">
+              <div class="l">
+                <div class="k">⚒ Item 04 · WorkItem</div>
+                <div class="t">Floor boxes — receptacle + data</div>
+              </div>
+              <div class="r">✕</div>
+            </div>
+            <div class="inspector-body">
+              <!-- Summary tiles -->
+              <div class="wi-detail-head">
+                <div class="wi-meta">
+                  <div style="margin-bottom:6px;"><strong>12 EA</strong> · floor box assemblies</div>
+                  <div><strong>MasterFormat 26 27 26</strong> — Wiring Devices</div>
+                  <div style="margin-top:4px;">Reception + open office · slab floor</div>
+                </div>
+                <div class="mini-tile"><div class="k">Sell</div><div class="v machine">$9,800</div><div class="s">$817 / unit</div></div>
+                <div class="mini-tile"><div class="k">Margin</div><div class="v pass">22%</div><div class="s">$7,800 cost</div></div>
+              </div>
+
+              <!-- Insight card -->
+              <div class="insight-card">
+                <div class="top">
+                  <div class="k">⚑ Insight applied · +15% labour</div>
+                  <div class="conf">Confidence 92% · n=3</div>
+                </div>
+                <div class="body">
+                  <strong>Low-ceiling insight:</strong> floor-box installs below 9' ceilings run ~15% longer. Detected from <strong>Alder St</strong>, <strong>Chapelwood</strong>, <strong>Peachtree Ph I</strong>. Maple Ridge reception is 8'6" — match.
+                </div>
+                <div class="footer">
+                  <div>First seen · <strong>Nov 2024</strong> (Alder St)</div>
+                  <div>Last confirmed · <strong>Peachtree</strong></div>
+                </div>
+              </div>
+
+              <!-- Labour breakdown -->
+              <div class="kicker-row">Labour · 3 tasks</div>
+              <table class="labour-table">
+                <thead><tr><th>Task</th><th style="text-align:right;">Hours</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Cost</th></tr></thead>
+                <tbody>
+                  <tr class="selected"><td>Core-drill slab + sleeve</td><td class="num">18.4</td><td class="num">$92/hr</td><td class="num">$1,693</td></tr>
+                  <tr><td>Set box + unistrut + pull wire</td><td class="num">24.0</td><td class="num">$92/hr</td><td class="num">$2,208</td></tr>
+                  <tr><td>Trim device + data jack</td><td class="num">8.0</td><td class="num">$82/hr</td><td class="num">$656</td></tr>
+                </tbody>
+              </table>
+              <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.06em; text-transform:uppercase; margin: 6px 0 14px; text-align:right;">Total labour · 50.4 hrs · <span style="color:var(--machine);">$4,557</span></div>
+
+              <!-- Items breakdown -->
+              <div class="kicker-row">Items · 5 lines</div>
+              <table class="items-table">
+                <thead><tr><th>Item</th><th>Qty</th><th style="text-align:right;">Unit</th><th style="text-align:right;">Total</th></tr></thead>
+                <tbody>
+                  <tr><td>Hubbell FBR-2 floor box, 2-gang</td><td>12</td><td class="num">$147.20</td><td class="num">$1,766</td></tr>
+                  <tr><td>Unistrut P1000 10' length</td><td>24</td><td class="num">$22.40</td><td class="num">$538</td></tr>
+                  <tr><td>4-section brass cover w/ data port</td><td>12</td><td class="num">$38.50</td><td class="num">$462</td></tr>
+                  <tr><td>12 AWG THHN · 250 ft roll</td><td>1.5</td><td class="num">$168</td><td class="num">$252</td></tr>
+                  <tr><td>Misc. connectors &amp; anchors</td><td>1 LS</td><td class="num">$222</td><td class="num">$222</td></tr>
+                </tbody>
+              </table>
+              <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.06em; text-transform:uppercase; margin: 6px 0 14px; text-align:right;">Total items · <span style="color:var(--machine);">$3,240</span></div>
+
+              <!-- Methodology summary -->
+              <div class="kicker-row">Methodology · cascade</div>
+              <div style="background: var(--ink-3); border-radius:4px; padding:12px 14px; margin-bottom:12px;">
+                <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;">Effective at item level</div>
+                <div style="font-size:12px; color:var(--fg); line-height:1.6;">
+                  <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--machine); letter-spacing:0.06em;">substrate:</span> slab_on_grade · <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--machine); letter-spacing:0.06em;">ceiling_height:</span> 8'6" · <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--machine); letter-spacing:0.06em;">fixture_count:</span> 12 · <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--machine); letter-spacing:0.06em;">access:</span> hoisted
+                </div>
+                <a style="display:inline-block; font-family:'IBM Plex Mono'; font-size:10px; color:var(--machine); letter-spacing:0.08em; text-transform:uppercase; margin-top:8px; font-weight:600;">See full cascade →</a>
+              </div>
+
+              <!-- Source summary -->
+              <div class="kicker-row">Sources for this WorkItem</div>
+              <div class="trust-meter">
+                <span class="label">Confidence</span>
+                <div class="bar-track"><div class="bar-fill high" style="width:90%;"></div></div>
+                <span class="val high">90% · high</span>
+              </div>
+              <div style="font-family:'IBM Plex Mono'; font-size:11px; color:var(--fg-muted); letter-spacing:0.04em; line-height:1.7;">
+                <div>Labour rate · <strong style="color:var(--fg);">Past · 3 jobs</strong> (avg $91.50/hr · std dev 2.8%)</div>
+                <div>Productivity · <strong style="color:var(--fg);">Past · 3 jobs</strong> (3.5 hr/unit base)</div>
+                <div>Adjustment · <strong style="color:var(--fg);">Insight</strong> (+15% low-ceiling)</div>
+                <div>Items · <strong style="color:var(--fg);">Catalog</strong> (5 lines · City Electric)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="kicker-inline">Detail</span>
+  The inspector is a <strong>sidecar</strong>, not a page. The main list stays visible so Sarah can click another row without losing context. The <strong>insight card</strong> is prominent because it's the number she asked about. The <strong>confidence meter</strong> at the bottom summarises how much Kerf is inferring vs. reading — 90% high-confidence here because three similar jobs exist. Every subsection — labour, items, methodology, sources — is clickable into a deeper drill.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SCREEN 3 — Labour line detail                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-intro">
+  <span class="step">03 · Labour line inspector</span>
+  <h2>Click the core-drill task. See how 18.4 hours was derived.</h2>
+  <p>Sarah clicks the first labour line — <strong>Core-drill slab + sleeve · 18.4 hrs</strong>. The inspector now holds the <strong>provenance of this labour number</strong>: base productivity rate, adjustments, sample size, crew assignment, rate source, comparison to last 3 similar tasks, and the evidence chain for the insight.</p>
+</div>
+
+<div class="workspace">
+  <div class="icon-rail">
+    <div class="logo">K</div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="rb active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></div>
+  </div>
+  <div class="main">
+    <div class="chat-pane">
+      <div class="head"><div class="k">◎ Conversation</div><div class="c">Labour · Core-drill</div></div>
+      <div class="body">
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:10</div><div class="bubble">How did you get to 18.4 hours for core-drilling?</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:10</div>
+          <div class="bubble">Base productivity <strong>1.33 hr/hole</strong> from your last 3 core-drill jobs, × 12 holes = 16.0 hrs. + 15% low-ceiling insight = <strong>18.4 hrs</strong>. Rate $92/hr is from your journeyman average.</div></div>
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:11</div><div class="bubble">Which 3 jobs?</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:11</div>
+          <div class="bubble">Alder St · Nov 24. Chapelwood · Feb 25. Peachtree Ph I · Mar 25. All slab-on-grade. Samples in the inspector.</div></div>
+      </div>
+      <div class="input"><input placeholder="Reply — or hold to speak" /><button class="btn">◉ HOLD</button><button class="btn s">SEND</button></div>
+    </div>
+    <div class="canvas">
+      <div class="top-head">
+        <div class="klogo">K</div>
+        <div class="title">Maple Ridge — Phase II</div>
+        <span class="sep">·</span><span class="pid">MRP-2024-118</span>
+        <span class="chip quoted">Quoted · Draft A</span>
+        <div class="right">
+          <div><div class="tl">Quote Total</div><div class="tv">$121,200</div></div>
+          <button class="cta">Generate Proposal</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">◉ Dashboard</div>
+        <div class="tab active">⚒ Scope <span class="ct">7</span></div>
+        <div class="tab">⬒ Variations</div>
+        <div class="tab">◎ Timeline</div>
+        <div class="tab">$ Money</div>
+        <div class="tab">▤ Contract</div>
+        <div class="tab">⚘ Docs</div>
+        <div class="tab">⚐ People <span class="ct">2</span></div>
+      </div>
+      <div class="canvas-body">
+        <div class="split">
+          <div class="split-main">
+            <!-- Crumbs -->
+            <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px;">
+              WorkItems · <a style="color:var(--machine);">Item 04 Floor boxes</a> · <span style="color:var(--fg);">Labour · Core-drill</span>
+            </div>
+            <div class="section">
+              <div class="section-head"><span class="title">⚒ Item 04 · Floor boxes — labour tasks</span><span class="chip-mini">3 tasks</span></div>
+              <table class="labour-table">
+                <thead><tr><th>Task</th><th style="text-align:right;">Hours</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Cost</th></tr></thead>
+                <tbody>
+                  <tr class="selected"><td>Core-drill slab + sleeve</td><td class="num">18.4</td><td class="num">$92/hr</td><td class="num">$1,693</td></tr>
+                  <tr><td>Set box + unistrut + pull wire</td><td class="num">24.0</td><td class="num">$92/hr</td><td class="num">$2,208</td></tr>
+                  <tr><td>Trim device + data jack</td><td class="num">8.0</td><td class="num">$82/hr</td><td class="num">$656</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="section">
+              <div class="section-head"><span class="title">▤ Base productivity — core-drill through slab</span><span class="chip-mini neutral">3-job sample</span></div>
+              <div style="padding:16px;">
+                <div class="compare-row">
+                  <div class="compare-col"><div class="k">Alder St · Nov '24</div><div class="v">1.42 hr/hole</div><div class="s">14 holes · concrete</div></div>
+                  <div class="compare-col"><div class="k">Chapelwood · Feb '25</div><div class="v">1.28 hr/hole</div><div class="s">8 holes · concrete</div></div>
+                  <div class="compare-col"><div class="k">Peachtree Ph I · Mar '25</div><div class="v">1.29 hr/hole</div><div class="s">16 holes · concrete</div></div>
+                </div>
+                <div style="margin-top:14px; display:flex; align-items:center; gap:14px; padding:12px; background: var(--ink-3); border-radius:4px;">
+                  <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.08em; text-transform:uppercase; font-weight:600;">Base rate</div>
+                  <div style="flex:1; font-family:'IBM Plex Mono'; font-size:11px; color:var(--fg);">
+                    Mean <strong>1.33 hr/hole</strong> · std dev 6.4% · no outliers
+                  </div>
+                  <div style="font-family:'IBM Plex Mono'; font-size:16px; color:var(--machine); font-weight:600;">1.33 hr/hole</div>
+                </div>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-head"><span class="title">⚑ Adjustments applied</span></div>
+              <div style="padding:14px 16px;">
+                <div class="source-lineage">
+                  <div class="head">How 18.4 hours was computed</div>
+                  <div class="lineage-chain">
+                    <span class="lineage-node">12 holes</span>
+                    <span class="lineage-arrow">×</span>
+                    <span class="lineage-node base">1.33 hr/hole</span>
+                    <span class="lineage-arrow">=</span>
+                    <span class="lineage-node">16.0 hrs</span>
+                    <span class="lineage-arrow">+15%</span>
+                    <span class="lineage-node insight">low-ceiling</span>
+                    <span class="lineage-arrow">=</span>
+                    <span class="lineage-node final">18.4 hrs</span>
+                  </div>
+                </div>
+                <div style="margin-top:10px; font-size:12px; color:var(--fg-muted); line-height:1.6;">
+                  <strong style="color:var(--fg);">Low-ceiling insight:</strong> a +15% labour adjustment applies when <code style="color:var(--machine); font-family:'IBM Plex Mono'; font-size:11px;">approach.ceiling_height</code> is below <code style="color:var(--machine); font-family:'IBM Plex Mono'; font-size:11px;">9'0"</code> for any subtask involving ladder or lift work. Maple Ridge reception = 8'6". Matches.
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Inspector -->
+          <div class="split-inspector">
+            <div class="inspector-head">
+              <div class="l">
+                <div class="k">⛏ Labour · Task</div>
+                <div class="t">Core-drill slab + sleeve</div>
+              </div>
+              <div class="r">✕</div>
+            </div>
+            <div class="inspector-body">
+              <div class="wi-detail-head">
+                <div class="wi-meta">
+                  <div style="margin-bottom:6px;"><strong>12 holes</strong> · slab penetrations</div>
+                  <div>Deliverable unit: 1 hole through 6" slab</div>
+                  <div style="margin-top:4px;">Crew: 2-person (JM + helper)</div>
+                </div>
+                <div class="mini-tile"><div class="k">Hours</div><div class="v machine">18.4</div><div class="s">1.53 /hole effective</div></div>
+                <div class="mini-tile"><div class="k">Cost</div><div class="v">$1,693</div><div class="s">$92/hr · $141/hole</div></div>
+              </div>
+
+              <div class="kicker-row">Rate source</div>
+              <div class="source-lineage">
+                <div class="head">Hourly rate · $92/hr</div>
+                <div class="lineage-chain">
+                  <span class="lineage-node base">Journeyman avg</span>
+                  <span class="lineage-arrow">from</span>
+                  <span class="lineage-node">last 13 payroll cycles</span>
+                </div>
+                <div style="margin-top:10px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.04em;">
+                  $92.00 = blended rate · 4 JM + 1 apprentice · updated weekly from Gusto
+                </div>
+              </div>
+
+              <div class="kicker-row">Historical comparison</div>
+              <div class="trust-meter">
+                <span class="label">Sample</span>
+                <div class="bar-track"><div class="bar-fill med" style="width:60%;"></div></div>
+                <span class="val med">3 jobs · med</span>
+              </div>
+              <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); margin-top:4px; letter-spacing:0.04em; line-height:1.7;">
+                3-job sample is moderate. 5+ would bump to <strong style="color:var(--pass);">high</strong>. Every new floor-box job strengthens this.
+              </div>
+
+              <div class="kicker-row">Evidence</div>
+              <div class="evidence-list">
+                <div class="evidence-item">
+                  <span class="icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></span>
+                  <div class="desc"><strong>Alder St</strong> · 14 holes · 19.9 hrs logged<span class="sub">1.42 hr/hole · concrete slab · Mike crew</span></div>
+                  <div class="when">Nov 24</div>
+                </div>
+                <div class="evidence-item">
+                  <span class="icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></span>
+                  <div class="desc"><strong>Chapelwood</strong> · 8 holes · 10.2 hrs logged<span class="sub">1.28 hr/hole · concrete slab · Mike + Rafael</span></div>
+                  <div class="when">Feb 25</div>
+                </div>
+                <div class="evidence-item">
+                  <span class="icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></span>
+                  <div class="desc"><strong>Peachtree Ph I</strong> · 16 holes · 20.6 hrs logged<span class="sub">1.29 hr/hole · concrete slab · Mike crew</span></div>
+                  <div class="when">Mar 25</div>
+                </div>
+                <div class="evidence-item">
+                  <span class="icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+                  <div class="desc"><strong>Conversation Mar 14 · Peachtree walk</strong><span class="sub">"Ceiling was a beast — guys slowed down on every hole"</span></div>
+                  <div class="when">Mar 14</div>
+                </div>
+              </div>
+
+              <div class="kicker-row">Override</div>
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;">
+                <div style="font-size:11.5px; color:var(--fg-muted); line-height:1.5;">
+                  Set a stated rate (creates a one-off override, doesn't change the insight). Or tell Kerf the insight is wrong — it'll decay.
+                </div>
+                <button style="padding:7px 12px; background:var(--ink-3); color:var(--fg); border:1px solid var(--hairline); border-radius:3px; font-family:'IBM Plex Mono'; font-size:10px; letter-spacing:0.06em; text-transform:uppercase; font-weight:600;">Override</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="kicker-inline">Detail</span>
+  The lineage diagram (<strong>12 holes × 1.33 hr/hole + 15% low-ceiling = 18.4 hrs</strong>) is the heart of the screen — it's the equation Sarah asked about, rendered visually. Every node is clickable: base rate → 3-job sample; insight → full insight lifecycle; $92/hr → payroll source. <strong>Override</strong> is right there; Sarah can set a stated rate, and Kerf either learns from it (if consistent) or applies it as a one-off.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SCREEN 4 — Item line detail                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-intro">
+  <span class="step">04 · Item (material) line inspector</span>
+  <h2>Click the Hubbell floor box. Price history, supplier, quantity take-off.</h2>
+  <p>Items surface their <strong>price lineage</strong>: today's catalog price, previous POs, last-paid-price, supplier. Plus the quantity take-off with plan reference. If the price moved, Kerf flags it.</p>
+</div>
+
+<div class="workspace">
+  <div class="icon-rail">
+    <div class="logo">K</div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="rb active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></div>
+  </div>
+  <div class="main">
+    <div class="chat-pane">
+      <div class="head"><div class="k">◎ Conversation</div><div class="c">Item · FBR-2</div></div>
+      <div class="body">
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:15</div><div class="bubble">Hubbell FBR-2 at $147.20 — when did we last pay that?</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:15</div>
+          <div class="bubble">Current City Electric catalog price (updated Apr 15). Your last PO was Peachtree Ph I, <strong>$144.80/unit</strong> in Mar — a 1.7% bump since.</div></div>
+      </div>
+      <div class="input"><input placeholder="Reply — or hold to speak" /><button class="btn">◉ HOLD</button><button class="btn s">SEND</button></div>
+    </div>
+    <div class="canvas">
+      <div class="top-head">
+        <div class="klogo">K</div>
+        <div class="title">Maple Ridge — Phase II</div>
+        <span class="sep">·</span><span class="pid">MRP-2024-118</span>
+        <span class="chip quoted">Quoted · Draft A</span>
+        <div class="right">
+          <div><div class="tl">Quote Total</div><div class="tv">$121,200</div></div>
+          <button class="cta">Generate Proposal</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">◉ Dashboard</div>
+        <div class="tab active">⚒ Scope <span class="ct">7</span></div>
+        <div class="tab">⬒ Variations</div>
+        <div class="tab">◎ Timeline</div>
+        <div class="tab">$ Money</div>
+        <div class="tab">▤ Contract</div>
+        <div class="tab">⚘ Docs</div>
+        <div class="tab">⚐ People <span class="ct">2</span></div>
+      </div>
+      <div class="canvas-body">
+        <div class="split">
+          <div class="split-main">
+            <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px;">
+              WorkItems · <a style="color:var(--machine);">Item 04</a> · Items · <span style="color:var(--fg);">Hubbell FBR-2</span>
+            </div>
+            <div class="section">
+              <div class="section-head"><span class="title">⚙ Item 04 · Floor boxes — items</span><span class="chip-mini">5 lines · $3,240</span></div>
+              <table class="items-table">
+                <thead><tr><th>Item</th><th>Qty</th><th style="text-align:right;">Unit</th><th style="text-align:right;">Total</th><th>Source</th></tr></thead>
+                <tbody>
+                  <tr style="background: var(--machine-wash); outline: 1px solid var(--machine);"><td>Hubbell FBR-2 floor box, 2-gang</td><td>12</td><td class="num">$147.20</td><td class="num">$1,766</td><td><span class="src-tag catalog">Catalog</span></td></tr>
+                  <tr><td>Unistrut P1000 10' length</td><td>24</td><td class="num">$22.40</td><td class="num">$538</td><td><span class="src-tag catalog">Catalog</span></td></tr>
+                  <tr><td>4-section brass cover w/ data port</td><td>12</td><td class="num">$38.50</td><td class="num">$462</td><td><span class="src-tag catalog">Catalog</span></td></tr>
+                  <tr><td>12 AWG THHN · 250 ft roll</td><td>1.5</td><td class="num">$168</td><td class="num">$252</td><td><span class="src-tag catalog">Catalog</span></td></tr>
+                  <tr><td>Misc. connectors &amp; anchors</td><td>1 LS</td><td class="num">$222</td><td class="num">$222</td><td><span class="src-tag history">Past · 5×</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="section">
+              <div class="section-head"><span class="title">⚑ Quantity take-off · Hubbell FBR-2</span></div>
+              <div style="padding:16px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap: 14px;">
+                  <div>
+                    <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:8px;">Counted from drawing</div>
+                    <div style="padding:12px 14px; background: var(--ink-3); border-radius:4px; border:1px solid var(--hairline);">
+                      <div style="font-size:12px; color:var(--fg); line-height:1.6;">
+                        <strong>12 floor boxes</strong> — marked on the reception + open office floor plan.<br>
+                        <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.04em;">Reception: 4 · Open office north: 4 · Open office south: 4</span>
+                      </div>
+                    </div>
+                    <div style="margin-top:10px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.04em;">
+                      Drawings: Rev 4 IFC · 03/28 · sheet E-100
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:8px;">Assumptions</div>
+                    <div style="font-size:12px; color:var(--fg); line-height:1.8;">
+                      2-gang is specified in <strong>spec §26 27 26.A.3</strong>. Confirmed with Gary on call Apr 20 (data + power).
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Inspector -->
+          <div class="split-inspector">
+            <div class="inspector-head">
+              <div class="l">
+                <div class="k">⚙ Item · Material</div>
+                <div class="t">Hubbell FBR-2 floor box · 2-gang</div>
+              </div>
+              <div class="r">✕</div>
+            </div>
+            <div class="inspector-body">
+              <div class="item-head">
+                <div class="desc">Hubbell FBR-2-COVER · rectangular floor box · 2-gang · recessed · brass cover</div>
+                <div class="meta-row">
+                  <div>MF code <strong>26 27 26.13</strong></div>
+                  <div>Category <strong>Wiring devices</strong></div>
+                  <div>Unit <strong>EA</strong></div>
+                </div>
+              </div>
+
+              <div class="kicker-row">Today's price · catalog</div>
+              <div style="display: grid; grid-template-columns: 1fr auto; padding: 12px 14px; background: var(--machine-wash); border: 1px solid var(--machine); border-radius: 4px; align-items: center; margin-bottom: 14px;">
+                <div>
+                  <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--machine); letter-spacing:0.08em; text-transform:uppercase; font-weight:600; margin-bottom:4px;">City Electric Supply · Phoenix</div>
+                  <div style="font-size:11.5px; color:var(--fg-muted); line-height:1.5;">Catalog · updated <strong style="color:var(--fg);">Apr 15 2026</strong> · stock: 38 units</div>
+                </div>
+                <div style="font-family:'IBM Plex Mono'; font-size:22px; color:var(--machine); font-weight:600;">$147.20</div>
+              </div>
+
+              <div class="kicker-row">Price history · your POs</div>
+              <div class="price-history">
+                <div class="ph-row current">
+                  <div class="date">Apr 15 · '26</div>
+                  <div class="source"><strong>Catalog now</strong> · City Electric</div>
+                  <div class="price">$147.20</div>
+                </div>
+                <div class="ph-row">
+                  <div class="date">Mar 03 · '26</div>
+                  <div class="source">PO · Peachtree · City Electric</div>
+                  <div class="price">$144.80</div>
+                </div>
+                <div class="ph-row">
+                  <div class="date">Feb 12 · '26</div>
+                  <div class="source">PO · Chapelwood · City Electric</div>
+                  <div class="price">$141.50</div>
+                </div>
+                <div class="ph-row">
+                  <div class="date">Nov 18 · '25</div>
+                  <div class="source">PO · Alder St · Rexel</div>
+                  <div class="price">$148.00</div>
+                </div>
+                <div class="ph-row">
+                  <div class="date">Aug 02 · '25</div>
+                  <div class="source">PO · Westfield · City Electric</div>
+                  <div class="price">$139.50</div>
+                </div>
+              </div>
+              <div style="margin-top:10px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.04em; line-height:1.7;">
+                Trend · <strong style="color:var(--machine);">+5.5% over 12 months</strong> · City Electric is your usual supplier. Rexel was $0.80 higher on last trial.
+              </div>
+
+              <div class="kicker-row">Alternatives Kerf knows about</div>
+              <div class="evidence-list">
+                <div class="evidence-item">
+                  <span class="icon" style="color:var(--fg-muted);">◇</span>
+                  <div class="desc"><strong>Legrand 1-gang</strong> · $98.40 catalog<span class="sub">Rejected on Peachtree — spec requires 2-gang for data + power.</span></div>
+                  <div class="when"></div>
+                </div>
+                <div class="evidence-item">
+                  <span class="icon" style="color:var(--fg-muted);">◇</span>
+                  <div class="desc"><strong>Wiremold 880CM</strong> · $162.00<span class="sub">Above spec · surface-mount alternative, for renovation only.</span></div>
+                  <div class="when"></div>
+                </div>
+              </div>
+
+              <div class="kicker-row">This quote</div>
+              <div class="prov-row"><div class="k">Quantity</div><div class="v"><strong>12 EA</strong> · counted from Rev 4 IFC sheet E-100</div></div>
+              <div class="prov-row"><div class="k">Unit price</div><div class="v"><strong>$147.20</strong> · current catalog</div></div>
+              <div class="prov-row"><div class="k">Extended</div><div class="v"><strong>$1,766</strong> · material subtotal</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="kicker-inline">Detail</span>
+  Items surface <strong>price history</strong> (the most valuable thing any estimator can see), plus <strong>alternatives</strong> Kerf has observed across the contractor's graph. The yellow "current" row stands out, PO history below shows how the price has moved. "Rejected alternatives" carry forward the reasoning from past jobs — so the next time Legrand gets proposed, Kerf reminds Sarah why Peachtree said no.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SCREEN 5 — Methodology cascade                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-intro">
+  <span class="step">05 · Methodology cascade</span>
+  <h2>How are we doing this job? Project → Package → Item.</h2>
+  <p>Methodology is the "how", distinct from the "what kind of work". Cascades top-down. At each level, Sarah sees what was set, what was inherited, and what was overridden. The <strong>Effective methodology</strong> block at the bottom shows the merged map that drove insights and adjustments.</p>
+</div>
+
+<div class="workspace">
+  <div class="icon-rail">
+    <div class="logo">K</div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="rb active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></div>
+  </div>
+  <div class="main">
+    <div class="chat-pane">
+      <div class="head"><div class="k">◎ Conversation</div><div class="c">Methodology · Maple Ridge</div></div>
+      <div class="body">
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:20</div>
+          <div class="bubble">Show me the methodology cascade for WI 04.</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:20</div>
+          <div class="bubble"><strong>Project level:</strong> commercial fit-out, IFC drawings, slab-on-grade.<br><strong>Package (floor):</strong> 1st floor · reception + open office.<br><strong>Item level:</strong> ceiling_height overridden to 8'6" (reception has soffit, package assumed 9'+).</div></div>
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:21</div>
+          <div class="bubble">That 8'6" override — that's what triggered the +15% right?</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:21</div>
+          <div class="bubble">Exactly. <strong>approach.ceiling_height = 8'6"</strong> matches the insight's trigger condition. Without the override, this WI would have inherited the package's 9'6" and the insight wouldn't have fired.</div></div>
+      </div>
+      <div class="input"><input placeholder="Reply — or hold to speak" /><button class="btn">◉ HOLD</button><button class="btn s">SEND</button></div>
+    </div>
+    <div class="canvas">
+      <div class="top-head">
+        <div class="klogo">K</div>
+        <div class="title">Maple Ridge — Phase II</div>
+        <span class="sep">·</span><span class="pid">MRP-2024-118</span>
+        <span class="chip quoted">Quoted · Draft A</span>
+        <div class="right">
+          <div><div class="tl">Quote Total</div><div class="tv">$121,200</div></div>
+          <button class="cta">Generate Proposal</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">◉ Dashboard</div>
+        <div class="tab active">⚒ Scope <span class="ct">7</span></div>
+        <div class="tab">⬒ Variations</div>
+        <div class="tab">◎ Timeline</div>
+        <div class="tab">$ Money</div>
+        <div class="tab">▤ Contract</div>
+        <div class="tab">⚘ Docs</div>
+        <div class="tab">⚐ People <span class="ct">2</span></div>
+      </div>
+      <div class="canvas-body">
+        <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px;">
+          WorkItems · <a style="color:var(--machine);">Item 04 Floor boxes</a> · <span style="color:var(--fg);">Methodology</span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 420px; gap: 18px;">
+          <div>
+            <div class="section">
+              <div class="section-head"><span class="title">✧ Methodology cascade — Item 04</span><span class="chip-mini">3 levels · 1 override</span></div>
+              <div class="meth-cascade">
+                <div class="meth-level project">
+                  <div class="level-head"><span class="lbl">◈ Project</span><span class="title">Maple Ridge Phase II — commercial fit-out</span></div>
+                  <div class="meth-keys">
+                    <div class="meth-key"><span class="k">Trade</span><span class="v">electrical</span></div>
+                    <div class="meth-key"><span class="k">Project type</span><span class="v">commercial_fit_out</span></div>
+                    <div class="meth-key"><span class="k">Drawings</span><span class="v">IFC · Rev 4</span></div>
+                    <div class="meth-key"><span class="k">Substrate</span><span class="v">slab_on_grade</span></div>
+                    <div class="meth-key"><span class="k">Access</span><span class="v">GC hoist 0730–0930</span></div>
+                    <div class="meth-key"><span class="k">Schedule</span><span class="v">5d/wk · 0700–1700</span></div>
+                  </div>
+                </div>
+                <div class="meth-level package">
+                  <div class="level-head"><span class="lbl">◉ Package · 1st floor</span><span class="title">Reception + open office</span></div>
+                  <div class="meth-keys">
+                    <div class="meth-key"><span class="k">Crew</span><span class="v">2 JM + 1 helper</span></div>
+                    <div class="meth-key"><span class="k">Ceiling height</span><span class="v">9'6" (assumed)</span></div>
+                    <div class="meth-key"><span class="k">Conduit</span><span class="v">EMT</span></div>
+                    <div class="meth-key"><span class="k">Panel location</span><span class="v">B2 · corridor</span></div>
+                  </div>
+                </div>
+                <div class="meth-level item">
+                  <div class="level-head"><span class="lbl">◆ Item 04 · override</span><span class="title">Floor boxes · reception has soffit</span></div>
+                  <div class="meth-keys">
+                    <div class="meth-key override"><span class="k">⚑ Ceiling height</span><span class="v">8'6" — override</span></div>
+                    <div class="meth-key"><span class="k">Installation</span><span class="v">recessed in slab</span></div>
+                    <div class="meth-key"><span class="k">Wire route</span><span class="v">through slab core</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Insight trigger explanation -->
+            <div class="section">
+              <div class="section-head"><span class="title">⚑ Insights triggered by this methodology</span><span class="chip-mini">1 fired</span></div>
+              <div style="padding: 14px 16px;">
+                <div class="insight-card">
+                  <div class="top">
+                    <div class="k">⚑ low_ceiling · +15% labour</div>
+                    <div class="conf">Fired · n=3 · conf 92%</div>
+                  </div>
+                  <div class="body">
+                    Matches when <code style="color:var(--machine-bright); font-family:'IBM Plex Mono'; font-size:11px;">approach.ceiling_height &lt; 9'0"</code> AND subtask has ladder / lift work. <br>
+                    <strong>Matched value:</strong> 8'6" (from Item 04 override). <strong>Not matched</strong> at Package level (9'6") — insight wouldn't fire without the override.
+                  </div>
+                  <div class="footer">
+                    <div>First observed · <strong>Alder St · Nov 24</strong></div>
+                    <div>Last confirmed · <strong>Peachtree · Mar 25</strong></div>
+                  </div>
+                </div>
+                <div style="font-size:12px; color:var(--fg-muted); line-height:1.6; margin-top:4px;">
+                  <strong style="color:var(--fg);">Other insights evaluated but not fired:</strong> <em>concrete_hardness</em> (no slab-density data), <em>after_hours_access</em> (schedule allows 0700–1700).
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- Right column: effective methodology -->
+          <div>
+            <div class="section">
+              <div class="section-head"><span class="title">◉ Effective methodology · Item 04</span></div>
+              <div style="padding: 14px 16px;">
+                <div style="font-size:11.5px; color:var(--fg-muted); line-height:1.6; margin-bottom: 12px;">
+                  Merged from Project · Package · Item overrides. This is the map insights and productivity rates query against.
+                </div>
+                <div class="eff-meth">
+                  <div class="k">approach map (10 keys)</div>
+                  <div>
+                    <div class="key-row">
+                      <span class="key">trade</span>
+                      <span class="val">electrical</span>
+                      <span class="origin">proj</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">project_type</span>
+                      <span class="val">commercial_fit_out</span>
+                      <span class="origin">proj</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">drawings</span>
+                      <span class="val">ifc_rev_4</span>
+                      <span class="origin">proj</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">substrate</span>
+                      <span class="val">slab_on_grade</span>
+                      <span class="origin">proj</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">access</span>
+                      <span class="val">hoisted</span>
+                      <span class="origin">proj</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">schedule</span>
+                      <span class="val">5d_day</span>
+                      <span class="origin">proj</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">crew_size</span>
+                      <span class="val">2jm_1h</span>
+                      <span class="origin">pkg</span>
+                    </div>
+                    <div class="key-row">
+                      <span class="key">conduit</span>
+                      <span class="val">emt</span>
+                      <span class="origin">pkg</span>
+                    </div>
+                    <div class="key-row override">
+                      <span class="key">⚑ ceiling_height</span>
+                      <span class="val">8'6"</span>
+                      <span class="origin">item</span>
+                    </div>
+                    <div class="key-row override">
+                      <span class="key">⚑ installation</span>
+                      <span class="val">slab_recessed</span>
+                      <span class="origin">item</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-head"><span class="title">⚭ Why methodology matters</span></div>
+              <div style="padding: 14px 16px; font-size: 12px; color: var(--fg-muted); line-height: 1.6;">
+                <strong style="color:var(--fg);">Methodology drives insights.</strong> The <em>ceiling_height</em> key being <strong>8'6"</strong> (not 9'6" from the package) is what fires the low-ceiling insight. Without that override, the labour would be 16.0 hrs, not 18.4.
+                <br><br>
+                <strong style="color:var(--fg);">Methodology is learned.</strong> Keys that appear in many past projects of this category bubble up automatically — Kerf asks about <em>crew_size</em> and <em>ceiling_height</em> because they've varied in your past.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="kicker-inline">Detail</span>
+  The cascade is <strong>directional and colour-coded</strong> — yellow = project, neutral = package, dim = item. Override keys get the machine-yellow outline on both sides (Item level declaration and Effective map). The <strong>"why methodology matters"</strong> block makes the mechanism explicit: this 8'6" override is the sole reason the insight fired — without it, 16 hrs not 18.4.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SCREEN 6 — Source provenance (zoomed drill)                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-intro">
+  <span class="step">06 · Source provenance · the $9,800 deconstructed</span>
+  <h2>"Where did $9,800 come from?"</h2>
+  <p>This is the screen Kerf exists to make possible. From the sell price on a line item, unpack every decision, source, sample, and insight — as a connected tree. Sarah asks the question; Kerf draws the picture.</p>
+</div>
+
+<div class="workspace">
+  <div class="icon-rail">
+    <div class="logo">K</div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="rb active"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg></div>
+    <div class="rb"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg></div>
+  </div>
+  <div class="main">
+    <div class="chat-pane">
+      <div class="head"><div class="k">◎ Conversation</div><div class="c">Provenance · WI 04 sell</div></div>
+      <div class="body">
+        <div class="msg user"><div class="who"><span class="av">S</span>Sarah · 14:25</div>
+          <div class="bubble">Show me the full provenance for $9,800 on WI 04.</div></div>
+        <div class="msg kerf"><div class="who"><span class="av">K</span>Kerf · 14:25</div>
+          <div class="bubble">Full tree on the right. Three origin types — <strong>past jobs</strong> (base rates), <strong>insight</strong> (low-ceiling adjustment), <strong>catalog</strong> (items today). No stated numbers on this item.</div></div>
+      </div>
+      <div class="input"><input placeholder="Reply — or hold to speak" /><button class="btn">◉ HOLD</button><button class="btn s">SEND</button></div>
+    </div>
+    <div class="canvas">
+      <div class="top-head">
+        <div class="klogo">K</div>
+        <div class="title">Maple Ridge — Phase II</div>
+        <span class="sep">·</span><span class="pid">MRP-2024-118</span>
+        <span class="chip quoted">Quoted · Draft A</span>
+        <div class="right">
+          <div><div class="tl">Quote Total</div><div class="tv">$121,200</div></div>
+          <button class="cta">Generate Proposal</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab">◉ Dashboard</div>
+        <div class="tab active">⚒ Scope <span class="ct">7</span></div>
+        <div class="tab">⬒ Variations</div>
+        <div class="tab">◎ Timeline</div>
+        <div class="tab">$ Money</div>
+        <div class="tab">▤ Contract</div>
+        <div class="tab">⚘ Docs</div>
+        <div class="tab">⚐ People <span class="ct">2</span></div>
+      </div>
+      <div class="canvas-body">
+        <div style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-muted); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px;">
+          WorkItems · <a style="color:var(--machine);">Item 04</a> · <span style="color:var(--fg);">Provenance · sell price $9,800</span>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="title">⚬ Provenance tree · sell $9,800</span><span class="chip-mini pass">Confidence · 90% · high</span></div>
+          <div style="padding: 18px; overflow-x: auto;">
+
+            <!-- Tree: text-based ASCII-style -->
+            <div style="font-family:'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.9; color: var(--fg);">
+              <div><span style="color:var(--machine);font-weight:600;">⬤ $9,800</span> <span style="color:var(--fg-muted);">— sell price, item 04</span></div>
+              <div style="padding-left: 16px;"><span style="color:var(--fg-dim);">├─</span> <span style="color:var(--pass);">$7,800</span> <span style="color:var(--fg-muted);">cost</span></div>
+              <div style="padding-left: 32px;"><span style="color:var(--fg-dim);">│   ├─</span> <span style="color:var(--machine);">$4,560</span> <span style="color:var(--fg-muted);">labour (3 tasks)</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│   │   ├─</span> $1,693 · Core-drill slab · <span class="src-tag insight" style="margin: 0 4px;">Insight +15%</span> on base 1.33 hr/hole <span class="src-tag history" style="margin: 0 4px;">Past · 3 jobs</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│   │   │       └─</span> <span style="color:var(--fg-muted);">Alder St (14h/19.9hr) · Chapelwood (8h/10.2hr) · Peachtree (16h/20.6hr)</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│   │   ├─</span> $2,208 · Set box + unistrut · <span class="src-tag insight" style="margin: 0 4px;">Insight +15%</span> on base 2.0 hr/unit <span class="src-tag history" style="margin: 0 4px;">Past · 3 jobs</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│   │   └─</span> $656 · Trim · <span class="src-tag history" style="margin: 0 4px;">Past · 5 jobs</span> base 0.67 hr/unit <span class="src-tag default" style="margin: 0 4px;">No adjustment</span></div>
+              <div style="padding-left: 32px;"><span style="color:var(--fg-dim);">│   └─</span> <span style="color:var(--machine);">$3,240</span> <span style="color:var(--fg-muted);">items (5 lines)</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│       ├─</span> $1,766 · Hubbell FBR-2 floor box × 12 <span class="src-tag catalog" style="margin: 0 4px;">Catalog · City Electric · Apr 15</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│       ├─</span> $538 · Unistrut P1000 × 24 <span class="src-tag catalog" style="margin: 0 4px;">Catalog</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│       ├─</span> $462 · Brass covers × 12 <span class="src-tag catalog" style="margin: 0 4px;">Catalog</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│       ├─</span> $252 · 12 AWG THHN × 1.5 <span class="src-tag catalog" style="margin: 0 4px;">Catalog</span></div>
+              <div style="padding-left: 48px;"><span style="color:var(--fg-dim);">│       └─</span> $222 · Misc connectors <span class="src-tag history" style="margin: 0 4px;">Past · 5 jobs · lump-sum avg</span></div>
+              <div style="padding-left: 16px;"><span style="color:var(--fg-dim);">└─</span> <span style="color:var(--machine);">$2,000</span> <span style="color:var(--fg-muted);">margin · 20.4%</span></div>
+              <div style="padding-left: 32px;"><span style="color:var(--fg-dim);">    └─</span> <span style="color:var(--fg-muted);">Target margin 22% for this trade · accepted 20.4% due to labour adjustment</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px;">
+          <div style="background: var(--ink-2); padding: 14px; border-radius: 4px; border: 1px solid var(--hairline);">
+            <span class="src-tag catalog">Catalog</span>
+            <div style="margin-top:8px; font-size:11.5px; color:var(--fg-muted); line-height:1.5;">Current price from your company's rate table or supplier feed. <strong style="color:var(--fg);">Most certain.</strong></div>
+            <div style="margin-top:6px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-dim);">5 lines · $3,018 total</div>
+          </div>
+          <div style="background: var(--ink-2); padding: 14px; border-radius: 4px; border: 1px solid var(--hairline);">
+            <span class="src-tag history">Past · Nx</span>
+            <div style="margin-top:8px; font-size:11.5px; color:var(--fg-muted); line-height:1.5;">Derived from N past similar jobs. Confidence scales with sample size.</div>
+            <div style="margin-top:6px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-dim);">3 tasks + 1 item · $4,779 base</div>
+          </div>
+          <div style="background: var(--ink-2); padding: 14px; border-radius: 4px; border: 1px solid var(--hairline);">
+            <span class="src-tag insight">Insight</span>
+            <div style="margin-top:8px; font-size:11.5px; color:var(--fg-muted); line-height:1.5;">A learned pattern was applied. Matches current methodology values.</div>
+            <div style="margin-top:6px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-dim);">1 fired · +$595 labour</div>
+          </div>
+          <div style="background: var(--ink-2); padding: 14px; border-radius: 4px; border: 1px solid var(--hairline);">
+            <span class="src-tag stated">Stated</span>
+            <div style="margin-top:8px; font-size:11.5px; color:var(--fg-muted); line-height:1.5;">Contractor-stated value, not yet captured as a reusable insight.</div>
+            <div style="margin-top:6px; font-family:'IBM Plex Mono'; font-size:10px; color:var(--fg-dim);">0 on this WorkItem</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="title">⚠ Confidence distribution</span></div>
+          <div style="padding: 18px;">
+            <div class="trust-meter">
+              <span class="label">Labour</span>
+              <div class="bar-track"><div class="bar-fill med" style="width:75%;"></div></div>
+              <span class="val med">75% · med</span>
+            </div>
+            <div class="trust-meter">
+              <span class="label">Items</span>
+              <div class="bar-track"><div class="bar-fill high" style="width:95%;"></div></div>
+              <span class="val high">95% · high</span>
+            </div>
+            <div class="trust-meter">
+              <span class="label">Adjustment</span>
+              <div class="bar-track"><div class="bar-fill med" style="width:80%;"></div></div>
+              <span class="val med">80% · med</span>
+            </div>
+            <div class="trust-meter">
+              <span class="label">Overall</span>
+              <div class="bar-track"><div class="bar-fill high" style="width:90%;"></div></div>
+              <span class="val high">90% · high</span>
+            </div>
+            <div style="font-size:11.5px; color:var(--fg-muted); line-height:1.6; margin-top:10px;">
+              <strong style="color:var(--fg);">Weak spot:</strong> labour sample is 3 jobs — moderate. Adding 2–3 more floor-box jobs will push this to <strong style="color:var(--pass);">high</strong>. Every Maple Ridge logged hour contributes.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <span class="kicker-inline">Detail</span>
+  This is the screen that answers "why does the quote say $9,800?" fully — labour, item, margin, all traced to their sources. <strong>No black boxes.</strong> Compare to a spreadsheet contractor who can only answer "that's what I always charge." Kerf's answer: <em>"$9,800 = $4,560 labour (3 tasks × past-job rates × +15% low-ceiling insight) + $3,240 items (5 catalog lines) + $2,000 margin (target 22%, accepting 20.4% due to the adjustment)."</em> Every number citable. That's the moat.
+</div>
+
+<div style="max-width: 920px; margin: 96px auto 40px; padding: 0 24px; text-align: center; color: var(--fg-muted); font-size: 13px;">
+  <div style="font-family:'IBM Plex Mono'; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--machine); margin-bottom:8px; font-weight:600;">End of drill-down</div>
+  <p>Every quote number in Kerf traces down to: a catalog entry (with supplier + date), a historical data point (with job + crew + logs), an insight (with trigger condition + sample), or a stated value (flagged to capture). The UX must make that chain visible without requiring the contractor to ask. Source tags in the list, inspector on click, lineage tree on deep drill.</p>
+  <p style="margin-top:16px;">Next: Remotion animation showing a live drill — Sarah tapping WI 04 → inspector slides in → she taps the labour line → provenance tree expands.</p>
+</div>
+
+</body>
+</html>

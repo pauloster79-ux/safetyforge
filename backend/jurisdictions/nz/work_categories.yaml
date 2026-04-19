@@ -1,0 +1,12 @@
+jurisdiction: nz
+source: NATSPEC AU (short-term fallback) — Masterspec (CIL) canonical long-term
+source_reference: "NATSPEC AU tree applied under NZ jurisdiction as pragmatic fallback. New Zealand's canonical specification system is Masterspec by Construction Information Limited (CIL), which has its own library structure and numbering scheme not aligned code-for-code with NATSPEC."
+licensing_note: "NATSPEC AU tree is used here because Masterspec public code data is not available at a level that supports verbatim encoding. A Masterspec-derived YAML should replace this when (a) NZ customer volume justifies a Masterspec licence arrangement or (b) public taxonomy data improves. Regulatory refs point to NZBC clauses and NZS/AS-NZS standards (not NCC/AS)."
+version: "2025-10-natspec-fallback"
+last_updated: "2026-04-17"
+inherits_from: au
+deltas:
+  notes: "Structural tree inherited from AU. Regulatory bridge uses NZBC (clauses B1, E2, G12, etc.) and NZS 4232 / 4541 / 4515 for mechanical and fire, NZS 3604 for light timber framing, E2/AS1 for weathertightness, G12/G13 for plumbing. These go in activity_refs per category in a later phase; taxonomy itself unchanged."
+  label_overrides:
+    # When label overrides accumulate, list them here keyed by category code
+    # e.g. "0184": "Termite management (NZ: to NZS 3602)" — deferred until regulatory wiring phase

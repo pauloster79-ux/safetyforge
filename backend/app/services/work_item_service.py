@@ -50,6 +50,7 @@ class WorkItemService(BaseService):
         data: dict[str, Any],
         user_id: str,
         work_package_id: str | None = None,
+        work_category_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a new work item on a project.
 
@@ -60,12 +61,20 @@ class WorkItemService(BaseService):
                 is_alternate, alternate_label, planned_start, planned_end, notes, etc.
             user_id: Clerk user ID of the creating user.
             work_package_id: Optional work package to group this item under.
+            work_category_id: Optional canonical or extension category ID. When
+                supplied, the service writes `(wi)-[:CATEGORISED_AS]->(cat)` atomically
+                with the node creation. The caller is responsible for validating
+                access scope for Extensions (see
+                ``WorkCategoryService.resolve_for_work_item``). Canonicals are
+                globally accessible.
 
         Returns:
             The created work item dict.
 
         Raises:
             ProjectNotFoundError: If the project does not exist under this company.
+            ValueError: If ``work_category_id`` is supplied but does not reference
+                an accessible WorkCategory.
         """
         actor = Actor.human(user_id)
         wi_id = self._generate_id("wi")
@@ -93,12 +102,13 @@ class WorkItemService(BaseService):
             **self._provenance_create(actor),
         }
 
-        cypher = """
-            MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
-            CREATE (wi:WorkItem $props)
-            CREATE (p)-[:HAS_WORK_ITEM]->(wi)
-            RETURN wi {.*, project_id: p.id, company_id: c.id} AS work_item
-        """
+        # Compose Cypher based on whether package and/or category are supplied.
+        # All four combinations share the core pattern; we MATCH the optional
+        # targets first, then CREATE the WorkItem + relationships in one tx.
+        package_match = ""
+        package_link = ""
+        category_match = ""
+        category_link = ""
         params: dict[str, Any] = {
             "company_id": company_id,
             "project_id": project_id,
@@ -106,15 +116,27 @@ class WorkItemService(BaseService):
         }
 
         if work_package_id:
-            cypher = """
-                MATCH (c:Company {id: $company_id})-[:OWNS_PROJECT]->(p:Project {id: $project_id})
-                MATCH (wp:WorkPackage {id: $work_package_id})
-                CREATE (wi:WorkItem $props)
-                CREATE (p)-[:HAS_WORK_ITEM]->(wi)
-                CREATE (wp)-[:CONTAINS]->(wi)
-                RETURN wi {.*, project_id: p.id, company_id: c.id} AS work_item
-            """
+            package_match = "MATCH (wp:WorkPackage {id: $work_package_id})\n            "
+            package_link = "CREATE (wp)-[:CONTAINS]->(wi)\n            "
             params["work_package_id"] = work_package_id
+
+        if work_category_id:
+            # Accept both Canonical (shared) and Extension (scoped to this company).
+            # The Canonical match is unscoped; Extensions must be owned by this company.
+            category_match = (
+                "MATCH (cat:WorkCategory {id: $work_category_id})\n            "
+                "WHERE cat:Canonical OR EXISTS { "
+                "MATCH (c)-[:HAS_EXTENSION]->(cat) }\n            "
+            )
+            category_link = "CREATE (wi)-[:CATEGORISED_AS]->(cat)\n            "
+            params["work_category_id"] = work_category_id
+
+        cypher = f"""
+            MATCH (c:Company {{id: $company_id}})-[:OWNS_PROJECT]->(p:Project {{id: $project_id}})
+            {package_match}{category_match}CREATE (wi:WorkItem $props)
+            CREATE (p)-[:HAS_WORK_ITEM]->(wi)
+            {package_link}{category_link}RETURN wi {{.*, project_id: p.id, company_id: c.id}} AS work_item
+        """
 
         result = self._write_tx_single(cypher, params)
         if result is None:

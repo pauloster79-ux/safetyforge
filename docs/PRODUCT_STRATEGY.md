@@ -1,6 +1,6 @@
 # Kerf Product Strategy
 
-*Last updated: 2026-04-10*
+*Last updated: 2026-04-18*
 
 ---
 
@@ -44,6 +44,8 @@ Our wedge is safety. Our moat is the knowledge graph. Our interface is conversat
 ---
 
 ## 3. COMPETITIVE POSITIONING
+
+*For the full per-competitor scan of US, Canada, UK, and Europe — 79 competitors profiled with threat assessment against Kerf's 9 moat layers — see [`docs/research/competitor-market-scan-2026-04.md`](research/competitor-market-scan-2026-04.md). This section is the strategic framing; the scan is the source of truth for per-competitor detail.*
 
 ### 3.1 The real competitor: fragmentation
 
@@ -118,24 +120,32 @@ The construction AI space is heating up fast. Over $30M was invested in AI const
 | **Rebar** | AI plan reading for HVAC/electrical/plumbing suppliers | $14M Series A | Computer vision reads plans, identifies equipment, generates quotes 60-70% faster. Doubled ARR in first 6 weeks of 2026. | Supply chain (distributors), not contractors. HVAC-focused. US only. Not a contractor-facing platform. |
 | **Renalto** | Voice → proposals and estimate sheets | Very early | Converts voice commands into structured proposals with intelligent suggestions. | Limited information. Narrow use case. |
 
-**The critical insight: every funded AI construction startup is architecturally locked into the US market.** Handoff's intelligence depends on their US supplier pricing database (Home Depot/Lowe's API by ZIP code). Hardline integrates with US tools (Procore, Fieldwire). Rebar is trained on US mechanical blueprints. None have multi-jurisdiction regulatory encoding. None support languages beyond English (Hardline adds Spanish). None can serve a contractor in Dubai, Mumbai, Mexico City, or Barcelona without a fundamental rebuild.
+**Two critical insights from the scan.**
+
+**First, every funded AI construction startup is architecturally locked into the US market.** Handoff's intelligence depends on their US supplier pricing database (Home Depot/Lowe's API by ZIP code). Hardline integrates with US tools (Procore, Fieldwire). Rebar is trained on US mechanical blueprints. None have multi-jurisdiction regulatory encoding. None support languages beyond English (Hardline adds Spanish). None can serve a contractor in Dubai, Mumbai, Mexico City, or Barcelona without a fundamental rebuild.
+
+**Second, none of them is conversation-first.** Handoff's Audio-to-Docs (shipped January 2026) is batch voice — record a monologue, AI produces an estimate; the rest of the product is forms. Hardline captures phone calls passively and pushes transcripts into Procore/Fieldwire — the contractor never talks TO Hardline. Renalto is voice commands for narrow use cases. No funded construction AI startup has a two-way conversational voice agent with memory across sessions. None can be operated entirely by chat.
 
 ### 3.4 Global competitive landscape
 
 No competitor globally is building a knowledge-graph-based, agentic-first, conversational construction platform.
 
 **US market:**
-- **JobTread** ($199/month) — strongest financial management competitor. Excellent estimate-to-budget flow. 11,944% revenue growth. But: no safety, no voice, no AI intelligence, relational database architecture.
-- **Procore** ($30K+/year) — everything, but prices out small contractors.
-- **Handoff AI** ($119-299/month) — AI estimating for residential remodelers. Impressive but US-only, residential-only, no safety, no knowledge graph.
-- **Hardline** — voice capture layer. Validates the voice-first approach but is not a platform.
+- **JobTread** ($199/month) — strongest financial management competitor for residential GCs. Excellent estimate-to-budget flow. Workflow Automations engine (2025) triggers pipeline advancement. But: no safety, no conversational voice, no AI that learns from the contractor's own historical data (they maintain a manual Cost Catalog). Relational architecture.
+- **Procore** ($30K+/year) — everything, including an AI Copilot launched 2024. Still a sidebar on a forms-based platform; cannot run via chat. Prices out small contractors regardless.
+- **Autodesk Construction Cloud** (enterprise) — Cost Management with Budget Snapshots (Dec 2024), AI summarisation features. Same sidebar pattern.
+- **CMiC** (enterprise, Canada-based) — customisable workflow engine plus AI overlay. Full ERP.
+- **ServiceTitan** (enterprise-leaning) — Titan Intelligence for pricing and dispatch. Service-trades model, not project-first construction.
+- **Handoff AI** ($119-299/month) — AI estimating trained on 100K+ past estimates and 60M+ SKUs. Audio-to-Docs (Jan 2026) is batch voice — record-then-process, not conversational. Residential-only, US-only, no safety, no knowledge graph, no contractor-own-data learning.
+- **Hardline** — passive voice-capture layer that pushes tasks into Procore/Fieldwire. Validates voice capture but is not a conversational agent and not a platform.
+- **SMB contractor platforms** — Knowify, JobNimbus, Contractor Foreman, Houzz Pro, Buildertrend. Each is a forms-based SMB tool, none is conversation-first, none has safety depth, all are US-locked.
 - **Point solutions** — Raken (daily logs), ClockShark (time), Fieldwire (tasks), SafetyCulture (inspections), CompanyCam (photos). Each does one thing.
 
 **International markets — massively underserved:**
-- **UK:** Fieldwire and PlanRadar for PM. HandsHQ and swiftRMS for RAMS/safety documents. Safety and operations completely separate. No integrated platform. No AI estimating. No voice-first tools.
+- **UK:** Fieldwire, PlanRadar, and Site Samurai for PM (Site Samurai is purpose-built for UK NEC4/JCT with applications for payment and CIS). HandsHQ and swiftRMS for RAMS/safety documents. Safety and operations completely separate. **Access Coins Evo (enterprise ERP) ships a native Copilot AI assistant** — the most mature enterprise conversational AI in European construction, though still a sidebar on a forms-based ERP, not a conversation-first product. Eque2 (SME ERP), Integrity Software / Evolution Mx (IE-compliant accounting). No AI estimating for small contractors. No conversation-first platform. No integrated platform for small contractors.
 - **Australia/NZ:** SafetyCulture (1.5M users) dominates inspections but is a checklist engine — no graph, no financial connection. HammerTech integrates but is slow and expensive. No AI estimating.
 - **Canada:** SALUS for provincial safety. No JobTread equivalent. PM tools are US imports.
-- **Europe:** PlanRadar (Austria, 65+ countries) strong on documentation but no financial tools, no safety depth. Capmo (Germany) has basic AI. Brickanta (Sweden) focused on enterprise pre-construction. No integrated platform for small contractors.
+- **Europe:** PlanRadar (Austria, 65+ countries) strong on documentation but no financial tools, no safety depth. Capmo (Germany) has basic AI. Brickanta (Sweden) focused on enterprise pre-construction. **SmartCraft ASA** (Oslo-listed, Nordic consolidator) has 189,000 users across Sweden/Norway/Finland/UK via Bygglet (Swedish SME leader, 75K users), HomeRun (Finland), and Coredination (Sweden) — the European SMB platform with the largest user base. **Causeway Technologies** acquired LetsBuild in December 2025, building a pan-European BE/FR/NL/LU field-management footprint. National champions exist per country — HERO/plancraft/WINWORKER (DE), Batappli/EBP/Costructor (FR), Presto/Arquímedes (ES), TeamSystem (IT), Dalux (DK, 140 countries, BIM-led) — but none crosses borders as a full platform. Every country runs a different software stack for SMB contractors. No conversation-first platform, no knowledge graph, no integrated platform for small contractors.
 - **UAE/Gulf:** Expensive local ERPs (FirstBit, Axolon, DoFort) focused on VAT compliance. No AI. No voice. No safety integration. No dominant player for small contractors.
 - **India:** Fragmented market of basic apps (RDash Lite at $18/month, BuildNext at $48/month). WhatsApp is the primary business communication tool. No AI construction tools. Enormous underserved market.
 - **Latin America:** Contractors shifting from spreadsheets to affordable subscriptions. No purpose-built tool for Spanish-speaking small contractors. Market needs "language-customized interfaces."
@@ -145,7 +155,7 @@ No competitor globally is building a knowledge-graph-based, agentic-first, conve
 
 1. **Knowledge graph architecture.** Every competitor is built on a relational database. Kerf is built on a Neo4j knowledge graph where every entity is connected to every related entity. Their AI reads tables. Our AI traverses a connected graph that includes regulatory rules, historical performance, conversation context, and uploaded documents. This is the moat that cannot be replicated without re-architecting from scratch.
 
-2. **Conversational-first interface.** The contractor talks to Kerf — chat or voice — to estimate jobs, review daily logs, check schedules, and run their business. No other construction tool uses conversation as the primary interaction model. Handoff uses batch text/photo input. Hardline captures calls passively. Neither is an interactive conversation with an intelligent agent.
+2. **Conversational-first interface.** The contractor talks to Kerf — chat or voice — to estimate jobs, review daily logs, check schedules, and run their business. Competitors increasingly ship AI features (Procore AI Copilot, Autodesk AI, Access Coins Evo Copilot, ServiceTitan Titan Intelligence, CMiC AI) but every one is an assistant overlay on a forms-based product. You cannot operate any of them by chat alone. Handoff's Audio-to-Docs is batch voice — record a monologue, get an estimate; the rest of the product is forms. Hardline captures phone calls passively and pushes transcripts into Procore/Fieldwire — the contractor never talks TO Hardline. **No competitor offers conversation as the primary interaction model, and no competitor offers a two-way conversational voice agent with memory across sessions.** Kerf is both.
 
 3. **Safety-first architecture.** We built the hardest, most regulated part first. Every expansion feature gets enriched by safety data. No competitor — not Handoff, not JobTread, not Hardline — has any safety capability. Safety compliance is the regulatory wedge that gets contractors onto the platform and the data foundation that makes everything else intelligent.
 
@@ -303,6 +313,10 @@ Fully specified in `BUILD_PLAN_EXPANSION.md`.
 | Brickanta expands into field operations | Low | They're enterprise-focused and pre-construction only. Different market. But their agentic architecture is sophisticated — worth monitoring. |
 | International regulatory encoding errors | High | Wrong compliance answers in any jurisdiction = real-world harm. Risk-stratified human verification (100% for life-safety rules). Start with English-speaking markets where team can validate. |
 | Solo developer vs funded teams | High | Handoff has $25M and a team. Kerf has one developer and Claude Code. Mitigations: Claude Code multiplies engineering output 5-8x; knowledge graph architecture and safety-first foundation are structural advantages that headcount doesn't solve; global market is uncontested; 500 customers is the target, not 10,000. |
+| Access Coins Evo Copilot moves downmarket in UK | Medium | Access Coins is enterprise-UK-focused. Their Copilot is a sidebar pattern, not conversation-first. If Access Group releases an SMB tier or Eque2/Site Samurai copy the pattern, Kerf's "no conversational AI in UK" claim erodes in 12-18 months. Mitigation: ship the conversation-first product at SMB price point before they do; monitor Access Group SMB roadmap. |
+| SmartCraft consolidates a UK or DE national champion | Medium | SmartCraft has 189K Nordic users and an active acquisition strategy. A UK or DE acquisition turns them into the EU version of a ServiceTitan-style rollup. Mitigation: Kerf's graph-first + conversation-first architecture is 2-3 years ahead of anything they can buy; entry-market advantage is structural, not functional. |
+| Causeway + LetsBuild becomes pan-European field platform | Medium | Causeway-LetsBuild covers field management (quality, safety, planning) across BE/FR/NL/LU now. Broader than PlanRadar but narrower than Kerf's scope. Mitigation: compete on platform breadth (estimating, job costing, financial) and AI depth; they are field-only. |
+| SafetyCulture adds construction-specific depth | Medium | SafetyCulture has 1.5M global users across 50 industries. Adding construction templates + OSHA traversal is easier than adding job costing, estimating, or daily logs. Mitigation: the safety wedge is only the entry; Kerf's moat is the expansion into operations and financial intelligence that safety-only tools cannot follow. |
 
 ---
 

@@ -2,7 +2,7 @@
 
 *Precision for Your Jobsite*
 
-*Last updated: 2026-04-10*
+*Last updated: 2026-04-18*
 
 ---
 
@@ -55,6 +55,8 @@ Eleven hundred people died on construction sites in the United States last year.
 **We believe financial intelligence should be derived, not entered.** A 15-person electrical sub will never set up cost code structures, code every expense, enter every purchase order, and reconcile budgets monthly. The vast majority track finances by gut feel and find out whether they made money after the job is done. Kerf derives financial insight from data the contractor already captures in daily operations — time entries become labour costs, daily logs reveal delay causes, photos become change order evidence. The contractor never enters financial data. The system assembles it from the graph.
 
 **We believe the knowledge graph is the moat, not the AI.** Every competitor will add AI. LLMs will get cheaper, faster, and more capable every year. What cannot be replicated quickly is a structured knowledge graph that connects every worker to every certification to every project to every regulation to every cost line to every daily log entry. The graph is what makes AI answers deterministic, auditable, and citable. Without it, AI is guessing. With it, AI is traversing. That structural difference is the defensible advantage.
+
+**We believe the knowledge graph is not a backend — it is a universal substrate.** Competitors ship features as modules. Each module has its own schema, its own UI, its own reports, its own release cycle. When they want a new feature, they build a new module. Kerf ships capabilities as traversals of one connected graph. A new feature is mostly prompt engineering and ontology extension, not new code plus new schema plus new UI. This is how a small team ships what a larger competitor team cannot match — not because we are smarter, but because their schema was wrong. The graph is why every Kerf feature is richer than its relational equivalent, and why new capabilities are dramatically cheaper to add as the product matures. Customers do not buy "the graph." They buy what it makes possible. But internally, the graph is what Kerf is.
 
 **We believe every conversation is data.** When a contractor says "I'm using 0.38 hours per receptacle because our guys are slower in renovations with low ceilings," that reasoning is as valuable as the number itself. Conversations — chat and voice — contain decisions, institutional knowledge, supplier relationships, GC preferences, and hard-won experience that no structured form could capture. Every interaction with Kerf is recorded, linked to the entities it touches, and available for the agent to draw on in future interactions. The contractor's knowledge stops walking out the door.
 
@@ -171,8 +173,8 @@ Insurance certificates are AI-parsed from uploaded documents — carrier, policy
 The agent does not just inform — it acts, within boundaries the contractor controls:
 
 - **Autonomous** (no approval needed): Send certification renewal reminders, check sub insurance status, generate reports, flag compliance issues, prepare morning briefs, detect potential variations in daily logs, monitor payment status, track weather against scheduled work
-- **Propose and confirm** (contractor reviews before execution): Draft variations with evidence, suggest estimate adjustments based on historical data, recommend schedule changes, identify cost overruns with recommended actions, generate invoices
-- **Contractor approves** (consequential actions): Place material orders with suppliers, submit proposals, send invoices to clients, accept contract terms, modify schedules affecting other parties
+- **Propose and confirm** (contractor reviews before execution): Draft variations with evidence, suggest estimate adjustments based on historical data, recommend schedule changes, identify cost overruns with recommended actions, generate invoices, draft outbound client emails (proposals, replies to questions, variation explanations), propose new quote versions when clients request changes
+- **Contractor approves** (consequential actions): Place material orders with suppliers, submit proposals, send invoices to clients, accept contract terms, modify schedules affecting other parties, send any client-facing email
 
 The agent's memory accumulates over time. After a year, it knows the contractor's labour rates, crew productivity, GC relationships, supplier preferences, and decision-making patterns. Every conversation, every document uploaded, every job completed adds to the graph. The system that has seen 50 of your jobs knows your business better than any spreadsheet ever could.
 
@@ -190,6 +192,58 @@ Voice and mobile are not a companion modality to Kerf — they are the primary i
 
 **Drawing and voice together where geometry matters.** For fencing, paving, decking, site concrete, and other geometric trades, drawing on a satellite overlay or a scale sketch is faster than counting by voice. Kerf pairs both: draw the shape on the map, narrate the spec — "galvanized chain link, 8-foot with barbed wire top." Neither modality is forced, and neither is treated as a second-class citizen.
 
+### 3.14 Cross-Cutting: Email as a Client Channel
+
+Kerf connects to the contractor's email (Gmail, Outlook, or equivalent via OAuth) and treats email as a first-class bidirectional channel with clients. Quotes, variation proposals, progress updates, invoices, and responses to client questions are drafted by the agent and sent from the contractor's own address — preserving the relationship continuity that a separate portal or no-reply address destroys.
+
+Inbound handling is scoped to threads Kerf originated. The agent does not scan the contractor's general inbox; it only reads replies to emails it sent. Privacy model: tight.
+
+When a client replies in a Kerf-originated thread, the agent reads the message, links it to the relevant Project in the graph, and proposes the next action:
+
+- **Clarifying question** → draft a reply grounded in the contract, methodology, or historical context
+- **Request for changes** → draft a new document version (Quote v2, revised invoice, amended variation) alongside a draft email explaining the change
+- **Acceptance or approval** → propose the state transition (e.g., `QUOTED → ACCEPTED`) and the contract snapshot that locks with it
+- **Objection or dispute signal** → flag explicitly, draft a measured response, never send without explicit approval
+
+The contractor always approves before anything is sent. Email to clients carries legal and relationship consequences that belong in human hands. The magic-link portal remains the primary surface for structured actions (Accept, Decline, Sign); email is the conversational channel that carries the links and handles the human-language layer around them.
+
+Every inbound and outbound email is stored in the graph — linked to the Project, timestamped, and indexed for semantic retrieval. "What did the client actually say about the pantry outlet?" becomes a one-query answer, not an inbox search.
+
+### 3.15 Cross-Cutting: Conversation and Canvas
+
+The primary way the contractor interacts with Kerf is **conversation** — chat, voice, or email. The primary way Kerf presents answers to open questions is **canvas** — a dynamic, LLM-generated visualisation rendered on demand from a graph traversal.
+
+Traditional construction software is built around menus, dashboards, and pre-built reports. Every answer the contractor might want requires a developer to have anticipated the question, designed a view, and shipped it. Custom reports are the line where product teams drown.
+
+Kerf inverts this. The contractor asks a question. The agent translates the question into a graph traversal, executes it, chooses the appropriate visualisation, and renders a canvas. No menu. No dashboard. No pre-built report. The next question pivots or refines the canvas in place.
+
+**The canvas is not one thing — it is whatever the answer needs to be:**
+
+- A **table** when the answer is rows ("which subs are most reliable?" → ranked table with reliability metrics, sortable)
+- A **timeline** when the answer is a sequence ("walk me through the Peachtree job" → annotated timeline from bid to close with every decision linked to evidence)
+- A **chart** when the answer is a trend ("is my margin improving?" → line chart by quarter, with crossover to estimating accuracy)
+- A **map** when the answer is spatial ("where are my open hazards?" → site map with hazard pins and status colours)
+- A **narrative** when the answer is causal ("why did we lose money on the hospital job?" → prose with inline evidence chain — time entries, material overages, delay days, missed change orders)
+- A **comparison** when the answer is relative ("how does this bid compare to similar past jobs?" → side-by-side WorkItem comparison with variance highlighted)
+- A **Gantt or kanban** when the answer is work-in-progress ("what's the week ahead look like?" → interactive schedule with drag-to-reschedule)
+- A **forecast** when the answer is future-looking ("will I hit my quarterly target?" → pipeline plus historical conversion curve)
+- A **document view** when the answer is a file ("show me the signed contract for this job" → PDF with the agent's annotations highlighting relevant clauses)
+
+Every canvas is interactive. Clicking any element drills into the underlying graph. Asking a follow-up question refines or pivots the view. A canvas is a conversation continued in visual form, not a static report.
+
+**Principles governing canvas:**
+
+- **Any question produces a canvas.** There is no "this isn't a supported report" state. If the agent cannot answer, it says so in the conversation; it does not fail silently.
+- **Every canvas is grounded in the graph.** No synthesised numbers. Every data point is traceable to its source node or nodes. Click to see the path.
+- **The canvas follows the conversation.** It does not replace it. The contractor keeps typing or speaking; the canvas updates or pivots beneath.
+- **Canvas is the right output for open questions; forms are the right output for structured data entry.** Canvas does not replace the inspection form or the estimate entry screen. It replaces the report, the dashboard, and the menu.
+
+**Why this is cheap on a knowledge graph and hard for competitors to match:**
+
+The canvas is cheap to ship on a knowledge graph because every node has typed properties, every relationship has semantics, and Cypher traversals map cleanly to the structure an LLM needs to pick a visualisation. The ontology is the visualisation grammar. A relational-database competitor cannot ship this without rebuilding — their schema was not designed for arbitrary traversal, and their UI was not designed for rendered-on-demand views. They can bolt an AI Copilot onto their tables and get autocomplete; they cannot render an arbitrary canvas from a question without a multi-year architectural rewrite.
+
+**Status:** Planned capability, not yet built. Will be built when the core operational graph — safety, daily logs, quality, time, estimating, job costing — is sufficiently populated that canvases have rich, interconnected content to traverse. Until then, Kerf's agent answers conversationally without canvas rendering; structured views use purpose-built UI. The canvas is the pattern shift that turns Kerf's knowledge-graph advantage from invisible-to-customers into visible-in-30-seconds.
+
 ---
 
 ## 4. THE INTELLIGENCE ARCHITECTURE
@@ -202,7 +256,9 @@ Kerf's intelligence comes from three complementary data layers, unified by the k
 
 **How agents use it:** Cypher traversal. Deterministic, auditable, citable. "Is this worker certified for this task?" returns the same answer every time, with a citation chain showing exactly which regulation requires which certification.
 
-**This is the system of truth.**
+**This is the system of truth. It is also Kerf's core architectural commitment — the universal substrate on which every feature is built.**
+
+Every feature in Kerf is a traversal of this graph, not a separate module with its own schema. New capabilities are built by extending the ontology and writing prompts, not by building new databases or new UI. A relational-database competitor adding an "AI Copilot" bolts LLMs onto tables — they get autocomplete and summarisation. Kerf's agent traverses a connected graph that includes operational data, financial data, regulatory structure, document extractions, and conversation history as one substrate. The difference is structural, not incremental. Every new entity the ontology grows makes every existing feature richer; every new feature unlocked is mostly a new query and a new prompt, not a new product.
 
 ### Layer 2: The Semantic Layer (Vector Index within Neo4j)
 
@@ -350,6 +406,8 @@ The transcript text and its vector embedding enable semantic retrieval — "find
 **13. Conversational first. Chat always. Voice everywhere.** The primary interface to Kerf is a conversation — the contractor tells Kerf what they need, and Kerf understands, acts, and responds. Chat is the foundation that works in every context. Voice is the field-optimised layer on top. Both are always available. Every conversation is recorded, linked, and available for future reference. The contractor who talks to Kerf for a year has an intelligent assistant that knows their business, their preferences, their history, and their patterns.
 
 **14. Every interaction makes the system smarter.** Every conversation, every document uploaded, every photo taken, every estimate created, every job completed adds to the knowledge graph. The system that has seen 50 of your jobs knows your business better than a spreadsheet that has seen zero. This is not a feature — it is the fundamental architecture. Intelligence accumulates because the graph connects everything.
+
+**15. Advise, highlight, keep logical, do what you're told.** The contractor controls state transitions, and every other consequential action. Kerf advises with context, highlights issues and risks, enforces only those preconditions where a transition is logically impossible without them (e.g. Practical Completion with WorkItems below 100%), and then does what the operator asks. The agent never blocks on inferred facts, never auto-transitions based on silence or elapsed time, and never overrides contractor judgment with "best practice." It surfaces nudges; the operator decides. The operator is the expert; the agent is the assistant. This is how the contractor stays in control of their business.
 
 ---
 
@@ -506,7 +564,7 @@ Percentage of contractor interactions conducted through chat/voice vs. tradition
 
 **We will not build a safety training LMS.** We deliver micro-training through the AI Safety Coach — contextual, two-minute interactions tied to the day's work. We do not build a full learning management system with courses, quizzes, and SCORM compliance.
 
-**We will not chase enterprise accounts.** A Fortune 500 GC with 200 projects and a full safety department is not our customer. They have budget for Procore and Intelex. Serving them would distort our product and distract us from the 750,000 small contractors who have nothing.
+**We will not chase enterprise accounts.** Our customer is the **1-100 employee contractor** running **1-8 concurrent projects** with **$150K-$10M in annual construction volume**. The sweet spot within that band is **15-100 employees** — large enough to have real operational complexity, small enough that every one of our moat layers wins. A Fortune 500 GC with 200 projects and a full safety department is not our customer. They have budget for Procore and Intelex; they have dedicated estimators, schedulers, and safety directors; they run country-specific subsidiaries on country-specific stacks. Every one of Kerf's differentiators — voice-first, one-tool-not-six, safety-first architecture, contractor-own-data learning, conversation-and-canvas — weakens at enterprise scale where roles are specialised and workflows are process-heavy. Chasing enterprise would distort our product and distract us from the 750,000 small contractors who have nothing.
 
 **We will not build worker performance tracking or disciplinary tools.** Kerf will never include features that allow managers to score, rank, or discipline individual workers based on safety or time data. Time tracking measures hours for payroll, not speed or output. The moment workers believe the tool is being used to evaluate their performance, honest reporting dies.
 

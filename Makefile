@@ -1,5 +1,9 @@
 .PHONY: dev dev-local dev-backend dev-frontend neo4j-up neo4j-schema seed-all seed-regulatory seed-golden seed-golden-only clean-golden test lint format frontend-build
 
+# Read Neo4j password from backend/.env so local tooling stays in sync with the
+# backend. Falls back to "password" if backend/.env is missing.
+NEO4J_PASSWORD := $(shell grep -E "^NEO4J_PASSWORD=" backend/.env 2>/dev/null | cut -d= -f2- || echo password)
+
 # --- Full Docker stack ---
 dev:
 	docker compose up --build
@@ -20,7 +24,7 @@ neo4j-up:
 	@docker ps --filter name=neo4j-test --format '{{.Names}}' | grep -q neo4j-test \
 		|| docker run -d --name neo4j-test \
 			-p 7474:7474 -p 7687:7687 \
-			-e NEO4J_AUTH=neo4j/password \
+			-e NEO4J_AUTH=neo4j/$(NEO4J_PASSWORD) \
 			neo4j:5
 	@echo "Waiting for Neo4j..."
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \

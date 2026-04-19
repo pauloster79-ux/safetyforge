@@ -10,10 +10,19 @@ Usage:
 
 import argparse
 import logging
+import os
 import secrets
+from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from neo4j import Driver, GraphDatabase, ManagedTransaction
+
+# Load backend/.env so NEO4J_PASSWORD (and friends) are available as defaults
+# when the script is invoked from the repo root.
+_BACKEND_ENV = Path(__file__).resolve().parents[1] / ".env"
+if _BACKEND_ENV.exists():
+    load_dotenv(_BACKEND_ENV)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 logger = logging.getLogger(__name__)
@@ -181,12 +190,24 @@ def main() -> None:
     )
     parser.add_argument(
         "--uri",
-        default="bolt://localhost:7687",
-        help="Neo4j connection URI (default: bolt://localhost:7687)",
+        default=os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+        help="Neo4j URI (defaults to $NEO4J_URI or bolt://localhost:7687)",
     )
-    parser.add_argument("--user", default="neo4j", help="Neo4j username")
-    parser.add_argument("--password", default="password", help="Neo4j password")
-    parser.add_argument("--database", default="neo4j", help="Neo4j database name")
+    parser.add_argument(
+        "--user",
+        default=os.environ.get("NEO4J_USER", "neo4j"),
+        help="Neo4j username (defaults to $NEO4J_USER or neo4j)",
+    )
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("NEO4J_PASSWORD", "password"),
+        help="Neo4j password (defaults to $NEO4J_PASSWORD from backend/.env)",
+    )
+    parser.add_argument(
+        "--database",
+        default=os.environ.get("NEO4J_DATABASE", "neo4j"),
+        help="Neo4j database name (defaults to $NEO4J_DATABASE or neo4j)",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",

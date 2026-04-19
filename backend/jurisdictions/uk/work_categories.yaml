@@ -1,0 +1,587 @@
+jurisdiction: uk
+source: NRM 2
+source_reference: "RICS NRM 2: Detailed measurement for building works (1st edition, 2012; reprinted with corrections)"
+licensing_note: "Structural content (work-section numbering + hierarchy) referenced as factual taxonomy. Full rule text and tabulated measurement rules are not reproduced. RICS licence to be reviewed as UK customer volume grows."
+version: "2012-edition"
+last_updated: "2026-04-17"
+categories:
+  - code: "1"
+    name: "Preliminaries"
+    level: 1
+    children:
+      - code: "1.1"
+        name: "Employer's requirements"
+        level: 2
+        children:
+          - { code: "1.1.1", name: "Site accommodation", level: 3, unit_note: "item", activity_refs: [] }
+          - { code: "1.1.2", name: "Site records", level: 3, unit_note: "item", activity_refs: [] }
+          - { code: "1.1.3", name: "Completion and post-completion requirements", level: 3, unit_note: "item", activity_refs: [] }
+      - code: "1.2"
+        name: "Main contractor's cost items"
+        level: 2
+        children:
+          - { code: "1.2.1", name: "Management and staff", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.2", name: "Site establishment", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.3", name: "Temporary services", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.4", name: "Security", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.5", name: "Safety and environmental protection", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.7", name: "Mechanical plant", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.8", name: "Temporary works", level: 3, unit_note: "item", activity_refs: [] }
+          - { code: "1.2.11", name: "Cleaning", level: 3, unit_note: "item / week", activity_refs: [] }
+          - { code: "1.2.12", name: "Fees and charges", level: 3, unit_note: "item", activity_refs: [] }
+          - { code: "1.2.14", name: "Insurances, bonds, guarantees and warranties", level: 3, unit_note: "item", activity_refs: [] }
+
+  - code: "3"
+    name: "Demolitions"
+    level: 1
+    children:
+      - code: "3.1"
+        name: "Demolition of existing structures"
+        level: 2
+        children:
+          - { code: "3.1.1", name: "Demolition of whole buildings", level: 3, unit_note: "item / m³", activity_refs: [] }
+          - { code: "3.1.2", name: "Demolition of parts of buildings", level: 3, unit_note: "item / m³", activity_refs: [] }
+          - { code: "3.1.3", name: "Demolition of isolated structures", level: 3, unit_note: "nr / m³", activity_refs: [] }
+
+  - code: "4"
+    name: "Alterations, repairs and conservation"
+    level: 1
+    children:
+      - code: "4.1"
+        name: "Alterations"
+        level: 2
+        children:
+          - { code: "4.1.1", name: "Forming openings in existing walls / floors / roofs", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "4.1.2", name: "Filling openings in existing walls / floors / roofs", level: 3, unit_note: "nr / m²", activity_refs: [] }
+          - { code: "4.1.3", name: "Removing existing building fabric", level: 3, unit_note: "m² / m³", activity_refs: [] }
+      - code: "4.2"
+        name: "Repairs to existing structures"
+        level: 2
+        children:
+          - { code: "4.2.1", name: "Repairs to masonry", level: 3, unit_note: "m² / m / nr", activity_refs: [] }
+          - { code: "4.2.2", name: "Repairs to structural timber", level: 3, unit_note: "m / nr", activity_refs: [] }
+          - { code: "4.2.3", name: "Repairs to structural metalwork", level: 3, unit_note: "m / nr / t", activity_refs: [] }
+
+  - code: "5"
+    name: "Excavating and filling"
+    level: 1
+    children:
+      - code: "5.1"
+        name: "Site preparation"
+        level: 2
+        children:
+          - { code: "5.1.1", name: "Removing trees", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "5.1.3", name: "Clearing site vegetation", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "5.2"
+        name: "Excavation"
+        level: 2
+        children:
+          - { code: "5.2.1", name: "Bulk excavation", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "5.2.2", name: "Excavation for basements and the like", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "5.2.3", name: "Excavation for foundations", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "5.2.5", name: "Excavation for trenches (services / drainage)", level: 3, unit_note: "m / m³", activity_refs: [] }
+      - code: "5.4"
+        name: "Disposal"
+        level: 2
+        children:
+          - { code: "5.4.1", name: "Disposal of excavated material off site", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "5.4.3", name: "Disposal of ground water", level: 3, unit_note: "item", activity_refs: [] }
+      - code: "5.5"
+        name: "Filling"
+        level: 2
+        children:
+          - { code: "5.5.1", name: "Filling obtained from excavations", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "5.5.2", name: "Imported filling", level: 3, unit_note: "m³", activity_refs: [] }
+
+  - code: "7"
+    name: "Piling"
+    level: 1
+    children:
+      - code: "7.1"
+        name: "Bored piles"
+        level: 2
+        children:
+          - { code: "7.1.1", name: "Bored piles (cast in-situ)", level: 3, unit_note: "m / nr", activity_refs: [] }
+          - { code: "7.1.2", name: "Continuous flight auger (CFA) piles", level: 3, unit_note: "m / nr", activity_refs: [] }
+      - code: "7.2"
+        name: "Driven piles"
+        level: 2
+        children:
+          - { code: "7.2.1", name: "Driven precast concrete piles", level: 3, unit_note: "m / nr", activity_refs: [] }
+          - { code: "7.2.2", name: "Driven steel piles", level: 3, unit_note: "m / nr", activity_refs: [] }
+
+  - code: "11"
+    name: "In-situ concrete works"
+    level: 1
+    children:
+      - code: "11.1"
+        name: "Mass concrete"
+        level: 2
+        children:
+          - { code: "11.1.1", name: "Mass concrete foundations / fills", level: 3, unit_note: "m³", activity_refs: [] }
+      - code: "11.2"
+        name: "Reinforced in-situ concrete"
+        level: 2
+        children:
+          - { code: "11.2.1", name: "Foundations", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.2", name: "Pile caps and ground beams", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.3", name: "Ground slabs and beds", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.4", name: "Walls", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.5", name: "Suspended slabs", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.6", name: "Beams", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.7", name: "Columns", level: 3, unit_note: "m³", activity_refs: [] }
+          - { code: "11.2.8", name: "Staircases", level: 3, unit_note: "m³ / nr", activity_refs: [] }
+      - code: "11.3"
+        name: "Reinforcement"
+        level: 2
+        children:
+          - { code: "11.3.1", name: "Bar reinforcement", level: 3, unit_note: "t (by bar diameter)", activity_refs: [] }
+          - { code: "11.3.2", name: "Fabric (mesh) reinforcement", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "11.4"
+        name: "Formwork"
+        level: 2
+        children:
+          - { code: "11.4.1", name: "Formwork to soffits of slabs", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "11.4.2", name: "Formwork to sides of foundations and ground beams", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "11.4.3", name: "Formwork to sides of walls", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "11.4.4", name: "Formwork to sides and soffits of beams", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "11.4.5", name: "Formwork to columns", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "14"
+    name: "Masonry"
+    level: 1
+    children:
+      - code: "14.1"
+        name: "Brick / block walling"
+        level: 2
+        children:
+          - { code: "14.1.1", name: "Common brickwork", level: 3, unit_note: "m² (by thickness)", activity_refs: [] }
+          - { code: "14.1.2", name: "Facing brickwork", level: 3, unit_note: "m² (by thickness)", activity_refs: [] }
+          - { code: "14.1.3", name: "Engineering brickwork", level: 3, unit_note: "m² (by thickness)", activity_refs: [] }
+          - { code: "14.1.4", name: "Blockwork — dense concrete", level: 3, unit_note: "m² (by thickness)", activity_refs: [] }
+          - { code: "14.1.5", name: "Blockwork — lightweight / aerated", level: 3, unit_note: "m² (by thickness)", activity_refs: [] }
+          - { code: "14.1.6", name: "Cavity wall construction", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "14.3"
+        name: "Masonry sundries"
+        level: 2
+        children:
+          - { code: "14.3.1", name: "Wall ties and cavity insulation ties", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "14.3.2", name: "Damp-proof courses", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "14.3.5", name: "Movement joints", level: 3, unit_note: "m", activity_refs: [] }
+
+  - code: "15"
+    name: "Structural metalwork"
+    level: 1
+    children:
+      - code: "15.1"
+        name: "Structural steel framing"
+        level: 2
+        children:
+          - { code: "15.1.1", name: "Structural steel columns", level: 3, unit_note: "t / nr", activity_refs: [] }
+          - { code: "15.1.2", name: "Structural steel beams", level: 3, unit_note: "t", activity_refs: [] }
+          - { code: "15.1.3", name: "Structural steel trusses and girders", level: 3, unit_note: "t / nr", activity_refs: [] }
+          - { code: "15.1.4", name: "Structural steel bracing", level: 3, unit_note: "t", activity_refs: [] }
+      - code: "15.3"
+        name: "Protective treatment to metalwork"
+        level: 2
+        children:
+          - { code: "15.3.1", name: "Shop-applied protective coatings", level: 3, unit_note: "m² / t", activity_refs: [] }
+          - { code: "15.3.3", name: "Intumescent fire protection coatings", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "15.3.4", name: "Galvanising", level: 3, unit_note: "t / m²", activity_refs: [] }
+
+  - code: "16"
+    name: "Carpentry"
+    level: 1
+    children:
+      - code: "16.1"
+        name: "Structural timber"
+        level: 2
+        children:
+          - { code: "16.1.1", name: "Timber wall plates", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "16.1.2", name: "Timber floor joists", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "16.1.4", name: "Timber roof rafters", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "16.1.6", name: "Timber trussed rafters", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "16.1.7", name: "Engineered timber joists (I-joists / metal web)", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "16.1.8", name: "Timber stud partitioning", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "18"
+    name: "Tile and slate roof and wall coverings"
+    level: 1
+    children:
+      - code: "18.1"
+        name: "Tiled coverings"
+        level: 2
+        children:
+          - { code: "18.1.1", name: "Clay plain tiling", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "18.1.2", name: "Clay interlocking tiling", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "18.1.3", name: "Concrete interlocking tiling", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "18.2"
+        name: "Slate coverings"
+        level: 2
+        children:
+          - { code: "18.2.1", name: "Natural slate roofing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "18.2.2", name: "Fibre cement slate roofing", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "19"
+    name: "Waterproofing"
+    level: 1
+    children:
+      - code: "19.1"
+        name: "Tanking and damp-proofing to structures"
+        level: 2
+        children:
+          - { code: "19.1.1", name: "Tanking to basements / below-ground structures", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "19.1.2", name: "Damp-proof membranes (DPM) to floors", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "19.2"
+        name: "Flat and low-pitch roof waterproofing"
+        level: 2
+        children:
+          - { code: "19.2.1", name: "Built-up felt roofing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "19.2.2", name: "Single-ply membrane roofing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "19.2.3", name: "Mastic asphalt roofing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "19.2.4", name: "Liquid-applied waterproofing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "19.2.5", name: "Green / biodiverse roof build-up", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "23"
+    name: "Windows, screens and lights"
+    level: 1
+    children:
+      - code: "23.1"
+        name: "Windows"
+        level: 2
+        children:
+          - { code: "23.1.1", name: "Timber windows", level: 3, unit_note: "nr / m²", activity_refs: [] }
+          - { code: "23.1.2", name: "Aluminium windows", level: 3, unit_note: "nr / m²", activity_refs: [] }
+          - { code: "23.1.3", name: "UPVC windows", level: 3, unit_note: "nr / m²", activity_refs: [] }
+          - { code: "23.1.4", name: "Steel windows", level: 3, unit_note: "nr / m²", activity_refs: [] }
+      - code: "23.2"
+        name: "Curtain walling and shopfronts"
+        level: 2
+        children:
+          - { code: "23.2.1", name: "Curtain walling (stick / unitised)", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "23.2.2", name: "Shopfronts", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "23.3"
+        name: "Rooflights and roof windows"
+        level: 2
+        children:
+          - { code: "23.3.1", name: "Domed rooflights", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "23.3.2", name: "Glazed roof windows", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "24"
+    name: "Doors, shutters and hatches"
+    level: 1
+    children:
+      - code: "24.1"
+        name: "Doors and doorsets"
+        level: 2
+        children:
+          - { code: "24.1.1", name: "Timber doors and doorsets", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "24.1.2", name: "Metal doors and doorsets", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "24.1.4", name: "Fire-rated doorsets", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "24.1.5", name: "Automatic / sliding doorsets", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "24.4"
+        name: "Ironmongery"
+        level: 2
+        children:
+          - { code: "24.4.1", name: "Hinges", level: 3, unit_note: "nr / set", activity_refs: [] }
+          - { code: "24.4.2", name: "Locks and latches", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "24.4.3", name: "Handles, levers and pulls", level: 3, unit_note: "nr / set", activity_refs: [] }
+          - { code: "24.4.4", name: "Door closers", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "27"
+    name: "Plastering and rendering"
+    level: 1
+    children:
+      - code: "27.1"
+        name: "In-situ plaster finishes"
+        level: 2
+        children:
+          - { code: "27.1.1", name: "Plaster to walls", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "27.1.2", name: "Plaster to ceilings", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "27.2"
+        name: "Rendering"
+        level: 2
+        children:
+          - { code: "27.2.1", name: "Cement / sand render", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "27.2.2", name: "Polymer / acrylic render", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "27.3"
+        name: "Dry lining and plasterboard"
+        level: 2
+        children:
+          - { code: "27.3.1", name: "Plasterboard linings to walls (direct fix)", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "27.3.2", name: "Plasterboard linings to walls (metal stud)", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "27.3.3", name: "Plasterboard ceilings (MF / suspended)", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "27.3.4", name: "Skim finish to plasterboard", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "28"
+    name: "Floor, wall, ceiling and roof finishings"
+    level: 1
+    children:
+      - code: "28.1"
+        name: "Screeds and in-situ floor finishes"
+        level: 2
+        children:
+          - { code: "28.1.1", name: "Cement / sand screeds", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "28.1.2", name: "Self-levelling / flowing screeds", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "28.1.4", name: "Resin / epoxy floor finishes", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "28.2"
+        name: "Tile and slab finishes"
+        level: 2
+        children:
+          - { code: "28.2.1", name: "Ceramic / porcelain floor tiling", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "28.2.2", name: "Ceramic / porcelain wall tiling", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "28.2.3", name: "Natural stone floor slabs / tiles", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "28.3"
+        name: "Resilient and sheet finishes"
+        level: 2
+        children:
+          - { code: "28.3.1", name: "Vinyl sheet flooring", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "28.3.2", name: "Vinyl tile flooring (LVT)", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "28.3.5", name: "Carpet and carpet tiles", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "29"
+    name: "Decoration"
+    level: 1
+    children:
+      - code: "29.1"
+        name: "Paint finishes"
+        level: 2
+        children:
+          - { code: "29.1.1", name: "Emulsion paint to walls and ceilings", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "29.1.2", name: "Gloss / satin paint to woodwork", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "29.1.3", name: "Paint to metalwork", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "29.1.5", name: "Masonry paint to external render / masonry", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "31"
+    name: "Insulation, fire stopping and fire protection"
+    level: 1
+    children:
+      - code: "31.1"
+        name: "Thermal and acoustic insulation"
+        level: 2
+        children:
+          - { code: "31.1.1", name: "Insulation to floors", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "31.1.2", name: "Insulation to walls (cavity / internal / external)", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "31.1.3", name: "Insulation to roofs (cold / warm / inverted)", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "31.2"
+        name: "Passive fire protection"
+        level: 2
+        children:
+          - { code: "31.2.1", name: "Fire-stopping to linear compartment gaps", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "31.2.2", name: "Fire-stopping to service penetrations", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "31.2.4", name: "Fire-resistant board encasement to structure", level: 3, unit_note: "m²", activity_refs: [] }
+
+  - code: "32"
+    name: "Furniture, fittings and equipment"
+    level: 1
+    children:
+      - code: "32.1"
+        name: "Sanitary appliances"
+        level: 2
+        children:
+          - { code: "32.1.1", name: "WC suites", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "32.1.2", name: "Wash hand basins", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "32.1.4", name: "Sinks", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "32.1.5", name: "Baths", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "32.1.6", name: "Showers and shower trays", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "32.2"
+        name: "Fitted furniture and built-in storage"
+        level: 2
+        children:
+          - { code: "32.2.1", name: "Kitchen units", level: 3, unit_note: "nr / m", activity_refs: [] }
+          - { code: "32.2.2", name: "Wardrobes and bedroom units", level: 3, unit_note: "nr / m", activity_refs: [] }
+          - { code: "32.2.3", name: "Reception counters / service counters", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "33"
+    name: "Drainage above ground"
+    level: 1
+    children:
+      - code: "33.1"
+        name: "Rainwater installations"
+        level: 2
+        children:
+          - { code: "33.1.1", name: "Gutters", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "33.1.2", name: "Rainwater pipes (downpipes)", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "33.1.3", name: "Rainwater heads, outlets and shoes", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "33.2"
+        name: "Soil and waste installations"
+        level: 2
+        children:
+          - { code: "33.2.1", name: "Soil and vent pipes (SVP)", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "33.2.2", name: "Waste pipework", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "33.2.3", name: "Traps, access fittings and bosses", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "34"
+    name: "Drainage below ground"
+    level: 1
+    children:
+      - code: "34.2"
+        name: "Drain pipework"
+        level: 2
+        children:
+          - { code: "34.2.1", name: "Vitrified clay drain pipes", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "34.2.2", name: "UPVC / plastic drain pipes", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "34.2.3", name: "Concrete drain pipes", level: 3, unit_note: "m", activity_refs: [] }
+      - code: "34.3"
+        name: "Manholes, chambers and gullies"
+        level: 2
+        children:
+          - { code: "34.3.1", name: "Manholes (brick / precast concrete)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "34.3.2", name: "Inspection chambers (proprietary)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "34.3.3", name: "Yard gullies / road gullies", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "35"
+    name: "Site works"
+    level: 1
+    children:
+      - code: "35.1"
+        name: "Roads and paving"
+        level: 2
+        children:
+          - { code: "35.1.1", name: "Sub-base layers", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "35.1.2", name: "Bituminous / asphalt surfacing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "35.1.3", name: "Concrete paving / slabs", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "35.1.4", name: "Block paving", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "35.3"
+        name: "Fencing, walls and gates"
+        level: 2
+        children:
+          - { code: "35.3.1", name: "Timber fencing", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "35.3.2", name: "Metal fencing (palisade / mesh / railings)", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "35.3.3", name: "External site walls (brick / block / masonry)", level: 3, unit_note: "m² / m", activity_refs: [] }
+      - code: "35.4"
+        name: "Landscaping and soft works"
+        level: 2
+        children:
+          - { code: "35.4.1", name: "Topsoil placement", level: 3, unit_note: "m² / m³", activity_refs: [] }
+          - { code: "35.4.2", name: "Turfing", level: 3, unit_note: "m²", activity_refs: [] }
+          - { code: "35.4.4", name: "Trees, shrubs and planting", level: 3, unit_note: "nr / m²", activity_refs: [] }
+
+  - code: "37"
+    name: "Mechanical services"
+    level: 1
+    children:
+      - code: "37.1"
+        name: "Heat source and generation"
+        level: 2
+        children:
+          - { code: "37.1.1", name: "Boilers", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.1.2", name: "Heat pumps (air / ground source)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.1.4", name: "Solar thermal collectors", level: 3, unit_note: "m² / nr", activity_refs: [] }
+      - code: "37.2"
+        name: "Heat distribution and emitters"
+        level: 2
+        children:
+          - { code: "37.2.1", name: "LPHW pipework (heating primary / secondary)", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "37.2.2", name: "Radiators", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.2.3", name: "Underfloor heating", level: 3, unit_note: "m²", activity_refs: [] }
+      - code: "37.3"
+        name: "Cooling systems"
+        level: 2
+        children:
+          - { code: "37.3.1", name: "Chillers", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.3.3", name: "VRF / VRV indoor units", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.3.4", name: "VRF / VRV outdoor units", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "37.4"
+        name: "Ventilation and air conditioning"
+        level: 2
+        children:
+          - { code: "37.4.1", name: "Air handling units (AHU)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.4.2", name: "Mechanical ventilation with heat recovery (MVHR)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.4.4", name: "Ductwork (rectangular / circular / flexible)", level: 3, unit_note: "m² / m", activity_refs: [] }
+      - code: "37.5"
+        name: "Domestic water services (plumbing)"
+        level: 2
+        children:
+          - { code: "37.5.1", name: "Cold water distribution pipework", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "37.5.2", name: "Hot water distribution pipework", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "37.5.4", name: "Domestic hot water cylinders / calorifiers", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "37.5.6", name: "Taps, mixers and sanitary connections", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "38"
+    name: "Electrical services"
+    level: 1
+    children:
+      - code: "38.1"
+        name: "LV distribution"
+        level: 2
+        children:
+          - { code: "38.1.1", name: "Main LV switchgear / panels", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.1.2", name: "Distribution boards", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.1.3", name: "Sub-main cabling", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "38.1.5", name: "Cable tray / ladder / basket containment", level: 3, unit_note: "m", activity_refs: [] }
+          - { code: "38.1.6", name: "Conduit and trunking", level: 3, unit_note: "m", activity_refs: [] }
+      - code: "38.2"
+        name: "Small power"
+        level: 2
+        children:
+          - { code: "38.2.1", name: "Socket outlets", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.2.2", name: "Fused spurs / connection units", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.2.3", name: "Final circuit cabling (small power)", level: 3, unit_note: "m / nr", activity_refs: [] }
+      - code: "38.3"
+        name: "Lighting"
+        level: 2
+        children:
+          - { code: "38.3.1", name: "Internal luminaires", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.3.2", name: "External / amenity luminaires", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.3.3", name: "Emergency lighting", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.3.6", name: "Switches and dimmers", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "38.5"
+        name: "Fire detection and alarm"
+        level: 2
+        children:
+          - { code: "38.5.1", name: "Fire alarm control panels", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.5.2", name: "Detectors (smoke / heat / multi-sensor)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.5.3", name: "Manual call points", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.5.4", name: "Sounders / beacons / VADs", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "38.6"
+        name: "Security and access control"
+        level: 2
+        children:
+          - { code: "38.6.1", name: "Intruder alarm systems", level: 3, unit_note: "item / nr", activity_refs: [] }
+          - { code: "38.6.2", name: "Access control systems (readers, controllers)", level: 3, unit_note: "nr / item", activity_refs: [] }
+          - { code: "38.6.3", name: "CCTV systems", level: 3, unit_note: "nr / item", activity_refs: [] }
+      - code: "38.7"
+        name: "Communications and data"
+        level: 2
+        children:
+          - { code: "38.7.1", name: "Structured cabling (Cat 6/6A/7) outlets and backbone", level: 3, unit_note: "nr / m", activity_refs: [] }
+          - { code: "38.7.3", name: "Comms cabinets and patch panels", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.7.4", name: "Wireless access points", level: 3, unit_note: "nr", activity_refs: [] }
+      - code: "38.8"
+        name: "Standby and renewable generation"
+        level: 2
+        children:
+          - { code: "38.8.1", name: "Standby diesel generators", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.8.2", name: "Uninterruptible power supply (UPS)", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "38.8.3", name: "Photovoltaic (PV) arrays and inverters", level: 3, unit_note: "m² / kWp / nr", activity_refs: [] }
+          - { code: "38.8.5", name: "EV charging points", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "39"
+    name: "Transport systems"
+    level: 1
+    children:
+      - code: "39.1"
+        name: "Lifts"
+        level: 2
+        children:
+          - { code: "39.1.1", name: "Passenger lifts (traction / MRL)", level: 3, unit_note: "nr (by stops)", activity_refs: [] }
+          - { code: "39.1.2", name: "Goods / service lifts", level: 3, unit_note: "nr", activity_refs: [] }
+          - { code: "39.1.3", name: "Platform / disabled access lifts", level: 3, unit_note: "nr", activity_refs: [] }
+
+  - code: "41"
+    name: "Testing and commissioning of services"
+    level: 1
+    children:
+      - code: "41.2"
+        name: "Commissioning and balancing"
+        level: 2
+        children:
+          - { code: "41.2.1", name: "Water system balancing", level: 3, unit_note: "item", activity_refs: [] }
+          - { code: "41.2.2", name: "Air system balancing", level: 3, unit_note: "item", activity_refs: [] }
+      - code: "41.3"
+        name: "Handover documentation"
+        level: 2
+        children:
+          - { code: "41.3.1", name: "Operation and maintenance (O&M) manuals", level: 3, unit_note: "item / set", activity_refs: [] }
+          - { code: "41.3.2", name: "Record (as-built) drawings", level: 3, unit_note: "item / set", activity_refs: [] }

@@ -56,10 +56,19 @@ CREATE INDEX index_work_package_status IF NOT EXISTS
   FOR (n:WorkPackage) ON (n.status);
 
 // -- WorkCategory --
+// Two-tier model: :WorkCategory:Canonical (shared, system-maintained, per-jurisdiction)
+// and :WorkCategory:Extension (company-scoped leaf extensions of canonical parents).
+// See docs/design/canonical-work-categories.md.
 CREATE CONSTRAINT constraint_work_category_id IF NOT EXISTS
   FOR (n:WorkCategory) REQUIRE n.id IS UNIQUE;
 CREATE CONSTRAINT constraint_work_category_id_exists IF NOT EXISTS
   FOR (n:WorkCategory) REQUIRE n.id IS NOT NULL;
+CREATE INDEX index_work_category_jurisdiction IF NOT EXISTS
+  FOR (n:WorkCategory) ON (n.jurisdiction_code);
+CREATE INDEX index_work_category_code IF NOT EXISTS
+  FOR (n:WorkCategory) ON (n.code);
+CREATE INDEX index_work_category_level IF NOT EXISTS
+  FOR (n:WorkCategory) ON (n.level);
 
 // -- Item (global shared catalogue) --
 CREATE CONSTRAINT constraint_item_id IF NOT EXISTS
@@ -111,6 +120,24 @@ CREATE CONSTRAINT condition_id IF NOT EXISTS
   FOR (cond:Condition) REQUIRE cond.id IS UNIQUE;
 CREATE INDEX condition_category IF NOT EXISTS
   FOR (cond:Condition) ON (cond.category);
+
+
+// ============================================================================
+// METHODOLOGY (Construction-method cascade — Project → WorkPackage → WorkItem)
+// ============================================================================
+// See docs/design/methodology.md for the full data model and authoring flow.
+
+// -- Methodology --
+CREATE CONSTRAINT constraint_methodology_id IF NOT EXISTS
+  FOR (n:Methodology) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT constraint_methodology_id_exists IF NOT EXISTS
+  FOR (n:Methodology) REQUIRE n.id IS NOT NULL;
+CREATE CONSTRAINT constraint_methodology_scope_exists IF NOT EXISTS
+  FOR (n:Methodology) REQUIRE n.scope_level IS NOT NULL;
+CREATE INDEX index_methodology_scope_level IF NOT EXISTS
+  FOR (n:Methodology) ON (n.scope_level);
+CREATE INDEX index_methodology_valid_until IF NOT EXISTS
+  FOR (n:Methodology) ON (n.valid_until);
 
 
 // ============================================================================

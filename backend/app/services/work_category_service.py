@@ -24,9 +24,26 @@ class WorkCategoryNotFoundError(Exception):
 class WorkCategoryService(BaseService):
     """Manages WorkCategory nodes in the Neo4j graph.
 
-    Categories connect to companies via (Company)-[:HAS_WORK_CATEGORY]->(WorkCategory).
-    Hierarchical relationships use (WorkCategory)-[:PARENT_CATEGORY]->(WorkCategory).
-    Regulatory links use (WorkCategory)-[:LINKS_TO_ACTIVITY]->(Activity).
+    Two-tier model (see docs/design/canonical-work-categories.md):
+
+    * **Canonical** categories (:WorkCategory:Canonical) — shared system-maintained
+      trees per jurisdiction, loaded from YAML seeds. Contractors cannot create or
+      modify these; they are the authoritative taxonomy (MasterFormat for US/CA,
+      NRM 2 for UK/IE, NATSPEC for AU/NZ).
+
+    * **Extension** categories (:WorkCategory:Extension) — company-scoped leaves
+      under a Canonical parent. Contractors create these via ``add_extension`` for
+      specialisations that don't warrant a canonical entry.
+
+    Additionally, companies may alias canonical categories via ``add_alias`` — a
+    display-name override that does not fork the tree.
+
+    Hierarchical relationships use (WorkCategory)-[:PARENT_CATEGORY]->(WorkCategory)
+    with Extensions always pointing at a Canonical parent.
+
+    Regulatory links use (:WorkCategory:Canonical)-[:LINKS_TO_ACTIVITY]->(Activity)
+    — attached to Canonical nodes only; Extensions inherit regulatory context by
+    traversing through their canonical parent.
     """
 
     def create(
@@ -358,3 +375,325 @@ class WorkCategoryService(BaseService):
             actor=Actor.human(user_id),
             summary=f"Archived work category {category_id}",
         )
+
+    # ------------------------------------------------------------------
+    # Canonical category operations (two-tier model)
+    # ------------------------------------------------------------------
+
+    def list_canonical(
+        self,
+        jurisdiction_code: str,
+        level: int | None = None,
+        parent_code: str | None = None,
+        search: str | None = None,
+        limit: int = 200,
+    ) -> list[dict[str, Any]]:
+        """List canonical WorkCategories for a jurisdiction.
+
+        Args:
+            jurisdiction_code: ISO-style code ('us', 'uk', 'ca', 'ie', 'au', 'nz').
+            level: Optional filter to a specific hierarchy level (1, 2, or 3).
+            parent_code: Optional filter to children of a given parent code.
+            search: Optional case-insensitive substring match on name or code.
+            limit: Maximum rows to return (default 200).
+
+        Returns:
+            List of canonical category dicts ordered by code.
+        """
+        where_clauses = ["c.jurisdiction_code = $jurisdiction_code"]
+        params: dict[str, Any] = {
+            "jurisdiction_code": jurisdiction_code,
+            "limit": limit,
+        }
+        if level is not None:
+            where_clauses.append("c.level = $level")
+            params["level"] = level
+        if search:
+            where_clauses.append(
+                "(toLower(c.name) CONTAINS toLower($search) "
+                "OR toLower(c.code) CONTAINS toLower($search))"
+            )
+            params["search"] = search
+
+        where_str = " AND ".join(where_clauses)
+
+        if parent_code is not None:
+            params["parent_code"] = parent_code
+            query = f"""
+            MATCH (c:WorkCategory:Canonical)-[:PARENT_CATEGORY]->(parent:WorkCategory:Canonical)
+            WHERE {where_str}
+              AND parent.code = $parent_code
+              AND parent.jurisdiction_code = $jurisdiction_code
+            RETURN c {{.*, parent_code: parent.code}} AS category
+            ORDER BY c.code
+            LIMIT $limit
+            """
+        else:
+            query = f"""
+            MATCH (c:WorkCategory:Canonical)
+            WHERE {where_str}
+            OPTIONAL MATCH (c)-[:PARENT_CATEGORY]->(parent:WorkCategory:Canonical)
+            RETURN c {{.*, parent_code: parent.code}} AS category
+            ORDER BY c.code
+            LIMIT $limit
+            """
+
+        results = self._read_tx(query, params)
+        return [r["category"] for r in results]
+
+    def list_for_company(
+        self,
+        company_id: str,
+        jurisdiction_code: str,
+        search: str | None = None,
+        limit: int = 200,
+    ) -> dict[str, Any]:
+        """List the effective category set for a company.
+
+        Merges:
+        * All Canonical categories for the jurisdiction
+        * Company Extensions (leaves under canonical parents)
+        * Company aliases (display-name overrides for canonical nodes)
+
+        Args:
+            company_id: The owning company ID.
+            jurisdiction_code: Jurisdiction to scope canonical tree.
+            search: Optional case-insensitive substring filter.
+            limit: Maximum rows to return.
+
+        Returns:
+            Dict with ``canonical``, ``extensions``, and ``aliases`` keys.
+        """
+        params: dict[str, Any] = {
+            "company_id": company_id,
+            "jurisdiction_code": jurisdiction_code,
+            "limit": limit,
+        }
+        search_filter = ""
+        if search:
+            search_filter = (
+                " AND (toLower(c.name) CONTAINS toLower($search) "
+                "OR toLower(c.code) CONTAINS toLower($search))"
+            )
+            params["search"] = search
+
+        canonical = self._read_tx(
+            f"""
+            MATCH (c:WorkCategory:Canonical)
+            WHERE c.jurisdiction_code = $jurisdiction_code{search_filter}
+            OPTIONAL MATCH (c)-[:PARENT_CATEGORY]->(parent:WorkCategory:Canonical)
+            RETURN c {{.*, parent_code: parent.code}} AS category
+            ORDER BY c.code
+            LIMIT $limit
+            """,
+            params,
+        )
+
+        extensions = self._read_tx(
+            """
+            MATCH (co:Company {id: $company_id})-[:HAS_EXTENSION]->(ext:WorkCategory:Extension)
+            OPTIONAL MATCH (ext)-[:PARENT_CATEGORY]->(parent:WorkCategory:Canonical)
+            WHERE parent.jurisdiction_code = $jurisdiction_code
+            RETURN ext {.*, parent_code: parent.code, parent_id: parent.id} AS extension
+            ORDER BY parent.code, ext.name
+            """,
+            params,
+        )
+
+        aliases = self._read_tx(
+            """
+            MATCH (co:Company {id: $company_id})-[a:HAS_ALIAS]->(c:WorkCategory:Canonical)
+            WHERE c.jurisdiction_code = $jurisdiction_code
+            RETURN {
+                canonical_id: c.id,
+                canonical_code: c.code,
+                canonical_name: c.name,
+                display_name: a.display_name,
+                added_at: a.added_at
+            } AS alias
+            """,
+            params,
+        )
+
+        return {
+            "canonical": [r["category"] for r in canonical],
+            "extensions": [r["extension"] for r in extensions],
+            "aliases": [r["alias"] for r in aliases],
+        }
+
+    def add_alias(
+        self,
+        company_id: str,
+        canonical_id: str,
+        display_name: str,
+        user_id: str,
+    ) -> dict[str, Any]:
+        """Add a display-name alias for a canonical category.
+
+        The company's contractors see ``display_name`` throughout the UI in place
+        of the canonical name. The alias is a relationship property, not a node
+        copy — the canonical tree is not forked.
+
+        Args:
+            company_id: The owning company ID.
+            canonical_id: The canonical category ID to alias.
+            display_name: The contractor-preferred display name.
+            user_id: Clerk user ID performing the action.
+
+        Returns:
+            Dict with alias metadata.
+
+        Raises:
+            ValueError: If the target is not a Canonical category or the
+                company does not exist.
+        """
+        actor = Actor.human(user_id)
+        now = datetime.now(timezone.utc).isoformat()
+        result = self._write_tx_single(
+            """
+            MATCH (co:Company {id: $company_id})
+            MATCH (c:WorkCategory:Canonical {id: $canonical_id})
+            MERGE (co)-[a:HAS_ALIAS]->(c)
+            SET a.display_name = $display_name,
+                a.added_at = $now,
+                a.added_by = $actor_id
+            RETURN {
+                canonical_id: c.id,
+                canonical_code: c.code,
+                canonical_name: c.name,
+                display_name: a.display_name,
+                added_at: a.added_at
+            } AS alias
+            """,
+            {
+                "company_id": company_id,
+                "canonical_id": canonical_id,
+                "display_name": display_name,
+                "now": now,
+                "actor_id": actor.id,
+            },
+        )
+        if result is None:
+            raise ValueError(
+                f"Cannot alias: company '{company_id}' or canonical category "
+                f"'{canonical_id}' not found"
+            )
+        self._emit_audit(
+            event_type="relationship.added",
+            entity_id=canonical_id,
+            entity_type="WorkCategory",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Aliased canonical category {canonical_id} to '{display_name}'",
+        )
+        return result["alias"]
+
+    def add_extension(
+        self,
+        company_id: str,
+        parent_canonical_id: str,
+        name: str,
+        description: str | None,
+        user_id: str,
+    ) -> dict[str, Any]:
+        """Add a company Extension under a Canonical parent.
+
+        Extensions are company-scoped leaf categories that do not exist in the
+        canonical tree. Guarded so the parent MUST be a Canonical node — you
+        cannot extend an Extension (keeping the tree shallow and predictable).
+
+        Args:
+            company_id: The owning company ID.
+            parent_canonical_id: Parent canonical node ID.
+            name: Extension display name.
+            description: Optional description.
+            user_id: Clerk user ID performing the action.
+
+        Returns:
+            The created extension dict.
+
+        Raises:
+            ValueError: If the parent is not Canonical or does not exist.
+        """
+        actor = Actor.human(user_id)
+        ext_id = self._generate_id("wcat")
+        props = {
+            "id": ext_id,
+            "name": name,
+            "description": description,
+            "deleted": False,
+            **self._provenance_create(actor),
+        }
+
+        result = self._write_tx_single(
+            """
+            MATCH (co:Company {id: $company_id})
+            MATCH (parent:WorkCategory:Canonical {id: $parent_id})
+            CREATE (ext:WorkCategory:Extension $props)
+            SET ext.level = parent.level + 1
+            CREATE (co)-[:HAS_EXTENSION]->(ext)
+            CREATE (ext)-[:PARENT_CATEGORY]->(parent)
+            RETURN ext {
+                .*,
+                company_id: co.id,
+                parent_code: parent.code,
+                parent_id: parent.id
+            } AS extension
+            """,
+            {
+                "company_id": company_id,
+                "parent_id": parent_canonical_id,
+                "props": props,
+            },
+        )
+        if result is None:
+            raise ValueError(
+                f"Cannot extend: company '{company_id}' not found or parent "
+                f"'{parent_canonical_id}' is not a Canonical category"
+            )
+        self._emit_audit(
+            event_type="entity.created",
+            entity_id=ext_id,
+            entity_type="WorkCategory",
+            company_id=company_id,
+            actor=actor,
+            summary=f"Created extension category '{name}' under canonical {parent_canonical_id}",
+        )
+        return result["extension"]
+
+    def resolve_for_work_item(
+        self,
+        company_id: str,
+        category_id: str,
+    ) -> dict[str, Any] | None:
+        """Resolve a category by ID for use on a WorkItem (CATEGORISED_AS target).
+
+        Accepts either a Canonical ID or a company-scoped Extension ID.
+        Validates that if Extension, it belongs to this company.
+
+        Args:
+            company_id: The owning company ID for access-scope check.
+            category_id: Canonical or Extension category ID.
+
+        Returns:
+            Dict with id, name, code, jurisdiction, level, and is_canonical flag,
+            or None if not found / not accessible.
+        """
+        result = self._read_tx_single(
+            """
+            MATCH (cat:WorkCategory {id: $category_id})
+            WHERE cat:Canonical
+               OR EXISTS {
+                   MATCH (co:Company {id: $company_id})-[:HAS_EXTENSION]->(cat)
+               }
+            OPTIONAL MATCH (cat)-[:PARENT_CATEGORY]->(parent:WorkCategory:Canonical)
+            RETURN cat {
+                .*,
+                is_canonical: cat:Canonical,
+                parent_code: parent.code,
+                parent_id: parent.id
+            } AS category
+            """,
+            {"company_id": company_id, "category_id": category_id},
+        )
+        return result["category"] if result else None
